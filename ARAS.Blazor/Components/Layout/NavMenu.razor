@@ -1,0 +1,124 @@
+﻿@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+
+@inherits ComponentBase
+
+@inject IAuthService AuthService
+@inject IConfigService Config
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<!-- SIDEBAR -->
+<RadzenSidebar @bind-Expanded="@sidebarExpanded" Style="width:250px; background: transparent">
+	<NavLink href="/" class="navbar-brand m-0 px-4 pt-5 pb-4 me-3 d-flex align-items-center">
+		<img src="img/icons/icon_vst_sm.svg" style="max-height: 2.3rem;" alt="logo" />
+		<span class="ms-2 fw-bold text-dark">AR-<span class="text-primary">Adjustments</span></span>
+	</NavLink>
+	<!-- Navigation Menu -->
+	<RadzenPanelMenu Style="background: transparent; " class="px-3">
+		<RadzenPanelMenuItem Text="Dashboard" Path="/" Icon="space_dashboard" Style="border: none" />
+		@if (accountDetails.AccountRole.Equals("Admin", StringComparison.CurrentCultureIgnoreCase))
+		{
+			<RadzenPanelMenuItem Text="Operations" Icon="action_key" Style="border: none">
+				<RadzenPanelMenuItem Text="Accounts" Path="/ops/accounts" Style="background: transparent; border: none;" />
+			</RadzenPanelMenuItem>
+		}
+		else if (accountDetails.AccountRole.Equals("Requestor", StringComparison.CurrentCultureIgnoreCase))
+		{
+			<RadzenPanelMenuItem Text="Requests" Icon="prescriptions" Style="border: none">
+				<RadzenPanelMenuItem Text="AP-AR" Path="/requests/ap-ar" Style="background: transparent; border: none;" />
+				<RadzenPanelMenuItem Text="Cash Discount" Path="/requests/cash-discount" Style="background: transparent" />
+			</RadzenPanelMenuItem>
+		}
+		else if (accountDetails.AccountRole.Equals("Approver", StringComparison.CurrentCultureIgnoreCase))
+		{
+			<RadzenPanelMenuItem Text="Approvals" Icon="prescriptions" Style="border: none">
+				<RadzenPanelMenuItem Text="Cash Discount" Path="/approvals/cash-discount" Style="background: transparent" />
+			</RadzenPanelMenuItem>
+		}
+
+		else if (accountDetails.AccountRole.Equals("Validator", StringComparison.CurrentCultureIgnoreCase))
+		{
+			<RadzenPanelMenuItem Text="Validations" Icon="fact_check" Style="border: none">
+				<RadzenPanelMenuItem Text="Cash Discount" Path="/validations/cash-discount" Style="background: transparent" />
+			</RadzenPanelMenuItem>
+		}
+
+		<RadzenPanelMenuItem Text="Submissions" Icon="article_shortcut" Style="border: none">
+			<RadzenPanelMenuItem Text="Cash Discount" Path="/submissions/cash-discount" Style="background: transparent" />
+		</RadzenPanelMenuItem>
+
+	</RadzenPanelMenu>
+</RadzenSidebar>
+
+<!-- HEADER / TOP BAR -->
+<RadzenHeader Style="background-color:transparent; box-shadow:none; border:none;">
+	<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Style="width:100%; padding:2.4em 1rem; height:60px; border:none;">
+
+		<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="5">
+			<RadzenSidebarToggle Class="text-primary" Click="@(() => sidebarExpanded = !sidebarExpanded)" />
+		</RadzenStack>
+
+		<RadzenProfileMenu Style="background-color: transparent; box-shadow:none; border-radius: 0.8em;">
+			<Template>
+				<div class="profile-menu d-flex align-items-center">
+					<div class="custom-avatar-square me-3">@avatar</div>
+					<div>
+						<div class="profile-username">@accountDetails.FullName</div>
+						<div class="profile-role">@accountDetails.AccountRole</div>
+					</div>
+				</div>
+			</Template>
+			<ChildContent>
+				<RadzenProfileMenuItem Text="Account Profile" Icon="person" Path="/profile" />
+				<RadzenProfileMenuItem Text="Dark Mode" Icon="ev_shadow" />
+				<li class="rz-navigation-item" @onclick="Logout">
+					<div class="rz-navigation-item-wrapper">
+						<div class="rz-navigation-item-link">
+							<div class="rz-navigation-item" style="cursor:pointer">
+								<span class="rz-navigation-item-icon rz-icon rz-icon-logout"></span>
+								<span class="rz-navigation-item-text">Logout</span>
+							</div>
+						</div>
+					</div>
+				</li>
+			</ChildContent>
+		</RadzenProfileMenu>
+	</RadzenStack>
+</RadzenHeader>
+
+@code {
+	bool sidebarExpanded = true;
+	string avatar = "";
+
+	AccountDetailsDto accountDetails = new();
+
+	protected override async Task OnInitializedAsync()
+	{
+		accountDetails = await AuthService.GetAccountDetails();
+		string[] fullName = accountDetails.FullName.Split(" ");
+		avatar = fullName[0].First().ToString().ToUpper() + " " + fullName[1]?.FirstOrDefault().ToString()?.ToUpper();
+	}
+
+	private async Task Logout()
+	{
+		try
+		{
+			var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+			string currentUrl = Uri.EscapeDataString(uri.GetLeftPart(UriPartial.Path));
+			string externalUrl = Config.GetAuthApiUrl($"auth/aad/logout?url={currentUrl}");
+			Navigation.NavigateTo(externalUrl, forceLoad: true);
+		}
+		catch (Exception ex)
+		{
+			await Task.Delay(10);
+			NotificationService.Notify(new NotificationMessage
+			{
+				Severity = NotificationSeverity.Error,
+				Summary = "Error",
+				Detail = ex.Message,
+				Duration = 5000
+			});
+		}
+	}
+}

@@ -1,0 +1,88 @@
+﻿@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@inherits ComponentBase
+@inject DialogService DialogService
+
+<RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
+	<RadzenFormField Text="Invoice Number to adjust" Variant="@Variant.Outlined" >
+		<RadzenTextBox @bind-Value="@InvoiceDetails.InvoiceNumber" ReadOnly/>
+	</RadzenFormField>
+
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenFormField Text="@("Discount (%)")" Variant="Variant.Outlined">
+			<RadzenNumeric @bind-Value="@discountPercentage" Max="1000" />
+		</RadzenFormField>
+		@if (!string.IsNullOrEmpty(discountPercentage))
+		{
+			<RadzenText class="fs-6 font-italic ps-3">
+				@(discountPercentage + " = " + (GetDiscountValue().ToString()) + " of Invoice Amount")
+			</RadzenText>
+		}
+	</RadzenStack>
+
+	<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
+		<RadzenTextArea @bind-Value="@remarks" Rows="4" />
+	</RadzenFormField>
+
+	<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+		<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
+			Close
+		</button>
+		<button @onclick="OnSubmit" class="btn btn-outline-primary">
+			Add
+		</button>
+	</RadzenStack>
+</RadzenStack>
+
+@code {
+
+	[Parameter] public IList<CashDiscountRowDto> Rows { get; set; }
+	[Parameter] public RadzenDataGrid<CashDiscountRowDto> Grid { get; set; }
+	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
+
+	private IEnumerable<string> invoices = new List<string>();
+	private string discountPercentage = string.Empty;
+	private string remarks = string.Empty;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+
+	}
+
+	private async Task OnSubmit()
+	{
+		bool isInvoiceDiscounted = Rows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
+		if (isInvoiceDiscounted){
+			await DialogService.Alert($"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the cash-discount adjustment table", "Invoice is already adjusted");
+			return;
+		}
+
+		var row = new CashDiscountRowDto(
+			GetDiscountValue(),
+			string.IsNullOrEmpty(remarks) ? $"{discountPercentage}% Discount Remarks" : remarks,
+			InvoiceDetails
+		);
+
+		Rows.Add(row);
+
+		await Grid.Reload();
+		DialogService.Close(true);
+	}
+
+	private float GetDiscountValue()
+	{
+		var _discountValue = 0f;
+		bool isSuccess = float.TryParse(discountPercentage, out _discountValue);
+
+		if (!isSuccess)
+			throw new InvalidOperationException("Cannot convert discount");
+
+		return _discountValue / 100;
+	}
+}

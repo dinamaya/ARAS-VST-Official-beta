@@ -1,0 +1,89 @@
+﻿
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@inherits ComponentBase
+@inject IOpsService OpsService
+@inject DialogService DialogService
+
+<RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;">
+    <RadzenRow Gap="1rem">
+		<RadzenColumn Size="12" SizeMD="6">
+			<RadzenFormField class="w-100" Text="First Name" Variant="@Variant.Outlined" Max>
+				<RadzenTextBox @bind-Value="@accountEditRequest.FirstName" />
+			</RadzenFormField>
+		</RadzenColumn>
+
+		<RadzenColumn Size="12" SizeMD="6">
+			<RadzenFormField class="w-100" Text="Last Name" Variant="@Variant.Outlined" Max>
+				<RadzenTextBox @bind-Value="@accountEditRequest.LastName" />
+			</RadzenFormField>
+		</RadzenColumn>		
+	</RadzenRow>
+
+	<RadzenRow Gap="1rem">
+		<RadzenColumn Size="12" SizeMD="6">
+			<RadzenFormField class="w-100 mt-3" Text="Email" Variant="@Variant.Outlined" Max>
+				<RadzenTextBox @bind-Value="accountEditRequest.Email" />
+			</RadzenFormField>
+		</RadzenColumn>
+
+		<RadzenColumn Size="12" SizeMD="6">
+			<RadzenStack class="w-100" Orientation="Orientation.Vertical" AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Center" Gap="0.5rem">
+				<RadzenLabel Text="Select Value" Component="DropDownClear" />
+				<RadzenDropDown 
+					Style="width: 100%"
+					@bind-Value=@accountEditRequest.AccountRole
+					Data=@Roles
+					TextProperty="@nameof(DropdownOptionDto.Label)"
+					ValueProperty="@nameof(DropdownOptionDto.Label)"
+					AllowClear=true
+					Placeholder="Select role" />
+			</RadzenStack>
+		</RadzenColumn>
+	</RadzenRow>
+
+	<RadzenRow class="ps-4">
+		<RadzenCheckBox @bind-Value="accountEditRequest.IsActive" Name="Active" />
+		<RadzenLabel Text="Active" Component="IsActive" class="rz-ms-2" />
+	</RadzenRow>
+
+	<RadzenStack Visible="@ShowClose" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+		<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
+			Close
+		</button>
+		<button @onclick="OnSubmit" class="btn btn-outline-primary">
+			Edit
+		</button>
+	</RadzenStack>
+</RadzenStack>
+
+@code {
+	[Parameter] public string AccountId { get; set; } = string.Empty;
+	[Parameter] public bool ShowClose { get; set; } = true;
+	[Parameter] public IEnumerable<DropdownOptionDto> Roles { get; set; }
+	private AccountEditRequestDto accountEditRequest;
+	private string selectedRole;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		accountEditRequest = new AccountEditRequestDto();
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+
+		if (!string.IsNullOrEmpty(AccountId))
+		{
+			accountEditRequest = await OpsService.GetAccountById(AccountId);
+		}
+	}
+
+	private async Task OnSubmit()
+	{
+		bool isSuccess = await OpsService.Update(accountEditRequest);
+		if (isSuccess)
+			StateHasChanged();
+	}
+}

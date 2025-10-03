@@ -1,0 +1,110 @@
+﻿@using ARAS.Blazor.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.WebUtilities
+
+@page "/auth/login"
+@attribute [AllowAnonymous]
+@inject IConfigService Config
+@inject IAuthService AuthService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+
+<div class="mx-5 d-none d-xxl-block">
+	<!-- Navbar -->
+	<nav class="navbar top-0 z-index-3 shadow-none position-absolute start-0 end-0 mx-5 mt-4">
+		<div class="container-fluid">
+			<NavLink class="navbar-brand font-weight-bolder ms-lg-0 ms-3" href="/">
+				<img src="@Assets["/img/icons/icon_app_lg.svg"]" alt="aras-icon">
+			</NavLink>
+		</div>
+	</nav>
+	<!-- End Navbar -->
+</div>
+
+<div class="page-header min-vh-100">
+	<div class="container">
+		<div class="row">
+			<div class="col-xl-4 col-lg-5 col-md-7 d-flex flex-column mx-lg-0 mx-auto">
+				<div class="card card-plain">
+					<div class="card-header pb-0 text-start bg-transparent text-center">
+						<div class="mb-4 mt-4">
+							<img src="@Assets["/img/icons/icon_vst_lg.svg"]" alt="vstecs-icon">
+						</div>
+						<div>
+							<h1 class="mb">Sign In to Account</h1>
+							<p class="mb-0">Use your Microsoft Account to access the system securely</p>
+						</div>
+					</div>
+					<div class="card-body">
+						<div class="text-center row">
+							<button class="btn btn-lg bg-gradient-primary btn-lg w-100 mt-4 mb-2" @onclick="SignIn">
+								Sign in
+							</button>
+						</div>
+						@if (showErrorAlert)
+						{
+							<RadzenAlert Size="AlertSize.Large" AllowClose="false" AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" Shade="Shade.Lighter">
+								Account is not authorized
+							</RadzenAlert>
+						}
+					</div>
+				</div>
+			</div>
+			<div class="col-6 d-lg-flex d-none h-100 my-auto pe-0 position-absolute top-0 end-0 text-center justify-content-center flex-column">
+				<div class="position-relative bg-gradient-primary h-100 m-3 px-7 border-radius-lg d-flex flex-column justify-content-center">
+					<img src="@Assets["/img/shapes/pattern-lines.svg"]" alt="pattern-lines" class="position-absolute opacity-4 start-0">
+					<div class="position-relative">
+						<img id="img-poster" src="@Assets["/img/illustrations/login-poster-1.png"]" class="max-width-500 w-100 position-relative z-index-2" alt="3DQrHand">
+					</div>
+					<h1 class="mt-5 text-white font-weight-bolder">"Take Control of your AR Adjustments"</h1>
+					<p class="text-white">Make managing accounts receivable easier and faster. Track, adjust, and reconcile with confidence.</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+@code {
+	string authLoginUrl = "";
+	string currentUrl = "";
+	bool showErrorAlert = false;
+	Uri uri = null;
+	protected override async Task OnInitializedAsync()
+	{
+		uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+		currentUrl = Uri.EscapeDataString(uri.GetLeftPart(UriPartial.Path));
+		authLoginUrl = Config.GetAuthApiUrl($"auth/aad/login?url={currentUrl}");
+
+		ShowAlert();
+
+		await Authenticate();
+	}
+
+	private void ShowAlert()
+	{
+		if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("q", out var qValue))
+			showErrorAlert = string.Equals(qValue, Queries.Auth.UNAUTHORIZED, StringComparison.OrdinalIgnoreCase);
+	}
+
+	private void SignIn()
+	{
+		Navigation.NavigateTo(authLoginUrl, forceLoad: true);
+	}
+
+	private async Task Authenticate()
+	{
+		try
+		{
+
+			var isAuthenticated = await AuthService.IsAuthenticated();
+			if (isAuthenticated)
+				Navigation.NavigateTo("/", forceLoad: true);
+		}
+		catch
+		{
+			
+		}
+	}
+}

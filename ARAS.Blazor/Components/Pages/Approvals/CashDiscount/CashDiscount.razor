@@ -1,0 +1,30 @@
+﻿@page "/approvals/cash-discount"
+@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Components.Layout;
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Approver")]
+
+@inherits ComponentBase
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inject ICashDiscountService CashDiscountService
+
+<h2>Cash Discount Adjustment Approval</h2>
+
+
+<RequestDataTable SelectionRoute="approvals/cash-discount" SelectButtonTitle="Update" OnDateLoad="@(OnDataLoad)" />
+
+@code {
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+	}
+
+	private async Task<IEnumerable<TransactionRequestRowDto>> OnDataLoad()
+	{
+		return await CashDiscountService.GetApprovals();
+	}
+}

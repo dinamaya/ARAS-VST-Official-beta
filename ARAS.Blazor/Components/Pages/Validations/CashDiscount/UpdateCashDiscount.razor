@@ -1,0 +1,65 @@
+﻿@page "/validations/cash-discount/{RequestId:long}"
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Components.Pages.Requests.CashDiscount
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Validator")]
+@inject ICashDiscountService CashDiscountService
+@inject IRequestService RequestService
+@inject DialogService DialogService
+
+@inherits ComponentBase
+
+<h3>Update Cash Discount</h3>
+<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+	<RadzenRow>
+		@if (isApprovable)
+		{
+			<RadzenStack class="w-100" JustifyContent="JustifyContent.End" Orientation="Orientation.Horizontal">
+				<RadzenButton ButtonStyle="ButtonStyle.Danger" Text="Reject" class="btn-danger" Icon="cancel" />
+				<RadzenButton ButtonStyle="ButtonStyle.Warning" Text="Decline" class="btn-dark" Icon="thumb_down" />
+				<RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Validate" class="btn-primary" Icon="assignment_turned_in" Click="OnValidate" />
+			</RadzenStack>
+		}
+	</RadzenRow>
+	<RadzenRow>
+		<div class="py-4 px-3 w-100 card">
+			<CashDiscountSummary Rows="rows" IsButtonsVisible="false" RequestAudit="requestAudit" />
+		</div>
+	</RadzenRow>
+</RadzenStack>
+
+@code {
+	[Parameter] public long RequestId { get; set; }
+	private IEnumerable<CashDiscountRowDto> rows;
+	private RequestAuditDto requestAudit;
+	private bool isApprovable = false;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		isApprovable = await RequestService.IsValidatable(RequestId);
+		var request = await CashDiscountService.GetRequestDetails(RequestId);
+		rows = await CashDiscountService.GetAdjustments(RequestId);
+
+		requestAudit = new RequestAuditDto();
+		requestAudit.Requestor = request.Requestor;
+		requestAudit.Approver = request.Approver;
+		requestAudit.Validator = request.Validator;
+		requestAudit.Checker = request.Checker;
+		requestAudit.ReferenceNumber = request.RequestNumber;
+		requestAudit.DateRequested = request.DateRequested;
+	}
+
+	protected async Task OnValidate()
+	{
+		bool isApprove = await DialogService.Confirm("Are you sure you want to validate this request?", "Validate Request") ?? false;
+
+		if(!isApprove)
+			return;
+
+		await CashDiscountService.ValidateAdjustment(RequestId);
+	}
+
+}

@@ -1,0 +1,31 @@
+@ARAS.Auth.Api_HostAddress = https://localhost:7008
+
+GET {{ARAS.Auth.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+GET {{ARAS.Auth.Api_HostAddress}}/api/auth/aad/login
+
+###
+
+GET {{ARAS.Auth.Api_HostAddress}}/api/ops/accounts
+
+###
+
+GET {{ARAS.Auth.Api_HostAddress}}/api/ops/accounts
+
+###
+
+GET {{ARAS.Auth.Api_HostAddress}}/api/ops/roles
+
+###
+
+@id=ACCcc96453d300a42e29512e6e3a39a18aa9f686912aa2c4e1cbefabc5ec3b9c539
+GET {{ARAS.Auth.Api_HostAddress}}/api/ops/accounts/{{id}}
+
+###
+
+GET {{ARAS.Auth.Api_HostAddress}}/api/ops/roles
+
+###

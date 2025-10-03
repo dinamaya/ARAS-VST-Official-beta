@@ -1,0 +1,121 @@
+﻿@using ARAS.Blazor.Services.Interfaces
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.AspNetCore.Identity
+@using Radzen.Blazor
+@using Radzen
+
+@using ARAS.Blazor.Components.Layout
+
+@inject NavigationManager Navigation
+@inject IAuthService AuthService
+@inherits LayoutComponentBase
+
+<div>
+	<RadzenNotification />
+	<RadzenDialog />
+	<main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg">
+		<RadzenLayout Style="grid-template-areas: 'rz-sidebar rz-header' 'rz-sidebar rz-body'">
+			@if(isAuthenticated)
+			{
+				<NavMenu />
+			}
+
+			<!-- BODY -->
+			<RadzenBody>
+				<div class="px-4">
+					@Body
+				</div>
+			</RadzenBody>
+		</RadzenLayout>
+	</main>
+</div>
+
+@code{
+	bool isAuthenticated = false;
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		isAuthenticated = await AuthService.IsAuthenticated();
+	}
+}
+
+<style>
+	/* Force Radzen sidebar toggle icon to your primary color variant */
+	.rz-sidebar-toggle,
+	.rz-sidebar-toggle .rz-icon,
+	.rz-sidebar-toggle i {
+		color: var(--bs-primary, #0d6efd) !important; /* try Bootstrap var first, fallback to blue */
+		fill: currentColor !important; /* for SVG icons that use fill */
+	}
+
+	.custom-avatar {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 40px;
+		height: 40px;
+		background: transparent; /* Uses your primary color */
+		color: #fff;
+		font-weight: 600;
+		font-size: 1rem;
+		border-radius: 50%;
+		user-select: none;
+	}
+
+	.custom-avatar-square {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 44px;
+		height: 44px;
+		background: #d32f2f; /* Material Red 700, matches your reference */
+		color: #fff;
+		font-weight: 600;
+		font-size: 1.1rem;
+		border-radius: 12px;
+		user-select: none;
+	}
+
+	.profile-username {
+		font-weight: 600;
+		color: #344767;
+		font-size: 1rem;
+	}
+
+	.profile-role {
+		color: #8f9cc0;
+		font-size: 0.95rem;
+		margin-top: 2px;
+		letter-spacing: 0.5px;
+	}
+
+	.profile-menu {
+		padding: 0.5rem 0.5rem 0.5rem 0.5rem;
+	}
+
+	.rz-navigation-menu .rz-navigation-item-wrapper {
+		background: transparent !important;
+	}
+
+	.rz-navigation-item, .rz-navigation-item-wrapper {
+		margin: 0.5em 0.6em;
+		border-radius: 0.8em;
+	}
+
+		.rz-navigation-item-wrapper.rz-navigation-item-wrapper-active, .rz-navigation-item-link {
+			border-radius: 0.8em;
+		}
+
+	.rz-panel-menu .rz-navigation-item-wrapper:hover {
+		border-radius: 0.8em;
+	}
+
+	.rz-panel-menu.rz-navigation-menu.rz-navigation-item-wrapper {
+		background: transparent;
+	}
+
+	.ul.rz-profile-menu .rz-navigation-item-icon-children {
+		color: black !important;
+	}
+</style>

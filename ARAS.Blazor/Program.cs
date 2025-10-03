@@ -1,0 +1,43 @@
+using ARAS.Blazor.App_Code.Globals.Extensions;
+using ARAS.Blazor.Components;
+using Radzen;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient();
+
+// Add services to the container.
+builder.Services.AddLocalRepositories();
+builder.Services.AddRadzenConfig();
+builder.Services.AddAuthConfig();
+
+builder.Services.AddControllers();
+
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization(); 
+app.UseAntiforgery();
+
+app.MapControllers();
+app.MapStaticAssets();
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode()
+    .AllowAnonymous();
+
+app.AddEndpointConfig();
+
+app.Run();

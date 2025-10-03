@@ -1,0 +1,208 @@
+﻿@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inject ICashDiscountService CashDiscountService
+@inherits ComponentBase
+
+<RadzenStack Gap="0">
+	<RadzenImage Path="@Assets["/img/icons/VST-ECS.png"]" Style="width: 170px" />
+	<RadzenStack class="w-100" AlignItems="AlignItems.Center" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem">
+		<div class="h-100">
+			<h2 class="text-capitalize m-0">
+				Cash Discount
+			</h2>
+		</div>
+		<RadzenTable class="w-25 border-0 mb-2" GridLines="DataGridGridLines.None" AllowAlternatingRows="false">
+			<RadzenTableBody>
+				<RadzenTableRow>
+					<RadzenTableCell class="p-1">
+						Request No:
+					</RadzenTableCell>
+					<RadzenTableCell class="p-1">
+						<b>@RequestAudit?.ReferenceNumber</b>
+					</RadzenTableCell>
+				</RadzenTableRow>
+
+				<RadzenTableRow>
+					<RadzenTableCell class="p-1">
+						Date Requested
+					</RadzenTableCell>
+					<RadzenTableCell class="p-1">
+						<b>@RequestAudit?.DateRequested</b>
+					</RadzenTableCell>
+				</RadzenTableRow>
+			</RadzenTableBody>
+		</RadzenTable>
+	</RadzenStack>
+
+	<div style="overflow-x:auto; width:100%;">
+		<RadzenTable class="w-100 pb-2" GridLines="DataGridGridLines.Both" AllowAlternatingRows="false">
+			<RadzenTableHeader>
+				<RadzenTableHeaderRow>
+					<RadzenTableHeaderCell Style="width: 220px; text-align: center">
+						Adjustment Amount
+					</RadzenTableHeaderCell>
+					<RadzenTableHeaderCell Style="width: 170px; text-align: center">
+						Adjustment<br />Activity
+					</RadzenTableHeaderCell>
+					<RadzenTableHeaderCell Style="width: 220px; text-align: center">
+						Invoice Amount
+					</RadzenTableHeaderCell>
+					<RadzenTableHeaderCell Style="width: 220px; text-align: center">
+						Invoice Date
+					</RadzenTableHeaderCell>
+					<RadzenTableHeaderCell Style="width: 220px; text-align: center">
+						Invoice Number
+					</RadzenTableHeaderCell>
+					<RadzenTableHeaderCell Style="width: 400px; text-align: center">
+						Customer Name
+					</RadzenTableHeaderCell>
+					<RadzenTableHeaderCell Style="width: 220px; text-align: center">
+						Customer Number
+					</RadzenTableHeaderCell>
+					<RadzenTableHeaderCell Style="width: 120px; text-align: center">
+						Reason<br />Code
+					</RadzenTableHeaderCell>
+					<RadzenTableHeaderCell Style="width: 500px; text-align: center">
+						Remarks
+					</RadzenTableHeaderCell>
+				</RadzenTableHeaderRow>
+			</RadzenTableHeader>
+			<RadzenTableBody>
+				@if (Rows != null)
+				{
+					@foreach (var data in Rows)
+					{
+						<RadzenTableRow>
+							<RadzenTableCell Style="width: 220px">
+								@data.AdjustmentAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+							</RadzenTableCell>
+							<RadzenTableCell Style="width: 170px; text-align: center">
+								@data.AdjustmentActivity
+							</RadzenTableCell>
+							<RadzenTableCell Style="width: 220px">
+								@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+							</RadzenTableCell>
+							<RadzenTableCell Style="width: 220px">
+								@data.InvoiceDate
+							</RadzenTableCell>
+							<RadzenTableCell Style="width: 220px">
+								@data.InvoiceNumber
+							</RadzenTableCell>
+							<RadzenTableCell Style="width: 400px">
+								@data.CustomerName
+							</RadzenTableCell>
+							<RadzenTableCell Style="width: 220px">
+								@data.CustomerNumber
+							</RadzenTableCell>
+							<RadzenTableCell Style="width: 120px; text-align: center">
+								@data.ReasonCode
+							</RadzenTableCell>
+							<RadzenTableCell Style="width: 500px">
+								@data.Remarks
+							</RadzenTableCell>
+						</RadzenTableRow>
+					}
+				}
+			</RadzenTableBody>
+		</RadzenTable>
+
+		<RadzenTable class="w-100 pb-2" GridLines="DataGridGridLines.Both" AllowAlternatingRows="false">
+			<RadzenTableBody>
+				<RadzenTableRow>
+					<RadzenTableCell Style="width: 220px; text-align: center">
+						<b>Requested By:</b>
+					</RadzenTableCell>
+					@if (IsCheckByVisible)
+					{
+						<RadzenTableCell Style="width: 220px; text-align: center">
+							<b>Checked By:</b>
+						</RadzenTableCell>
+					}
+					<RadzenTableCell Style="width: 170px; text-align: center">
+						<b>Approved By:</b>
+					</RadzenTableCell>
+					<RadzenTableCell Style="width: 220px; text-align: center">
+						<b>Validated By:</b>
+					</RadzenTableCell>
+				</RadzenTableRow>
+				<RadzenTableRow>
+					<RadzenTableCell Style="width: 220px; text-align: center">
+						@RequestAudit?.Requestor
+					</RadzenTableCell>
+					@if (IsCheckByVisible)
+					{
+						<RadzenTableCell Style="width: 220px; text-align: center">
+							@RequestAudit?.Checker
+						</RadzenTableCell>
+					}
+					<RadzenTableCell Style="width: 170px; text-align: center">
+						@RequestAudit?.Approver
+					</RadzenTableCell>
+					<RadzenTableCell Style="width: 220p; text-align: center">
+						@RequestAudit?.Validator
+					</RadzenTableCell>
+				</RadzenTableRow>
+			</RadzenTableBody>
+		</RadzenTable>
+	</div>
+
+	@if (IsButtonsVisible)
+	{
+		<RadzenStack class="w-100 mt-3" Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem">
+			<button @onclick="@OnExport" class="btn btn-dark">
+				Export
+			</button>
+
+			<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+				<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
+					Close
+				</button>
+				<button @onclick="OnSubmit" class="btn btn-outline-primary">
+					Submit
+				</button>
+			</RadzenStack>
+
+		</RadzenStack>
+	}
+
+</RadzenStack>
+
+@code {
+	[Parameter] public IEnumerable<CashDiscountRowDto> Rows { get; set; }
+	[Parameter] public bool IsButtonsVisible { get; set; } = true;
+	[Parameter] public bool IsCheckByVisible { get; set; } = false;
+	[Parameter] public RequestAuditDto RequestAudit { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+	}
+
+	public async Task OnSubmit()
+	{
+		try
+		{
+			await CashDiscountService.Create(Rows);
+			NavigationManager.NavigateTo("/requests/cash-discount", true);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Submission Failed");
+		}
+	}
+
+	public async Task OnExport()
+	{
+		try
+		{
+			await DialogService.Alert("Can't Export. This is not yet Implemented", "Request Export Failed");
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Export Failed");
+		}
+	}
+}

@@ -1,0 +1,31 @@
+﻿
+
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Components.Layout;
+@using Microsoft.AspNetCore.Authorization
+
+@page "/submissions/cash-discount"
+
+@attribute [Authorize]
+@inherits ComponentBase
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inject ICashDiscountService CashDiscountService
+
+<h3>CashDiscount</h3>
+
+<RequestDataTable SelectionRoute="submissions/cash-discount" SelectButtonTitle="View" OnDateLoad="@(OnDataLoad)" />
+
+@code {
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+	}
+
+	private async Task<IEnumerable<TransactionRequestRowDto>> OnDataLoad()
+	{
+		return await CashDiscountService.GetSubmissions();
+	}
+}

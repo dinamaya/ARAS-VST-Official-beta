@@ -1,0 +1,39 @@
+@ARAS.Main.Oracle.Api_HostAddress = https://localhost:7255
+
+GET {{ARAS.Main.Oracle.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/test/acc-eu
+
+###
+
+GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/test/acc-eu
+
+###
+
+GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/test/acc-eu
+
+###
+
+@invoiceNo=219395
+@count=10
+###
+
+GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/invoice/no/{{invoiceNo}}/{{count}}
+
+
+###
+
+GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/invoice/no/{{invoiceNo}}/{{count}}
+
+###
+
+GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/invoice/no/{{invoiceNo}}/{{count}}
+
+###
+
+GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/invoice/no/{{invoiceNo}}/{{count}}
+
+###

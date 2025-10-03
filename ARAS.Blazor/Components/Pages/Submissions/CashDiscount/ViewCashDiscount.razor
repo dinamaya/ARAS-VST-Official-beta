@@ -1,0 +1,53 @@
+﻿@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Components.Pages.Requests.CashDiscount
+@using Microsoft.AspNetCore.Authorization
+
+@page "/submissions/cash-discount/{RequestId:long}"
+@attribute [Authorize]
+@inject ICashDiscountService CashDiscountService
+@inject IRequestService RequestService
+@inject DialogService DialogService
+
+@inherits ComponentBase
+
+<h3>Update Cash Discount</h3>
+<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+	<RadzenRow>
+		<div class="py-4 px-3 w-100 card">
+			<CashDiscountSummary Rows="rows" IsButtonsVisible="false" RequestAudit="requestAudit" />
+		</div>
+	</RadzenRow>
+</RadzenStack>
+
+@code {
+	[Parameter] public long RequestId { get; set; }
+	private IEnumerable<CashDiscountRowDto> rows;
+	private RequestAuditDto requestAudit;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		var request = await CashDiscountService.GetRequestDetails(RequestId);
+		rows = await CashDiscountService.GetAdjustments(RequestId);
+
+		requestAudit = new RequestAuditDto();
+		requestAudit.Requestor = request.Requestor;
+		requestAudit.Approver = request.Approver;
+		requestAudit.Validator = request.Validator;
+		requestAudit.Checker = request.Checker;
+		requestAudit.ReferenceNumber = request.RequestNumber;
+		requestAudit.DateRequested = request.DateRequested;
+	}
+
+	protected async Task OnValidate()
+	{
+		bool isApprove = await DialogService.Confirm("Are you sure you want to validate this request?", "Validate Request") ?? false;
+
+		if(!isApprove)
+			return;
+
+		await CashDiscountService.ValidateAdjustment(RequestId);
+	}
+
+}

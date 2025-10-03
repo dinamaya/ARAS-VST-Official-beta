@@ -1,0 +1,42 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    
+    <link href="@Assets["/img/icons/apple-touch-icon.png"]" rel="apple-touch-icon" sizes="76x76" />
+    <link href="@Assets["/img/icons/favicon.ico"]" rel="icon" type="image/png"/>
+    <link href="@Assets["/styles/soft-ui-dashboard.css"]" rel="stylesheet" />
+
+    <!--     Radzen Blazor     -->
+    <link rel="stylesheet" href="_content/Radzen.Blazor/css/default.css" />
+
+    <!--     Nucleo Icons     -->
+    <link href="@Assets["/styles/nucleo-icons.css"]" rel="stylesheet" />
+    <link href="@Assets["/styles/nucleo-svg.css"]" rel="stylesheet" />
+
+    <!--     Fonts and icons     -->
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
+
+    <!--     Font Awesome Icons     -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    
+    <script src="js/core/popper.min.js" defer></script>
+    <script src="js/core/bootstrap.min.js" defer></script>
+    <script src="js/plugins/perfect-scrollbar.min.js" defer></script>
+    <script src="js/soft-ui-dashboard.js" defer></script>
+
+    <ImportMap />
+    <HeadOutlet @rendermode="InteractiveServer" />
+    <RadzenTheme Theme="material" @rendermode="InteractiveServer" />
+</head>
+
+<body>
+    <Routes @rendermode="InteractiveServer" />
+    <script src="_framework/blazor.web.js"></script>
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
+</body>
+
+</html>

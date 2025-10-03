@@ -1,0 +1,120 @@
+﻿@using ARAS.Blazor.Models.DTOs
+
+@inject NavigationManager NavigationManager
+
+@inherits ComponentBase
+
+<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+	<RadzenRow>
+		<div class="py-4 px-3 w-100 card">
+			@if (IsLoading)
+			{
+				<RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
+					<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:30px;" />
+					<RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" class="w-100">
+						@for (int i = 0; i < 7; i++)
+						{
+							<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:30px;" />
+						}
+					</RadzenStack>
+					@for (int i = 0; i < 3; i++)
+					{
+						<RadzenStack Orientation="Orientation.Horizontal" Gap="1rem">
+							@for (int j = 0; j < 7; j++)
+							{
+								<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:25px;" />
+							}
+						</RadzenStack>
+					}
+				</RadzenStack>
+			}
+			else
+			{
+				<RadzenDataGrid class="border-0"
+								AllowFiltering="true"
+								AllowColumnResize="true"
+								AllowAlternatingRows="false"
+								FilterMode="FilterMode.Advanced"
+								AllowSorting="true"
+								PageSize="20"
+								AllowPaging="true"
+								PagerHorizontalAlign="HorizontalAlign.Left"
+								ShowPagingSummary="true"
+								Data="@Requests"
+								LogicalFilterOperator="LogicalFilterOperator.Or"
+								SelectionMode="DataGridSelectionMode.Single">
+					<Columns>
+						<RadzenDataGridColumn Frozen="true" Title="Select" Sortable="false" Filterable="false" Width="180px" TextAlign="TextAlign.Center">
+							<Template Context="data">
+								<RadzenButton Icon="edit_document" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Text="@SelectButtonTitle" Click="@(args => OnSelect(data.RequestId))" />
+							</Template>
+						</RadzenDataGridColumn>
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.RequestNumber)" Title="Request Number" Visible="false" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Status)" Width="180px" Title="Status">
+							<Template Context="data">
+								@{
+									BadgeStyle color = BadgeStyle.Warning;
+									switch (data.Status)
+									{
+										case "Approved":
+											color = BadgeStyle.Success;
+											break;
+										case "Validated":
+											color = BadgeStyle.Primary;
+											break;
+										case "Declined":
+											color = BadgeStyle.Secondary;
+											break;
+										case "Rejected":
+											color = BadgeStyle.Danger;
+											break;
+									}
+								}
+								<RadzenBadge IsPill class="px-3 py-1" Text="@data.Status" BadgeStyle="@color" />
+							</Template>
+						</RadzenDataGridColumn>	
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Requestor)" Width="220px" Title="Requestor" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateRequested)" Width="220px" Title="Date Requested" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Approver)" Width="220px" Title="Approver" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateApproved)" Width="220px" Title="Date Approved" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Validator)" Width="220px" Title="Validator" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateValidated)" Width="220px" Title="Date Validated" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Checker)" Width="220px" Title="Checker" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateChecked)" Width="220px" Title="Date Checked" />
+					</Columns>
+				</RadzenDataGrid>
+			}
+		</div>
+	</RadzenRow>
+</RadzenStack>
+
+@code 
+{
+	[Parameter] public Func<Task<IEnumerable<TransactionRequestRowDto>>> OnDateLoad { get; set; }
+	[Parameter] public string SelectButtonTitle { get; set; }
+	[Parameter] public string SelectionRoute { get; set; }
+
+	private IEnumerable<TransactionRequestRowDto> Requests { get; set; }
+	private bool IsLoading { get; set; } = true;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+
+		IsLoading = true;
+
+		Requests = await OnDateLoad.Invoke();
+
+		IsLoading = false;
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnInitializedAsync();
+	}
+
+	private async Task OnSelect(long RequestId)
+	{
+		NavigationManager.NavigateTo($"/{SelectionRoute}/{RequestId}");
+	}
+}

@@ -1,0 +1,90 @@
+﻿@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@inherits ComponentBase
+@inject DialogService DialogService
+
+<RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
+	<RadzenFormField Text="Invoice Number to adjust" Variant="@Variant.Outlined" >
+		<RadzenTextBox @bind-Value="@Data.InvoiceNumber" ReadOnly />
+	</RadzenFormField>
+
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenFormField Text="@("Discount (%)")" Variant="Variant.Outlined">
+			<RadzenNumeric @bind-Value="@discountPercentage" Max="1000" />
+		</RadzenFormField>
+		@if (!string.IsNullOrEmpty(discountPercentage))
+		{
+			<RadzenText class="fs-6 font-italic ps-3">
+				@(discountPercentage + " = " + (GetDiscountValue().ToString()) + " of Invoice Amount")
+			</RadzenText>
+		}
+	</RadzenStack>
+
+	<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
+		<RadzenTextArea @bind-Value="@Data.Remarks" Rows="4" />
+	</RadzenFormField>
+
+
+	<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+		<button @onclick="@OnDelete" class="btn btn-dark">
+			Delete
+		</button>
+		<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+			<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
+				Close
+			</button>
+			<button @onclick="OnEdit" class="btn btn-outline-primary">
+				Edit
+			</button>
+		</RadzenStack>
+	</RadzenStack>
+	
+</RadzenStack>
+
+@code {
+
+	[Parameter] public IList<CashDiscountRowDto> Rows { get; set; }
+	[Parameter] public RadzenDataGrid<CashDiscountRowDto> Grid { get; set; }
+	[Parameter] public CashDiscountRowDto Data { get; set; }
+
+	private IEnumerable<string> invoices = new List<string>();
+	private string discountPercentage = string.Empty;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+		discountPercentage = (Data.DiscountValue * 100).ToString();
+	}
+
+	private async Task OnEdit()
+	{
+		var data = Rows.FirstOrDefault(r => r.Id == Data.Id) ?? throw new Exception("Data is not found in the cash-discount adjustment table");
+		data.SetValues(GetDiscountValue(), Data.Remarks);
+
+		await Grid.Reload();
+		DialogService.Close(true);
+	}
+
+	private async Task OnDelete()
+	{
+		Rows.Remove(Data);
+		await Grid.Reload();
+		DialogService.Close(true);
+	}
+
+	private float GetDiscountValue()
+	{
+		var _discountValue = 0f;
+		bool isSuccess = float.TryParse(discountPercentage, out _discountValue);
+
+		if (!isSuccess)
+			throw new InvalidOperationException("Cannot convert discount");
+
+		return _discountValue / 100;
+	}
+}

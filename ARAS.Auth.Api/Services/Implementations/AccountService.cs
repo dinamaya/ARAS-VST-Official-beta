@@ -1,4 +1,5 @@
-﻿using ARAS.Auth.Api.App_Code.Globals.Constants;
+﻿using ARAS.Auth.Api.App_Code.Globals;
+using ARAS.Auth.Api.App_Code.Globals.Constants;
 using ARAS.Auth.Api.Context;
 using ARAS.Auth.Api.Models.Dtos;
 using ARAS.Auth.Api.Models.Entities;
@@ -28,10 +29,11 @@ namespace ARAS.Auth.Api.Services.Implementations
 				.Select(a => new AccountRowDto()
 				{
 					Id = a.Id,
-					FirstName = a.FirstName,
-					LastName = a.LastName,
-					Email = a.Email,
-					CreatedBy = a.Creator ?? "System",
+					FirstName = Utils.Security.DecodeString(a.FirstName),
+					LastName = Utils.Security.DecodeString(a.LastName),
+					Email = Utils.Security.DecodeString(a.Email),
+					CreatedBy = Utils.Security.DecodeString(a.Creator) ?? "System",
+					GroupCode = a.GroupCode ?? "",
 					AccountRole = a.AccountType,
 					IsActive = a.IsActive
 				}).Take(1000).ToListAsync();
@@ -44,10 +46,10 @@ namespace ARAS.Auth.Api.Services.Implementations
 				.Select(a => new AccountEditRequestDto()
 				{
 					Id = a.Id,
-					FirstName = a.FirstName,
-					LastName = a.LastName,
-					Email = a.Email,
-					AccountRole = a.AccountType ?? "Unassigned",
+					FirstName = Utils.Security.DecodeString(a.FirstName),
+					LastName = Utils.Security.DecodeString(a.LastName),
+					GroupCode = Utils.Security.DecodeString(a.GroupCode) ?? "",
+					AccountRole = string.IsNullOrEmpty(a.AccountType) ? "Unassigned" : Utils.Security.DecodeString(a.AccountType),
 					IsActive = a.IsActive
 				}).FirstOrDefaultAsync() ?? throw new InvalidOperationException("Account not found. Please contact the administrator");
 		}
@@ -71,26 +73,18 @@ namespace ARAS.Auth.Api.Services.Implementations
 		public async Task Update(AccountEditRequestDto request)
 		{
 			Account account = await _userManager.FindByIdAsync(request.Id) ?? throw new InvalidOperationException("Account not found. Please contact the administrator");
-			account.FirstName = request.FirstName;
-			account.LastName = request.LastName;
-
-			var emailChangeResult = await _userManager.SetEmailAsync(account, request.Email);
-			if (!emailChangeResult.Succeeded)
-				throw new InvalidOperationException("Failed to update email. " + Utils.GetErrorDescription(emailChangeResult));
-
-			var usernameChangeResult = await _userManager.SetUserNameAsync(account, request.Email);
-			if (!usernameChangeResult.Succeeded)
-				throw new InvalidOperationException("Failed to update username. " + Utils.GetErrorDescription(usernameChangeResult));
+			account.FirstName = Utils.Security.CleanString(request.FirstName);
+			account.LastName = Utils.Security.CleanString(request.LastName);
+			account.GroupCode = Utils.Security.CleanString(request.GroupCode);
 
 			var accountUpdateResult = await _userManager.UpdateAsync(account);
 			if (!accountUpdateResult.Succeeded)
 				throw new InvalidOperationException("Failed to update account. " + Utils.GetErrorDescription(accountUpdateResult));
 
-
 			// === Role handling ===
 			// TEST Need thorough testing
-			string currentRole = (await _userManager.GetRolesAsync(account)).FirstOrDefault();
-			string requestedRole = request.AccountRole;
+			string currentRole = Utils.Security.DecodeString((await _userManager.GetRolesAsync(account)).FirstOrDefault());
+			string requestedRole = Utils.Security.CleanString(request.AccountRole);
 
 			if (string.IsNullOrEmpty(requestedRole) || requestedRole.Equals("Unassigned", StringComparison.OrdinalIgnoreCase))
 			{

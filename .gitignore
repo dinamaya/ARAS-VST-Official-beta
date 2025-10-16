@@ -363,3 +363,6 @@ MigrationBackup/
 FodyWeavers.xsd
 /ARAS.Main.SSMS.Api/Migrations
 /ARAS.Main.SSMS.Api/ARAS.Main.SSMS.Api.http
+/ARAS.Auth.Api/Migrations/
+/ARAS.Auth.Api/Migrations/AuthDbContextModelSnapshot.cs
+/ARAS.Auth.Api/Migrations/AuthDbContextModelSnapshot.cs

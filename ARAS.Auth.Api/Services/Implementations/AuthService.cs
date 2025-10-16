@@ -1,7 +1,9 @@
-﻿using ARAS.Auth.Api.Models.Dtos;
+﻿using ARAS.Auth.Api.Context;
+using ARAS.Auth.Api.Models.Dtos;
 using ARAS.Auth.Api.Models.Entities;
 using ARAS.Auth.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace ARAS.Auth.Api.Services.Implementations
 {
@@ -9,11 +11,13 @@ namespace ARAS.Auth.Api.Services.Implementations
 	{
 		private readonly ITokenService _tokenService;
 		private readonly UserManager<Account> _userManager;
+		private readonly AuthDbContext _context;
 
-		public AuthService(ITokenService tokenService, UserManager<Account> userManager)
+		public AuthService(ITokenService tokenService, UserManager<Account> userManager, AuthDbContext context)
 		{
 			_tokenService = tokenService;
 			_userManager = userManager;
+			_context = context;
 		}
 
 		public async Task<string> SignInAsync(AccountSignInRequestDto dto)
@@ -21,7 +25,7 @@ namespace ARAS.Auth.Api.Services.Implementations
 			if (string.IsNullOrEmpty(dto.Email))
 				throw new InvalidOperationException("Email is empty. Please contact the administrator");
 
-			var account = await _userManager.FindByEmailAsync(dto.Email);
+			var account = await _context.Accounts.Where(a => a.OpenId == dto.OpenId).FirstOrDefaultAsync();
 
 			if (account == null)
 			{
@@ -33,6 +37,8 @@ namespace ARAS.Auth.Api.Services.Implementations
 				other.OpenId = dto.OpenId;
 				other.FirstName = dto.FirstName;
 				other.LastName = dto.LastName;
+				other.GroupCode = "";
+
 				other.CreatedBy = "ARAS-AUTH-API";
 				other.DateCreated = date;
 				other.ModifiedBy = "ARAS-AUTH-API";

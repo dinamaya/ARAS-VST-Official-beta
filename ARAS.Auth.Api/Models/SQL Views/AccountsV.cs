@@ -17,6 +17,8 @@ public partial class AccountsV
 
     public string LastName { get; set; } = null!;
 
+    public string? GroupCode { get; set; }
+
     public string CreatorId { get; set; } = null!;
 
     public string? Creator { get; set; }

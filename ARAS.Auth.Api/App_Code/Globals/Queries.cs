@@ -9,6 +9,11 @@
 		public const string MIGRATE = "mYK4h0zV";
 		public const string ERROR = "eRtvPnV1";
 
+		public class Api
+		{
+			public const string INACCESSIBLE = "aI0xKnZA";
+		}
+
 		public class Success
 		{
 			public const string DELETE = "scZpmNld";

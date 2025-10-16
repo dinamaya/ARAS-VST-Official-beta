@@ -28,6 +28,7 @@ namespace ARAS.Auth.Api.Services.Implementations
 				new(JwtRegisteredClaimNames.Name, account.UserName.ToString()),
 				new(JwtRegisteredClaimNames.GivenName, account.FirstName),
 				new(JwtRegisteredClaimNames.FamilyName, account.LastName),
+				new(ClaimTypes.GroupSid, account.GroupCode ?? ""),
 				new(ClaimTypes.Role, role),
 			};
 

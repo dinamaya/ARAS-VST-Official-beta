@@ -1,4 +1,4 @@
-﻿using ARAS.Auth.Api.App_Code.Globals.Constants;
+﻿using ARAS.Auth.Api.App_Code.Globals;
 using System.ComponentModel.DataAnnotations;
 
 namespace ARAS.Auth.Api.Models.Abstracts

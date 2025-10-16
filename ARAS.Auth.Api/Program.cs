@@ -1,4 +1,5 @@
-﻿using ARAS.Auth.Api.Context;
+﻿using ARAS.Auth.Api.App_Code.Globals.Extensions;
+using ARAS.Auth.Api.Context;
 using ARAS.Auth.Api.Models.Complex;
 using ARAS.Auth.Api.Models.Entities;
 using ARAS.Auth.Api.Services.Implementations;
@@ -25,6 +26,7 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("AuthCon
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddValidationConfig();
 
 builder.Services.AddIdentityCore<Account>(options =>
 {

@@ -29,9 +29,16 @@ namespace ARAS.Auth.Api.Controllers
 		[HttpGet("aad/login")]
 		public IActionResult Login(string url)
 		{
-			return Challenge(
-				new AuthenticationProperties { RedirectUri = $"/api/auth/login-callback?url={Utils.Security.CleanString(url)}" },
-				OpenIdConnectDefaults.AuthenticationScheme);
+			try{
+				return Challenge(
+					new AuthenticationProperties { RedirectUri = $"/api/auth/login-callback?url={Utils.Security.CleanString(url)}" },
+					OpenIdConnectDefaults.AuthenticationScheme);
+			}
+			catch(Exception ex)
+			{
+				return Redirect(Utils.Security.DecodeString(url) + "?q=" + Queries.Api.INACCESSIBLE);
+			}
+
 		}
 
 		[HttpGet("login-callback")]

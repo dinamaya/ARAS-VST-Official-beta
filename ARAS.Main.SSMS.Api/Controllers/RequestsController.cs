@@ -39,13 +39,13 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
+		//[HttpGet("cdr/is-approvable/{requestId:long}")]
 		[HttpGet("cdr/is-approvable/{requestId:long}"), Authorize(Roles = "Approver")]
 		public async Task<ResponseDto<bool>> IsApprovable(long requestId)
 		{
 			var response = new ResponseDto<bool>();
 			try
 			{
-				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
 				response.Result = await _requestRepo.IsApprovable(requestId);
 				return response;
 			}
@@ -56,14 +56,47 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
+		//[HttpGet("cdr/is-validatable/{requestId:long}")]
 		[HttpGet("cdr/is-validatable/{requestId:long}"), Authorize(Roles = "Validator")]
 		public async Task<ResponseDto<bool>> IsValidatable(long requestId)
 		{
 			var response = new ResponseDto<bool>();
 			try
 			{
-				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
 				response.Result = await _requestRepo.IsValidatable(requestId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("cdr/is-declinable/{requestId:long}"), Authorize]
+		public async Task<ResponseDto<bool>> IsDeclinable(long requestId)
+		{
+			var response = new ResponseDto<bool>();
+			try
+			{
+				response.Result = await _requestRepo.IsDeclinable(requestId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("cdr/is-rejectable/{requestId:long}")]
+		//[HttpGet("cdr/is-rejectable/{requestId:long}"), Authorize]
+		public async Task<ResponseDto<bool>> IsRejectable(long requestId)
+		{
+			var response = new ResponseDto<bool>();
+			try
+			{
+				response.Result = await _requestRepo.IsRejectable(requestId);
 				return response;
 			}
 			catch (Exception ex)

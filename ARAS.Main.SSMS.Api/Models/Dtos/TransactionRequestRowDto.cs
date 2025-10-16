@@ -10,8 +10,8 @@
 		public string DateApproved { get; set; }
 		public string Validator { get; set; }
 		public string DateValidated { get; set; }
-		public string Checker { get; set; }
-		public string DateChecked { get; set; }
+		public string Creator { get; set; }
+		public string DateCreated { get; set; }
 		public string Status { get; set; }
 	}
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ARAS.Main.SSMS.Api.Models.SQLVIews;
 
-public partial class AllTransactionRequestsV
+public partial class LatestRequestTransactionV
 {
 	public long TransactionId { get; set; }
 
@@ -11,13 +11,15 @@ public partial class AllTransactionRequestsV
 
 	public string? RequestNumber { get; set; }
 
-	public string? RequestorId { get; set; }
+	public string AdjustmentTypeCode { get; set; } = null!;
+
+	public string RequestorId { get; set; } = null!;
 
 	public string RequestorFirstName { get; set; } = null!;
 
 	public string RequestorLastName { get; set; } = null!;
 
-	public DateTime? DateRequested { get; set; }
+	public DateTime DateRequested { get; set; }
 
 	public string? ApproverId { get; set; }
 
@@ -31,19 +33,17 @@ public partial class AllTransactionRequestsV
 
 	public string? ValidatorFirstName { get; set; }
 
-	public string? ValidatorLlastName { get; set; }
+	public string? ValidatorLastName { get; set; }
 
 	public DateTime? DateValidated { get; set; }
 
-	public string? CheckerId { get; set; }
+	public string CreatorId { get; set; } = null!;
 
-	public string? CheckerFirstName { get; set; }
+	public string CreatorFirstName { get; set; } = null!;
 
-	public string? CheckerLastName { get; set; }
+	public string CreatorLastName { get; set; } = null!;
 
-	public DateTime? DateChecked { get; set; }
-
-	public DateTime TransactionDateCreated { get; set; }
+	public DateTime DateCreated { get; set; }
 
 	public string Status { get; set; } = null!;
 }

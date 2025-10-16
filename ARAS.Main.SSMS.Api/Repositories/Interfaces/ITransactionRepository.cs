@@ -1,0 +1,9 @@
+﻿using ARAS.Main.SSMS.Api.Models.Dtos;
+
+namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
+{
+	public interface ITransactionRepository: ICreateRepository<TransactionCreateDto, long>
+	{
+		Task<IEnumerable<TransactionHistoryDto>> GetHistoryByRequestId(long requestId);
+	}
+}

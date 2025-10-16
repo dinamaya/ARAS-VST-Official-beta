@@ -15,9 +15,11 @@ namespace ARAS.Main.SSMS.Api.Context
 		public virtual DbSet<Transaction> Transactions { get; set; }
 
 		// SQL VIEWS
-		public virtual DbSet<AllTransactionRequestsV> AllTransactionRequestsV { get; set; }
-		public virtual DbSet<LatestTransactionRequestsV> LatestTransactionRequestsVs { get; set; }
-		public virtual DbSet<RequestAdjustmentV> RequestAdjustmentVs { get; set; }
+		public virtual DbSet<ActiveTransactionsV> VwActiveTransactions { get; set; }
+		public virtual DbSet<CashDiscountAdjustmentsV> VwCashDiscountAdjustments { get; set; }
+		public virtual DbSet<InvoiceNumbersV> VwInvoiceNumbers { get; set; }
+		public virtual DbSet<LatestRequestTransactionV> VwLatestRequestTransactions { get; set; }
+		public virtual DbSet<TransactionsHistoryV> VwTransactionsHistory { get; set; }
 
 		public MainDbContext(DbContextOptions<MainDbContext> options) : base(options) { }
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -61,31 +63,51 @@ namespace ARAS.Main.SSMS.Api.Context
 
 
 			// SQL VIEWS
-			modelBuilder.Entity<AllTransactionRequestsV>(entity =>
+
+			modelBuilder.Entity<ActiveTransactionsV>(entity =>
 			{
 				entity
 					.HasNoKey()
-					.ToView("AllTransactionRequests_v");
+					.ToView("ActiveTransactions_v");
 
-				entity.Property(e => e.ValidatorLlastName).HasColumnName("ValidatorLLastName");
+				entity.Property(e => e.AccountType).HasMaxLength(256);
+				entity.Property(e => e.CreatorId).HasMaxLength(250);
+				entity.Property(e => e.StatusId).HasMaxLength(450);
 			});
 
-			modelBuilder.Entity<LatestTransactionRequestsV>(entity =>
+			modelBuilder.Entity<CashDiscountAdjustmentsV>(entity =>
 			{
 				entity
 					.HasNoKey()
-					.ToView("LatestTransactionRequests_v");
+					.ToView("CashDiscountAdjustments_v");
 
-				entity.Property(e => e.ValidatorLlastName).HasColumnName("ValidatorLLastName");
+				entity.Property(e => e.AdjustmentTypeId).HasMaxLength(450);
 			});
 
-			modelBuilder.Entity<RequestAdjustmentV>(entity =>
+			modelBuilder.Entity<InvoiceNumbersV>(entity =>
 			{
 				entity
 					.HasNoKey()
-					.ToView("RequestAdjustment_v");
+					.ToView("InvoiceNumbers_v");
+			});
 
-				entity.Property(e => e.RequestId).HasColumnName("RequestID");
+			modelBuilder.Entity<LatestRequestTransactionV>(entity =>
+			{
+				entity
+					.HasNoKey()
+					.ToView("LatestRequestTransaction_v");
+
+				entity.Property(e => e.ApproverId).HasMaxLength(250);
+				entity.Property(e => e.ValidatorId).HasMaxLength(250);
+			});
+
+			modelBuilder.Entity<TransactionsHistoryV>(entity =>
+			{
+				entity
+					.HasNoKey()
+					.ToView("TransactionsHistory_v");
+
+				entity.Property(e => e.StatusId).HasMaxLength(450);
 			});
 		}
 	}

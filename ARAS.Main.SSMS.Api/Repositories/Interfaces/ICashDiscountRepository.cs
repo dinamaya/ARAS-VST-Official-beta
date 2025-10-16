@@ -7,15 +7,11 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 {
-	public interface ICashDiscountRepository : ICreateRepository<IEnumerable<CashDiscountCreateDto>>
+	public interface ICashDiscountRepository : ICreateStatusRepository, IGetTransactionRequestsRepository, ICreateRepository<RequestCreationDto<CashDiscountCreateDto>, long>
 	{
-		Task<IEnumerable<TransactionRequestRowDto>> GetAllSubmissions();
-		Task<IEnumerable<TransactionRequestRowDto>> GetAllForApprovals();
-		Task<IEnumerable<TransactionRequestRowDto>> GetAllForValidations();
 		Task<IEnumerable<CashDiscountRowDto>> GetAdjustmentsByRequestId(long requestId);
-		Task CreateApproveTransaction(long requestId, string createdBy);
-		Task CreateValidateTransaction(long requestId, string createdBy);
+		Task UpdateAsync(long requestId, IEnumerable<CashDiscountCreateDto> data, string modifiedBy);
 		Task<TransactionRequestRowDto> GetTransactionRequestByRequestId(long requestId);
-
+		Task<bool> IsValid(CashDiscountCreateValidationDto cashCreateValidationRequest);
 	}
 }

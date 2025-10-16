@@ -1,8 +1,7 @@
 ﻿namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 {
-	public interface ICreateRepository<TModel> where TModel : class
+	public interface ICreateRepository<TModel, TReturnId> where TModel : class
 	{
-		string InsertedId { get; set; }
-		Task CreateAsync(TModel data, string createdBy);
+		Task<TReturnId> CreateAsync(TModel data, string createdBy);
 	}
 }

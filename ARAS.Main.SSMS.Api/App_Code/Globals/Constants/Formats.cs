@@ -12,6 +12,7 @@
 			public const string INPUT2 = "yyyy-MM-dd";
 			public const string UNIQUE_INPUT = "MMddyyyyHHmmssfff";
 			public const string CASEID = "yyMMddfff";
+			public const string REFERNUMBER = "ddMMyyyy";
 		}
 	}
 }

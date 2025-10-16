@@ -9,9 +9,12 @@ namespace ARAS.Main.SSMS.Api.App_Code.Globals.Extensions
 	{
 		public static void AddRepositoriesConfig(this IServiceCollection services)
 		{
+			services.AddScoped<IAdjustmentRepository, AdjustmentRepository>();
 			services.AddScoped<ICashDiscountRepository, CashDiscountRepository>();
-			services.AddScoped<IStatusRepository, StatusRepository>();
+			services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 			services.AddScoped<IRequestRepository, RequestRepository>();
+			services.AddScoped<IStatusRepository, StatusRepository>();
+			services.AddScoped<ITransactionRepository, TransactionRepository>();
 
 			services.AddScoped<IBackgroundJobService, BackgroundJobService>();
 			services.AddScoped<IEmailService, EmailService>();

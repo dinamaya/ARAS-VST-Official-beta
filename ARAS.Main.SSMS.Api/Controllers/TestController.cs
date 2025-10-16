@@ -1,4 +1,5 @@
 ﻿using ARAS.Main.SSMS.Api.Models.Dtos;
+using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using ARAS.Main.SSMS.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,10 +11,12 @@ namespace ARAS.Main.SSMS.Api.Controllers
 	public class TestController : ControllerBase
 	{
 		private readonly IBackgroundJobService _bgJobService;
+		private readonly IAdjustmentRepository _adjustmentRepo;
 
-		public TestController(IBackgroundJobService bgJobService)
+		public TestController(IBackgroundJobService bgJobService, IAdjustmentRepository adjustmentRepo)
 		{
 			_bgJobService = bgJobService;
+			_adjustmentRepo = adjustmentRepo;
 		}
 
 		[HttpGet("email")]
@@ -25,6 +28,19 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 			catch (Exception ex)
 			{
+			}
+		}
+
+		[HttpGet("ref-number/{groupCode}/{adjustmentTypeCode}")]
+		public async Task<string> GetRefNo(string groupCode, string adjustmentTypeCode)
+		{
+			try
+			{
+				return await _adjustmentRepo.GenerateReferenceNumber(groupCode, adjustmentTypeCode);
+			}
+			catch (Exception ex)
+			{
+				return ex.Message;
 			}
 		}
 	}

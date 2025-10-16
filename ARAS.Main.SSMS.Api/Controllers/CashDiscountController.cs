@@ -22,16 +22,41 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			_cashDiscountRepo = cashDiscountRepo;
 		}
 
-		[HttpPost, Authorize( Roles = "Requestor")]
-		public async Task<ResponseDto<string>> Post([FromBody] IEnumerable<CashDiscountCreateDto> data)
+		//[HttpPost("create")]
+		[HttpPost("create"), Authorize(Roles = "Requestor")]
+		public async Task<ResponseDto<string>> Create([FromBody] IEnumerable<CashDiscountCreateDto> data)
 		{
 			ResponseDto<string> response = new ResponseDto<string>();
 			try
 			{
 				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
+				string groupCode = User.GetIdentityClaim(ClaimTypes.GroupSid);
+
+				RequestCreationDto<CashDiscountCreateDto> requestCreation = new(data, groupCode);
+				await _cashDiscountRepo.CreateAsync(requestCreation, accountId);
+
 				response.Result = "Success";
 				response.Message = "Request Created Successfully";
-				await _cashDiscountRepo.CreateAsync(data, accountId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
+
+		//[HttpPost("update/{requestId:long}")]
+		[HttpPost("update/{requestId:long}"), Authorize(Roles = "Requestor")]
+		public async Task<ResponseDto<string>> Update(long requestId, [FromBody] IEnumerable<CashDiscountCreateDto> data)
+		{
+			ResponseDto<string> response = new ResponseDto<string>();
+			try
+			{
+				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
+				await _cashDiscountRepo.UpdateAsync(requestId, data, accountId);
+
+				response.Result = "Success";
+				response.Message = "Request Updated Successfully";
 				return response;
 			}
 			catch (Exception ex)
@@ -56,6 +81,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
+		//[HttpGet("approvals")]
 		[HttpGet("approvals"), Authorize(Roles = "Approver")]
 		public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetForApprovals()
 		{
@@ -71,8 +97,8 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("validations")]
-		//[Authorize(Roles = "Validator")]
+		//[HttpGet("validations")]
+		[HttpGet("validations"), Authorize(Roles = "Validator")]
 		public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetForValidations()
 		{
 			var response = new ResponseDto<IEnumerable<TransactionRequestRowDto>>();

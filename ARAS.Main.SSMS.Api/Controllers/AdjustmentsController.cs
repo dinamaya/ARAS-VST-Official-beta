@@ -1,4 +1,5 @@
-﻿using ARAS.Main.SSMS.Api.Models.Dtos;
+﻿using ARAS.Main.Oracle.Api.Models.Dtos;
+using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -19,7 +20,6 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			_cashDiscountRepo = cashDiscountRepo;
 		}
 
-
 		[HttpGet("cdr/{requestId:long}"), Authorize]
 		public async Task<ResponseDto<IEnumerable<CashDiscountRowDto>>> GetCashDiscountAdjustments(long requestId)
 		{
@@ -27,6 +27,23 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			try
 			{
 				response.Result = await _cashDiscountRepo.GetAdjustmentsByRequestId(requestId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
+		//[HttpPost("cdr/validate")]
+		[HttpPost("cdr/validate"), Authorize]
+		public async Task<ResponseDto<bool>> ValidateCashDiscountAdjustments([FromBody] CashDiscountCreateValidationDto CashDiscountCreateValidation)
+		{
+			var response = new ResponseDto<bool>();
+			try
+			{
+				response.Result = await _cashDiscountRepo.IsValid(CashDiscountCreateValidation);
 				return response;
 			}
 			catch (Exception ex)

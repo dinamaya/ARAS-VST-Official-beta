@@ -4,18 +4,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ARAS.Main.SSMS.Api.Models.Entities
 {
-	public class Request : BigEntity, IModifiableByUser, IActivatable
+	public class Request : BigEntity, ICreatableByUser
 	{
 		public string? RequestNumber { get; set; }
 
 		public string? AdjustmentTypeId { get; set; }
 
-		public string? RequestorId { get; set; }
-		public DateTime? DateRequested { get; set; }
-
-		public string? ModifiedBy { get; set; }
-		public DateTime DateModified { get; set; }
-		public bool IsActive { get; set; }
+		public string CreatedBy { get; set; }
+		public DateTime DateCreated { get; set; }
 
 		[ForeignKey(nameof(AdjustmentTypeId))] public virtual AdjustmentType AdjustmentType { get; set; }
 	}

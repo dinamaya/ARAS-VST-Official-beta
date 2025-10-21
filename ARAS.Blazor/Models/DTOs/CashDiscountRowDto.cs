@@ -6,7 +6,7 @@ namespace ARAS.Blazor.Models.DTOs
 	public class CashDiscountRowDto
 	{
 		public float DiscountValue { get; set; }
-		public string Id { get; private set; }
+		public string Id { get; set; }
 		public double AdjustmentAmount { get; set; }
 		public string AdjustmentActivity { get; set; } = string.Empty;
 		public double InvoiceAmount { get; set; } = 1_000.00d;

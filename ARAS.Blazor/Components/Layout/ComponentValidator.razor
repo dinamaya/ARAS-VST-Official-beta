@@ -1,0 +1,38 @@
+﻿@using ARAS.Blazor.Services.Interfaces
+@implements IDisposable
+@inject IValidationService ValidationService
+
+<RadzenRow class="py-1 px-2">
+    <RadzenText class="text-danger fs-6">@message</RadzenText>
+</RadzenRow>
+
+@code {
+    [Parameter] public string ValidationName { get; set; } = string.Empty;
+    private string message;
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrWhiteSpace(ValidationName))
+        {
+            ValidationService.Register(ValidationName, this);
+        }
+    }
+
+    public void SetErrors(string errorMessage)
+    {
+        message = errorMessage;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void ClearErrors()
+    {
+        message = null;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ValidationService.Unregister(ValidationName);
+    }
+
+}

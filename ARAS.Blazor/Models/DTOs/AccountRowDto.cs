@@ -8,6 +8,7 @@
 		public string Email { get; set; }
 		public string CreatedBy { get; set; }
 		public string AccountRole { get; set; }
+		public string GroupCode { get; set; }
 		public bool IsActive { get; set; }
 	}
 }

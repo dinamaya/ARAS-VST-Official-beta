@@ -8,5 +8,17 @@
 		public string? Checker { get; set; }
 		public string? ReferenceNumber { get; set; }
 		public string? DateRequested { get; set; }
+
+		public RequestAuditDto() { }
+		public RequestAuditDto(TransactionRequestRowDto transactionRequestRow) 
+		{
+			Requestor = transactionRequestRow.Requestor;
+			Approver = transactionRequestRow.Approver;
+			Validator = transactionRequestRow.Validator;
+			Checker = transactionRequestRow.Creator;
+			ReferenceNumber = transactionRequestRow.RequestNumber;
+			DateRequested = transactionRequestRow.DateRequested;
+		}
+
 	}
 }

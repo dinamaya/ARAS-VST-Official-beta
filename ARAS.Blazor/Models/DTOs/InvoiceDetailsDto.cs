@@ -8,6 +8,5 @@
 		public DateTime InvoiceDate { get; set; }
 		public string CustomerName { get; set; }
 		public string CustomerNumber { get; set; }
-		public string OtherDetails { get; set; }
 	}
 }

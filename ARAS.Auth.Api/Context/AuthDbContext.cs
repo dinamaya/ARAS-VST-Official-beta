@@ -1,4 +1,5 @@
 ﻿using ARAS.Auth.Api.App_Code.Globals;
+using ARAS.Auth.Api.Models.Dtos;
 using ARAS.Auth.Api.Models.Entities;
 using ARAS.Auth.Api.Models.SQLViews;
 using Microsoft.AspNetCore.Identity;
@@ -14,6 +15,7 @@ namespace ARAS.Auth.Api.Context
 
 		public virtual DbSet<Account> Accounts { get; set; }
 		public virtual DbSet<AccountsV> AccountsVs { get; set; }
+		public virtual DbSet<EmailAccountsV> EmailAccountsVs { get; set; }
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
@@ -32,6 +34,17 @@ namespace ARAS.Auth.Api.Context
 				entity.Property(e => e.Id).HasMaxLength(250);
 			});
 
+			modelBuilder.Entity<EmailAccountsV>(entity =>
+			{
+				entity
+					.HasNoKey()
+					.ToView("EmailAccounts_v");
+
+				entity.Property(e => e.Email).HasMaxLength(256);
+				entity.Property(e => e.Id).HasMaxLength(250);
+				entity.Property(e => e.NormalizedName).HasMaxLength(256);
+			});
+
 			// MODELS
 			modelBuilder.Entity<Account>()
 				.Ignore(a => a.LockoutEnabled)
@@ -44,6 +57,7 @@ namespace ARAS.Auth.Api.Context
 				.Ignore(a => a.SecurityStamp);
 
 			modelBuilder.Entity<Account>().Property(u => u.Id).HasMaxLength(250);
+
 			modelBuilder.Entity<IdentityRole>().Property(u => u.Id).HasMaxLength(250);
 
 			// Pre-generated GUIDs (deterministic for migrations)

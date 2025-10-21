@@ -1,4 +1,4 @@
-﻿using ARAS.Blazor.Components.Layout;
+﻿using ARAS.Blazor.Components.UI;
 
 namespace ARAS.Blazor.Services.Interfaces
 {

@@ -23,8 +23,6 @@ namespace ARAS.Blazor.Services.Implementations
 				URL = _configService.GetAuthApiUrl("ops/accounts")
 			});
 
-			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to get the accounts");
-
 			return response.Result;
 		}
 
@@ -36,8 +34,6 @@ namespace ARAS.Blazor.Services.Implementations
 				URL = _configService.GetAuthApiUrl($"ops/accounts/{id}")
 			});
 
-			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to get the account");
-
 			return response.Result;
 		}
 
@@ -48,8 +44,6 @@ namespace ARAS.Blazor.Services.Implementations
 				URL = _configService.GetAuthApiUrl("ops/roles")
 			});
 
-			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to get roles");
-			
 			return response.Result;
 		}
 
@@ -61,8 +55,6 @@ namespace ARAS.Blazor.Services.Implementations
 				Data = data,
 				URL = _configService.GetAuthApiUrl("ops/accounts")
 			});
-
-			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to update the account details");
 
 			return response.IsSuccess && response.Result.Equals("Success");
 		}

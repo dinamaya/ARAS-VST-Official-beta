@@ -34,19 +34,21 @@
 	}
 	else
 	{
-		<RadzenDataGrid AllowFiltering="true"
-						AllowColumnResize="true"
-						AllowAlternatingRows="false"
-						FilterMode="FilterMode.Advanced"
-						AllowSorting="true"
-						PageSize="5"
-						AllowPaging="true"
-						PagerHorizontalAlign="HorizontalAlign.Left"
-						ShowPagingSummary="true"
-						Data="@_accounts"
-						class="border-0"
-						LogicalFilterOperator="LogicalFilterOperator.Or"
-						SelectionMode="DataGridSelectionMode.Single">
+		<RadzenDataGrid 
+			@ref=_dataGrid
+			AllowFiltering="true"
+			AllowColumnResize="true"
+			AllowAlternatingRows="false"
+			FilterMode="FilterMode.Advanced"
+			AllowSorting="true"
+			PageSize="5"
+			AllowPaging="true"
+			PagerHorizontalAlign="HorizontalAlign.Left"
+			ShowPagingSummary="true"
+			Data="@_accounts"
+			class="border-0"
+			LogicalFilterOperator="LogicalFilterOperator.Or"
+			SelectionMode="DataGridSelectionMode.Single">
 			<Columns>
 				<RadzenDataGridColumn Title="Option" Sortable="false" Filterable="false" Width="100px" TextAlign="TextAlign.Center">
 					<Template Context="data">
@@ -57,6 +59,7 @@
 				<RadzenDataGridColumn Property="@nameof(AccountRowDto.LastName)" Title="Last Name" />
 				<RadzenDataGridColumn Property="@nameof(AccountRowDto.Email)" Title="Email"/>
 				<RadzenDataGridColumn Property="@nameof(AccountRowDto.AccountRole)" Title="Account Role" Width="100px" />
+				<RadzenDataGridColumn Property="@nameof(AccountRowDto.GroupCode)" Title="Group Code" />
 				<RadzenDataGridColumn Property="@nameof(AccountRowDto.CreatedBy)" Title="Created By" />
 				<RadzenDataGridColumn Property="@nameof(AccountRowDto.IsActive)" Title="Status" Width="130px" />
 			</Columns>
@@ -71,6 +74,7 @@
 	}
 </style>
 @code {
+	private RadzenDataGrid<AccountRowDto> _dataGrid;
 	private IEnumerable<AccountRowDto>? _accounts;
 	private IEnumerable<DropdownOptionDto> _roles;
 	private string _accountId = "";
@@ -90,7 +94,8 @@
 			new Dictionary<string, object>()
 			{
 				{ "AccountId", _accountId },
-				{ "Roles", _roles }
+				{ "Roles", _roles },
+				{ "DataGrid", _dataGrid }
 			},
 			new DialogOptions() { Width = "800px", Height = "auto" }
 		);

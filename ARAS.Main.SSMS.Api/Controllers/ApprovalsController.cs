@@ -22,14 +22,15 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			_cashDiscountRepo = cashDiscountRepo;
 		}
 
-		[HttpPost("cdr/{requestId:long}")]
-		public async Task<ResponseDto<string>> ApproveTransactionRequestByRequestId(long requestId)
+		[HttpPost("cdr")]
+		public async Task<ResponseDto<string>> ApproveTransactionRequestByRequestId([FromBody] RequestUpdateDto data)
 		{
 			var response = new ResponseDto<string>();
 			try
 			{
 				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
-				await _cashDiscountRepo.CreateApproveTransaction(requestId, accountId);
+				await _cashDiscountRepo.CreateApproveTransaction(data, accountId);
+
 				response.Result = "Success";
 				response.Message = "Request Approved";
 				return response;

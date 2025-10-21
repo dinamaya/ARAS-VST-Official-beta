@@ -24,7 +24,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		{
 			try
 			{
-				await _bgJobService.RunTestJob();
+				await _bgJobService.RunTest();
 			}
 			catch (Exception ex)
 			{

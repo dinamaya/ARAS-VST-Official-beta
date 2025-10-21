@@ -4,6 +4,7 @@ using ARAS.Blazor.App_Code.Globals.Enums;
 using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Services.Interfaces;
 using Azure;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Radzen;
 using System.Net;
@@ -15,17 +16,19 @@ namespace ARAS.Blazor.Services.Implementations
 	{
 		private readonly ITokenService _tokenService;
 		private readonly IHttpClientFactory _httpClientFactory;
+		private readonly IValidationService _validationService;
 		private readonly ILogger<BaseService> _logger;
 		private readonly NotificationService _notifService;
 		private readonly DialogService _dialogService;
 
-		public BaseService(IHttpClientFactory httpClientFactory, ILogger<BaseService> logger, ITokenService tokenService, NotificationService notifService, DialogService dialogService)
+		public BaseService(IHttpClientFactory httpClientFactory, ILogger<BaseService> logger, ITokenService tokenService, NotificationService notifService, DialogService dialogService, IValidationService validationService)
 		{
 			_tokenService = tokenService;
 			_httpClientFactory = httpClientFactory;
 			_logger = logger;
 			_notifService = notifService;
 			_dialogService = dialogService;
+			_validationService = validationService;
 		}
 
 		/// <summary>
@@ -36,7 +39,7 @@ namespace ARAS.Blazor.Services.Implementations
 		/// <param name="withBearer"></param>
 		/// <returns></returns>
 		public async Task<ResponseDto<TResult>> SendAsync<TResult>(
-			RequestDto requestDto, 
+			RequestDto requestDto,
 			bool withBearer = true,
 			Func<RequestDto, Task>? onBeforeSendCallBack = null,
 			Func<TResult, Task>? onSuccessSendCallBack = null,
@@ -48,6 +51,7 @@ namespace ARAS.Blazor.Services.Implementations
 				HttpRequestMessage message = new();
 				ResponseDto<TResult> responseDto = new();
 
+				_validationService.ClearErrors();
 				if (withBearer)
 				{
 					var token = _tokenService.GetToken();
@@ -95,8 +99,10 @@ namespace ARAS.Blazor.Services.Implementations
 						return new() { IsSuccess = false, Message = "Internal Server Error! Please check logs for more info." };
 
 					case HttpStatusCode.BadRequest:
-						await Notify(requestDto, apiResponse, "Bad Request", false);
-						return new() { IsSuccess = false, Message = "Bad Request" };
+						{
+							await NotifyBadRequest(requestDto, apiResponse);
+							return new() { IsSuccess = false, Message = "Bad Request" };
+						}
 
 					default:
 						var apiContent = await apiResponse.Content.ReadAsStringAsync();
@@ -123,34 +129,58 @@ namespace ARAS.Blazor.Services.Implementations
 			}
 		}
 
+		private async Task NotifyBadRequest(RequestDto requestDto, HttpResponseMessage apiResponse)
+		{
+			try
+			{
+				var content = await apiResponse.Content.ReadAsStringAsync();
+				var validationProblem = JsonConvert.DeserializeObject<ValidationProblemDetails>(content);
+
+				if (!validationProblem.Title.Equals("One or more validation errors occurred.", StringComparison.InvariantCultureIgnoreCase))
+					throw new Exception();
+
+				if (validationProblem?.Errors != null)
+				{
+					var validationResult = validationProblem.Errors
+						.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToList());
+
+					_validationService.DisplayErrors(validationResult);
+					await Notify(requestDto, apiResponse, validationResult, "Bad Request", false);
+				}
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error parsing validation response.");
+
+				await Notify(requestDto, apiResponse, "Bad Request", false);
+			}
+		}
+
+		private async Task Notify(RequestDto request, HttpResponseMessage response, Dictionary<string, List<string>> errors, string responseTitle, bool isDebug = true)
+		{
+			string content = await response.Content.ReadAsStringAsync();
+			foreach (var (k, v) in errors)
+			{
+				string message = v.FirstOrDefault();
+				string notifMessage = $"{request.URL} {responseTitle} {response.StatusCode} {content}";
+
+				_logger.Log(LogLevel.Error, $"{request.URL} {responseTitle} {k} {message}");
+				_notifService.Notify(NotifTemplates.Error(responseTitle, message, async (msg) => await Alert(responseTitle, notifMessage)));
+			}
+		}
+
 		private async Task Notify(RequestDto request, HttpResponseMessage response, string responseTitle, bool isDebug = true)
 		{
 			string content = await response.Content.ReadAsStringAsync();
 			_logger.Log(isDebug ? LogLevel.Debug : LogLevel.Error, $"{request.URL} {responseTitle} {response.StatusCode} {content}");
-
-			_notifService.Notify(new NotificationMessage
-			{
-				Summary = "Bad Request",
-				Detail = response.RequestMessage.ToString(),
-				Duration = 6000,
-				Severity = NotificationSeverity.Error,
-				Click = async (msg) => await Alert(responseTitle, content)
-			});
+			_notifService.Notify(NotifTemplates.Error(responseTitle, content, async (msg) => await Alert(responseTitle, content)));
 		}
 
 		private void Notify(RequestDto request, Exception ex, string responseTitle, bool isDebug = true)
 		{
 			var message = Exceptions.GetMessage(ex);
 			_logger.Log(isDebug ? LogLevel.Debug : LogLevel.Error, $"{responseTitle} {message}");
-
-			_notifService.Notify(new NotificationMessage
-			{
-				Summary = responseTitle,
-				Detail = message,
-				Duration = 6000,
-				Severity = NotificationSeverity.Error,
-				Click = async (msg) => await Alert(responseTitle, message)
-			});
+			_notifService.Notify(NotifTemplates.Error(responseTitle, message, async (msg) => await Alert(responseTitle, message)));
 		}
 
 		private async Task Alert(string title, string message)

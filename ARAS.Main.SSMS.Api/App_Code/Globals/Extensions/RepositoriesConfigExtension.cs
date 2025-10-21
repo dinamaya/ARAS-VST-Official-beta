@@ -13,10 +13,12 @@ namespace ARAS.Main.SSMS.Api.App_Code.Globals.Extensions
 			services.AddScoped<ICashDiscountRepository, CashDiscountRepository>();
 			services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 			services.AddScoped<IRequestRepository, RequestRepository>();
+			services.AddScoped<IRemarksRepository, RemarksRepository>();
 			services.AddScoped<IStatusRepository, StatusRepository>();
 			services.AddScoped<ITransactionRepository, TransactionRepository>();
 
 			services.AddScoped<IBackgroundJobService, BackgroundJobService>();
+			services.AddScoped<IConfigurationService, ConfigurationService>();
 			services.AddScoped<IEmailService, EmailService>();
 		}
 	}

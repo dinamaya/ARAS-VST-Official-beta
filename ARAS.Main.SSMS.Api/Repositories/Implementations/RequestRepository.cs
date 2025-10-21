@@ -87,5 +87,26 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 			return request.Id;
 		}
+
+		public async Task<string> GetRequestNumberById(long requestId)
+		{
+			return await _context.Requests
+				.Where(r => r.Id == requestId)
+				.Select(r => r.RequestNumber)
+				.FirstOrDefaultAsync() ?? throw new InvalidOperationException(Exceptions.NOTFOUND_REQUEST);
+		}
+
+		public async Task<RequestUpdateEmailDetailsDto> GetForEmailDetailsById(long requestId)
+		{
+			return await _context.VwLatestRequestTransactions
+				.Where(r => r.RequestId == requestId)
+				.Select(r => new RequestUpdateEmailDetailsDto
+				{
+					RequestNumber = r.RequestNumber,
+					Creator = r.RequestorFirstName + " " + r.RequestorLastName
+				})
+				.FirstOrDefaultAsync() ?? throw new InvalidOperationException(Exceptions.NOTFOUND_REQUEST);
+
+		}
 	}
 }

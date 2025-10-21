@@ -14,28 +14,51 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 	public class EmailService : IEmailService
 	{
 
-		private readonly string _approversTemplate = Path.Combine("App_Code", "Scriban", "ToApproverTemplate.sbn");
+		private readonly string _testTemplate = Path.Combine("App_Code", "Scriban", "ToApproverTemplate.sbn");
+		private readonly string _requestPendingTemplate = Path.Combine("App_Code", "Scriban", "RequestPending.html");
+		private readonly string _requestApprovedTemplate = Path.Combine("App_Code", "Scriban", "RequestApproved.html");
 
 		private readonly EmailServiceConfig _emailServiceConfig;
+		private readonly IConfigurationService _configService;
 
-		public EmailService(IOptions<EmailServiceConfig> emailServiceOption)
+		public EmailService(IOptions<EmailServiceConfig> emailServiceOption, IConfigurationService configService)
 		{
 			_emailServiceConfig = emailServiceOption.Value;
+			_configService = configService;
 		}
 
-		public async Task<TaskResultDto> SendToApprover()
+		public async Task<TaskResultDto> SendRequestPending(RequestPendingDto model)
 		{
 			try
 			{
-				//CaseCreateEmailDetails emailDetails = new CaseCreateEmailDetails();
-				//emailDetails.BaseUrl = _baseUrl;
-				//emailDetails.Model = emailViewModel;
+				var emailRequestPending = new EmailRequestPendingDto(model, _configService.GetFrontendBaseUrl($"approvals/cash-discount/{model.RequestId}"));
 
-				var htmlBody = await RenderEmailAsync(_approversTemplate, new {});
+				var htmlBody = await RenderEmailAsync(_requestPendingTemplate, emailRequestPending);
+				string subject = $"AR Adjustment System - {model.Status} | {model.AdjustmentType} | {model.RequestNumber}";
 
-				//await CreateEmailAsync([], [emailDetails.Model.SenderEmail], $"TEST PCSv2 - Request from {emailDetails.Model.BranchName}", htmlBody, _credentials);
+				await CreateEmailAsync(model.ToEmail, subject, htmlBody);
 
-				return TaskResultDto.Success("Case Created and Email Sent Successfully");
+				return TaskResultDto.Success($"{subject} and Email Sent Successfully");
+			}
+			catch (Exception ex)
+			{
+				return TaskResultDto.Fail(ex.Message);
+			}
+		}
+
+		public async Task<TaskResultDto> SendRequestApproved(RequestPendingDto model)
+		{
+			try
+			{
+				model.Status = "Approved";
+				var emailRequestPending = new EmailRequestPendingDto(model, _configService.GetFrontendBaseUrl($"validations/cash-discount/{model.RequestId}"));
+
+				var htmlBody = await RenderEmailAsync(_requestApprovedTemplate, emailRequestPending);
+				string subject = $"AR Adjustment System - {model.Status} | {model.AdjustmentType} | {model.RequestNumber}";
+
+				await CreateEmailAsync(model.ToEmail, subject, htmlBody);
+
+				return TaskResultDto.Success($"{subject} and Email Sent Successfully");
 			}
 			catch (Exception ex)
 			{
@@ -47,11 +70,12 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 		{
 			try
 			{
-				var htmlBody = await RenderEmailAsync(_approversTemplate, new { });
+				var htmlBody = await RenderEmailAsync(_testTemplate, new { });
+				string subject = $"TEST AR Adjustment System - Request";
 
-				await CreateEmailAsync([], $"TEST AR Adjustment System - Request", htmlBody);
+				await CreateEmailAsync([], subject, htmlBody);
 
-				return TaskResultDto.Success("Case Created and Email Sent Successfully");
+				return TaskResultDto.Success($"{subject} and Email Sent Successfully");
 			}
 			catch (Exception ex)
 			{

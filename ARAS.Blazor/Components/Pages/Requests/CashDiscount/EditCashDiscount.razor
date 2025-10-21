@@ -1,12 +1,19 @@
-﻿@using ARAS.Blazor.Models.DTOs
+﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.UI
+@using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
+
 @inherits ComponentBase
 @inject DialogService DialogService
+@inject ICashDiscountService CashDiscountService
 
 <RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
-	<RadzenFormField Text="Invoice Number to adjust" Variant="@Variant.Outlined" >
-		<RadzenTextBox @bind-Value="@Data.InvoiceNumber" ReadOnly />
-	</RadzenFormField>
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenFormField Text="Invoice Number to adjust" Variant="@Variant.Outlined">
+			<RadzenTextBox @bind-Value="@Data.InvoiceNumber" ReadOnly />
+		</RadzenFormField>
+		<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.InvoiceNumber)" />
+	</RadzenStack>
 
 	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
 		<RadzenFormField Text="@("Discount (%)")" Variant="Variant.Outlined">
@@ -18,18 +25,21 @@
 				@(discountPercentage + " = " + (GetDiscountValue().ToString()) + " of Invoice Amount")
 			</RadzenText>
 		}
+		<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.DiscountPercentage)" />
 	</RadzenStack>
 
-	<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
-		<RadzenTextArea @bind-Value="@Data.Remarks" Rows="4" />
-	</RadzenFormField>
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
+			<RadzenTextArea @bind-Value="@Data.Remarks" Rows="4" />
+		</RadzenFormField>
+		<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.Remarks)" />
+	</RadzenStack>
 
-
-	<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
 		<button @onclick="@OnDelete" class="btn btn-dark">
 			Delete
 		</button>
-		<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
 			<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
 				Close
 			</button>
@@ -38,7 +48,7 @@
 			</button>
 		</RadzenStack>
 	</RadzenStack>
-	
+
 </RadzenStack>
 
 @code {
@@ -58,16 +68,35 @@
 	protected override async Task OnParametersSetAsync()
 	{
 		await base.OnParametersSetAsync();
-		discountPercentage = (Data.DiscountValue * 100).ToString();
+		discountPercentage = (Data.DiscountValue * 100).ToString("N2");
 	}
 
 	private async Task OnEdit()
 	{
-		var data = Rows.FirstOrDefault(r => r.Id == Data.Id) ?? throw new Exception("Data is not found in the cash-discount adjustment table");
-		data.SetValues(GetDiscountValue(), Data.Remarks);
+		try
+		{
+			float discountValue = GetDiscountValue();
 
-		await Grid.Reload();
-		DialogService.Close(true);
+			bool isValid = await CashDiscountService.IsValid(new CashDiscountCreateValidationDto()
+			{
+				InvoiceNumber = Data.InvoiceNumber,
+				DiscountPercentage = discountValue * 100,
+				Remarks = Data.Remarks
+			});
+
+			if (!isValid) return;
+
+
+			var data = Rows.FirstOrDefault(r => r.Id == Data.Id) ?? throw new Exception("Data is not found in the cash-discount adjustment table");
+			data.SetValues(discountValue, Data.Remarks);
+
+			await Grid.Reload();
+			DialogService.Close(true);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(Exceptions.GetMessage(ex), "Failed to Edit Cash Discount Details");
+		}
 	}
 
 	private async Task OnDelete()
@@ -80,10 +109,10 @@
 	private float GetDiscountValue()
 	{
 		var _discountValue = 0f;
+		Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(discountPercentage), "Discount Percentage is empty");
 		bool isSuccess = float.TryParse(discountPercentage, out _discountValue);
 
-		if (!isSuccess)
-			throw new InvalidOperationException("Cannot convert discount");
+		Guards.ThrowInvalidOperationIf(!isSuccess, "Cannot convert discount");
 
 		return _discountValue / 100;
 	}

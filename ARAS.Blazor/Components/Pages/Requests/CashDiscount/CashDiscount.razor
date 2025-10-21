@@ -1,8 +1,9 @@
 ﻿@page "/requests/cash-discount"
 @using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.Shared.Modals
+@using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
-@using ARAS.Blazor.Components.Layout;
 @using Microsoft.AspNetCore.Authorization
 
 @attribute [Authorize(Roles = "Requestor")]
@@ -10,6 +11,7 @@
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
+@inject ICashDiscountService CashDiscountService
 
 <h2>Cash Discount Adjustment</h2>
 
@@ -32,7 +34,7 @@
 							AllowPaging="true"
 							PagerHorizontalAlign="HorizontalAlign.Left"
 							ShowPagingSummary="true"
-							Data="@adjusments"
+							Data="@Adjustments"
 							LogicalFilterOperator="LogicalFilterOperator.Or"
 							SelectionMode="DataGridSelectionMode.Single">
 				<Columns>
@@ -41,7 +43,6 @@
 							<RadzenButton Icon="Edit" Variant="Variant.Outlined" Click="@(args => OpenEdit(data))" />
 						</Template>
 					</RadzenDataGridColumn>
-					<RadzenDataGridColumn Property="@nameof(CashDiscountRowDto.Id)" Title="Id" Visible="false" />
 					<RadzenDataGridColumn Property="@nameof(CashDiscountRowDto.AdjustmentAmount)" Width="120px" Title="Adjustment Amount">
 						<Template Context="data">
 							@data.AdjustmentAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
@@ -76,7 +77,7 @@
 
 
 @code {
-	private IList<CashDiscountRowDto> adjusments;
+	[Parameter] public IList<CashDiscountRowDto> Adjustments { get; set; }
 	private InvoiceDetailsDto searchedInvoiceNumber;
 	private RadzenDataGrid<CashDiscountRowDto> adjustmentGrid;
 	private RequestAuditDto requestAudit;
@@ -88,12 +89,12 @@
 	{
 		await base.OnInitializedAsync();
 
-		adjusments = new List<CashDiscountRowDto>();
+		Adjustments = new List<CashDiscountRowDto>();
 		searchedInvoiceNumber = new InvoiceDetailsDto();
 		requestAudit = new RequestAuditDto();
+		// TestCashDiscountRows(); // For testing Only
 
 		requestAudit.Requestor = await AuthService.GetLastFirstName();
-		TestCashDiscountRows();
 	}
 
 	private void TestCashDiscountRows()
@@ -106,7 +107,7 @@
 		double min = 1000.00;
 		double max = 10000000.00;
 
-		for (int x = 0; x < 3; x++)
+		for (int x = 0; x < rand.Next(1, 10); x++)
 		{
 			float discountValue = (float)rand.NextDouble();
 
@@ -126,7 +127,7 @@
 				invoiceDetails
 			);
 
-			adjusments.Add(row);
+			Adjustments.Add(row);
 		}
 	}
 
@@ -137,7 +138,7 @@
 			"Add Cash Discount Adjustment",
 			new Dictionary<string, object>()
 			{
-				{ "Rows", adjusments },
+				{ "Rows", Adjustments },
 				{ "Grid", adjustmentGrid },
 				{ "InvoiceDetails", invoiceDetails }
 			},
@@ -153,7 +154,7 @@
 				"Edit Cash Discount Adjustment",
 				new Dictionary<string, object>()
 				{
-				{ "Rows", adjusments },
+				{ "Rows", Adjustments },
 				{ "Grid", adjustmentGrid },
 				{ "Data", data }
 				},
@@ -170,18 +171,20 @@
 	{
 		try
 		{
-			if (!adjusments.Any())
+			if (!Adjustments.Any())
 				throw new InvalidOperationException("Can't submit request because there are no adjustment in the current request");
 
 			if (isLoading)
 				throw new InvalidOperationException("Can't submit request while search operation is ongoing");
 
-			await DialogService.OpenAsync<CashDiscountSummary>(
+			await DialogService.OpenAsync<CashDiscountModalSummary>(
 				"Submit Cash Discount Adjustment",
 				new Dictionary<string, object>()
 				{
-					{ "Rows", adjusments },
+					{ "Rows", Adjustments },
 					{ "RequestAudit", requestAudit },
+					{ "OnSubmit", SubmitRequest },
+					{ "SucccessSubmissionRoute", "/requests/cash-discount" },
 				},
 				new DialogOptions() { Width = "1500px", Height = "auto" }
 			);
@@ -190,6 +193,11 @@
 		{
 			await DialogService.Alert(ex.Message, "Request Submission Failed");
 		}
+	}
+
+	public async Task SubmitRequest()
+	{
+		await CashDiscountService.Create(Adjustments);
 	}
 
 	private void HandleSearchChanged(bool value)

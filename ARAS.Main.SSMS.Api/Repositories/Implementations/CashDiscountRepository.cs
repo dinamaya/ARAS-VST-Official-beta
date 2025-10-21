@@ -5,14 +5,8 @@ using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Models.Entities;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
-using Humanizer;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
+using ARAS.Main.SSMS.Api.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
-using static ARAS.Main.SSMS.Api.App_Code.Globals.Constants.Formats;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 {
@@ -22,10 +16,12 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		private readonly IStatusRepository _statusRepo;
 		private readonly IRequestRepository _requestRepo;
 		private readonly ITransactionRepository _transactionRepo;
+		private readonly IRemarksRepository _remarksRepo;
 		private readonly IAdjustmentRepository _adjustmentRepo;
 		private readonly IInvoiceRepository _invoiceRepo;
+		private readonly IBackgroundJobService _bgJobService;
 
-		public CashDiscountRepository(MainDbContext context, IStatusRepository statusRepo, IRequestRepository requestRepo, IAdjustmentRepository adjustmentRepo, IInvoiceRepository invoiceRepo, ITransactionRepository transactionRepo)
+		public CashDiscountRepository(MainDbContext context, IStatusRepository statusRepo, IRequestRepository requestRepo, IAdjustmentRepository adjustmentRepo, IInvoiceRepository invoiceRepo, ITransactionRepository transactionRepo, IRemarksRepository remarksRepo, IBackgroundJobService bgJobService)
 		{
 			_context = context;
 			_statusRepo = statusRepo;
@@ -33,16 +29,18 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			_adjustmentRepo = adjustmentRepo;
 			_invoiceRepo = invoiceRepo;
 			_transactionRepo = transactionRepo;
+			_remarksRepo = remarksRepo;
+			_bgJobService = bgJobService;
 		}
 
-		public async Task<long> CreateAsync(RequestCreationDto<CashDiscountCreateDto> data, string createdBy)
+		public async Task<long> CreateAsync(RequestCreationDto<AdjustmentRequestCreationDto<CashDiscountCreateDto>> data, string createdBy)
 		{
 			ArgumentNullException.ThrowIfNull(data, nameof(CashDiscountCreateDto));
 
 			if (string.IsNullOrEmpty(data.GroupCode))
 				throw new InvalidOperationException(Exceptions.EMPTY_GROUP_CODE);
 
-			if (!data.Adjustments.Any())
+			if (!data.Model.Adjustments.Any())
 				throw new ArgumentNullException(Exceptions.EMPTY_CASHDISCOUNT_ROWS);
 
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
@@ -50,8 +48,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			try
 			{
 				string cashDiscountTypeId = await _context.AdjustmentTypes.Where(x => x.Code.Equals("CDR")).Select(x => x.Id).FirstAsync();
-				//string referenceNo = await _adjustmentRepo.GenerateReferenceNumber(data.GroupCode, "CDR");
-				string referenceNo = $"SAMP-{Guid.NewGuid().ToString()}";
+				string referenceNo = await _adjustmentRepo.GenerateReferenceNumber(data.GroupCode, "CDR");
 
 				var request = new RequestCreateDto(referenceNo, cashDiscountTypeId);
 				var requestId = await _requestRepo.CreateAsync(request, createdBy);
@@ -59,16 +56,21 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				var transaction = new TransactionCreateDto(requestId, "Pending");
 				var transactId = await _transactionRepo.CreateAsync(transaction, createdBy);
 
-				foreach (var item in data.Adjustments)
-				{
-					var invoice = new InvoiceCreateDto(item.InvoiceNumber, item.InvoiceAmount, item.InvoiceDate, item.CustomerNumber, item.CustomerName);
-					var invoiceId = await _invoiceRepo.CreateAsync(invoice, createdBy);
+				foreach (var item in data.Model.Adjustments)
+					await CreateInvoiceAdjustments(createdBy, requestId, cashDiscountTypeId, item);
 
-					double adjustmentAmount = item.DiscountValue * item.InvoiceAmount;
-					float discountPercent = item.DiscountValue * 100;
-					var adjustment = new AdjustmentCreateDto(invoiceId, requestId, adjustmentAmount, cashDiscountTypeId, discountPercent, item.Remarks);
-					await _adjustmentRepo.CreateAsync(adjustment, createdBy);
-				}
+				var timeline = await _transactionRepo.GetEmailHistoryByRequestId(requestId);
+
+				await _bgJobService.RunSendRequestPending(new RequestPendingDto
+				{
+					RequestId = requestId.ToString(),
+					RequestorName = data.CreatorFullName,
+					AdjustmentType = "Cash Discount",
+					RequestNumber = referenceNo,
+					Status = "Pending",
+					Timeline = timeline,
+					ToEmail = data.Model.ToEmail,
+				});
 
 				await dbTransaction.CommitAsync();
 
@@ -81,96 +83,46 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			}
 		}
 
-		//private async Task TestCommits(long requestId, string createdBy)
-		//{
-		//	await CreateDeclineTransaction(requestId, "ACCdf886923c4044b3abfd2533531d3ae2a827b2debca6c40a28e46128abb85c506");
-		//	await Resubmit(requestId, createdBy);
-		//	await CreateApproveTransaction(requestId, "ACCdf886923c4044b3abfd2533531d3ae2a827b2debca6c40a28e46128abb85c506");
-		//	await CreateValidateTransaction(requestId, "ACCe48a677d4f144d489981f5b1f4eb81da790a1c2109394979a637c227f0320f21");
-		//}
-
-		//private async Task Resubmit(long requestId, string createdBy)
-		//{
-		//	var transaction = new TransactionCreateDto(requestId, "Pending");
-		//	var transactId = await _transactionRepo.CreateAsync(transaction, createdBy);
-		//}
-
-		public async Task UpdateAsync(long requestId, IEnumerable<CashDiscountCreateDto> data, string modifiedBy)
+		public async Task UpdateAsync(long requestId, RequestCreationDto<AdjustmentRequestCreationDto<CashDiscountCreateDto>> data, string modifiedBy)
 		{
-			ArgumentNullException.ThrowIfNull(data, nameof(CashDiscountCreateDto));
-
-			if (!data.Any())
-				throw new ArgumentNullException(Exceptions.EMPTY_CASHDISCOUNT_ROWS);
+			// Fetch the existing transaction by request Id
+			// Create new Transaction with the status Pending
+			// -- set the other details to the existing transaction
+			// Fetch all Existing Adjustments and Invoice by RequestId
+			// Deactivate the existing or previous adjustments and invoices
+			// Insert both the updated and new adjustments and invoices
 
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
 			try
 			{
-				DateTime date = DateTime.Now;
+				ArgumentNullException.ThrowIfNull(data, nameof(CashDiscountCreateDto));
+				Guards.ThrowInvalidOperationIf(!data.Model.Adjustments.Any(), Exceptions.EMPTY_CASHDISCOUNT_ROWS);
+
+				var requestRefNo = await _requestRepo.GetRequestNumberById(requestId);
 				string cashDiscountTypeId = await _context.AdjustmentTypes.Where(x => x.Code.Equals("CDR")).Select(x => x.Id).FirstAsync();
-				string pendingStatusId = await _context.Statuses.Where(x => x.Name.Equals("Pending")).Select(x => x.Id).FirstAsync();
 
-				// Fetch the existing transaction by request Id
-				// Create new Transaction with the status Pending
-				// -- set the other details to the existing transaction
-
-				// Fetch all Existing Adjustments and Invoice by RequestId
-				// Deactivate the existing or previous adjustments and invoices
-				// Insert both the updated and new adjustments and invoices
-
-				var transactionRequest = await GetLatestTransactionByRequestId(requestId);
-
-				var transaction = new Transaction();
-
-				transaction.RequestId = requestId;
-
-				transaction.CreatedBy = modifiedBy;
-				transaction.DateCreated = DateTime.Now;
-
-				transaction.StatusId = pendingStatusId;
-				transaction.IsActive = true;
-
-				await _context.Transactions.AddAsync(transaction);
-				await _context.SaveChangesAsync();
+				var transaction = new TransactionCreateDto(requestId, "Pending");
+				var transactId = await _transactionRepo.CreateAsync(transaction, modifiedBy);
 
 				await _adjustmentRepo.DeactivateAllByRequestId(requestId);
 
-				foreach (var item in data)
+				foreach (var item in data.Model.Adjustments)
+					await CreateInvoiceAdjustments(modifiedBy, requestId, cashDiscountTypeId, item);
+
+
+				var timeline = await _transactionRepo.GetEmailHistoryByRequestId(requestId);
+
+				await _bgJobService.RunSendRequestPending(new RequestPendingDto
 				{
-					var invoice = new Invoice();
-					invoice.InvoiceNumber = item.InvoiceNumber;
-					invoice.InvoiceAmount = item.InvoiceAmount;
-					invoice.InvoiceDate = item.InvoiceDate;
-					invoice.CustomerName = item.CustomerName;
-					invoice.CustomerNumber = item.CustomerNumber;
-
-					invoice.DateCreated = date;
-					invoice.DateModified = date;
-					invoice.CreatedBy = modifiedBy;
-					invoice.ModifiedBy = modifiedBy;
-					invoice.IsActive = true;
-
-					await _context.Invoices.AddAsync(invoice);
-					await _context.SaveChangesAsync();
-
-					var adjustment = new Adjustment();
-
-					adjustment.InvoiceId = invoice.Id;
-					adjustment.RequestId = requestId;
-					adjustment.AdjustmentAmount = item.DiscountValue * item.InvoiceAmount;
-					adjustment.AdjustmentTypeId = cashDiscountTypeId;
-					adjustment.DiscountPercentage = item.DiscountValue * 100;
-					adjustment.Remarks = item.Remarks;
-
-					adjustment.DateCreated = date;
-					adjustment.DateModified = date;
-					adjustment.CreatedBy = modifiedBy;
-					adjustment.ModifiedBy = modifiedBy;
-					adjustment.IsActive = true;
-
-					await _context.Adjustments.AddAsync(adjustment);
-					await _context.SaveChangesAsync();
-				}
+					RequestId = requestId.ToString(),
+					RequestorName = data.CreatorFullName,
+					AdjustmentType = "Cash Discount",
+					RequestNumber = requestRefNo,
+					Status = "Approved",
+					Timeline = timeline,
+					ToEmail = data.Model.ToEmail,
+				});
 
 				await dbTransaction.CommitAsync();
 			}
@@ -181,17 +133,33 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			}
 		}
 
-		public async Task CreateApproveTransaction(long requestId, string createdBy)
+		public async Task CreateApproveTransaction(RequestUpdateDto data, string createdBy)
 		{
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
 			try
 			{
-				bool isApprovable = await _requestRepo.IsApprovable(requestId);
+				bool isApprovable = await _requestRepo.IsApprovable(data.RequestId);
 				Guards.ThrowInvalidOperationIf(!isApprovable, Exceptions.ALREADY_APPROVED);
 
-				var transaction = new TransactionCreateDto(requestId, "Approved");
+				var transaction = new TransactionCreateDto(data.RequestId, "Approved");
 				var transactId = await _transactionRepo.CreateAsync(transaction, createdBy);
+
+				var timeline = await _transactionRepo.GetEmailHistoryByRequestId(data.RequestId);
+				var request = await _requestRepo.GetForEmailDetailsById(data.RequestId);
+
+				await _bgJobService.RunSendRequestApproved(new RequestPendingDto
+				{
+					RequestId = data.RequestId.ToString(),
+					RequestorName = request.Creator,
+					AdjustmentType = "Cash Discount",
+					RequestNumber = request.RequestNumber,
+					Status = "Approved",
+					Timeline = timeline,
+					ToEmail = data.ToEmail,
+				});
+
+				await dbTransaction.CommitAsync();
 			}
 			catch
 			{
@@ -221,17 +189,20 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			}
 		}
 
-		public async Task CreateDeclineTransaction(long requestId, string createdBy)
+		public async Task CreateDeclineTransaction(CreateDeclineDto createDecline, string createdBy)
 		{
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
 			try
 			{
-				bool isDeclinable = await _requestRepo.IsDeclinable(requestId);
+				bool isDeclinable = await _requestRepo.IsDeclinable(createDecline.RequestId);
 				Guards.ThrowInvalidOperationIf(!isDeclinable, Exceptions.ALREADY_DECLINED);
 
-				var transaction = new TransactionCreateDto(requestId, "Declined");
+				var transaction = new TransactionCreateDto(createDecline.RequestId, "Declined");
 				var transactId = await _transactionRepo.CreateAsync(transaction, createdBy);
+
+				var remarks = new RemarksCreateDto(transactId, createDecline.Remarks);
+				await _remarksRepo.CreateAsync(remarks, createdBy);
 
 				await dbTransaction.CommitAsync();
 			}
@@ -400,6 +371,17 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.Where(t => t.RequestId == requestId)
 				.OrderByDescending(t => t.Id)
 				.FirstOrDefaultAsync() ?? throw new InvalidOperationException(Exceptions.NOTFOUND_TRANSACTION);
+		}
+
+		private async Task CreateInvoiceAdjustments(string createdBy, long requestId, string adjustmentTypeId, CashDiscountCreateDto data)
+		{
+			var invoice = new InvoiceCreateDto(data.InvoiceNumber, data.InvoiceAmount, data.InvoiceDate, data.CustomerNumber, data.CustomerName);
+			var invoiceId = await _invoiceRepo.CreateAsync(invoice, createdBy);
+
+			double adjustmentAmount = data.DiscountValue * data.InvoiceAmount;
+			float discountPercent = data.DiscountValue * 100;
+			var adjustment = new AdjustmentCreateDto(invoiceId, requestId, adjustmentAmount, adjustmentTypeId, discountPercent, data.Remarks);
+			await _adjustmentRepo.CreateAsync(adjustment, createdBy);
 		}
 
 		public async Task<bool> IsValid(CashDiscountCreateValidationDto cashCreateValidationRequest)

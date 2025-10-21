@@ -26,6 +26,7 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("AuthCon
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddValidationConfig();
 
 builder.Services.AddIdentityCore<Account>(options =>

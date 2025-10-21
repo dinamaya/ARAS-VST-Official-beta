@@ -2,6 +2,7 @@
 using ARAS.Main.Oracle.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
+using ARAS.Main.SSMS.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -24,16 +25,16 @@ namespace ARAS.Main.SSMS.Api.Controllers
 
 		//[HttpPost("create")]
 		[HttpPost("create"), Authorize(Roles = "Requestor")]
-		public async Task<ResponseDto<string>> Create([FromBody] IEnumerable<CashDiscountCreateDto> data)
+		public async Task<ResponseDto<string>> Create([FromBody] AdjustmentRequestCreationDto<CashDiscountCreateDto> data)
 		{
 			ResponseDto<string> response = new ResponseDto<string>();
 			try
 			{
-				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
-				string groupCode = User.GetIdentityClaim(ClaimTypes.GroupSid);
+				var accountInfo = User.GetAccountBasicInfo();
 
-				RequestCreationDto<CashDiscountCreateDto> requestCreation = new(data, groupCode);
-				await _cashDiscountRepo.CreateAsync(requestCreation, accountId);
+				var requestCreation = new RequestCreationDto<AdjustmentRequestCreationDto<CashDiscountCreateDto>>(data, accountInfo.GroupCode, accountInfo.FullName);
+
+				await _cashDiscountRepo.CreateAsync(requestCreation, accountInfo.Id);
 
 				response.Result = "Success";
 				response.Message = "Request Created Successfully";
@@ -47,13 +48,15 @@ namespace ARAS.Main.SSMS.Api.Controllers
 
 		//[HttpPost("update/{requestId:long}")]
 		[HttpPost("update/{requestId:long}"), Authorize(Roles = "Requestor")]
-		public async Task<ResponseDto<string>> Update(long requestId, [FromBody] IEnumerable<CashDiscountCreateDto> data)
+		public async Task<ResponseDto<string>> Update(long requestId, [FromBody] AdjustmentRequestCreationDto<CashDiscountCreateDto> data)
 		{
 			ResponseDto<string> response = new ResponseDto<string>();
 			try
 			{
-				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
-				await _cashDiscountRepo.UpdateAsync(requestId, data, accountId);
+				var accountInfo = User.GetAccountBasicInfo();
+				var requestCreation = new RequestCreationDto<AdjustmentRequestCreationDto<CashDiscountCreateDto>>(data, accountInfo.GroupCode, accountInfo.FullName);
+
+				await _cashDiscountRepo.UpdateAsync(requestId, requestCreation, accountInfo.Id);
 
 				response.Result = "Success";
 				response.Message = "Request Updated Successfully";

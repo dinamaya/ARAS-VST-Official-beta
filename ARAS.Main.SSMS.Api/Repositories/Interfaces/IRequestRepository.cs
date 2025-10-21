@@ -9,5 +9,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 		Task<bool> IsValidatable (long requestId);
 		Task<bool> IsDeclinable (long requestId);
 		Task<bool> IsRejectable (long requestId);
+
+		Task<string> GetRequestNumberById (long requestId);
+		Task<RequestUpdateEmailDetailsDto> GetForEmailDetailsById (long requestId);
 	}
 }

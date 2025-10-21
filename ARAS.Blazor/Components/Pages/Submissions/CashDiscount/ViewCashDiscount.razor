@@ -1,8 +1,10 @@
-﻿@using ARAS.Blazor.Models.DTOs
+﻿@using ARAS.Blazor.Components.Shared
+@using ARAS.Blazor.Components.Shared.Summaries
+@using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
 @using ARAS.Blazor.Components.Pages.Requests.CashDiscount
-@using Microsoft.AspNetCore.Authorization
 
+@using Microsoft.AspNetCore.Authorization
 @page "/submissions/cash-discount/{RequestId:long}"
 @attribute [Authorize]
 @inject ICashDiscountService CashDiscountService
@@ -14,9 +16,14 @@
 <h3>Update Cash Discount</h3>
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 	<RadzenRow>
-		<div class="py-4 px-3 w-100 card">
-			<CashDiscountSummary Rows="rows" IsButtonsVisible="false" RequestAudit="requestAudit" />
-		</div>
+		<RadzenColumn Size="12">
+			<div class="py-4 px-3 w-100 card">
+				<CashDiscountSummary Rows="rows" RequestAudit="requestAudit" />
+			</div>
+		</RadzenColumn>
+		<RadzenColumn Size="12">
+			<Timeline RequestId="@RequestId" />
+		</RadzenColumn>
 	</RadzenRow>
 </RadzenStack>
 
@@ -30,14 +37,7 @@
 		await base.OnInitializedAsync();
 		var request = await CashDiscountService.GetRequestDetails(RequestId);
 		rows = await CashDiscountService.GetAdjustments(RequestId);
-
-		requestAudit = new RequestAuditDto();
-		requestAudit.Requestor = request.Requestor;
-		requestAudit.Approver = request.Approver;
-		requestAudit.Validator = request.Validator;
-		requestAudit.Checker = request.Checker;
-		requestAudit.ReferenceNumber = request.RequestNumber;
-		requestAudit.DateRequested = request.DateRequested;
+		requestAudit = new RequestAuditDto(request);
 	}
 
 	protected async Task OnValidate()
@@ -47,7 +47,7 @@
 		if(!isApprove)
 			return;
 
-		await CashDiscountService.ValidateAdjustment(RequestId);
+		await CashDiscountService.Validate(RequestId);
 	}
 
 }

@@ -13,6 +13,7 @@ namespace ARAS.Main.SSMS.Api.Context
 		public virtual DbSet<Request> Requests { get; set; }
 		public virtual DbSet<Status> Statuses { get; set; }
 		public virtual DbSet<Transaction> Transactions { get; set; }
+		public virtual DbSet<TransactionRemarks> TransactionRemarks { get; set; }
 
 		// SQL VIEWS
 		public virtual DbSet<ActiveTransactionsV> VwActiveTransactions { get; set; }
@@ -20,6 +21,7 @@ namespace ARAS.Main.SSMS.Api.Context
 		public virtual DbSet<InvoiceNumbersV> VwInvoiceNumbers { get; set; }
 		public virtual DbSet<LatestRequestTransactionV> VwLatestRequestTransactions { get; set; }
 		public virtual DbSet<TransactionsHistoryV> VwTransactionsHistory { get; set; }
+		public virtual DbSet<RequestsNumberSourceV> VwRequestsNumberSources { get; set; }
 
 		public MainDbContext(DbContextOptions<MainDbContext> options) : base(options) { }
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -29,6 +31,11 @@ namespace ARAS.Main.SSMS.Api.Context
 			  .HasOne(a => a.Request)
 			  .WithMany()
 			  .HasForeignKey(a => a.RequestId);
+
+			modelBuilder.Entity<TransactionRemarks>()
+			  .HasOne(a => a.Transaction)
+			  .WithMany()
+			  .HasForeignKey(a => a.TransactionId);
 
 			modelBuilder.Entity<Request>(entity =>
 			{
@@ -101,6 +108,13 @@ namespace ARAS.Main.SSMS.Api.Context
 				entity.Property(e => e.ValidatorId).HasMaxLength(250);
 			});
 
+			modelBuilder.Entity<RequestsNumberSourceV>(entity =>
+			{
+				entity
+					.HasNoKey()
+					.ToView("RequestsNumberSource_v");
+			});
+
 			modelBuilder.Entity<TransactionsHistoryV>(entity =>
 			{
 				entity
@@ -108,6 +122,7 @@ namespace ARAS.Main.SSMS.Api.Context
 					.ToView("TransactionsHistory_v");
 
 				entity.Property(e => e.StatusId).HasMaxLength(450);
+				entity.Property(e => e.TransactionRemarksId).HasMaxLength(450);
 			});
 		}
 	}

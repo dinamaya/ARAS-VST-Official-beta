@@ -1,13 +1,17 @@
-﻿@using ARAS.Blazor.Models.DTOs
+﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Components.UI.Badges
 
 @inject NavigationManager NavigationManager
+@inject IAuthService AuthService
 
 @inherits ComponentBase
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 	<RadzenRow>
 		<div class="py-4 px-3 w-100 card">
-			@if (IsLoading)
+			@if (isLoading)
 			{
 				<RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
 					<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:30px;" />
@@ -40,37 +44,26 @@
 								AllowPaging="true"
 								PagerHorizontalAlign="HorizontalAlign.Left"
 								ShowPagingSummary="true"
-								Data="@Requests"
+								Data="@requests"
 								LogicalFilterOperator="LogicalFilterOperator.Or"
 								SelectionMode="DataGridSelectionMode.Single">
 					<Columns>
-						<RadzenDataGridColumn Frozen="true" Title="Select" Sortable="false" Filterable="false" Width="180px" TextAlign="TextAlign.Center">
+						<RadzenDataGridColumn Frozen="true" Title="Option" Sortable="false" Filterable="false" Width="180px" TextAlign="TextAlign.Center">
 							<Template Context="data">
-								<RadzenButton Icon="edit_document" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Text="@SelectButtonTitle" Click="@(args => OnSelect(data.RequestId))" />
+								@if (data.Status == "Declined" && accountDetails.IsInRole("Requestor"))
+								{
+									<RadzenButton Icon="edit_document" ButtonStyle="ButtonStyle.Dark" Variant="Variant.Outlined" Text="Update" Click="@(args => OnSelect(data.Status, data.RequestId))" />
+								}
+								else
+								{
+									<RadzenButton Icon="edit_document" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Text="@SelectButtonTitle" Click="@(args => OnSelect(data.Status, data.RequestId))" />
+								}
 							</Template>
 						</RadzenDataGridColumn>
 						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.RequestNumber)" Title="Request Number" Visible="false" />
 						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Status)" Width="180px" Title="Status">
 							<Template Context="data">
-								@{
-									BadgeStyle color = BadgeStyle.Warning;
-									switch (data.Status)
-									{
-										case "Approved":
-											color = BadgeStyle.Success;
-											break;
-										case "Validated":
-											color = BadgeStyle.Primary;
-											break;
-										case "Declined":
-											color = BadgeStyle.Secondary;
-											break;
-										case "Rejected":
-											color = BadgeStyle.Danger;
-											break;
-									}
-								}
-								<RadzenBadge IsPill class="px-3 py-1" Text="@data.Status" BadgeStyle="@color" />
+								<StatusBadge Status="@data.Status" Style="font-size: 0.9em" />
 							</Template>
 						</RadzenDataGridColumn>	
 						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Requestor)" Width="220px" Title="Requestor" />
@@ -79,8 +72,8 @@
 						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateApproved)" Width="220px" Title="Date Approved" />
 						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Validator)" Width="220px" Title="Validator" />
 						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateValidated)" Width="220px" Title="Date Validated" />
-						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Checker)" Width="220px" Title="Checker" />
-						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateChecked)" Width="220px" Title="Date Checked" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Creator)" Width="220px" Title="Updated By" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateCreated)" Width="220px" Title="Date Checked" />
 					</Columns>
 				</RadzenDataGrid>
 			}
@@ -92,20 +85,31 @@
 {
 	[Parameter] public Func<Task<IEnumerable<TransactionRequestRowDto>>> OnDateLoad { get; set; }
 	[Parameter] public string SelectButtonTitle { get; set; }
-	[Parameter] public string SelectionRoute { get; set; }
 
-	private IEnumerable<TransactionRequestRowDto> Requests { get; set; }
-	private bool IsLoading { get; set; } = true;
+	/// <summary>
+	/// When the button is clicked in the datatable it will navigate to that page / route
+	/// </summary>
+	[Parameter] public string ViewRoute { get; set; }
+
+	/// <summary>
+	/// Provide Update Route if there are data with status equals to Declined
+	/// </summary>
+	[Parameter] public string? UpdateRoute { get; set; }
+
+	private IEnumerable<TransactionRequestRowDto> requests { get; set; }
+	private bool isLoading { get; set; } = true;
+	private AccountDetailsDto accountDetails { get; set; }
 
 	protected override async Task OnInitializedAsync()
 	{
+		accountDetails = await AuthService.GetAccountDetails();
 		await base.OnInitializedAsync();
 
-		IsLoading = true;
+		isLoading = true;
 
-		Requests = await OnDateLoad.Invoke();
+		requests = await OnDateLoad.Invoke();
 
-		IsLoading = false;
+		isLoading = false;
 	}
 
 	protected override async Task OnParametersSetAsync()
@@ -113,8 +117,15 @@
 		await base.OnInitializedAsync();
 	}
 
-	private async Task OnSelect(long RequestId)
+	private async Task OnSelect(string status, long requestId)
 	{
-		NavigationManager.NavigateTo($"/{SelectionRoute}/{RequestId}");
+		@if (status == "Declined" && accountDetails.IsInRole("Requestor"))
+		{
+			NavigationManager.NavigateTo($"/{UpdateRoute}/{requestId}");
+		}
+		else
+		{
+			NavigationManager.NavigateTo($"/{ViewRoute}/{requestId}");
+		}
 	}
 }

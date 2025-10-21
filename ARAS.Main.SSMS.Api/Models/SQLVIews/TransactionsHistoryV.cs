@@ -24,4 +24,10 @@ public partial class TransactionsHistoryV
 	public string Status { get; set; } = null!;
 
 	public bool IsActive { get; set; }
+
+	public string? TransactionRemarksId { get; set; }
+
+	public string? Description { get; set; }
+
+	public string? AttachmentName { get; set; }
 }

@@ -7,6 +7,7 @@
 @attribute [AllowAnonymous]
 @inject IConfigService Config
 @inject IAuthService AuthService
+@inject IQueryService QueryService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 
@@ -43,10 +44,14 @@
 								Sign in
 							</button>
 						</div>
+					</div>
+					<div>
 						@if (showErrorAlert)
 						{
 							<RadzenAlert Size="AlertSize.Large" AllowClose="false" AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" Shade="Shade.Lighter">
-								Account is not authorized
+								<b>Account is not authorized.</b>
+								<br />
+								Please contact the administrator for role assignment.
 							</RadzenAlert>
 						}
 					</div>
@@ -67,40 +72,24 @@
 </div>
 
 @code {
-	string authLoginUrl = "";
-	string currentUrl = "";
 	bool showErrorAlert = false;
-	Uri uri = null;
 	protected override async Task OnInitializedAsync()
 	{
-		uri = Navigation.ToAbsoluteUri(Navigation.Uri);
-		currentUrl = Uri.EscapeDataString(uri.GetLeftPart(UriPartial.Path));
-		authLoginUrl = Config.GetAuthApiUrl($"auth/aad/login?url={currentUrl}");
-
 		ShowAlert();
-
 		await Authenticate();
 	}
 
-	private void ShowAlert()
-	{
-		if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("q", out var qValue))
-			showErrorAlert = string.Equals(qValue, Queries.Auth.UNAUTHORIZED, StringComparison.OrdinalIgnoreCase);
-	}
+	private void ShowAlert() => showErrorAlert = QueryService.KeyHasValueOf("q", Queries.Auth.UNAUTHORIZED);
 
-	private void SignIn()
-	{
-		Navigation.NavigateTo(authLoginUrl, forceLoad: true);
-	}
+	private void SignIn() => Navigation.NavigateTo(Config.GetAuthApiUrl($"auth/aad/login?url={QueryService.GetCurrentUrl()}"), forceLoad: true);
 
 	private async Task Authenticate()
 	{
 		try
 		{
-
 			var isAuthenticated = await AuthService.IsAuthenticated();
-			if (isAuthenticated)
-				Navigation.NavigateTo("/", forceLoad: true);
+			if (!isAuthenticated) return;
+			Navigation.NavigateTo("/", forceLoad: true);
 		}
 		catch
 		{

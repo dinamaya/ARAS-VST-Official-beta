@@ -22,14 +22,14 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			_cashDiscountRepo = cashDiscountRepo;
 		}
 
-		[HttpPost("cdr/{requestId:long}")]
-		public async Task<ResponseDto<string>> DeclineTransactionRequestByRequestId(long requestId)
+		[HttpPost("cdr")]
+		public async Task<ResponseDto<string>> DeclineTransactionRequestByRequestId([FromBody] CreateDeclineDto createDecline)
 		{
 			var response = new ResponseDto<string>();
 			try
 			{
 				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
-				await _cashDiscountRepo.CreateDeclineTransaction(requestId, accountId);
+				await _cashDiscountRepo.CreateDeclineTransaction(createDecline, accountId);
 				response.Result = "Success";
 				response.Message = "Request Declined";
 				return response;

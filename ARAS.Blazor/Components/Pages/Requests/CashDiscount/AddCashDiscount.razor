@@ -1,12 +1,18 @@
-﻿@using ARAS.Blazor.Models.DTOs
+﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.UI
+@using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
 @inherits ComponentBase
 @inject DialogService DialogService
+@inject ICashDiscountService CashDiscountService
 
 <RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
-	<RadzenFormField Text="Invoice Number to adjust" Variant="@Variant.Outlined" >
-		<RadzenTextBox @bind-Value="@InvoiceDetails.InvoiceNumber" ReadOnly/>
-	</RadzenFormField>
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenFormField Text="Invoice Number to adjust" Variant="@Variant.Outlined">
+			<RadzenTextBox @bind-Value="@InvoiceDetails.InvoiceNumber" ReadOnly />
+		</RadzenFormField>
+		<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.InvoiceNumber)" />
+	</RadzenStack>
 
 	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
 		<RadzenFormField Text="@("Discount (%)")" Variant="Variant.Outlined">
@@ -18,17 +24,21 @@
 				@(discountPercentage + " = " + (GetDiscountValue().ToString()) + " of Invoice Amount")
 			</RadzenText>
 		}
+		<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.DiscountPercentage)" />
 	</RadzenStack>
 
-	<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
-		<RadzenTextArea @bind-Value="@remarks" Rows="4" />
-	</RadzenFormField>
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
+			<RadzenTextArea @bind-Value="@remarks" Rows="4" />
+		</RadzenFormField>
+		<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.Remarks)" />
+	</RadzenStack>
 
 	<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
 		<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
 			Close
 		</button>
-		<button @onclick="OnSubmit" class="btn btn-outline-primary">
+		<button @onclick="OnAdd" class="btn btn-outline-primary">
 			Add
 		</button>
 	</RadzenStack>
@@ -55,33 +65,47 @@
 
 	}
 
-	private async Task OnSubmit()
+	private async Task OnAdd()
 	{
-		bool isInvoiceDiscounted = Rows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
-		if (isInvoiceDiscounted){
-			await DialogService.Alert($"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the cash-discount adjustment table", "Invoice is already adjusted");
-			return;
+		try
+		{
+			bool isInvoiceDiscounted = Rows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
+
+			Guards.ThrowInvalidOperationIf(isInvoiceDiscounted, $"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the cash-discount adjustment table");
+
+			var row = new CashDiscountRowDto(
+				GetDiscountValue(),
+				string.IsNullOrEmpty(remarks) ? $"{discountPercentage}% Discount Remarks" : remarks,
+				InvoiceDetails
+			);
+
+			bool isValid = await CashDiscountService.IsValid(new CashDiscountCreateValidationDto()
+			{
+				InvoiceNumber = row.InvoiceNumber,
+				DiscountPercentage = row.DiscountValue * 100,
+				Remarks = row.Remarks
+			});
+
+			if (!isValid) return;
+
+			Rows.Add(row);
+
+			await Grid.Reload();
+			DialogService.Close(true);
 		}
-
-		var row = new CashDiscountRowDto(
-			GetDiscountValue(),
-			string.IsNullOrEmpty(remarks) ? $"{discountPercentage}% Discount Remarks" : remarks,
-			InvoiceDetails
-		);
-
-		Rows.Add(row);
-
-		await Grid.Reload();
-		DialogService.Close(true);
+		catch (Exception ex)
+		{
+			await DialogService.Alert(Exceptions.GetMessage(ex), "Add Adjustment Failed");
+		}
 	}
 
 	private float GetDiscountValue()
 	{
 		var _discountValue = 0f;
+		Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(discountPercentage), "Discount Percentage is empty");
+	
 		bool isSuccess = float.TryParse(discountPercentage, out _discountValue);
-
-		if (!isSuccess)
-			throw new InvalidOperationException("Cannot convert discount");
+		Guards.ThrowInvalidOperationIf(!isSuccess, "Cannot convert discount");
 
 		return _discountValue / 100;
 	}

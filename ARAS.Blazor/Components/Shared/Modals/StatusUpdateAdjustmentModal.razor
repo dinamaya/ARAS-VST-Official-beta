@@ -1,0 +1,41 @@
+﻿@using ARAS.Blazor.Components.UI
+@inject DialogService DialogService
+<RadzenStack>
+	<RadzenRow JustifyContent="JustifyContent.Start" Gap="0.5rem">
+		<h3>
+
+			@Message
+		</h3>
+	</RadzenRow>
+
+	<RadzenRow JustifyContent="JustifyContent.Center" Gap="0.5rem">
+		<RadzenColumn Size="12">
+			<RadzenFormField class="w-100" Text="Remarks" Variant="@Variant.Outlined" Max>
+				<RadzenTextArea @bind-Value="@Remarks" Rows="4" />
+			</RadzenFormField>
+			<ComponentValidator ValidationName="@nameof(Remarks)" />
+		</RadzenColumn>
+	</RadzenRow>
+
+	<RadzenRow JustifyContent="JustifyContent.End" Gap="0.5rem">
+		<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+			<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
+				Close
+			</button>
+			<button @onclick="Submit" class="btn btn-outline-primary">
+				@SubmitButtonTitle
+			</button>
+		</RadzenStack>
+	</RadzenRow>
+</RadzenStack>
+@code {
+	[Parameter] public string Message { get; set; } = "Submit";
+	[Parameter] public string SubmitButtonTitle { get; set; } = "Submit";
+	[Parameter] public Func<string, Task> OnSubmit { get; set; }
+	private string Remarks { get; set; } = string.Empty;
+
+	private async Task Submit()
+	{
+		await OnSubmit.Invoke(Remarks);
+	}
+}

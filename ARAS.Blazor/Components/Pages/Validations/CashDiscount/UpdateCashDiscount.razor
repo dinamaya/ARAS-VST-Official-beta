@@ -1,4 +1,6 @@
 ﻿@page "/validations/cash-discount/{RequestId:long}"
+@using ARAS.Blazor.Components.Shared.Modals
+@using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
 @using ARAS.Blazor.Components.Pages.Requests.CashDiscount
@@ -8,6 +10,7 @@
 @inject ICashDiscountService CashDiscountService
 @inject IRequestService RequestService
 @inject DialogService DialogService
+@inject NavigationManager NavigationManager
 
 @inherits ComponentBase
 
@@ -17,15 +20,15 @@
 		@if (isApprovable)
 		{
 			<RadzenStack class="w-100" JustifyContent="JustifyContent.End" Orientation="Orientation.Horizontal">
-				<RadzenButton ButtonStyle="ButtonStyle.Danger" Text="Reject" class="btn-danger" Icon="cancel" />
-				<RadzenButton ButtonStyle="ButtonStyle.Warning" Text="Decline" class="btn-dark" Icon="thumb_down" />
+				<RadzenButton ButtonStyle="ButtonStyle.Danger" Text="Reject" class="btn-danger" Icon="cancel" Click="OnReject" />
+				<RadzenButton ButtonStyle="ButtonStyle.Warning" Text="Decline" class="btn-dark" Icon="thumb_down" Click="OnDecline" />
 				<RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Validate" class="btn-primary" Icon="assignment_turned_in" Click="OnValidate" />
 			</RadzenStack>
 		}
 	</RadzenRow>
 	<RadzenRow>
 		<div class="py-4 px-3 w-100 card">
-			<CashDiscountSummary Rows="rows" IsButtonsVisible="false" RequestAudit="requestAudit" />
+			<CashDiscountSummary Rows="rows" RequestAudit="requestAudit" />
 		</div>
 	</RadzenRow>
 </RadzenStack>
@@ -43,23 +46,50 @@
 		var request = await CashDiscountService.GetRequestDetails(RequestId);
 		rows = await CashDiscountService.GetAdjustments(RequestId);
 
-		requestAudit = new RequestAuditDto();
-		requestAudit.Requestor = request.Requestor;
-		requestAudit.Approver = request.Approver;
-		requestAudit.Validator = request.Validator;
-		requestAudit.Checker = request.Checker;
-		requestAudit.ReferenceNumber = request.RequestNumber;
-		requestAudit.DateRequested = request.DateRequested;
+		requestAudit = new RequestAuditDto(request);
 	}
 
 	protected async Task OnValidate()
 	{
-		bool isApprove = await DialogService.Confirm("Are you sure you want to validate this request?", "Validate Request") ?? false;
+		bool isConfirmed = await DialogService.Confirm("Are you sure you want to validate this request?", "Validate Request") ?? false;
+		if(!isConfirmed) return;
 
-		if(!isApprove)
-			return;
-
-		await CashDiscountService.ValidateAdjustment(RequestId);
+		await CashDiscountService.Validate(RequestId);
+		NavigationManager.NavigateTo("/validations/cash-discount");
 	}
 
+	protected async Task OnDecline()
+	{
+		await DialogService.OpenAsync<StatusUpdateAdjustmentModal>(
+			"Approve Request",
+			new Dictionary<string, object>()
+			{
+						{ "Message", "Are you sure you want to \"DECLINE\" this request?" },
+						{ "SubmitButtonTitle", "Decline" },
+						{ "OnSubmit", Decline}
+			},
+			new DialogOptions() { Width = "700px", Height = "auto" }
+		);
+	}
+
+	private async Task Decline(string remarks)
+	{
+		var createDto = new CreateDeclineDto()
+		{
+			Remarks = remarks,
+			RequestId = RequestId
+		};
+
+		await CashDiscountService.Decline(createDto);
+		NavigationManager.NavigateTo("/validations/cash-discount");
+	}
+
+	protected async Task OnReject()
+	{
+		bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"REJECT\" this request?", "Decline Request") ?? false;
+		if (!isConfirmed) return;
+
+		await CashDiscountService.Reject(RequestId);
+		NavigationManager.NavigateTo("/validations/cash-discount");
+	}
 }

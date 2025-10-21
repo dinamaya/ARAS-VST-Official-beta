@@ -166,11 +166,13 @@
 	{
 		try
 		{
-			if (searchInvoiceNo.Length < 3)
-				throw new InvalidOperationException("Please provided 3 or more character in the search invoice number field");
+			Guards.ThrowInvalidOperationIf(searchInvoiceNo.Length < 3, "Please provided 3 or more character in the search invoice number field");
 
 			if (isLoading)
-				throw new InvalidOperationException("Please wait until the current search operation is complete");
+			{
+				await DialogService.Alert("Please wait until the current search operation is complete");
+				return;
+			}
 
 			await SetIsOnSearch(true);
 			await SetIsLoading(true);

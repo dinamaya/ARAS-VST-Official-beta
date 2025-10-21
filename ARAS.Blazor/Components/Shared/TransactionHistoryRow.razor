@@ -1,0 +1,30 @@
+﻿@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Components.UI.Badges
+
+<div class="timeline-block mb-3 pe-3 w-100">
+	<span class="timeline-step">
+		<i class="ni @iconStyle text-gradient"></i>
+	</span>
+
+	<div class="timeline-content">
+		<h6 class="text-dark text-sm font-weight-bold mb-0" title="Creator">@TransactionHistory.Creator</h6>
+		<p class="text-secondary font-weight-bold text-xs mt-1 mb-0" title="Date Created">@TransactionHistory.DateCreated</p>
+		<p class="text-secondary text-sm mt-3 mb-2">
+			@TransactionHistory.Description
+		</p>
+		<StatusBadge Status="@TransactionHistory.Status" OnIconStyleSet="SetIconStyle" />
+		<span class="badge badge-sm bg-gradient-dark" title="Transaction ID">#@TransactionHistory.TransactionId</span>
+	</div>
+</div>
+@code {
+	[Parameter] public TransactionHistoryDto TransactionHistory { get; set; }
+
+	private string iconStyle ="";
+
+	private Task SetIconStyle(string style)
+	{
+		iconStyle = style;
+		StateHasChanged();
+		return Task.CompletedTask;
+	}
+}

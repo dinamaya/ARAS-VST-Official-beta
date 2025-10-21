@@ -85,13 +85,13 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			string adjCode = adjustmentTypeCode.ToUpper();
 
 			// Get all requests for same groupCode and same date
-			//var requests = _context.RequestsNumberSourceVs.Where(r =>
-			//	r.GroupCode == grpCode && 
-			//	r.AdjustmentTypeCode == adjCode &&
-			//	r.RequestDate == today
-			//);
+			var requests = _context.VwRequestsNumberSources.Where(r =>
+				r.GroupCode == grpCode &&
+				r.AdjustmentTypeCode == adjCode &&
+				r.RequestDate == today
+			);
 
-			//int nextIndex = await (requests.CountAsync()) + 1;
+			int nextIndex = (await requests.CountAsync()) + 1;
 
 			string datePart = today.ToString(Formats.Date.REFERNUMBER);
 			string indexPart = 2.ToString("D3");

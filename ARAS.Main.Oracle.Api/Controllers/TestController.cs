@@ -14,12 +14,5 @@ namespace ARAS.Main.Oracle.Api.Controllers
 		{
 			this.context = context;
 		}
-
-		[HttpGet("acc-eu")]
-		public async Task<IActionResult> Get()
-		{
-			var resut = await context.TestAccEndUser.ToListAsync();
-			return Ok(resut);
-		}
 	}
 }

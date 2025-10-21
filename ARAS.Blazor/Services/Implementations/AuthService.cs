@@ -62,6 +62,7 @@ namespace ARAS.Blazor.Services.Implementations
 			{
 				FullName = user.GetClaim(JwtRegisteredClaimNames.GivenName) + " " + user.GetClaim(JwtRegisteredClaimNames.FamilyName),
 				AccountRole =  role == "Ops" ? "Admin" : role,
+				GroupCode = user.GetClaim(ClaimTypes.GroupSid) ?? string.Empty,
 				Email = user.GetClaim(ClaimTypes.Email) ?? string.Empty
 			};
 		}

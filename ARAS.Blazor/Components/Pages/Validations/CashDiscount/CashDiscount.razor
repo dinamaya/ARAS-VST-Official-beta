@@ -1,8 +1,6 @@
-﻿
-
-@using ARAS.Blazor.Models.DTOs
+﻿@using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
-@using ARAS.Blazor.Components.Layout;
+@using ARAS.Blazor.Components.Shared.DataTables;
 @using Microsoft.AspNetCore.Authorization
 
 @page "/validations/cash-discount"
@@ -15,7 +13,7 @@
 
 <h3>CashDiscount</h3>
 
-<RequestDataTable SelectionRoute="validations/cash-discount" SelectButtonTitle="Update" OnDateLoad="@(OnDataLoad)" />
+<RequestDataTable ViewRoute="validations/cash-discount" SelectButtonTitle="Update" OnDateLoad="@(OnDataLoad)" />
 
 @code {
 

@@ -76,6 +76,7 @@ namespace ARAS.Auth.Api.Services.Implementations
 			account.FirstName = Utils.Security.CleanString(request.FirstName);
 			account.LastName = Utils.Security.CleanString(request.LastName);
 			account.GroupCode = Utils.Security.CleanString(request.GroupCode);
+			account.IsActive = request.IsActive;
 
 			var accountUpdateResult = await _userManager.UpdateAsync(account);
 			if (!accountUpdateResult.Succeeded)

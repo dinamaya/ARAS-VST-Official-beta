@@ -16,9 +16,7 @@
 			<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
 				Close
 			</button>
-			<button @onclick="Submit" class="btn btn-outline-primary">
-				Submit
-			</button>
+			<SubmitButton Title="Submit" Click="Submit" DisabledTitle="Submitting" />
 		</RadzenStack>
 
 	</RadzenStack>

@@ -61,7 +61,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 				var timeline = await _transactionRepo.GetEmailHistoryByRequestId(requestId);
 
-				await _bgJobService.RunSendRequestPending(new RequestPendingDto
+				await _bgJobService.RunSendRequestPending(new ProceedEmailDto
 				{
 					RequestId = requestId.ToString(),
 					RequestorName = data.CreatorFullName,
@@ -102,6 +102,9 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				var requestRefNo = await _requestRepo.GetRequestNumberById(requestId);
 				string cashDiscountTypeId = await _context.AdjustmentTypes.Where(x => x.Code.Equals("CDR")).Select(x => x.Id).FirstAsync();
 
+				var prevTimeline = await _transactionRepo.GetHistoryByRequestId(requestId);
+				var prevCreatorRole = prevTimeline.LastOrDefault().AccountRole;
+
 				var transaction = new TransactionCreateDto(requestId, "Pending");
 				var transactId = await _transactionRepo.CreateAsync(transaction, modifiedBy);
 
@@ -111,18 +114,43 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					await CreateInvoiceAdjustments(modifiedBy, requestId, cashDiscountTypeId, item);
 
 
-				var timeline = await _transactionRepo.GetEmailHistoryByRequestId(requestId);
-
-				await _bgJobService.RunSendRequestPending(new RequestPendingDto
+				var updatedTimeline = await _transactionRepo.GetEmailHistoryByRequestId(requestId);
+				if (prevCreatorRole.Equals("Approver"))
 				{
-					RequestId = requestId.ToString(),
-					RequestorName = data.CreatorFullName,
-					AdjustmentType = "Cash Discount",
-					RequestNumber = requestRefNo,
-					Status = "Approved",
-					Timeline = timeline,
-					ToEmail = data.Model.ToEmail,
-				});
+					await _bgJobService.RunSendRequestUpdated(new UpdateEmailDto
+					{
+						RequestId = requestId.ToString(),
+						RequestorName = data.CreatorFullName,
+						AdjustmentType = "Cash Discount",
+						RequestNumber = requestRefNo,
+						Status = "Update / Resubmitted",
+						ForAction = "For Approval",
+						Role = prevCreatorRole,
+						RoleGroup = "Manager / Supervisor",
+						Timeline = updatedTimeline,
+						ToEmail = data.Model.ToEmail,
+						Endpoint = "approvals/cash-discount",
+					});
+				}
+				else if (prevCreatorRole.Equals("Validator"))
+				{
+					await _bgJobService.RunSendRequestUpdated(new UpdateEmailDto
+					{
+						RequestId = requestId.ToString(),
+						RequestorName = data.CreatorFullName,
+						AdjustmentType = "Cash Discount",
+						RequestNumber = requestRefNo,
+						Status = "Update / Resubmitted",
+						ForAction = "For Validation",
+						Role = prevCreatorRole,
+						RoleGroup = "FSG",
+						Timeline = updatedTimeline,
+						ToEmail = data.Model.ToEmail,
+						Endpoint = "validations/cash-discount",
+					});
+				}
+				else
+					throw new InvalidCastException("Invalid Previous Creator Role");
 
 				await dbTransaction.CommitAsync();
 			}
@@ -148,7 +176,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				var timeline = await _transactionRepo.GetEmailHistoryByRequestId(data.RequestId);
 				var request = await _requestRepo.GetForEmailDetailsById(data.RequestId);
 
-				await _bgJobService.RunSendRequestApproved(new RequestPendingDto
+				await _bgJobService.RunSendRequestApproved(new ProceedEmailDto
 				{
 					RequestId = data.RequestId.ToString(),
 					RequestorName = request.Creator,
@@ -168,17 +196,31 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			}
 		}
 
-		public async Task CreateValidateTransaction(long requestId, string createdBy)
+		public async Task CreateValidateTransaction(RequestUpdateDto data, string createdBy)
 		{
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
 			try
 			{
-				bool isValidatable = await _requestRepo.IsValidatable(requestId);
+				bool isValidatable = await _requestRepo.IsValidatable(data.RequestId);
 				Guards.ThrowInvalidOperationIf(!isValidatable, Exceptions.ALREADY_VALIDATED);
 
-				var transaction = new TransactionCreateDto(requestId, "Validated");
+				var transaction = new TransactionCreateDto(data.RequestId, "Validated");
 				var transactId = await _transactionRepo.CreateAsync(transaction, createdBy);
+
+				var timeline = await _transactionRepo.GetEmailHistoryByRequestId(data.RequestId);
+				var request = await _requestRepo.GetForEmailDetailsById(data.RequestId);
+
+				await _bgJobService.RunSendRequestValidated(new ProceedEmailDto
+				{
+					RequestId = data.RequestId.ToString(),
+					RequestorName = request.Creator,
+					AdjustmentType = "Cash Discount",
+					RequestNumber = request.RequestNumber,
+					Status = "Validated",
+					Timeline = timeline,
+					ToEmail = data.ToEmail,
+				});
 
 				await dbTransaction.CommitAsync();
 			}
@@ -189,20 +231,37 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			}
 		}
 
-		public async Task CreateDeclineTransaction(CreateDeclineDto createDecline, string createdBy)
+		public async Task CreateDeclineTransaction(NegateRequestDto data, string createdBy)
 		{
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
 			try
 			{
-				bool isDeclinable = await _requestRepo.IsDeclinable(createDecline.RequestId);
+				bool isDeclinable = await _requestRepo.IsDeclinable(data.RequestId);
 				Guards.ThrowInvalidOperationIf(!isDeclinable, Exceptions.ALREADY_DECLINED);
 
-				var transaction = new TransactionCreateDto(createDecline.RequestId, "Declined");
+				var transaction = new TransactionCreateDto(data.RequestId, "Declined");
 				var transactId = await _transactionRepo.CreateAsync(transaction, createdBy);
 
-				var remarks = new RemarksCreateDto(transactId, createDecline.Remarks);
+				var remarks = new RemarksCreateDto(transactId, data.Remarks);
 				await _remarksRepo.CreateAsync(remarks, createdBy);
+
+				var timeline = await _transactionRepo.GetEmailHistoryByRequestId(data.RequestId);
+				var request = await _requestRepo.GetForEmailDetailsById(data.RequestId);
+				var latestUpdateDetails = timeline.LastOrDefault();
+
+				await _bgJobService.RunSendRequestDeclined(new()
+				{
+					RequestId = data.RequestId.ToString(),
+					AdjustmentType = "Cash Discount",
+					RequestorName = request.Creator,
+					RequestNumber = request.RequestNumber,
+					Remarks = data.Remarks,
+					Status = "Declined",
+					Timeline = timeline,
+					UpdatedBy = latestUpdateDetails.CreatorFullName,
+					ToEmail = data.ToEmail,
+				});
 
 				await dbTransaction.CommitAsync();
 			}
@@ -213,17 +272,34 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			}
 		}
 
-		public async Task CreateRejectTransaction(long requestId, string createdBy)
+		public async Task CreateRejectTransaction(NegateRequestDto data, string createdBy)
 		{
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
 			try
 			{
-				bool isRejectable = await _requestRepo.IsRejectable(requestId);
+				bool isRejectable = await _requestRepo.IsRejectable(data.RequestId);
 				Guards.ThrowInvalidOperationIf(!isRejectable, Exceptions.NOT_REJECTABLE);
 
-				var transaction = new TransactionCreateDto(requestId, "Rejected");
+				var transaction = new TransactionCreateDto(data.RequestId, "Rejected");
 				var transactId = await _transactionRepo.CreateAsync(transaction, createdBy);
+				
+				var timeline = await _transactionRepo.GetEmailHistoryByRequestId(data.RequestId);
+				var request = await _requestRepo.GetForEmailDetailsById(data.RequestId);
+				var latestUpdateDetails = timeline.LastOrDefault();
+
+				await _bgJobService.RunSendRequestRejected(new()
+				{
+					RequestId = data.RequestId.ToString(),
+					AdjustmentType = "Cash Discount",
+					RequestorName = request.Creator,
+					RequestNumber = request.RequestNumber,
+					Remarks = data.Remarks,
+					Status = "Rejected",
+					Timeline = timeline,
+					UpdatedBy = latestUpdateDetails.CreatorFullName,
+					ToEmail = data.ToEmail,
+				});
 
 				await dbTransaction.CommitAsync();
 			}

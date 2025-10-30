@@ -23,6 +23,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			_requestRepo = requestRepo;
 		}
 
+		//[HttpGet("cdr/{requestId:long}")]
 		[HttpGet("cdr/{requestId:long}"), Authorize]
 		public async Task<ResponseDto<TransactionRequestRowDto>> GetTransactionRequestByRequestId(long requestId)
 		{
@@ -73,6 +74,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
+		//[HttpGet("cdr/is-declinable/{requestId:long}")]
 		[HttpGet("cdr/is-declinable/{requestId:long}"), Authorize]
 		public async Task<ResponseDto<bool>> IsDeclinable(long requestId)
 		{
@@ -89,8 +91,8 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("cdr/is-rejectable/{requestId:long}")]
-		//[HttpGet("cdr/is-rejectable/{requestId:long}"), Authorize]
+		//[HttpGet("cdr/is-rejectable/{requestId:long}")]
+		[HttpGet("cdr/is-rejectable/{requestId:long}"), Authorize]
 		public async Task<ResponseDto<bool>> IsRejectable(long requestId)
 		{
 			var response = new ResponseDto<bool>();

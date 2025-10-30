@@ -7,7 +7,7 @@ namespace ARAS.Blazor.Services.Interfaces
 		Task<ResponseDto<TResult>> SendAsync<TResult>(RequestDto requestDto,
 			bool withBearer = true,
 			Func<RequestDto, Task>? onBeforeSendCallBack = null,
-			Func<TResult, Task>? onSuccessSendCallBack = null,
+			Func<ResponseDto<TResult>, Task>? onSuccessSendCallBack = null,
 			Func<RequestDto, Task>? onErrorSendCallBack = null
 		);
 	}

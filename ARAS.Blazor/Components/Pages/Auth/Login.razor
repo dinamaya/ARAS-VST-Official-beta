@@ -81,7 +81,7 @@
 
 	private void ShowAlert() => showErrorAlert = QueryService.KeyHasValueOf("q", Queries.Auth.UNAUTHORIZED);
 
-	private void SignIn() => Navigation.NavigateTo(Config.GetAuthApiUrl($"auth/aad/login?url={QueryService.GetCurrentUrl()}"), forceLoad: true);
+	private void SignIn() => Navigation.NavigateTo(Config.GetAuthUrl($"aad/login?url={QueryService.GetCurrentUrl()}"), forceLoad: true);
 
 	private async Task Authenticate()
 	{

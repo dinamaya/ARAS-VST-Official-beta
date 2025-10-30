@@ -3,12 +3,14 @@
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
 @using ARAS.Blazor.Components.Pages.Requests.CashDiscount
+@using ARAS.Blazor.Components.Shared.DataTables
 
 @using Microsoft.AspNetCore.Authorization
 @page "/submissions/cash-discount/{RequestId:long}"
 @attribute [Authorize]
 @inject ICashDiscountService CashDiscountService
 @inject IRequestService RequestService
+@inject INoteService NoteService
 @inject DialogService DialogService
 
 @inherits ComponentBase
@@ -21,8 +23,11 @@
 				<CashDiscountSummary Rows="rows" RequestAudit="requestAudit" />
 			</div>
 		</RadzenColumn>
-		<RadzenColumn Size="12">
+		<RadzenColumn Size="4">
 			<Timeline RequestId="@RequestId" />
+		</RadzenColumn>
+		<RadzenColumn Size="8">
+			<AttachmentsDatatable Notes="@notes" IsReadOnly="true" ShowOtherColumns=true ShowAddButton=false/>
 		</RadzenColumn>
 	</RadzenRow>
 </RadzenStack>
@@ -30,6 +35,8 @@
 @code {
 	[Parameter] public long RequestId { get; set; }
 	private IEnumerable<CashDiscountRowDto> rows;
+	private IList<NoteRowDto> notes;
+
 	private RequestAuditDto requestAudit;
 
 	protected override async Task OnInitializedAsync()
@@ -37,6 +44,7 @@
 		await base.OnInitializedAsync();
 		var request = await CashDiscountService.GetRequestDetails(RequestId);
 		rows = await CashDiscountService.GetAdjustments(RequestId);
+		notes = await NoteService.GetRows(RequestId);
 		requestAudit = new RequestAuditDto(request);
 	}
 
@@ -47,7 +55,7 @@
 		if(!isApprove)
 			return;
 
-		await CashDiscountService.Validate(RequestId);
+		await CashDiscountService.Validate(RequestId, notes);
 	}
 
 }

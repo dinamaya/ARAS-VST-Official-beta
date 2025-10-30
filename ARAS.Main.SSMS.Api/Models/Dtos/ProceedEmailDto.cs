@@ -1,6 +1,6 @@
 ﻿namespace ARAS.Main.SSMS.Api.Models.Dtos
 {
-	public class RequestPendingDto
+	public class ProceedEmailDto
 	{
 		public string RequestId { get; set; }
 		public string RequestorName { get; set; }
@@ -9,6 +9,5 @@
 		public string Status { get; set; }
 		public IEnumerable<EmailTimelineDetailsDto> Timeline { get; set; }
 		public IEnumerable<string> ToEmail { get; set; }
-		// public string Approver { get; set; } // No need
 	}
 }

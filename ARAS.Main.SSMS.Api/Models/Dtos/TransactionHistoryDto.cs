@@ -9,5 +9,6 @@
 		public string Description { get; set; }
 		public string AttachmentName { get; set; }
 		public string Status { get; set; }
+		public string AccountRole { get; set; }
 	}
 }

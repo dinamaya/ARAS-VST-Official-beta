@@ -4,6 +4,10 @@ using ARAS.Blazor.App_Code.Globals.Enums;
 using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Services.Interfaces;
 using Azure;
+using System.Collections;
+using System.Net.Http.Headers;
+
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Radzen;
@@ -42,7 +46,7 @@ namespace ARAS.Blazor.Services.Implementations
 			RequestDto requestDto,
 			bool withBearer = true,
 			Func<RequestDto, Task>? onBeforeSendCallBack = null,
-			Func<TResult, Task>? onSuccessSendCallBack = null,
+			Func<ResponseDto<TResult>, Task>? onSuccessSendCallBack = null,
 			Func<RequestDto, Task>? onErrorSendCallBack = null)
 		{
 			try
@@ -52,18 +56,59 @@ namespace ARAS.Blazor.Services.Implementations
 				ResponseDto<TResult> responseDto = new();
 
 				_validationService.ClearErrors();
+
+				if (requestDto.ContentType == ContentType.MultipartFormData)
+					message.Headers.Add("Accept", "*/*");
+				else
+					message.Headers.Add("Accept", "application/json");
+
 				if (withBearer)
 				{
 					var token = _tokenService.GetToken();
 					message.Headers.Add("Authorization", $"Bearer {token}");
 				}
 
-				message.Headers.Add("Accept", "application/json");
-
 				message.RequestUri = new Uri(requestDto.URL);
 
-				if (requestDto.Data != null)
-					message.Content = new StringContent(JsonConvert.SerializeObject(requestDto.Data), encoding: Encoding.UTF8, "application/json");
+				if (requestDto.ContentType == ContentType.MultipartFormData)
+				{
+					var content = new MultipartFormDataContent();
+
+					if (requestDto.Data is IEnumerable enumerable && requestDto.Data is not string)
+					{
+						int index = 0;
+						foreach (var item in enumerable)
+						{
+							if (item == null) continue;
+							var props = item.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0);
+							foreach (var prop in props) 
+							{
+								var value = prop.GetValue(item);
+								AddFormDataValue(content, $"{requestDto.FormCollectionName}[{index}].{prop.Name}", value);
+							}
+
+							index++;
+						}
+					}
+					else
+					{
+						// Handle a single object
+						var props = requestDto.Data.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0);
+						foreach (var prop in props)
+						{
+							var value = prop.GetValue(requestDto.Data);
+							AddFormDataValue(content, prop.Name, value);
+						}
+					}
+
+					message.Content = content;
+				}
+				else
+				{
+					if (requestDto.Data != null)
+						message.Content = new StringContent(JsonConvert.SerializeObject(requestDto.Data), Encoding.UTF8, "application/json");
+				}
+
 
 				HttpResponseMessage? apiResponse = null;
 
@@ -76,7 +121,7 @@ namespace ARAS.Blazor.Services.Implementations
 				};
 
 				if (onBeforeSendCallBack != null)
-					await onBeforeSendCallBack(requestDto);
+					await onBeforeSendCallBack.Invoke(requestDto);
 
 				apiResponse = await client.SendAsync(message);
 
@@ -105,11 +150,16 @@ namespace ARAS.Blazor.Services.Implementations
 						}
 
 					default:
+						var contentType = apiResponse.Content.Headers.ContentType?.MediaType;
+
+						if (contentType != null && !contentType.Contains("application/json", StringComparison.OrdinalIgnoreCase))
+							return await DownloadMedia<TResult>(apiResponse);
+
 						var apiContent = await apiResponse.Content.ReadAsStringAsync();
 						var contentResponse = JsonConvert.DeserializeObject<ResponseDto<TResult>>(apiContent) ?? throw new Exception("Error while connecting to the server please check the internet connection");
 
 						if (contentResponse.Result != null && onSuccessSendCallBack != null)
-							await onSuccessSendCallBack(contentResponse.Result);
+							await onSuccessSendCallBack.Invoke(contentResponse);
 
 						return contentResponse;
 				}
@@ -119,7 +169,7 @@ namespace ARAS.Blazor.Services.Implementations
 				Notify(requestDto, ex, "System Error");
 
 				if (onErrorSendCallBack != null)
-					await onErrorSendCallBack(requestDto);
+					await onErrorSendCallBack.Invoke(requestDto);
 
 				return new()
 				{
@@ -186,6 +236,46 @@ namespace ARAS.Blazor.Services.Implementations
 		private async Task Alert(string title, string message)
 		{
 			await _dialogService.Alert(message, title);
+		}
+
+		private static void AddFormDataValue(MultipartFormDataContent content, string name, object? value)
+		{
+			switch (value)
+			{
+				case null:
+					content.Add(new StringContent(string.Empty), name);
+					break;
+
+				case byte[] bytes:
+					var byteContent = new ByteArrayContent(bytes);
+					byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+					content.Add(byteContent, name, name);
+					break;
+
+				default:
+					content.Add(new StringContent(value.ToString() ?? string.Empty), name);
+					break;
+			}
+		}
+
+		private async Task<ResponseDto<TResult>> DownloadMedia<TResult>(HttpResponseMessage apiResponse)
+		{
+			var fileBytes = await apiResponse.Content.ReadAsByteArrayAsync();
+
+			var fileName = apiResponse.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? "downloaded_file";
+
+			object? result = default(TResult);
+			if (typeof(TResult) == typeof(byte[]))
+				result = (object)fileBytes;
+
+			var responseDto = new ResponseDto<TResult>
+			{
+				Result = (TResult)result!,
+				IsSuccess = true,
+				Message = fileName
+			};
+
+			return responseDto;
 		}
 	}
 }

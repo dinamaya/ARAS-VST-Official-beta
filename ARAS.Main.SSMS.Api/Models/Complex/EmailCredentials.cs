@@ -8,5 +8,6 @@
 		public string Username { get; set; }
 		public string Password { get; set; }
 		public string ReplyAddress { get; set; }
+		public bool EnableSsl { get; set; }
 	}
 }

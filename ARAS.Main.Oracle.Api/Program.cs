@@ -2,13 +2,36 @@ using ARAS.Main.Oracle.Api.App_Code.Globals.Extensions;
 using ARAS.Main.Oracle.Api.Context;
 using ARAS.Main.Oracle.Api.Repositories.Implementations;
 using ARAS.Main.Oracle.Api.Repositories.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Oracle.ManagedDataAccess.Client;
 using System;
 using System.Data;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 string mainDbConnection = builder.Configuration.GetConnectionString("MainDbContext") ?? throw new Exception("Main Oracle Database Context not found");
+
+builder.Services.AddAuthentication(options =>
+{
+	options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+	options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+{
+	options.TokenValidationParameters = new TokenValidationParameters
+	{
+		ValidateIssuer = true,
+		ValidateAudience = true,
+		ValidateLifetime = true,
+		ValidateIssuerSigningKey = true,
+
+		ValidIssuer = builder.Configuration["AuthConfig:JwtOptions:Issuer"],
+		ValidAudience = builder.Configuration["AuthConfig:JwtOptions:Audience"],
+		IssuerSigningKey = new SymmetricSecurityKey(
+			Encoding.UTF8.GetBytes(builder.Configuration["AuthConfig:JwtOptions:Key"]))
+	};
+});
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();

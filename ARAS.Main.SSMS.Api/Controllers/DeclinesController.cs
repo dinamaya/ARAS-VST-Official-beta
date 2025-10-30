@@ -23,7 +23,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		}
 
 		[HttpPost("cdr")]
-		public async Task<ResponseDto<string>> DeclineTransactionRequestByRequestId([FromBody] CreateDeclineDto createDecline)
+		public async Task<ResponseDto<string>> DeclineTransactionRequestByRequestId([FromBody] NegateRequestDto createDecline)
 		{
 			var response = new ResponseDto<string>();
 			try

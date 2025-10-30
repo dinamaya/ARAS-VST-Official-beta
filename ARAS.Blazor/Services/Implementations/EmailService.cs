@@ -19,7 +19,7 @@ namespace ARAS.Blazor.Services.Implementations
 		{
 			var response = await _baseService.SendAsync<IEnumerable<string>>(new RequestDto()
 			{
-				URL = _configService.GetAuthApiUrl($"email/all"),
+				URL = _configService.GetAuthEmailUrl("all"),
 			});
 
 			return response.Result;
@@ -29,8 +29,10 @@ namespace ARAS.Blazor.Services.Implementations
 		{
 			var response = await _baseService.SendAsync<IEnumerable<string>>(new RequestDto()
 			{
-				URL = _configService.GetAuthApiUrl($"email/approvers"),
+				URL = _configService.GetAuthEmailUrl("approvers"),
 			});
+
+			Guards.ThrowNullReferenceIf(response.Result, "No approver emails found");
 
 			return response.Result;
 		}
@@ -39,7 +41,7 @@ namespace ARAS.Blazor.Services.Implementations
 		{
 			var response = await _baseService.SendAsync<IEnumerable<string>>(new RequestDto()
 			{
-				URL = _configService.GetAuthApiUrl($"email/validators"),
+				URL = _configService.GetAuthEmailUrl("validators"),
 			});
 
 			return response.Result;

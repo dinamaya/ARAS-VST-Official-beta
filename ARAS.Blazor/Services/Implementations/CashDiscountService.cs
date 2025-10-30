@@ -1,10 +1,8 @@
 ﻿using ARAS.Blazor.App_Code.Globals;
-using ARAS.Blazor.App_Code.Globals.Constants;
 using ARAS.Blazor.App_Code.Globals.Enums;
 using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Services.Interfaces;
-using System.Collections.Generic;
-using ARAS.Blazor.App_Code.Globals.Extensions;
+using Microsoft.AspNetCore.Mvc;
 using Radzen;
 
 namespace ARAS.Blazor.Services.Implementations
@@ -14,17 +12,19 @@ namespace ARAS.Blazor.Services.Implementations
 		private readonly IBaseService _baseService;
 		private readonly IConfigService _configService;
 		private readonly IEmailService _emailService;
+		private readonly INoteService _noteService;
 		private readonly DialogService _dialogService;
 
-		public CashDiscountService(IBaseService baseService, IConfigService configService, DialogService dialogService, IEmailService emailService)
+		public CashDiscountService(IBaseService baseService, IConfigService configService, DialogService dialogService, IEmailService emailService, INoteService noteService)
 		{
 			_baseService = baseService;
 			_configService = configService;
 			_dialogService = dialogService;
 			_emailService = emailService;
+			_noteService = noteService;
 		}
 
-		public async Task Create(IEnumerable<CashDiscountRowDto> rows)
+		public async Task Create(IEnumerable<CashDiscountRowDto> rows, IEnumerable<NoteRowDto> notes)
 		{
 			var requestsDto = rows.Select(r => new CashDiscountCreateDto()
 			{
@@ -40,15 +40,17 @@ namespace ARAS.Blazor.Services.Implementations
 			var emails = await _emailService.GetApprovers();
 			var adjustmentRequestCreation = new AdjustmentRequestCreationDto<CashDiscountCreateDto>(requestsDto, emails);
 
-			var response = await _baseService.SendAsync<string>(new RequestDto<AdjustmentRequestCreationDto<CashDiscountCreateDto>>()
+			var createResult = await _baseService.SendAsync<long>(new RequestDto<AdjustmentRequestCreationDto<CashDiscountCreateDto>>()
 			{
 				ApiType = ApiType.POST,
-				URL = _configService.GetMainSSMSApiUrl("cash-discount/create"),
+				URL = _configService.GetCashDiscountsUrl("create"),
 				Data = adjustmentRequestCreation
 			});
+
+			await _noteService.Create(createResult.Result, notes);
 		}
 
-		public async Task Update(long requestId, IEnumerable<CashDiscountRowDto> rows)
+		public async Task Update(long requestId, IEnumerable<CashDiscountRowDto> rows, IEnumerable<NoteRowDto> notes)
 		{
 			var requestsDto = rows.Select(r => new CashDiscountCreateDto()
 			{
@@ -64,81 +66,134 @@ namespace ARAS.Blazor.Services.Implementations
 			var emails = await _emailService.GetApprovers();
 			var adjustmentRequestUpdate = new AdjustmentRequestCreationDto<CashDiscountCreateDto>(requestsDto, emails);
 
-			var response = await _baseService.SendAsync<string>(new RequestDto<AdjustmentRequestCreationDto<CashDiscountCreateDto>>()
-			{
-				ApiType = ApiType.POST,
-				URL = _configService.GetMainSSMSApiUrl($"cash-discount/update/{requestId}"),
-				Data = adjustmentRequestUpdate
-			});
-
-			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to update cash-discount request");
+			await _baseService.SendAsync<string>(
+				new RequestDto<AdjustmentRequestCreationDto<CashDiscountCreateDto>>()
+				{
+					ApiType = ApiType.POST,
+					URL = _configService.GetCashDiscountsUrl($"update/{requestId}"),
+					Data = adjustmentRequestUpdate
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to update cash-discount request");
+					});
+				}
+			);
+		
+			await _noteService.Create(requestId, notes);
 		}
 
-		public async Task Approve(long requestId)
+		public async Task Approve(long requestId, IEnumerable<NoteRowDto> notes)
 		{
 			var emails = await _emailService.GetValidators();
 			var requestUpdateDto = new RequestUpdateDto(requestId, emails);
 
-			var response = await _baseService.SendAsync<string>(new RequestDto<RequestUpdateDto>()
-			{
-				ApiType = ApiType.POST,
-				URL = _configService.GetMainSSMSApiUrl($"approve/cdr"),
-				Data = requestUpdateDto
-			});
+			await _baseService.SendAsync<string>(
+				new RequestDto<RequestUpdateDto>()
+				{
+					ApiType = ApiType.POST,
+					URL = _configService.GetApprovalsUrl("cdr"),
+					Data = requestUpdateDto
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to APPROVE the current request");
+						Guards.ThrowInvalidOperationIf(!(resp.IsSuccess && resp.Result == "Success"), "Failed to APPROVE the current request");
+					});
+				}
+			);
 
-			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to APPROVE the current request");
-			Guards.ThrowInvalidOperationIf(!(response.IsSuccess && response.Result == "Success"), "Failed to APPROVE the current request");
+			await _noteService.Create(requestId, notes);
 		}
 
-		public async Task Validate(long requestId)
+		public async Task Validate(long requestId, IEnumerable<NoteRowDto> notes)
 		{
 			var emails = await _emailService.GetAll();
 			var requestUpdateDto = new RequestUpdateDto(requestId, emails);
 
-			var response = await _baseService.SendAsync<string>(new RequestDto<RequestUpdateDto>()
-			{
-				ApiType = ApiType.POST,
-				URL = _configService.GetMainSSMSApiUrl($"validate/cdr"),
-				Data = requestUpdateDto
-			});
+			await _baseService.SendAsync<string>(
+				new RequestDto<RequestUpdateDto>()
+				{
+					ApiType = ApiType.POST,
+					URL = _configService.GetValidationsUrl("cdr"),
+					Data = requestUpdateDto
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to VALIDATE the current request");
+						Guards.ThrowInvalidOperationIf(!(resp.IsSuccess && resp.Result == "Success"), "Failed to VALIDATE the current request");
+					});
+				});
 
-			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to VALIDATE the current request");
-			Guards.ThrowInvalidOperationIf(!(response.IsSuccess && response.Result == "Success"), "Failed to VALIDATE the current request");
+			await _noteService.Create(requestId, notes);
 		}
 
-		public async Task Decline(CreateDeclineDto createDecline)
+		public async Task Decline(NegateRequestDto createDecline, IEnumerable<NoteRowDto> notes)
 		{
-			var response = await _baseService.SendAsync<string>(new RequestDto<CreateDeclineDto>()
-			{
-				ApiType = ApiType.POST,
-				URL = _configService.GetMainSSMSApiUrl($"decline/cdr"),
-				Data = createDecline
-			});
+			createDecline.ToEmail = await _emailService.GetAll();
 
-			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to DECLINE the current request");
-			Guards.ThrowInvalidOperationIf(!(response.IsSuccess && response.Result == "Success"), "Failed to DECLINE the current request");
+			await _baseService.SendAsync<string>(
+				new RequestDto<NegateRequestDto>()
+				{
+					ApiType = ApiType.POST,
+					URL = _configService.GetDeclinesUrl("cdr"),
+					Data = createDecline
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to DECLINE the current request");
+						Guards.ThrowInvalidOperationIf(!(resp.IsSuccess && resp.Result == "Success"), "Failed to DECLINE the current request");
+					});
+				});
+
+			await _noteService.Create(createDecline.RequestId, notes);
 		}
 
-		public async Task Reject(long requestId)
+		public async Task Reject(NegateRequestDto createReject, IEnumerable<NoteRowDto> notes)
 		{
-			var response = await _baseService.SendAsync<string>(new RequestDto()
-			{
-				ApiType = ApiType.POST,
-				URL = _configService.GetMainSSMSApiUrl($"reject/cdr/{requestId}"),
-			});
+			createReject.ToEmail = await _emailService.GetAll();
 
-			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to REJECT the current request");
-			Guards.ThrowInvalidOperationIf(!(response.IsSuccess && response.Result == "Success"), "Failed to REJECT the current request");
+			await _baseService.SendAsync<string>(
+				new RequestDto<NegateRequestDto>()
+				{
+					ApiType = ApiType.POST,
+					URL = _configService.GetRejectionsUrl("cdr"),
+					Data = createReject
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to REJECT the current request");
+						Guards.ThrowInvalidOperationIf(!(resp.IsSuccess && resp.Result == "Success"), "Failed to REJECT the current request");
+					});
+				});
+
+			await _noteService.Create(createReject.RequestId, notes);
 		}
 
 		public async Task<IEnumerable<TransactionRequestRowDto>> GetSubmissions()
 		{
-			var response = await _baseService.SendAsync<IEnumerable<TransactionRequestRowDto>>(new RequestDto()
-			{
-				URL = _configService.GetMainSSMSApiUrl("cash-discount/submissions"),
-			});
-
-			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to fetch the submitted requests");
+			var response = await _baseService.SendAsync<IEnumerable<TransactionRequestRowDto>>(
+				new RequestDto()
+				{
+					URL = _configService.GetCashDiscountsUrl("submissions"),
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch the submitted requests");
+					});
+				});
 
 			return response.Result;
 		}
@@ -146,11 +201,16 @@ namespace ARAS.Blazor.Services.Implementations
 		public async Task<IEnumerable<TransactionRequestRowDto>> GetApprovals()
 		{
 			var response = await _baseService.SendAsync<IEnumerable<TransactionRequestRowDto>>(new RequestDto()
-			{
-				URL = _configService.GetMainSSMSApiUrl("cash-discount/approvals"),
-			});
-
-			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to fetch for approval requests");
+				{
+					URL = _configService.GetCashDiscountsUrl("approvals"),
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch for approval requests");
+					});
+				});
 
 			return response.Result;
 		}
@@ -158,11 +218,16 @@ namespace ARAS.Blazor.Services.Implementations
 		public async Task<IEnumerable<TransactionRequestRowDto>> GetValidations()
 		{
 			var response = await _baseService.SendAsync<IEnumerable<TransactionRequestRowDto>>(new RequestDto()
-			{
-				URL = _configService.GetMainSSMSApiUrl("cash-discount/validations"),
-			});
-
-			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to fetch for validation requests");
+				{
+					URL = _configService.GetCashDiscountsUrl("validations"),
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch for validation requests");
+					});
+				});
 
 			return response.Result;
 		}
@@ -170,11 +235,16 @@ namespace ARAS.Blazor.Services.Implementations
 		public async Task<IEnumerable<CashDiscountRowDto>> GetAdjustments(long requestId)
 		{
 			var response = await _baseService.SendAsync<IEnumerable<CashDiscountRowDto>>(new RequestDto()
-			{
-				URL = _configService.GetMainSSMSApiUrl($"adjustments/cdr/{requestId}"),
-			});
-
-			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to fetch the adjustments");
+				{
+					URL = _configService.GetAdjustmentsUrl($"cdr/{requestId}"),
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch the adjustments");
+					});
+				});
 
 			return response.Result;
 		}
@@ -182,11 +252,16 @@ namespace ARAS.Blazor.Services.Implementations
 		public async Task<TransactionRequestRowDto> GetRequestDetails(long requestId)
 		{
 			var response = await _baseService.SendAsync<TransactionRequestRowDto>(new RequestDto()
-			{
-				URL = _configService.GetMainSSMSApiUrl($"requests/cdr/{requestId}"),
-			});
-
-			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to fetch the request");
+				{
+					URL = _configService.GetRequestsUrl($"cdr/{requestId}"),
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch the request");
+					});
+				});
 
 			return response.Result;
 		}
@@ -197,7 +272,7 @@ namespace ARAS.Blazor.Services.Implementations
 			{
 				ApiType = ApiType.POST,
 				Data = cashDiscountCreateValidation,
-				URL = _configService.GetMainSSMSApiUrl($"adjustments/cdr/validate"),
+				URL = _configService.GetAdjustmentsUrl($"cdr/validate"),
 			});
 
 			return response.IsSuccess && !response.Result;

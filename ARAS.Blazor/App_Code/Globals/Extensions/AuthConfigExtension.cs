@@ -15,7 +15,7 @@ namespace ARAS.Blazor.App_Code.Globals.Extensions
 			{
 				var tokenService = sp.GetRequiredService<ITokenService>();
 				var config = sp.GetRequiredService<IConfigService>();
-				client.BaseAddress = new Uri(config.GetAuthApiUrl());
+				client.BaseAddress = new Uri(config.GetAuthUrl());
 				var token = tokenService.GetToken();
 				if (!string.IsNullOrEmpty(token))
 				{

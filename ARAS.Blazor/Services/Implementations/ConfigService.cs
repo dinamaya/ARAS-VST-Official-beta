@@ -11,16 +11,56 @@ namespace ARAS.Blazor.Services.Implementations
 		{
 			_config = config;
 		}
+		public string GetBaseUrl(string route = null) => 
+			$"{_config.GetValue<string>("ApiConfig:internal")}{route}";
+		
+		public string GetAuthUrl(string route = null) => 
+			$"{_config.GetValue<string>("ApiConfig:external:AuthApi:Auth")}{route}";
 
-		public string GetAuthApiUrl(string route = null) => $"{_config.GetValue<string>("ApiConfig:external:AuthApi")}{route}";
+		public string GetAuthEmailUrl(string route = null) => 
+			$"{_config.GetValue<string>("ApiConfig:external:AuthApi:Email")}{route}";
 
-		public string GetBaseApiUrl(string route = null) => $"{_config.GetValue<string>("ApiConfig:internal")}{route}";
+		public string GetOpsUrl(string route = null) => 
+			$"{_config.GetValue<string>("ApiConfig:external:AuthApi:Ops")}{route}";
 
-		public string GetMainOracleApiUrl(string route = null) => $"{_config.GetValue<string>("ApiConfig:external:OracleMainApi")}{route}";
-
-		public string GetMainSSMSApiUrl(string route = null) => $"{_config.GetValue<string>("ApiConfig:external:SSMSMainApi")}{route}";
+		public string GetOracleInvoiceApiUrl(string route = null) =>
+			$"{_config.GetValue<string>("ApiConfig:external:OracleApi:Invoice")}{route}";
+		
+		public string GetMainSSMSApiUrl(string route = null) => 
+			$"{_config.GetValue<string>("ApiConfig:external:SSMSMainApi")}{route}";
 
 		public string GetTokenName() => _config["ApiConfig:Cookie:Name"] ?? "";
 		public string GetTokenDomainName() => _config["ApiConfig:Cookie:Domain"] ?? "";
+
+		// -----------------------------
+		// MainApi URLs Implementation
+		// -----------------------------
+
+		public string GetAdjustmentsUrl(string route = null) =>
+			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Adjustments")}{route}";
+
+		public string GetApprovalsUrl(string route = null) =>
+			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Approvals")}{route}";
+
+		public string GetCashDiscountsUrl(string route = null) =>
+			$"{_config.GetValue<string>("ApiConfig:external:MainApi:CashDiscounts")}{route}";
+
+		public string GetDeclinesUrl(string route = null) =>
+			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Declines")}{route}";
+
+		public string GetRejectionsUrl(string route = null) =>
+			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Rejections")}{route}";
+
+		public string GetRequestsUrl(string route = null) =>
+			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Requests")}{route}";
+
+		public string GetTransactionsUrl(string route = null) =>
+			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Transactions")}{route}";
+
+		public string GetValidationsUrl(string route = null) =>
+			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Validations")}{route}";
+
+		public string GetFilesUrl(string route = null) =>
+			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Files")}{route}";
 	}
 }

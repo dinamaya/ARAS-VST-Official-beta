@@ -7,12 +7,14 @@ namespace ARAS.Blazor.App_Code.Globals.Extensions
 	{
 		public static void AddLocalRepositories(this IServiceCollection services)
 		{
+			services.AddScoped<IAttachmentService, AttachmentService>();
 			services.AddScoped<IAuthService, AuthService>();
 			services.AddScoped<IBaseService, BaseService>();
 			services.AddScoped<ICashDiscountService, CashDiscountService>();
 			services.AddScoped<IConfigService, ConfigService>();
 			services.AddScoped<IEmailService, EmailService>();
 			services.AddScoped<IInvoiceService, InvoiceService>();
+			services.AddScoped<INoteService, NoteService>();
 			services.AddScoped<IOpsService, OpsService>();
 			services.AddScoped<IQueryService, QueryService>();
 			services.AddScoped<IRequestService, RequestService>();

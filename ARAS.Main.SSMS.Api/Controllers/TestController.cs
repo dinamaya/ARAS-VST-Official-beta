@@ -19,6 +19,12 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			_adjustmentRepo = adjustmentRepo;
 		}
 
+		[HttpGet]
+		public string Get()
+		{
+			return "ARAS Main SSMS API is working";
+		}
+
 		[HttpGet("email")]
 		public async Task SendTestEmail()
 		{

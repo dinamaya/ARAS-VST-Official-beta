@@ -1,5 +1,7 @@
 ﻿using ARAS.Auth.Api.Models.Dtos;
 using ARAS.Auth.Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,6 +9,7 @@ namespace ARAS.Auth.Api.Controllers
 {
 	[Route("api/email")]
 	[ApiController]
+	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 	public class EmailController : ControllerBase
 	{
 		private readonly IEmailService _emailService;

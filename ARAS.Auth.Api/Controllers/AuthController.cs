@@ -19,23 +19,27 @@ namespace ARAS.Auth.Api.Controllers
 	{
 		private readonly IAuthService _authService;
 		private readonly IConfiguration _config;
+		private readonly ILogger<AuthController> _logger;
 
-		public AuthController(IAuthService authService, IConfiguration conifg)
+		public AuthController(IAuthService authService, IConfiguration conifg, ILogger<AuthController> logger)
 		{
 			_authService = authService;
 			_config = conifg;
+			_logger = logger;
 		}
 
 		[HttpGet("aad/login")]
 		public IActionResult Login(string url)
 		{
 			try{
+				_logger.LogDebug("Redirection URL=\""+ url +"\"");
 				return Challenge(
 					new AuthenticationProperties { RedirectUri = $"/api/auth/login-callback?url={Utils.Security.CleanString(url)}" },
 					OpenIdConnectDefaults.AuthenticationScheme);
 			}
 			catch(Exception ex)
 			{
+				_logger.LogError(ex, "Error during AAD login challenge with q=\""+ url +"\"");
 				return Redirect(Utils.Security.DecodeString(url) + "?q=" + Queries.Api.INACCESSIBLE);
 			}
 
@@ -67,15 +71,18 @@ namespace ARAS.Auth.Api.Controllers
 					Secure = true,
 					SameSite = SameSiteMode.None,
 					Path = "/",
+					Domain = _config["AuthConfig:Cookie:Domain"],
 					Expires = DateTimeOffset.UtcNow.AddHours(8)
 				});
 			}
 			catch (InvalidOperationException ex)
 			{
+				_logger.LogError(ex, "Error during AAD login callback with q=\""+ url +"\"");
 				return BadRequest(ex.Message);
 			}
 			catch(Exception ex)
 			{
+				_logger.LogError(ex, "Error during AAD login callback with q=\""+ url +"\"");
 				return Redirect(Utils.Security.DecodeString(url) + "?q=" + Queries.Auth.UNAUTHORIZED);
 			}
 
@@ -97,6 +104,7 @@ namespace ARAS.Auth.Api.Controllers
 					Secure = true,
 					SameSite = SameSiteMode.None,
 					Path = "/",
+					Domain = _config["AuthConfig:Cookie:Domain"],
 					Expires = DateTimeOffset.UtcNow.AddYears(-1)
 				});
 

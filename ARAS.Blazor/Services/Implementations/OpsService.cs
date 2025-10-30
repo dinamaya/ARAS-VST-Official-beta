@@ -20,7 +20,7 @@ namespace ARAS.Blazor.Services.Implementations
 		{
 			var response = await _baseService.SendAsync< IEnumerable<AccountRowDto>>(new RequestDto<IEnumerable<AccountRowDto>>()
 			{
-				URL = _configService.GetAuthApiUrl("ops/accounts")
+				URL = _configService.GetOpsUrl("accounts")
 			});
 
 			return response.Result;
@@ -31,7 +31,7 @@ namespace ARAS.Blazor.Services.Implementations
 		{
 			var response = await _baseService.SendAsync<AccountEditRequestDto>(new RequestDto()
 			{
-				URL = _configService.GetAuthApiUrl($"ops/accounts/{id}")
+				URL = _configService.GetOpsUrl($"accounts/{id}")
 			});
 
 			return response.Result;
@@ -41,7 +41,7 @@ namespace ARAS.Blazor.Services.Implementations
 		{
 			var response = await _baseService.SendAsync<IEnumerable<DropdownOptionDto>>(new RequestDto()
 			{
-				URL = _configService.GetAuthApiUrl("ops/roles")
+				URL = _configService.GetOpsUrl("roles")
 			});
 
 			return response.Result;
@@ -53,7 +53,7 @@ namespace ARAS.Blazor.Services.Implementations
 			{
 				ApiType = ApiType.POST,
 				Data = data,
-				URL = _configService.GetAuthApiUrl("ops/accounts")
+				URL = _configService.GetOpsUrl("accounts")
 			});
 
 			return response.IsSuccess && response.Result.Equals("Success");

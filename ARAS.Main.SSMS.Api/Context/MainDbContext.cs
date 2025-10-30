@@ -20,6 +20,7 @@ namespace ARAS.Main.SSMS.Api.Context
 		public virtual DbSet<CashDiscountAdjustmentsV> VwCashDiscountAdjustments { get; set; }
 		public virtual DbSet<InvoiceNumbersV> VwInvoiceNumbers { get; set; }
 		public virtual DbSet<LatestRequestTransactionV> VwLatestRequestTransactions { get; set; }
+		public virtual DbSet<NotesV> VwNotes { get; set; }
 		public virtual DbSet<TransactionsHistoryV> VwTransactionsHistory { get; set; }
 		public virtual DbSet<RequestsNumberSourceV> VwRequestsNumberSources { get; set; }
 
@@ -107,6 +108,16 @@ namespace ARAS.Main.SSMS.Api.Context
 				entity.Property(e => e.ApproverId).HasMaxLength(250);
 				entity.Property(e => e.ValidatorId).HasMaxLength(250);
 			});
+			
+			modelBuilder.Entity<NotesV>(entity =>
+			{
+				entity
+					.HasNoKey()
+					.ToView("Notes_v");
+
+				entity.Property(e => e.AccountType).HasMaxLength(256);
+				entity.Property(e => e.Id).HasMaxLength(450);
+			});
 
 			modelBuilder.Entity<RequestsNumberSourceV>(entity =>
 			{
@@ -121,9 +132,11 @@ namespace ARAS.Main.SSMS.Api.Context
 					.HasNoKey()
 					.ToView("TransactionsHistory_v");
 
+				entity.Property(e => e.AccountRole).HasMaxLength(256);
 				entity.Property(e => e.StatusId).HasMaxLength(450);
 				entity.Property(e => e.TransactionRemarksId).HasMaxLength(450);
 			});
+
 		}
 	}
 }

@@ -41,27 +41,30 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					DateCreated = t.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
 					Description = t.Description,
 					AttachmentName = t.AttachmentName,
-					Status = t.Status
+					Status = t.Status,
+					AccountRole = t.AccountRole
 				}).ToListAsync();
 		}
 
 		public async Task<IEnumerable<EmailTimelineDetailsDto>> GetEmailHistoryByRequestId(long requestId)
 		{
-			return await context.VwTransactionsHistory
+			var history = await context.VwTransactionsHistory
 				.Where(t => t.RequestId == requestId)
 				.Select(t => new EmailTimelineDetailsDto
 				{
-					CreatorAction = t.Status == "Pending" ? "Requested by" : t.Status + "by",
+					CreatorAction = t.Status,
 					CreatorFullName = t.LastName + ", " + t.FirstName,
+					Remarks = t.Description,
 					DateCreated = t.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
 				}).ToListAsync();
-		}
 
-		private string GetCreatorAction(string status)
-		{
-			if (status == "Pending" )
-				return "Requested by";
-			return status + "by";
+			return history.Select((t, i) => new EmailTimelineDetailsDto
+			{
+				CreatorAction = t.CreatorAction == "Pending" ? (i > 1 ? "Updated by" : "Requested By") : t.CreatorAction + " by",
+				CreatorFullName = t.CreatorFullName,
+				Remarks = t.Remarks,
+				DateCreated = t.DateCreated,
+			}).ToList();
 		}
 	}
 }

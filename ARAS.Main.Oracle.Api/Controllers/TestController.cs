@@ -5,14 +5,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ARAS.Main.Oracle.Api.Controllers
 {
-	[Route("api/[controller]")]
+	[Route("api/test")]
 	[ApiController]
 	public class TestController : ControllerBase
 	{
-		private readonly MainDbContext context;
-		public TestController(MainDbContext context)
+		[HttpGet]
+		public string Get()
 		{
-			this.context = context;
+			return "ARAS Oracle API is working";
 		}
 	}
 }

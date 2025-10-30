@@ -19,7 +19,7 @@ namespace ARAS.Blazor.Services.Implementations
 		{
 			var result = await _baseService.SendAsync<IEnumerable<TransactionHistoryDto>>(new RequestDto()
 			{
-				URL = _configService.GetMainSSMSApiUrl($"transactions/history/{requestId}")
+				URL = _configService.GetTransactionsUrl($"history/{requestId}")
 			});
 
 			return result.Result ?? [];

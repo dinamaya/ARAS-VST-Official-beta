@@ -2,9 +2,11 @@
 
 namespace ARAS.Main.SSMS.Api.Models.Dtos
 {
-	public class CreateDeclineDto
+	public class NegateRequestDto
 	{
 		[Required] public long RequestId { get; set; }
 		[MaxLength(3000, ErrorMessage = "Remarks should not be more than 3000 characters")] public string Remarks { get; set; }
+
+		[Required] public IEnumerable<string> ToEmail { get; set; }
 	}
 }

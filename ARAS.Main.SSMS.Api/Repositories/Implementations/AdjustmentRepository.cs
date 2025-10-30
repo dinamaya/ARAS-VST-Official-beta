@@ -75,8 +75,14 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		/// <param name="groupCode">Account Group Code Ex. CC1, CC25</param>
 		/// <param name="adjustmentTypeCode">Adjustment Type Code: CDR, WOR, APAR</param>
 		/// <returns>
-		/// Format: GroupCode-AdjustmentTypeCode-DAY_MONTH_YEAR-REQUEST_COUNT_INDEX_PER_GROUPCODE_DAY_MONTH_YEAR
-		/// Example: CC1-CDR-31012025-001
+		/// <b>Format:</b> GroupCode-AdjustmentTypeCode-DAY_MONTH_YEAR-REQUEST_COUNT_INDEX_PER_GROUPCODE_DAY_MONTH_YEAR
+		/// <br/>
+		/// <b>Example:</b> 
+		/// <list type="number">
+		/// 	<item>CC1-CDR-31012025-<b>001</b>, CC1-CDR-31012025-<b>002</b>, CC1-CDR-31012025-<b>003</b> </item>
+		///		<item><b>CC2</b>-CDR-31012025-001, <b>CC2</b>-CDR-31012025-002, <b>CC2</b>-CDR-31012025-003 </item>
+		///		<item>CC2-CDR-<b>31022025</b>-001, CC2-CDR-<b>31032025</b>-001, CC2-CDR-<b>31042025</b>-001 </item>
+		/// </list>
 		/// </returns>
 		public async Task<string> GenerateReferenceNumber(string groupCode, string adjustmentTypeCode)
 		{
@@ -94,7 +100,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			int nextIndex = (await requests.CountAsync()) + 1;
 
 			string datePart = today.ToString(Formats.Date.REFERNUMBER);
-			string indexPart = 2.ToString("D3");
+			string indexPart = nextIndex.ToString("D3");
 
 			return $"{groupCode}-{adjustmentTypeCode}-{datePart}-{indexPart}";
 		}

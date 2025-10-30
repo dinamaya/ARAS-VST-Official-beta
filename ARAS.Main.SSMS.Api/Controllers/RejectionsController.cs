@@ -20,14 +20,14 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			_cashDiscountRepo = cashDiscountRepo;
 		}
 
-		[HttpPost("cdr/{requestId:long}")]
-		public async Task<ResponseDto<string>> RejectTransactionRequestByRequestId(long requestId)
+		[HttpPost("cdr")]
+		public async Task<ResponseDto<string>> RejectTransactionRequestByRequestId([FromBody] NegateRequestDto createReject)
 		{
 			var response = new ResponseDto<string>();
 			try
 			{
 				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
-				await _cashDiscountRepo.CreateRejectTransaction(requestId, accountId);
+				await _cashDiscountRepo.CreateRejectTransaction(createReject, accountId);
 				response.Result = "Success";
 				response.Message = "Request Rejected";
 				return response;

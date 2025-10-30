@@ -1,5 +1,6 @@
 ﻿@page "/declines/cash-discount/{RequestId:long}"
 @using ARAS.Blazor.Components.Shared
+@using ARAS.Blazor.Components.Shared.DataTables
 @using ARAS.Blazor.Components.Shared.Modals
 @using ARAS.Blazor.Components.Pages.Requests.CashDiscount
 @using ARAS.Blazor.Models.DTOs
@@ -11,6 +12,7 @@
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
+@inject INoteService NoteService
 @inject ICashDiscountService CashDiscountService
 
 <h2>Cash Discount Adjustment</h2>
@@ -73,8 +75,11 @@
 	</RadzenStack>
 
 	<RadzenRow>
-		<RadzenColumn Size="12">
+		<RadzenColumn Size="4">
 			<Timeline RequestId="@RequestId" />
+		</RadzenColumn>
+		<RadzenColumn Size="8">
+			<AttachmentsDatatable Notes="@notes" ShowOtherColumns=true />
 		</RadzenColumn>
 	</RadzenRow>
 </RadzenStack>
@@ -84,6 +89,8 @@
 @code {
 	[Parameter] public long RequestId { get; set; }
 	[Parameter] public IList<CashDiscountRowDto> Adjustments { get; set; }
+	private IList<NoteRowDto> notes { get; set; }
+
 	private InvoiceDetailsDto searchedInvoiceNumber;
 	private RadzenDataGrid<CashDiscountRowDto> adjustmentGrid;
 	private RequestAuditDto requestAudit;
@@ -97,9 +104,10 @@
 
 		Adjustments = (await CashDiscountService.GetAdjustments(RequestId)).ToList();
 		searchedInvoiceNumber = new InvoiceDetailsDto();
-		requestAudit = new RequestAuditDto();
+		var request = await CashDiscountService.GetRequestDetails(RequestId);
+		notes = await NoteService.GetRows(RequestId);
 
-		requestAudit.Requestor = await AuthService.GetLastFirstName();
+		requestAudit = new RequestAuditDto(request);
 	}
 
 
@@ -168,7 +176,7 @@
 
 	public async Task SubmitRequest()
 	{
-		await CashDiscountService.Update(RequestId, Adjustments);
+		await CashDiscountService.Update(RequestId, Adjustments, notes);
 	}
 
 	private void HandleSearchChanged(bool value)

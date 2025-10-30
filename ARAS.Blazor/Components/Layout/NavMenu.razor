@@ -101,7 +101,7 @@
 		{
 			var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
 			string currentUrl = Uri.EscapeDataString(uri.GetLeftPart(UriPartial.Path));
-			string externalUrl = Config.GetAuthApiUrl($"auth/aad/logout?url={currentUrl}");
+			string externalUrl = Config.GetAuthUrl($"aad/logout?url={currentUrl}");
 			Navigation.NavigateTo(externalUrl, forceLoad: true);
 		}
 		catch (Exception ex)

@@ -1,4 +1,5 @@
-﻿@using ARAS.Blazor.Components.Shared.Modals
+﻿@using ARAS.Blazor.Components.Shared.DataTables
+@using ARAS.Blazor.Components.Shared.Modals
 @using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
@@ -9,6 +10,7 @@
 @attribute [Authorize(Roles = "Approver")]
 @inject ICashDiscountService CashDiscountService
 @inject IRequestService RequestService
+@inject INoteService NoteService
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
 
@@ -31,11 +33,20 @@
 			<CashDiscountSummary Rows="rows" RequestAudit="requestAudit" />
 		</div>
 	</RadzenRow>
+	<RadzenRow>
+		<RadzenColumn Size="4">
+			<Timeline RequestId="@RequestId" />
+		</RadzenColumn>
+		<RadzenColumn Size="8">
+			<AttachmentsDatatable Notes="@notes" ShowOtherColumns=isApprovable />
+		</RadzenColumn>
+	</RadzenRow>
 </RadzenStack>
 
 @code {
 	[Parameter] public long RequestId { get; set; }
 	private IEnumerable<CashDiscountRowDto> rows;
+	private IList<NoteRowDto> notes;
 	private RequestAuditDto requestAudit;
 	private bool isApprovable = false;
 
@@ -45,6 +56,7 @@
 		isApprovable = await RequestService.IsApprovable(RequestId);
 		var request = await CashDiscountService.GetRequestDetails(RequestId);
 		rows = await CashDiscountService.GetAdjustments(RequestId);
+		notes = await NoteService.GetRows(RequestId);
 
 		requestAudit = new RequestAuditDto(request);
 	}
@@ -54,19 +66,19 @@
 		bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"APPROVE\" this request?", "Approve Request") ?? false;
 		if (!isConfirmed) return;
 
-		await CashDiscountService.Approve(RequestId);
+		await CashDiscountService.Approve(RequestId, notes);
 		NavigationManager.NavigateTo("/approvals/cash-discount");
 	}
 
 	protected async Task OnDecline()
 	{
 		await DialogService.OpenAsync<StatusUpdateAdjustmentModal>(
-			"Approve Request",
+			"Decline Request",
 			new Dictionary<string, object>()
 			{
-						{ "Message", "Are you sure you want to \"DECLINE\" this request?" },
-						{ "SubmitButtonTitle", "Decline" },
-						{ "OnSubmit", Decline}
+				{ "Message", "Are you sure you want to \"DECLINE\" this request?" },
+				{ "SubmitButtonTitle", "Decline" },
+				{ "OnSubmit", Decline}
 			},
 			new DialogOptions() { Width = "700px", Height = "auto" }
 		);
@@ -74,22 +86,40 @@
 
 	private async Task Decline(string remarks)
 	{
-		var createDto = new CreateDeclineDto()
+		var createDto = new NegateRequestDto()
 		{
 			Remarks = remarks,
 			RequestId = RequestId
 		};
 
-		await CashDiscountService.Decline(createDto);
+		await CashDiscountService.Decline(createDto, notes);
 		NavigationManager.NavigateTo("/approvals/cash-discount");
 	}
 
 	protected async Task OnReject()
 	{
-		bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"REJECT\" this request?", "Decline Request") ?? false;
-		if (!isConfirmed) return;
+		await DialogService.OpenAsync<StatusUpdateAdjustmentModal>(
+			"Approve Request",
+			new Dictionary<string, object>()
+			{
+				{ "Message", "Are you sure you want to \"REJECT\" this request?" },
+				{ "SubmitButtonTitle", "Decline" },
+				{ "OnSubmit", Reject}
+			},
+			new DialogOptions() { Width = "700px", Height = "auto" }
+		);
 
-		await CashDiscountService.Reject(RequestId);
+	}
+
+	private async Task Reject(string remarks)
+	{
+		var createReject = new NegateRequestDto()
+		{
+			Remarks = remarks,
+			RequestId = RequestId
+		};
+
+		await CashDiscountService.Reject(createReject, notes);
 		NavigationManager.NavigateTo("/approvals/cash-discount");
 	}
 }

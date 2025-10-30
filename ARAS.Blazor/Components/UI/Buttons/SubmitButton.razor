@@ -1,0 +1,91 @@
+﻿@using Radzen
+
+<span>
+	<button class="btn @Class @ButtonClass" @onclick="HandleClick" style="@Style" disabled="@(!isClickable)">
+		@if (ChildContent == null)
+		{
+			if(!string.IsNullOrEmpty(DisabledTitle) && !isClickable)
+			{
+				@DisabledTitle
+			}
+			else
+			{
+				@Title
+			}
+		}
+		else
+		{
+			@ChildContent
+		}
+	</button>
+</span>
+
+@code 
+{
+	private string Class = string.Empty;
+	private bool isClickable  = true;
+
+	[Parameter] public string Title { get; set; } = "Click Me";
+	[Parameter] public string ButtonClass { get; set; } = string.Empty;
+	[Parameter] public string DisabledTitle { get; set; } = string.Empty;
+	[Parameter] public string Style { get; set; } = string.Empty;
+	[Parameter] public bool IsOutlined { get; set; } = false;
+	[Parameter] public ButtonStyle Variant { get; set; } = ButtonStyle.Primary;
+	[Parameter] public RenderFragment? ChildContent { get; set; }
+	[Parameter] public EventCallback Click { get; set; }
+
+	protected override void OnParametersSet()
+	{
+		switch (Variant)
+		{
+			case ButtonStyle.Primary:
+				Class = IsOutlined ? "btn-outline-primary" : "btn-primary";
+				break;
+			case ButtonStyle.Secondary:
+				Class = IsOutlined ? "btn-outline-secondary" : "btn-secondary";
+				break;
+			case ButtonStyle.Success:
+				Class = IsOutlined ? "btn-outline-success" : "btn-success";
+				break;
+			case ButtonStyle.Danger:
+				Class = IsOutlined ? "btn-outline-danger" : "btn-danger";
+				break;
+			case ButtonStyle.Warning:
+				Class = IsOutlined ? "btn-outline-warning" : "btn-warning";
+				break;
+			case ButtonStyle.Info:
+				Class = IsOutlined ? "btn-outline-info" : "btn-info";
+				break;
+			case ButtonStyle.Light:
+				Class = IsOutlined ? "btn-outline-light" : "btn-light";
+				break;
+			case ButtonStyle.Dark:
+				Class = IsOutlined ? "btn-outline-dark" : "btn-dark";
+				break;
+			default:
+				Class = IsOutlined ? "btn-outline-primary" : "btn-primary";
+				break;
+		}
+	}
+
+	private async Task HandleClick()
+	{
+		if (!isClickable)
+			return;
+
+		isClickable = false;
+		StateHasChanged();
+
+		try
+		{
+			if (Click.HasDelegate)
+				await Click.InvokeAsync();
+		}
+		finally
+		{
+			isClickable = true;
+			StateHasChanged();
+		}
+	}
+
+}

@@ -1,0 +1,209 @@
+{
+	"Routes": [
+		// Test Endpoints
+		//// Auth API
+		{
+			"DownstreamPathTemplate": "/api/test",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3002
+				}
+			],
+			"UpstreamPathTemplate": "/test/auth",
+			"UpstreamHttpMethod": [ "GET" ]
+		},
+		//// SSMS API
+		{
+			"DownstreamPathTemplate": "/api/test",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/test/main",
+			"UpstreamHttpMethod": [ "GET" ]
+		},
+		//// Oracle API
+		{
+			"DownstreamPathTemplate": "/api/test",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3004
+				}
+			],
+			"UpstreamPathTemplate": "/test/erp",
+			"UpstreamHttpMethod": [ "GET" ]
+		},
+
+		// Auth API : "https://localhost:3002"
+		{
+			"DownstreamPathTemplate": "/api/auth/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3002
+				}
+			],
+			"UpstreamPathTemplate": "/auth/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/email/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3002
+				}
+			],
+			"UpstreamPathTemplate": "/email/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/ops/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3002
+				}
+			],
+			"UpstreamPathTemplate": "/ops/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+
+		// Oracle API : "https://localhost:3004"
+		{
+			"DownstreamPathTemplate": "/api/invoice/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3004
+				}
+			],
+			"UpstreamPathTemplate": "/erp/invoice/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+
+		// Main API : "https://localhost:3004"
+		{
+			"DownstreamPathTemplate": "/api/adjustments/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/adjust/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/approve/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/approve/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/cash-discount/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/cash-discount/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/decline/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/decline/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/reject/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/reject/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/requests/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/request/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/transactions/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/transaction/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/validate/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/validate/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/files/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/file/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		}
+	],
+	"GlobalConfiguration": {
+		"BaseUrl": "https://localhost:3000"
+	}
+}

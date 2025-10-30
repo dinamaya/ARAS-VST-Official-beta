@@ -20,7 +20,7 @@ namespace ARAS.Blazor.Services.Implementations
 		{
 			var response = await _baseService.SendAsync<bool>(new RequestDto()
 			{
-				URL = _configService.GetMainSSMSApiUrl($"requests/cdr/is-approvable/{requestId}"),
+				URL = _configService.GetRequestsUrl($"cdr/is-approvable/{requestId}"),
 			});
 
 			return response.IsSuccess && response.Result;
@@ -30,7 +30,7 @@ namespace ARAS.Blazor.Services.Implementations
 		{
 			var response = await _baseService.SendAsync<bool>(new RequestDto()
 			{
-				URL = _configService.GetMainSSMSApiUrl($"requests/cdr/is-validatable/{requestId}"),
+				URL = _configService.GetRequestsUrl($"cdr/is-validatable/{requestId}"),
 			});
 
 			return response.IsSuccess && response.Result;

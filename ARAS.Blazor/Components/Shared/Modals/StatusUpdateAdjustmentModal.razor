@@ -1,4 +1,6 @@
 ﻿@using ARAS.Blazor.Components.UI
+@using ARAS.Blazor.Components.UI.Buttons
+
 @inject DialogService DialogService
 <RadzenStack>
 	<RadzenRow JustifyContent="JustifyContent.Start" Gap="0.5rem">
@@ -22,9 +24,7 @@
 			<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
 				Close
 			</button>
-			<button @onclick="Submit" class="btn btn-outline-primary">
-				@SubmitButtonTitle
-			</button>
+			<SubmitButton Title="@SubmitButtonTitle" Click="Submit"/>
 		</RadzenStack>
 	</RadzenRow>
 </RadzenStack>

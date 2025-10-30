@@ -23,20 +23,19 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			_cashDiscountRepo = cashDiscountRepo;
 		}
 
-		//[HttpPost("create")]
 		[HttpPost("create"), Authorize(Roles = "Requestor")]
-		public async Task<ResponseDto<string>> Create([FromBody] AdjustmentRequestCreationDto<CashDiscountCreateDto> data)
+		public async Task<ResponseDto<long>> Create([FromBody] AdjustmentRequestCreationDto<CashDiscountCreateDto> data)
 		{
-			ResponseDto<string> response = new ResponseDto<string>();
+			ResponseDto<long> response = new ();
 			try
 			{
 				var accountInfo = User.GetAccountBasicInfo();
 
 				var requestCreation = new RequestCreationDto<AdjustmentRequestCreationDto<CashDiscountCreateDto>>(data, accountInfo.GroupCode, accountInfo.FullName);
 
-				await _cashDiscountRepo.CreateAsync(requestCreation, accountInfo.Id);
+				long requestId = await _cashDiscountRepo.CreateAsync(requestCreation, accountInfo.Id);
 
-				response.Result = "Success";
+				response.Result = requestId;
 				response.Message = "Request Created Successfully";
 				return response;
 			}
@@ -46,7 +45,6 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		//[HttpPost("update/{requestId:long}")]
 		[HttpPost("update/{requestId:long}"), Authorize(Roles = "Requestor")]
 		public async Task<ResponseDto<string>> Update(long requestId, [FromBody] AdjustmentRequestCreationDto<CashDiscountCreateDto> data)
 		{
@@ -84,7 +82,6 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		//[HttpGet("approvals")]
 		[HttpGet("approvals"), Authorize(Roles = "Approver")]
 		public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetForApprovals()
 		{
@@ -100,7 +97,6 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		//[HttpGet("validations")]
 		[HttpGet("validations"), Authorize(Roles = "Validator")]
 		public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetForValidations()
 		{

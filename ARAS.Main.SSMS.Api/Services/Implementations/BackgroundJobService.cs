@@ -23,14 +23,52 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 			return "Done";
 		}
 
-		public async Task RunSendRequestPending(RequestPendingDto emailModel)
+		public async Task RunSendRequestPending(ProceedEmailDto emailModel)
 		{
-			BackgroundJob.Enqueue<IEmailService>((service) => service.SendRequestPending(emailModel));
+			await Task.Run(() =>
+			{
+				BackgroundJob.Enqueue<IEmailService>((service) => service.SendRequestPending(emailModel));
+			});
 		}
 
-		public async Task RunSendRequestApproved(RequestPendingDto emailModel)
+		public async Task RunSendRequestApproved(ProceedEmailDto emailModel)
 		{
-			BackgroundJob.Enqueue<IEmailService>((service) => service.SendRequestApproved(emailModel));
+			await Task.Run(() =>
+			{
+				BackgroundJob.Enqueue<IEmailService>((service) => service.SendRequestApproved(emailModel));
+			});
+		}
+
+		public async Task RunSendRequestValidated(ProceedEmailDto emailModel)
+		{
+			await Task.Run(() => 
+			{
+				BackgroundJob.Enqueue<IEmailService>((service) => service.SendRequestValidated(emailModel));
+			});
+		}
+
+		public async Task RunSendRequestDeclined(NegateEmailDto emailModel)
+		{
+			await Task.Run(() => 
+			{ 
+				BackgroundJob.Enqueue<IEmailService>((service) => service.SendRequestDeclined(emailModel)); 
+			});
+		}
+
+		public async Task RunSendRequestRejected(NegateEmailDto emailModel)
+		{
+			await Task.Run(() => 
+			{ 
+				BackgroundJob.Enqueue<IEmailService>((service) => service.SendRequestRejected(emailModel)); 
+			});
+		}
+
+		public async Task RunSendRequestUpdated(UpdateEmailDto emailModel)
+		{
+			await Task.Run(() =>
+			{
+				BackgroundJob.Enqueue<IEmailService>((service) => service.SendRequestUpdated(emailModel)); 
+			});
 		}
 	}
 }

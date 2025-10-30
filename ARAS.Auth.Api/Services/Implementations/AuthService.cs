@@ -1,4 +1,5 @@
-﻿using ARAS.Auth.Api.Context;
+﻿using ARAS.Auth.Api.App_Code.Globals;
+using ARAS.Auth.Api.Context;
 using ARAS.Auth.Api.Models.Dtos;
 using ARAS.Auth.Api.Models.Entities;
 using ARAS.Auth.Api.Services.Interfaces;
@@ -22,8 +23,7 @@ namespace ARAS.Auth.Api.Services.Implementations
 
 		public async Task<string> SignInAsync(AccountSignInRequestDto dto)
 		{
-			if (string.IsNullOrEmpty(dto.Email))
-				throw new InvalidOperationException("Email is empty. Please contact the administrator");
+			Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(dto.Email), "Email is empty. Please contact the administrator");
 
 			var account = await _context.Accounts.Where(a => a.OpenId == dto.OpenId).FirstOrDefaultAsync();
 
@@ -46,17 +46,16 @@ namespace ARAS.Auth.Api.Services.Implementations
 				other.IsActive = true;
 
 				var createResult = await _userManager.CreateAsync(other);
-				if (!createResult.Succeeded)
-					throw new InvalidOperationException($"Failed to create account {account.UserName}.\n{string.Join(", ", createResult.Errors.Select(e => e.Description))}");
+				Guards.ThrowInvalidOperationIf(!createResult.Succeeded, $"Failed to create account {account.UserName}.\n{string.Join(", ", createResult.Errors.Select(e => e.Description))}");
 
 				var setEmailResult = await _userManager.SetEmailAsync(other, dto.Email);
-				if (!setEmailResult.Succeeded) 
-					throw new InvalidOperationException($"Failed to create account {account.UserName}.\n{string.Join(", ", setEmailResult.Errors.Select(e => e.Description))}");
+				Guards.ThrowInvalidOperationIf(!setEmailResult.Succeeded, $"Failed to create account {account.UserName}.\n{string.Join(", ", setEmailResult.Errors.Select(e => e.Description))}");
 				
 				var setUsernameResult = await _userManager.SetEmailAsync(other, dto.Email);
-				if (!setUsernameResult.Succeeded) 
-					throw new InvalidOperationException($"Failed to create account {account.UserName}.\n{string.Join(", ", setUsernameResult.Errors.Select(e => e.Description))}");
+				Guards.ThrowInvalidOperationIf(!setUsernameResult.Succeeded, $"Failed to create account {account.UserName}.\n{string.Join(", ", setUsernameResult.Errors.Select(e => e.Description))}");
 			}
+
+			Guards.ThrowInvalidOperationIf(!account.IsActive, "Account is deactivated. Please contact the administrator");
 
 			var role = (await _userManager.GetRolesAsync(account)).FirstOrDefault() ?? throw new UnauthorizedAccessException("Account is not authorize");
 			

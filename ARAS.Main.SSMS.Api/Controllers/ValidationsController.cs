@@ -22,14 +22,14 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			_cashDiscountRepo = cashDiscountRepo;
 		}
 
-		[HttpPost("cdr/{requestId:long}")]
-		public async Task<ResponseDto<string>> ValidateTransactionRequestByRequestId(long requestId)
+		[HttpPost("cdr")]
+		public async Task<ResponseDto<string>> ValidateTransactionRequestByRequestId(RequestUpdateDto data)
 		{
 			var response = new ResponseDto<string>();
 			try
 			{
 				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
-				await _cashDiscountRepo.CreateValidateTransaction(requestId, accountId);
+				await _cashDiscountRepo.CreateValidateTransaction(data, accountId);
 				response.Result = "Success";
 				response.Message = "Request Validated";
 				return response;

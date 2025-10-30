@@ -20,11 +20,10 @@ namespace ARAS.Blazor.Services.Implementations
 		{
 			var response = await _baseService.SendAsync<InvoiceDetailsDto>(new RequestDto()
 			{
-				URL = _configService.GetMainOracleApiUrl($"invoice/no/{invoiceNumber}"),
+				URL = _configService.GetOracleInvoiceApiUrl($"no/{invoiceNumber}"),
 			});
 
-			Guards.ThrowNullReferenceIf(response?.Result, Exceptions.NULL_INVOICE_DETAILS);
-
+			Guards.ThrowNullReferenceIf(response?.Result, response.Message);
 			return response.Result;
 		}
 	}

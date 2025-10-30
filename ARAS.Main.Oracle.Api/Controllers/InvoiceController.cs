@@ -1,12 +1,15 @@
-﻿using ARAS.Main.Oracle.Api.Models.Dtos;
+﻿using ARAS.Main.Oracle.Api.App_Code.Globals.Constants;
+using ARAS.Main.Oracle.Api.Models.Dtos;
 using ARAS.Main.Oracle.Api.Repositories.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Oracle.ManagedDataAccess.Client;
 
 namespace ARAS.Main.Oracle.Api.Controllers
 {
 	[Route("api/invoice")]
-	[ApiController]
+	[ApiController, Authorize]
 	public class InvoiceController : ControllerBase
 	{
 		private readonly ILogger<InvoiceController> _logger;
@@ -25,7 +28,13 @@ namespace ARAS.Main.Oracle.Api.Controllers
 			try
 			{
 				_response.Result = await _invoiceRepo.GetInvoiceNo(invoiceNo);
+
 				return _response;
+			}
+			catch (OracleException ex)
+			{
+				_logger.LogError(Exceptions.CANT_CONNECT);
+				return _response.Failed(Exceptions.CANT_CONNECT);
 			}
 			catch (Exception ex)
 			{

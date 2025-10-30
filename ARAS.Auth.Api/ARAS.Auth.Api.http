@@ -47,3 +47,7 @@ Content-Type: application/json
 GET {{ARAS.Auth.Api_HostAddress}}/api/email/approvers
 
 ###
+
+GET {{ARAS.Auth.Api_HostAddress}}/api/email/all
+
+###

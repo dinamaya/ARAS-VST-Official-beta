@@ -36,6 +36,7 @@
 @code {
 	[Parameter] public long RequestId { get; set; }
 	private IEnumerable<CashDiscountRowDto> rows;
+	private IEnumerable<NoteRowDto> notes;
 	private RequestAuditDto requestAudit;
 	private bool isApprovable = false;
 
@@ -52,21 +53,21 @@
 	protected async Task OnValidate()
 	{
 		bool isConfirmed = await DialogService.Confirm("Are you sure you want to validate this request?", "Validate Request") ?? false;
-		if(!isConfirmed) return;
+		if (!isConfirmed) return;
 
-		await CashDiscountService.Validate(RequestId);
+		await CashDiscountService.Validate(RequestId, notes);
 		NavigationManager.NavigateTo("/validations/cash-discount");
 	}
 
 	protected async Task OnDecline()
 	{
 		await DialogService.OpenAsync<StatusUpdateAdjustmentModal>(
-			"Approve Request",
+			"Decline Request",
 			new Dictionary<string, object>()
 			{
-						{ "Message", "Are you sure you want to \"DECLINE\" this request?" },
-						{ "SubmitButtonTitle", "Decline" },
-						{ "OnSubmit", Decline}
+				{ "Message", "Are you sure you want to \"DECLINE\" this request?" },
+				{ "SubmitButtonTitle", "Decline" },
+				{ "OnSubmit", Decline}
 			},
 			new DialogOptions() { Width = "700px", Height = "auto" }
 		);
@@ -74,22 +75,39 @@
 
 	private async Task Decline(string remarks)
 	{
-		var createDto = new CreateDeclineDto()
+		var createDto = new NegateRequestDto()
 		{
 			Remarks = remarks,
 			RequestId = RequestId
 		};
 
-		await CashDiscountService.Decline(createDto);
+		await CashDiscountService.Decline(createDto, notes);
 		NavigationManager.NavigateTo("/validations/cash-discount");
 	}
 
 	protected async Task OnReject()
 	{
-		bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"REJECT\" this request?", "Decline Request") ?? false;
-		if (!isConfirmed) return;
+		await DialogService.OpenAsync<StatusUpdateAdjustmentModal>(
+			"Approve Request",
+			new Dictionary<string, object>()
+			{
+				{ "Message", "Are you sure you want to \"REJECT\" this request?" },
+				{ "SubmitButtonTitle", "Reject" },
+				{ "OnSubmit", Reject}
+			},
+			new DialogOptions() { Width = "700px", Height = "auto" }
+		);
+	}
 
-		await CashDiscountService.Reject(RequestId);
+	private async Task Reject(string remarks)
+	{
+		var negateDto = new NegateRequestDto()
+		{
+			Remarks = remarks,
+			RequestId = RequestId
+		};
+
+		await CashDiscountService.Reject(negateDto, notes);
 		NavigationManager.NavigateTo("/validations/cash-discount");
 	}
 }

@@ -15,14 +15,14 @@
 @inject IAuthService AuthService
 @inject ICashDiscountService CashDiscountService
 
-<h2>APAR Adjustment</h2>
+<h2>AR Invoice Offsetting</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 	<SearchInvoiceDetails OnAdd="OpenAdd" OnLoadingChanged="HandleLoadingChanged" OnSearchChanged="HandleSearchChanged" />
 
 	<RadzenRow>
 		<div>
-			<h3 class="pb-0 mb-0">Cash Discount</h3>
+			<h3 class="pb-0 mb-0">AR Adjustment Details</h3>
 		</div>
 		<div class="py-4 px-3 w-100 card">
 			<RadzenDataGrid class="border-0"
@@ -43,16 +43,6 @@
 					<RadzenDataGridColumn Frozen="true" Title="Edit" Sortable="false" Filterable="false" Width="80px" TextAlign="TextAlign.Center">
 						<Template Context="data">
 							<RadzenButton Icon="Edit" Variant="Variant.Outlined" Click="@(args => OpenEdit(data))" />
-						</Template>
-					</RadzenDataGridColumn>
-					<RadzenDataGridColumn Property="@nameof(CashDiscountRowDto.AdjustmentAmount)" Width="120px" Title="Adjustment Amount">
-						<Template Context="data">
-							@data.AdjustmentAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
-						</Template>
-					</RadzenDataGridColumn>
-					<RadzenDataGridColumn Property="@nameof(CashDiscountRowDto.InvoiceAmount)" Title="Invoice Amount">
-						<Template Context="data">
-							@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
 						</Template>
 					</RadzenDataGridColumn>
 					<RadzenDataGridColumn Property="@nameof(CashDiscountRowDto.InvoiceDate)" Title="Invoice Date" />
@@ -136,8 +126,8 @@
 
 	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
 	{
-		await DialogService.OpenAsync<AddCashDiscount>(
-			"Add Cash Discount Adjustment",
+		await DialogService.OpenAsync<AddARAdjustment>(
+			"Add AR Adjustment",
 			new Dictionary<string, object>()
 			{
 				{ "Rows", Adjustments },
@@ -199,7 +189,7 @@
 
 	public async Task SubmitRequest()
 	{
-		await CashDiscountService.Create(Adjustments);
+		// await CashDiscountService.Create(Adjustments, no);
 	}
 
 	private void HandleSearchChanged(bool value)

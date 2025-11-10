@@ -1,0 +1,117 @@
+﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.UI
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@inherits ComponentBase
+@inject DialogService DialogService
+@inject ICashDiscountService CashDiscountService
+
+<RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenFormField Text="Invoice Number to adjust" Variant="@Variant.Outlined">
+			<RadzenTextBox @bind-Value="@InvoiceDetails.InvoiceNumber" ReadOnly />
+		</RadzenFormField>
+
+		<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.InvoiceNumber)" />
+	</RadzenStack>
+
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenRow Gap="1rem">
+			<RadzenColumn Size="8">
+				<RadzenFormField Text="@("Adjustment Type")" Variant="Variant.Outlined" Style="width: 100%;">
+					<RadzenTextBox @bind-Value="@AdjustmentType" />
+				</RadzenFormField>
+			</RadzenColumn>
+			<RadzenColumn Size="4">
+				<RadzenFormField Text="@("Amount")" Variant="Variant.Outlined" Style="width: 100%;">
+					<RadzenNumeric @bind-Value="@amount" Step="0.01" Format="F2" />
+				</RadzenFormField>
+			</RadzenColumn>
+		</RadzenRow>
+		<ComponentValidator ValidationName="@nameof(ARAdjustmentCreateValidationDto.AdjustmentType)" />
+	</RadzenStack>
+
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
+			<RadzenTextArea @bind-Value="@remarks" Rows="4" />
+		</RadzenFormField>
+		<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.Remarks)" />
+	</RadzenStack>
+
+	<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+		<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
+			Close
+		</button>
+		<button @onclick="OnAdd" class="btn btn-outline-primary">
+			Add
+		</button>
+	</RadzenStack>
+</RadzenStack>
+
+@code {
+
+	[Parameter] public IList<CashDiscountRowDto> Rows { get; set; }
+	[Parameter] public RadzenDataGrid<CashDiscountRowDto> Grid { get; set; }
+	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
+
+	private IEnumerable<string> invoices = new List<string>();
+	private string AdjustmentType = string.Empty;
+	private decimal amount;
+	private string remarks = string.Empty;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+
+	}
+
+	private async Task OnAdd()
+	{
+		try
+		{
+			bool isInvoiceDiscounted = Rows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
+
+			Guards.ThrowInvalidOperationIf(isInvoiceDiscounted, $"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the cash-discount adjustment table");
+
+			var row = new CashDiscountRowDto(
+				GetDiscountValue(),
+				string.IsNullOrEmpty(remarks) ? $"{AdjustmentType}% Discount Remarks" : remarks,
+				InvoiceDetails
+			);
+
+			bool isValid = await CashDiscountService.IsValid(new CashDiscountCreateValidationDto()
+			{
+				InvoiceNumber = row.InvoiceNumber,
+				DiscountPercentage = row.DiscountValue * 100,
+				Remarks = row.Remarks
+			});
+
+			if (!isValid) return;
+
+			Rows.Add(row);
+
+			await Grid.Reload();
+			DialogService.Close(true);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(Exceptions.GetMessage(ex), "Add Adjustment Failed");
+		}
+	}
+
+	private float GetDiscountValue()
+	{
+		var _discountValue = 0f;
+		Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(AdjustmentType), "Discount Percentage is empty");
+
+		bool isSuccess = float.TryParse(AdjustmentType, out _discountValue);
+		Guards.ThrowInvalidOperationIf(!isSuccess, "Cannot convert discount");
+
+		return _discountValue / 100;
+	}
+}

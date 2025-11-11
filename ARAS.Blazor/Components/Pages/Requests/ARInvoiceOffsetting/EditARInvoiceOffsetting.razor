@@ -1,0 +1,120 @@
+﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.UI
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+
+@inherits ComponentBase
+@inject DialogService DialogService
+@inject ICashDiscountService CashDiscountService
+
+<RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenFormField Text="Invoice Number to adjust" Variant="@Variant.Outlined">
+			<RadzenTextBox @bind-Value="@Data.InvoiceNumber" ReadOnly />
+		</RadzenFormField>
+		<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.InvoiceNumber)" />
+	</RadzenStack>
+
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenFormField Text="@("Discount (%)")" Variant="Variant.Outlined">
+			<RadzenNumeric @bind-Value="@discountPercentage" Max="1000" />
+		</RadzenFormField>
+		@if (!string.IsNullOrEmpty(discountPercentage))
+		{
+			<RadzenText class="fs-6 font-italic ps-3">
+				@(discountPercentage + " = " + (GetDiscountValue().ToString()) + " of Invoice Amount")
+			</RadzenText>
+		}
+		<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.DiscountPercentage)" />
+	</RadzenStack>
+
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
+			<RadzenTextArea @bind-Value="@Data.Remarks" Rows="4" />
+		</RadzenFormField>
+		<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.Remarks)" />
+	</RadzenStack>
+
+	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+		<button @onclick="@OnDelete" class="btn btn-dark">
+			Delete
+		</button>
+		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+			<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
+				Close
+			</button>
+			<button @onclick="OnEdit" class="btn btn-outline-primary">
+				Edit
+			</button>
+		</RadzenStack>
+	</RadzenStack>
+
+</RadzenStack>
+
+@code {
+
+	[Parameter] public IList<CashDiscountRowDto> Rows { get; set; }
+	[Parameter] public RadzenDataGrid<CashDiscountRowDto> Grid { get; set; }
+	[Parameter] public CashDiscountRowDto Data { get; set; }
+
+	private IEnumerable<string> invoices = new List<string>();
+	private string discountPercentage = string.Empty;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+		discountPercentage = (Data.DiscountValue * 100).ToString("N2");
+	}
+
+	private async Task OnEdit()
+	{
+		try
+		{
+			float discountValue = GetDiscountValue();
+
+			bool isValid = await CashDiscountService.IsValid(new CashDiscountCreateValidationDto()
+			{
+				InvoiceNumber = Data.InvoiceNumber,
+				DiscountPercentage = discountValue * 100,
+				Remarks = Data.Remarks
+			});
+
+			if (!isValid) return;
+
+
+			var data = Rows.FirstOrDefault(r => r.Id == Data.Id) ?? throw new Exception("Data is not found in the cash-discount adjustment table");
+			data.SetValues(discountValue, Data.Remarks);
+
+			await Grid.Reload();
+			DialogService.Close(true);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(Exceptions.GetMessage(ex), "Failed to Edit Cash Discount Details");
+		}
+	}
+
+	private async Task OnDelete()
+	{
+		Rows.Remove(Data);
+		await Grid.Reload();
+		DialogService.Close(true);
+	}
+
+	private float GetDiscountValue()
+	{
+		var _discountValue = 0f;
+		Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(discountPercentage), "Discount Percentage is empty");
+		bool isSuccess = float.TryParse(discountPercentage, out _discountValue);
+
+		Guards.ThrowInvalidOperationIf(!isSuccess, "Cannot convert discount");
+
+		return _discountValue / 100;
+	}
+}
+

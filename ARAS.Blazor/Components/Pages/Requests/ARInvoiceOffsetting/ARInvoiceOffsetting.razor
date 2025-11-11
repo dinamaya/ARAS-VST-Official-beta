@@ -1,7 +1,7 @@
-﻿@page "/requests/apar"
+﻿@page "/requests/ar-invoice-offsetting"
 
 @using ARAS.Blazor.App_Code.Globals
-@using ARAS.Blazor.Components.Pages.Requests.CashDiscount
+@using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting
 @using ARAS.Blazor.Components.Shared.Modals
 @using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Models.DTOs
@@ -22,7 +22,7 @@
 
 	<RadzenRow>
 		<div>
-			<h3 class="pb-0 mb-0">AR Adjustment Details</h3>
+			<h3 class="pb-0 mb-0">AR Invoice Offsetting List</h3>
 		</div>
 		<div class="py-4 px-3 w-100 card">
 			<RadzenDataGrid class="border-0"
@@ -45,11 +45,16 @@
 							<RadzenButton Icon="Edit" Variant="Variant.Outlined" Click="@(args => OpenEdit(data))" />
 						</Template>
 					</RadzenDataGridColumn>
-					<RadzenDataGridColumn Property="@nameof(CashDiscountRowDto.InvoiceDate)" Title="Invoice Date" />
-					<RadzenDataGridColumn Property="@nameof(CashDiscountRowDto.InvoiceNumber)" Title="Invoice Number" />
-					<RadzenDataGridColumn Property="@nameof(CashDiscountRowDto.CustomerName)" Title="Customer Name" />
-					<RadzenDataGridColumn Property="@nameof(CashDiscountRowDto.CustomerNumber)" Title="Customer Number" />
-					<RadzenDataGridColumn Property="@nameof(CashDiscountRowDto.Remarks)" Title="Remarks" />
+					<RadzenDataGridColumn Property="@nameof(APOffsettingRowDto.InvoiceNumber)" Title="Invoice Number" />
+					<RadzenDataGridColumn Property="@nameof(APOffsettingRowDto.InvoiceAmount)" Title="Invoice Amount">
+						<Template Context="data">
+							@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+						</Template>
+					</RadzenDataGridColumn>
+					<RadzenDataGridColumn Property="@nameof(APOffsettingRowDto.InvoiceDate)" Title="Invoice Date" />				
+					<RadzenDataGridColumn Property="@nameof(APOffsettingRowDto.CustomerName)" Title="Customer Name" />
+					<RadzenDataGridColumn Property="@nameof(APOffsettingRowDto.CustomerNumber)" Title="Customer Number" />
+					<RadzenDataGridColumn Property="@nameof(APOffsettingRowDto.Remarks)" Title="Remarks" />
 				</Columns>
 			</RadzenDataGrid>
 		</div>
@@ -69,9 +74,9 @@
 
 
 @code {
-	[Parameter] public IList<CashDiscountRowDto> Adjustments { get; set; }
+	[Parameter] public IList<APOffsettingRowDto> Adjustments { get; set; }
 	private InvoiceDetailsDto searchedInvoiceNumber;
-	private RadzenDataGrid<CashDiscountRowDto> adjustmentGrid;
+	private RadzenDataGrid<APOffsettingRowDto> adjustmentGrid;
 	private RequestAuditDto requestAudit;
 
 	private bool isOnSearch;
@@ -81,7 +86,7 @@
 	{
 		await base.OnInitializedAsync();
 
-		Adjustments = new List<CashDiscountRowDto>();
+		Adjustments = new List<APOffsettingRowDto>();
 		searchedInvoiceNumber = new InvoiceDetailsDto();
 		requestAudit = new RequestAuditDto();
 		// TestCashDiscountRows(); // For testing Only
@@ -113,7 +118,7 @@
 			invoiceDetails.CustomerName = first + " " + last;
 			invoiceDetails.CustomerNumber = "09123456789";
 
-			var row = new CashDiscountRowDto(
+			var row = new APOffsettingRowDto(
 				discountValue,
 				$"{(discountValue * 100).ToString("N2")}% Discount Remarks",
 				invoiceDetails
@@ -126,7 +131,7 @@
 
 	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
 	{
-		await DialogService.OpenAsync<AddARAdjustment>(
+		await DialogService.OpenAsync<AddARInvoiceOffsetting>(
 			"Add AR Adjustment",
 			new Dictionary<string, object>()
 			{
@@ -138,11 +143,11 @@
 		);
 	}
 
-	public async Task OpenEdit(CashDiscountRowDto data)
+	public async Task OpenEdit(APOffsettingRowDto data)
 	{
 		try
 		{
-			await DialogService.OpenAsync<EditCashDiscount>(
+			await DialogService.OpenAsync<EditARInvoiceOffsetting>(
 				"Edit Cash Discount Adjustment",
 				new Dictionary<string, object>()
 				{

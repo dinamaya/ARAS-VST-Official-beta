@@ -12,7 +12,7 @@
 			<RadzenTextBox @bind-Value="@InvoiceDetails.InvoiceNumber" ReadOnly />
 		</RadzenFormField>
 
-		<ComponentValidator ValidationName="@nameof(ARAdjustmentCreateValidationDto.InvoiceNumber)" />
+		<ComponentValidator ValidationName="@nameof(ARInvoiceOffsettingCreateValidationDto.InvoiceNumber)" />
 	</RadzenStack>
 
 
@@ -20,7 +20,7 @@
 		<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
 			<RadzenTextArea @bind-Value="@remarks" Rows="4" />
 		</RadzenFormField>
-		<ComponentValidator ValidationName="@nameof(ARAdjustmentCreateValidationDto.Remarks)" />
+		<ComponentValidator ValidationName="@nameof(ARInvoiceOffsettingCreateValidationDto.Remarks)" />
 	</RadzenStack>
 
 	<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">

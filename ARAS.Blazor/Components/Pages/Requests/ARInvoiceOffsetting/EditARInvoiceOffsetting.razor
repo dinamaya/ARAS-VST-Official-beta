@@ -12,27 +12,14 @@
 		<RadzenFormField Text="Invoice Number to adjust" Variant="@Variant.Outlined">
 			<RadzenTextBox @bind-Value="@Data.InvoiceNumber" ReadOnly />
 		</RadzenFormField>
-		<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.InvoiceNumber)" />
-	</RadzenStack>
-
-	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
-		<RadzenFormField Text="@("Discount (%)")" Variant="Variant.Outlined">
-			<RadzenNumeric @bind-Value="@discountPercentage" Max="1000" />
-		</RadzenFormField>
-		@if (!string.IsNullOrEmpty(discountPercentage))
-		{
-			<RadzenText class="fs-6 font-italic ps-3">
-				@(discountPercentage + " = " + (GetDiscountValue().ToString()) + " of Invoice Amount")
-			</RadzenText>
-		}
-		<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.DiscountPercentage)" />
+		<ComponentValidator ValidationName="@nameof(ARInvoiceOffsettingCreateValidationDto.InvoiceNumber)" />
 	</RadzenStack>
 
 	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
 		<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
 			<RadzenTextArea @bind-Value="@Data.Remarks" Rows="4" />
 		</RadzenFormField>
-		<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.Remarks)" />
+		<ComponentValidator ValidationName="@nameof(ARInvoiceOffsettingCreateValidationDto.Remarks)" />
 	</RadzenStack>
 
 	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
@@ -53,9 +40,9 @@
 
 @code {
 
-	[Parameter] public IList<CashDiscountRowDto> Rows { get; set; }
-	[Parameter] public RadzenDataGrid<CashDiscountRowDto> Grid { get; set; }
-	[Parameter] public CashDiscountRowDto Data { get; set; }
+	[Parameter] public IList<AROffsettingRowDto> Rows { get; set; }
+	[Parameter] public RadzenDataGrid<AROffsettingRowDto> Grid { get; set; }
+	[Parameter] public AROffsettingRowDto Data { get; set; }
 
 	private IEnumerable<string> invoices = new List<string>();
 	private string discountPercentage = string.Empty;
@@ -65,30 +52,13 @@
 		await base.OnInitializedAsync();
 	}
 
-	protected override async Task OnParametersSetAsync()
-	{
-		await base.OnParametersSetAsync();
-		discountPercentage = (Data.DiscountValue * 100).ToString("N2");
-	}
-
 	private async Task OnEdit()
 	{
 		try
 		{
-			float discountValue = GetDiscountValue();
-
-			bool isValid = await CashDiscountService.IsValid(new CashDiscountCreateValidationDto()
-			{
-				InvoiceNumber = Data.InvoiceNumber,
-				DiscountPercentage = discountValue * 100,
-				Remarks = Data.Remarks
-			});
-
-			if (!isValid) return;
-
 
 			var data = Rows.FirstOrDefault(r => r.Id == Data.Id) ?? throw new Exception("Data is not found in the cash-discount adjustment table");
-			data.SetValues(discountValue, Data.Remarks);
+			data.SetValues(Data.Remarks);
 
 			await Grid.Reload();
 			DialogService.Close(true);

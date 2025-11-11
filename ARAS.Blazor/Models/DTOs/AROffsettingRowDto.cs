@@ -15,7 +15,7 @@ namespace ARAS.Blazor.Models.DTOs
         public string ReasonCode { get; set; } = string.Empty;
         public string Remarks { get; set; } = string.Empty;
 
-        public AROffsettingRowDto(float discountValue, string remarks, InvoiceDetailsDto details)
+        public AROffsettingRowDto(string remarks, InvoiceDetailsDto details)
         {
             Id = Utils.Security.GenerateExtendedGuid("CD", 1);
             InvoiceAmount = details.InvoiceAmount;
@@ -23,10 +23,10 @@ namespace ARAS.Blazor.Models.DTOs
             InvoiceDate = details.InvoiceDate.ToString();
             CustomerName = details.CustomerName;
             CustomerNumber = details.CustomerNumber;
-            SetValues(discountValue, remarks);
+            SetValues( remarks);
         }
 
-        public void SetValues(float discountValue, string remarks)
+        public void SetValues(string remarks)
         {
             Remarks = remarks;
             AdjustmentActivity = "AR Offsetting";

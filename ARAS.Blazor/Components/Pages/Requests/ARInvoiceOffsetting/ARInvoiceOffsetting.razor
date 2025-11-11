@@ -6,6 +6,7 @@
 @using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Components.Shared.DataTables
 @using Microsoft.AspNetCore.Authorization
 
 @attribute [Authorize(Roles = "Requestor")]
@@ -61,6 +62,8 @@
 
 	</RadzenRow>
 
+	<AttachmentsDatatable Notes="Notes" IsDownloadable=false/>
+
 	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
 
 		<RadzenRow>
@@ -75,6 +78,8 @@
 
 @code {
 	[Parameter] public IList<AROffsettingRowDto> Adjustments { get; set; }
+	private IList<NoteRowDto> Notes { get; set; } = new List<NoteRowDto>();
+
 	private InvoiceDetailsDto searchedInvoiceNumber;
 	private RadzenDataGrid<AROffsettingRowDto> adjustmentGrid;
 	private RequestAuditDto requestAudit;
@@ -119,7 +124,6 @@
 			invoiceDetails.CustomerNumber = "09123456789";
 
 			var row = new AROffsettingRowDto(
-				discountValue,
 				$"{(discountValue * 100).ToString("N2")}% Discount Remarks",
 				invoiceDetails
 			);

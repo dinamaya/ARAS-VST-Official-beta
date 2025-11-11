@@ -4,7 +4,7 @@
 @using ARAS.Blazor.Services.Interfaces
 @inherits ComponentBase
 @inject DialogService DialogService
-@inject ICashDiscountService CashDiscountService
+@* @inject ICashDiscountService CashDiscountService *@
 
 <RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
 	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
@@ -78,15 +78,6 @@
 				string.IsNullOrEmpty(remarks) ? $"{discountPercentage}% Discount Remarks" : remarks,
 				InvoiceDetails
 			);
-
-			bool isValid = await CashDiscountService.IsValid(new CashDiscountCreateValidationDto()
-			{
-				InvoiceNumber = row.InvoiceNumber,
-				DiscountPercentage = row.DiscountValue * 100,
-				Remarks = row.Remarks
-			});
-
-			if (!isValid) return;
 
 			Rows.Add(row);
 

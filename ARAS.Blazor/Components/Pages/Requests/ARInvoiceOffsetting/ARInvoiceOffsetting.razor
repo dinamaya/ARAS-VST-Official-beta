@@ -45,16 +45,16 @@
 							<RadzenButton Icon="Edit" Variant="Variant.Outlined" Click="@(args => OpenEdit(data))" />
 						</Template>
 					</RadzenDataGridColumn>
-					<RadzenDataGridColumn Property="@nameof(APOffsettingRowDto.InvoiceNumber)" Title="Invoice Number" />
-					<RadzenDataGridColumn Property="@nameof(APOffsettingRowDto.InvoiceAmount)" Title="Invoice Amount">
+					<RadzenDataGridColumn Property="@nameof(AROffsettingRowDto.InvoiceNumber)" Title="Invoice Number" />
+					<RadzenDataGridColumn Property="@nameof(AROffsettingRowDto.InvoiceAmount)" Title="Invoice Amount">
 						<Template Context="data">
 							@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
 						</Template>
 					</RadzenDataGridColumn>
-					<RadzenDataGridColumn Property="@nameof(APOffsettingRowDto.InvoiceDate)" Title="Invoice Date" />				
-					<RadzenDataGridColumn Property="@nameof(APOffsettingRowDto.CustomerName)" Title="Customer Name" />
-					<RadzenDataGridColumn Property="@nameof(APOffsettingRowDto.CustomerNumber)" Title="Customer Number" />
-					<RadzenDataGridColumn Property="@nameof(APOffsettingRowDto.Remarks)" Title="Remarks" />
+					<RadzenDataGridColumn Property="@nameof(AROffsettingRowDto.InvoiceDate)" Title="Invoice Date" />				
+					<RadzenDataGridColumn Property="@nameof(AROffsettingRowDto.CustomerName)" Title="Customer Name" />
+					<RadzenDataGridColumn Property="@nameof(AROffsettingRowDto.CustomerNumber)" Title="Customer Number" />
+					<RadzenDataGridColumn Property="@nameof(AROffsettingRowDto.Remarks)" Title="Remarks" />
 				</Columns>
 			</RadzenDataGrid>
 		</div>
@@ -74,9 +74,9 @@
 
 
 @code {
-	[Parameter] public IList<APOffsettingRowDto> Adjustments { get; set; }
+	[Parameter] public IList<AROffsettingRowDto> Adjustments { get; set; }
 	private InvoiceDetailsDto searchedInvoiceNumber;
-	private RadzenDataGrid<APOffsettingRowDto> adjustmentGrid;
+	private RadzenDataGrid<AROffsettingRowDto> adjustmentGrid;
 	private RequestAuditDto requestAudit;
 
 	private bool isOnSearch;
@@ -86,7 +86,7 @@
 	{
 		await base.OnInitializedAsync();
 
-		Adjustments = new List<APOffsettingRowDto>();
+		Adjustments = new List<AROffsettingRowDto>();
 		searchedInvoiceNumber = new InvoiceDetailsDto();
 		requestAudit = new RequestAuditDto();
 		// TestCashDiscountRows(); // For testing Only
@@ -118,7 +118,7 @@
 			invoiceDetails.CustomerName = first + " " + last;
 			invoiceDetails.CustomerNumber = "09123456789";
 
-			var row = new APOffsettingRowDto(
+			var row = new AROffsettingRowDto(
 				discountValue,
 				$"{(discountValue * 100).ToString("N2")}% Discount Remarks",
 				invoiceDetails
@@ -143,7 +143,7 @@
 		);
 	}
 
-	public async Task OpenEdit(APOffsettingRowDto data)
+	public async Task OpenEdit(AROffsettingRowDto data)
 	{
 		try
 		{

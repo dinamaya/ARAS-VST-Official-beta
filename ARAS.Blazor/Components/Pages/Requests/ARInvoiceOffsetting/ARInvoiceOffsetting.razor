@@ -178,14 +178,14 @@
 			if (isLoading)
 				throw new InvalidOperationException("Can't submit request while search operation is ongoing");
 
-			await DialogService.OpenAsync<CashDiscountModalSummary>(
-				"Submit Cash Discount Adjustment",
+			await DialogService.OpenAsync<ARInvoiceOffsettingModalSummary>(
+				"Submit AR Invoice Offsetting",
 				new Dictionary<string, object>()
 				{
 					{ "Rows", Adjustments },
 					{ "RequestAudit", requestAudit },
 					{ "OnSubmit", SubmitRequest },
-					{ "SucccessSubmissionRoute", "/requests/cash-discount" },
+					{ "SucccessSubmissionRoute", "/requests/ar-invoice-offsetting" },
 				},
 				new DialogOptions() { Width = "1500px", Height = "auto" }
 			);

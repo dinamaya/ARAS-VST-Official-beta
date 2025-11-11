@@ -5,7 +5,7 @@
 @inject NavigationManager NavigationManager
 
 <RadzenStack>
-	<ARInvoiceOffsettingModalSummary Rows="Rows" RequestAudit="RequestAudit" />
+	<ARInvoiceOffsettingSummary Rows="Rows" RequestAudit="RequestAudit" />
 
 	<RadzenStack class="w-100 mt-3" Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem">
 		<button @onclick="@Submit" class="btn btn-dark">
@@ -22,7 +22,7 @@
 	</RadzenStack>
 </RadzenStack>
 @code {
-	[Parameter] public IEnumerable<CashDiscountRowDto> Rows { get; set; }
+	[Parameter] public IEnumerable<AROffsettingRowDto> Rows { get; set; }
 	[Parameter] public Func<Task> OnSubmit { get; set; }
 	[Parameter] public RequestAuditDto RequestAudit { get; set; }
 	[Parameter] public string SucccessSubmissionRoute { get; set; }

@@ -57,7 +57,7 @@
 		try
 		{
 
-			var data = Rows.FirstOrDefault(r => r.Id == Data.Id) ?? throw new Exception("Data is not found in the cash-discount adjustment table");
+			var data = Rows.FirstOrDefault(r => r.Id == Data.Id) ?? throw new Exception("Data is not found in the AR Invoice Offsetting List");
 			data.SetValues(Data.Remarks);
 
 			await Grid.Reload();
@@ -65,7 +65,7 @@
 		}
 		catch (Exception ex)
 		{
-			await DialogService.Alert(Exceptions.GetMessage(ex), "Failed to Edit Cash Discount Details");
+			await DialogService.Alert(Exceptions.GetMessage(ex), "Failed to Edit AR Offsetting Details");
 		}
 	}
 
@@ -74,17 +74,6 @@
 		Rows.Remove(Data);
 		await Grid.Reload();
 		DialogService.Close(true);
-	}
-
-	private float GetDiscountValue()
-	{
-		var _discountValue = 0f;
-		Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(discountPercentage), "Discount Percentage is empty");
-		bool isSuccess = float.TryParse(discountPercentage, out _discountValue);
-
-		Guards.ThrowInvalidOperationIf(!isSuccess, "Cannot convert discount");
-
-		return _discountValue / 100;
 	}
 }
 

@@ -40,31 +40,22 @@
 		<RadzenTable class="w-100 pb-2" GridLines="DataGridGridLines.Both" AllowAlternatingRows="false">
 			<RadzenTableHeader>
 				<RadzenTableHeaderRow>
-					<RadzenTableHeaderCell Style="width: 220px; text-align: center">
-						Adjustment Amount
+					<RadzenTableHeaderCell Style="width: 130px; text-align: center">
+						Invoice No.
 					</RadzenTableHeaderCell>
-					<RadzenTableHeaderCell Style="width: 170px; text-align: center">
-						Adjustment<br />Activity
-					</RadzenTableHeaderCell>
-					<RadzenTableHeaderCell Style="width: 220px; text-align: center">
+					<RadzenTableHeaderCell Style="width: 150px; text-align: center">
 						Invoice Amount
 					</RadzenTableHeaderCell>
-					<RadzenTableHeaderCell Style="width: 220px; text-align: center">
+					<RadzenTableHeaderCell Style="width: 130px; text-align: center">
 						Invoice Date
 					</RadzenTableHeaderCell>
-					<RadzenTableHeaderCell Style="width: 220px; text-align: center">
-						Invoice Number
-					</RadzenTableHeaderCell>
-					<RadzenTableHeaderCell Style="width: 400px; text-align: center">
+					<RadzenTableHeaderCell Style="width: 520px; text-align: center">
 						Customer Name
 					</RadzenTableHeaderCell>
-					<RadzenTableHeaderCell Style="width: 220px; text-align: center">
-						Customer Number
+					<RadzenTableHeaderCell Style="width: 140px; text-align: center">
+						Customer No.
 					</RadzenTableHeaderCell>
-					<RadzenTableHeaderCell Style="width: 120px; text-align: center">
-						Reason<br />Code
-					</RadzenTableHeaderCell>
-					<RadzenTableHeaderCell Style="width: 500px; text-align: center">
+					<RadzenTableHeaderCell Style="width: 370px; text-align: center">
 						Remarks
 					</RadzenTableHeaderCell>
 				</RadzenTableHeaderRow>
@@ -75,31 +66,22 @@
 					@foreach (var data in Rows)
 					{
 						<RadzenTableRow>
-							<RadzenTableCell Style="width: 220px">
-								@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
-							</RadzenTableCell>
-							<RadzenTableCell Style="width: 170px; text-align: center">
-								@data.AdjustmentActivity
-							</RadzenTableCell>
-							<RadzenTableCell Style="width: 220px">
-								@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
-							</RadzenTableCell>
-							<RadzenTableCell Style="width: 220px">
-								@data.InvoiceDate
-							</RadzenTableCell>
-							<RadzenTableCell Style="width: 220px">
+							<RadzenTableCell Style="width: 130px">
 								@data.InvoiceNumber
 							</RadzenTableCell>
-							<RadzenTableCell Style="width: 400px">
+							<RadzenTableCell Style="width: 150px">
+								@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+							</RadzenTableCell>
+							<RadzenTableCell Style="width: 130px">
+								@data.InvoiceDate
+							</RadzenTableCell>
+							<RadzenTableCell Style="width: 520px">
 								@data.CustomerName
 							</RadzenTableCell>
-							<RadzenTableCell Style="width: 220px">
+							<RadzenTableCell Style="width: 140px">
 								@data.CustomerNumber
 							</RadzenTableCell>
-							<RadzenTableCell Style="width: 120px; text-align: center">
-								@data.ReasonCode
-							</RadzenTableCell>
-							<RadzenTableCell Style="width: 500px">
+							<RadzenTableCell Style="width: 370px">
 								@data.Remarks
 							</RadzenTableCell>
 						</RadzenTableRow>

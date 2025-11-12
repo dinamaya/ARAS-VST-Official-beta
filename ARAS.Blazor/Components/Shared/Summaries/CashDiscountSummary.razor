@@ -6,11 +6,11 @@
 @inherits ComponentBase
 
 <RadzenStack Gap="0">
-	<RadzenImage Path="/img/icons/VST-ECS.png" Style="width: 170px" />
+	<RadzenImage Path="@Assets["/img/icons/VST-ECS.png"]" Style="width: 170px" />
 	<RadzenStack class="w-100" AlignItems="AlignItems.Center" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem">
 		<div class="h-100">
 			<h2 class="text-capitalize m-0">
-				AR Invoice Offsetting
+				Cash Discount
 			</h2>
 		</div>
 		<RadzenTable class="w-25 border-0 mb-2" GridLines="DataGridGridLines.None" AllowAlternatingRows="false">
@@ -76,7 +76,7 @@
 					{
 						<RadzenTableRow>
 							<RadzenTableCell Style="width: 220px">
-								@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+								@data.AdjustmentAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
 							</RadzenTableCell>
 							<RadzenTableCell Style="width: 170px; text-align: center">
 								@data.AdjustmentActivity
@@ -140,7 +140,7 @@
 
 
 @code {
-	[Parameter] public IEnumerable<AROffsettingRowDto> Rows { get; set; }
+	[Parameter] public IEnumerable<CashDiscountRowDto> Rows { get; set; }
 	[Parameter] public RequestAuditDto RequestAudit { get; set; }
 
 	protected override async Task OnInitializedAsync()

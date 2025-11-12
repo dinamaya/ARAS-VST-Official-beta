@@ -20,7 +20,7 @@ namespace ARAS.Blazor.Models.DTOs
             Id = Utils.Security.GenerateExtendedGuid("CD", 1);
             InvoiceAmount = details.InvoiceAmount;
             InvoiceNumber = details.InvoiceNumber;
-            InvoiceDate = details.InvoiceDate.ToString();
+            InvoiceDate = details.InvoiceDate.ToString("dd MMM yyyy");
             CustomerName = details.CustomerName;
             CustomerNumber = details.CustomerNumber;
             SetValues( remarks);

@@ -1,7 +1,296 @@
 ﻿@page "/requests/apar-offset"
 
-<h3>APAR : Offset</h3>
+@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting
+@using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting.Modal
+@using ARAS.Blazor.Components.Shared.Modals
+@using ARAS.Blazor.Components.Shared.Summaries
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Components.Shared.DataTables
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Requestor")]
+@inherits ComponentBase
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inject IAuthService AuthService
+@inject ICashDiscountService CashDiscountService
+
+<h2>AP AR : Offset</h2>
+
+<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+	<SearchInvoiceDetails OnAdd="OpenAdd" OnLoadingChanged="HandleLoadingChanged" OnSearchChanged="HandleSearchChanged" />
+
+	<RadzenRow Gap="1.5rem">
+		<RadzenColumn Size="6">
+		<div  class="text-center">
+			<h3 class="pb-0 mb-0">AP GROUP</h3>
+		</div>
+		<div class="py-4 px-3 w-100 card">
+			<RadzenDataGrid class="border-0"
+							@ref="adjustmentGrid"
+							AllowFiltering="true"
+							AllowColumnResize="true"
+							AllowAlternatingRows="false"
+							FilterMode="FilterMode.Advanced"
+							AllowSorting="true"
+							PageSize="20"
+							AllowPaging="true"
+							PagerHorizontalAlign="HorizontalAlign.Left"
+							ShowPagingSummary="true"
+							Data="@Adjustments"
+							LogicalFilterOperator="LogicalFilterOperator.Or"
+							SelectionMode="DataGridSelectionMode.Single">
+				<Columns>
+						<RadzenDataGridColumn Property="@nameof(APAROffsetRowDto.InvoiceNumber)" Title="Invoice Number">
+						<FooterTemplate>
+							<b>Total Amount:</b>
+						</FooterTemplate>
+					</RadzenDataGridColumn>
+						<RadzenDataGridColumn Property="@nameof(APAROffsetRowDto.InvoiceAmount)" Title="Invoice Amount">
+						<Template Context="data">
+							@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+						</Template>
+						<FooterTemplate>
+							<b>@Adjustments.AsQueryable().Where(adjustmentGrid.ColumnsCollection).Sum(a => a.InvoiceAmount).ToString("C2", new System.Globalization.CultureInfo("en-PH"))</b>
+						</FooterTemplate>
+					</RadzenDataGridColumn>
+				</Columns>
+			</RadzenDataGrid>
+		</div>
+		</RadzenColumn>
+		<RadzenColumn Size="6">
+			<div class="text-center">
+				<h3 class="pb-0 mb-0">AR GROUP</h3>
+			</div>
+
+			<div class="py-4 px-3 w-100 card">
+				<RadzenDataGrid TItem="APAROffsetRowDto"
+								@ref="arGrid"
+								Data="@Adjustments"
+								AllowFiltering="false"
+								AllowPaging="false"
+								AllowSorting="false"
+								EditMode="DataGridEditMode.Single"
+								AllowRowInsert="true"
+								AllowRowEdit="true"
+								AllowRowDelete="true"
+								RowCreate="@OnCreateRow"
+								RowUpdate="@OnUpdateRow"
+								RowRemove="@OnRemoveRow"
+								ShowPagingSummary="false">
+
+					<Columns>
+						<RadzenDataGridColumn TItem="APAROffsetRowDto" Property="InvoiceNumber" Title="Invoice No.">
+							<EditTemplate Context="data">
+								<RadzenTextBox @bind-Value="data.InvoiceNumber" Style="width:100%" />
+							</EditTemplate>
+						</RadzenDataGridColumn>
+
+						<RadzenDataGridColumn TItem="APAROffsetRowDto" Property="InvoiceAmount" Title="Amount">
+							<Template Context="data">
+								@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+							</Template>
+							<EditTemplate Context="data">
+								<RadzenNumeric @bind-Value="data.InvoiceAmount"
+											   Style="width:100%"
+											   Step="0.01"
+											   Min="0" />
+							</EditTemplate>
+							<FooterTemplate>
+								<b>Total:</b> @Adjustments.Sum(a => a.InvoiceAmount).ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+							</FooterTemplate>
+						</RadzenDataGridColumn>
+
+						<RadzenDataGridColumn TItem="APAROffsetRowDto" Context="data" TextAlign="TextAlign.Center" Width="150px">
+							<Template Context="data">
+								<RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@((args) => arGrid.EditRow(data))" />
+								<RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Click="@((args) => OnRemoveRow(data))" />
+							</Template>
+							<EditTemplate Context="data">
+								<RadzenButton Icon="save" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success" Click="@((args) => arGrid.UpdateRow(data))" />
+								<RadzenButton Icon="cancel" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="@((args) => arGrid.CancelEditRow(data))" />
+							</EditTemplate>
+						</RadzenDataGridColumn>
+					</Columns>
+				</RadzenDataGrid>
+		</div>
+		</RadzenColumn>
+	</RadzenRow>
+
+	<AttachmentsDatatable Notes="Notes" IsDownloadable=false />
+
+	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+
+		<RadzenRow>
+			<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
+				Submit
+			</button>
+		</RadzenRow>
+	</RadzenStack>
+</RadzenStack>
+
+
 
 @code {
+	[Parameter] public IList<APAROffsetRowDto> Adjustments { get; set; }
+	private IList<NoteRowDto> Notes { get; set; } = new List<NoteRowDto>();
+
+	private InvoiceDetailsDto searchedInvoiceNumber;
+	private RadzenDataGrid<APAROffsetRowDto> adjustmentGrid;
+	private RequestAuditDto requestAudit;
+
+	private bool isOnSearch;
+	private bool isLoading;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+
+		Adjustments = new List<APAROffsetRowDto>();
+		searchedInvoiceNumber = new InvoiceDetailsDto();
+		requestAudit = new RequestAuditDto();
+		TestARInvoiceOffsettingRows(); // For testing Only
+
+		requestAudit.Requestor = await AuthService.GetLastFirstName();
+	}
+
+	private void TestARInvoiceOffsettingRows()
+	{
+		// For Demo Purposes Only - Remove this on Production
+		string[] CustomerNames = { "BODEGA SITE COMPUTER SALES, SERVICES AND RENTALS", "SOLUTIONS PROVIDING & LOGISTIC TECHNOLOGIES CORP.", "LUCKY SURVIVOR PERSONAL COMPUTER REPAIR/SERVICES", "AJ SOFTDRIVE INTERNET CAFE & COMPUTER STUDIO", "SYSTEMS & SOFTWARE CONSULTING GROUP, INC.", "TECHNOLOGY LINKS INTERNATIONAL CORPORATION", "(L-ETL) WELLCOM TELECOM SUPERMARKET INC.", "APPLE SOUTH ASIA PTE LTD", "CONCEPT COMPUTER CENTER", "E-PLUS STATIONERY" };
+		string[] Remarks = { "please see attached page 1-3", "please see attached page 4", "please see attached page 5-6", "please see attached page 7", "please see attached page 8-10", " ", " ", " ", " ", " " };
+
+		Random rand = new Random();
+		double min = 1000.00;
+		double max = 10000000.00;
+
+		for (int x = 0; x < rand.Next(1, 10); x++)
+		{
+			var invoiceDetails = new InvoiceDetailsDto();
+			string first = CustomerNames[rand.Next(CustomerNames.Length)];
+
+			invoiceDetails.InvoiceAmount = rand.NextDouble() * (max - min) + min;
+			invoiceDetails.InvoiceNumber = rand.Next(20_000, 9_000_000).ToString();
+			invoiceDetails.InvoiceDate = DateTime.Now.AddDays(-rand.Next(10, 200));
+			invoiceDetails.CustomerName = first;
+			invoiceDetails.CustomerNumber = "09123456789";
+
+			var row = new APAROffsetRowDto(
+				Remarks[rand.Next(Remarks.Length)],
+				invoiceDetails
+			);
+
+			Adjustments.Add(row);
+		}
+	}
+
+
+	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
+	{
+		await DialogService.OpenAsync<AddARInvoiceOffsetting>(
+			"Add AR Adjustment",
+			new Dictionary<string, object>()
+			{
+				{ "Rows", Adjustments },
+				{ "Grid", adjustmentGrid },
+				{ "InvoiceDetails", invoiceDetails }
+			},
+			new DialogOptions() { Width = "800px", Height = "auto" }
+		);
+	}
+
+	public async Task OpenEdit(APAROffsetRowDto data)
+	{
+		try
+		{
+			await DialogService.OpenAsync<EditARInvoiceOffsetting>(
+				"Edit Cash Discount Adjustment",
+				new Dictionary<string, object>()
+				{
+				{ "Rows", Adjustments },
+				{ "Grid", adjustmentGrid },
+				{ "Data", data }
+				},
+				new DialogOptions() { Width = "800px", Height = "auto" }
+			);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Edit Adjustment Failed");
+		}
+	}
+
+	public async Task OnSubmit()
+	{
+		try
+		{
+			if (!Adjustments.Any())
+				throw new InvalidOperationException("Can't submit request because there are no adjustment in the current request");
+
+			if (isLoading)
+				throw new InvalidOperationException("Can't submit request while search operation is ongoing");
+
+			await DialogService.OpenAsync<ARInvoiceOffsettingModalSummary>(
+				"Submit AR Invoice Offsetting",
+				new Dictionary<string, object>()
+				{
+					{ "Rows", Adjustments },
+					{ "RequestAudit", requestAudit },
+					{ "OnSubmit", SubmitRequest },
+					{ "SucccessSubmissionRoute", "/requests/ar-invoice-offsetting" },
+				},
+				new DialogOptions() { Width = "1500px", Height = "auto" }
+			);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Submission Failed");
+		}
+	}
+
+	public async Task SubmitRequest()
+	{
+		// await CashDiscountService.Create(Adjustments, no);
+	}
+
+	private void HandleSearchChanged(bool value)
+	{
+		isOnSearch = value;
+	}
+
+	private void HandleLoadingChanged(bool value)
+	{
+		isLoading = value;
+	}
+
+	private RadzenDataGrid<APAROffsetRowDto> arGrid;
+
+	private void AddNewInvoiceRow()
+	{
+		var newRow = new APAROffsetRowDto
+		{
+			InvoiceNumber = "",
+			InvoiceAmount = 0
+		};
+		Adjustments.Add(newRow);
+	}
+
+	private void OnCreateRow(APAROffsetRowDto item)
+	{
+		Adjustments.Add(item);
+	}
+
+	private void OnUpdateRow(APAROffsetRowDto item)
+	{
+		// Optionally save to temporary collection or validate
+	}
+
+	private void OnRemoveRow(APAROffsetRowDto item)
+	{
+		Adjustments.Remove(item);
+	}
+
 
 }

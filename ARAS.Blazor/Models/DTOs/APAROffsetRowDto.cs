@@ -8,6 +8,8 @@ namespace ARAS.Blazor.Models.DTOs
         public double InvoiceAmount { get; set; } = 1_000.00d;
         public string InvoiceNumber { get; set; } = string.Empty;
         public string Remarks { get; set; } = string.Empty;
+        public string AdjustmentActivity { get; set; } = string.Empty;
+        public string ReasonCode { get; set; } = string.Empty;
 
         public APAROffsetRowDto(string remarks, InvoiceDetailsDto details)
         {
@@ -16,10 +18,9 @@ namespace ARAS.Blazor.Models.DTOs
             SetValues(remarks);
         }
 
-        public AROffsettingRowDto()
+        public APAROffsetRowDto()
         {
             Remarks = string.Empty;
-            InvoiceDetails = new InvoiceDetailsDto();
         }
 
         public void SetValues(string remarks)

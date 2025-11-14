@@ -64,9 +64,9 @@
 			</div>
 
 			<div class="py-4 px-3 w-100 card">
-				<RadzenDataGrid TItem="APAROffsetRowDto"
+				<RadzenDataGrid TItem="APAROffsetARRowDto"
 								@ref="arGrid"
-								Data="@Adjustments"
+								Data="@ARAdjustments"
 								AllowFiltering="false"
 								AllowPaging="false"
 								AllowSorting="false"
@@ -80,13 +80,13 @@
 								ShowPagingSummary="false">
 
 					<Columns>
-						<RadzenDataGridColumn TItem="APAROffsetRowDto" Property="InvoiceNumber" Title="Invoice No.">
+						<RadzenDataGridColumn TItem="APAROffsetARRowDto" Property="InvoiceNumber" Title="Invoice No.">
 							<EditTemplate Context="data">
 								<RadzenTextBox @bind-Value="data.InvoiceNumber" Style="width:100%" />
 							</EditTemplate>
 						</RadzenDataGridColumn>
 
-						<RadzenDataGridColumn TItem="APAROffsetRowDto" Property="InvoiceAmount" Title="Amount">
+						<RadzenDataGridColumn TItem="APAROffsetARRowDto" Property="InvoiceAmount" Title="Amount">
 							<Template Context="data">
 								@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
 							</Template>
@@ -97,11 +97,11 @@
 											   Min="0" />
 							</EditTemplate>
 							<FooterTemplate>
-								<b>Total:</b> @Adjustments.Sum(a => a.InvoiceAmount).ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+								<b>Total:</b> @ARAdjustments.Sum(a => a.InvoiceAmount).ToString("C2", new System.Globalization.CultureInfo("en-PH"))
 							</FooterTemplate>
 						</RadzenDataGridColumn>
 
-						<RadzenDataGridColumn TItem="APAROffsetRowDto" Context="data" TextAlign="TextAlign.Center" Width="150px">
+						<RadzenDataGridColumn TItem="APAROffsetARRowDto" Context="data" TextAlign="TextAlign.Center" Width="150px">
 							<Template Context="data">
 								<RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@((args) => arGrid.EditRow(data))" />
 								<RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Click="@((args) => OnRemoveRow(data))" />
@@ -133,6 +133,7 @@
 
 @code {
 	[Parameter] public IList<APAROffsetRowDto> Adjustments { get; set; }
+	[Parameter] public IList<APAROffsetARRowDto> ARAdjustments { get; set; }
 	private IList<NoteRowDto> Notes { get; set; } = new List<NoteRowDto>();
 
 	private InvoiceDetailsDto searchedInvoiceNumber;
@@ -147,6 +148,7 @@
 		await base.OnInitializedAsync();
 
 		Adjustments = new List<APAROffsetRowDto>();
+		ARAdjustments = new List<APAROffsetARRowDto>();
 		searchedInvoiceNumber = new InvoiceDetailsDto(); 
 		requestAudit = new RequestAuditDto();
 		//TestARInvoiceOffsettingRows(); // For testing Only
@@ -224,7 +226,7 @@
 	{
 		try
 		{
-			if (!Adjustments.Any())
+			if (!ARAdjustments.Any())
 				throw new InvalidOperationException("Can't submit request because there are no adjustment in the current request");
 
 			if (isLoading)
@@ -263,31 +265,21 @@
 		isLoading = value;
 	}
 
-	private RadzenDataGrid<APAROffsetRowDto> arGrid;
+	private RadzenDataGrid<APAROffsetARRowDto> arGrid;
 
-	private void AddNewInvoiceRow()
+	private void OnCreateRow(APAROffsetARRowDto item)
 	{
-		var newRow = new APAROffsetRowDto
-		{
-			InvoiceNumber = "",
-			InvoiceAmount = 0
-		};
-		Adjustments.Add(newRow);
+		ARAdjustments.Add(item);
 	}
 
-	private void OnCreateRow(APAROffsetRowDto item)
-	{
-		Adjustments.Add(item);
-	}
-
-	private void OnUpdateRow(APAROffsetRowDto item)
+	private void OnUpdateRow(APAROffsetARRowDto item)
 	{
 		// Optionally save to temporary collection or validate
 	}
 
-	private void OnRemoveRow(APAROffsetRowDto item)
+	private void OnRemoveRow(APAROffsetARRowDto item)
 	{
-		Adjustments.Remove(item);
+		ARAdjustments.Remove(item);
 	}
 
 

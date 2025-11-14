@@ -2,7 +2,7 @@
 
 @using ARAS.Blazor.App_Code.Globals
 @using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting
-@using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting.Modal
+@using ARAS.Blazor.Components.Pages.Requests.APAROffset.Modal
 @using ARAS.Blazor.Components.Shared.Modals
 @using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Models.DTOs
@@ -178,8 +178,30 @@
 		ARAdjustments = new List<APAROffsetARRowDto>();
 		searchedInvoiceNumber = new InvoiceDetailsDto(); 
 		requestAudit = new RequestAuditDto();
-
+		TestARInvoiceOffsettingRows(); // For testing Only
 		requestAudit.Requestor = await AuthService.GetLastFirstName();
+	}
+
+	private void TestARInvoiceOffsettingRows()
+	{
+		// For Demo Purposes Only - Remove this on Production
+		Random rand = new Random();
+		double min = 1000.00;
+		double max = 10000000.00;
+
+		for (int x = 0; x < rand.Next(1, 10); x++)
+		{
+			var invoiceDetails = new InvoiceDetailsDto();
+
+			invoiceDetails.InvoiceAmount = rand.NextDouble() * (max - min) + min;
+			invoiceDetails.InvoiceNumber = rand.Next(20_000, 9_000_000).ToString();
+
+			var row = new APAROffsetAPRowDto(
+				invoiceDetails
+			);
+
+			APAdjustments.Add(row);
+		}
 	}
 
 	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
@@ -227,14 +249,16 @@
 			if (isLoading)
 				throw new InvalidOperationException("Can't submit request while search operation is ongoing");
 
-			await DialogService.OpenAsync<ARInvoiceOffsettingModalSummary>(
-				"Submit AR Invoice Offsetting",
+			await DialogService.OpenAsync<APAROffsetModalSummary>(
+				"Submit AP AR Offsetting",
 				new Dictionary<string, object>()
 				{
-					{ "Rows", APAdjustments },
+					{ "APAdjustments", APAdjustments },
+					{ "ARAdjustments", ARAdjustments },
+					{ "Notes", Notes },
 					{ "RequestAudit", requestAudit },
 					{ "OnSubmit", SubmitRequest },
-					{ "SucccessSubmissionRoute", "/requests/ar-invoice-offsetting" },
+					{ "SuccessSubmissionRoute", "/requests/apar-offset" },
 				},
 				new DialogOptions() { Width = "1500px", Height = "auto" }
 			);

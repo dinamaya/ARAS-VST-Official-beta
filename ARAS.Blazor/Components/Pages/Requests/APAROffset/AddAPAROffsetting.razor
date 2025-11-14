@@ -15,14 +15,6 @@
 		<ComponentValidator ValidationName="@nameof(ARInvoiceOffsettingCreateValidationDto.InvoiceNumber)" />
 	</RadzenStack>
 
-
-	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
-		<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
-			<RadzenTextArea @bind-Value="@remarks" Rows="4" />
-		</RadzenFormField>
-		<ComponentValidator ValidationName="@nameof(ARInvoiceOffsettingCreateValidationDto.Remarks)" />
-	</RadzenStack>
-
 	<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
 		<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
 			Close
@@ -35,8 +27,8 @@
 
 @code {
 
-	[Parameter] public IList<APAROffsetRowDto> Rows { get; set; }
-	[Parameter] public RadzenDataGrid<APAROffsetRowDto> Grid { get; set; }
+	[Parameter] public IList<APAROffsetAPRowDto> Rows { get; set; }
+	[Parameter] public RadzenDataGrid<APAROffsetAPRowDto> Grid { get; set; }
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
 
 	private IEnumerable<string> invoices = new List<string>();
@@ -61,8 +53,7 @@
 
 			Guards.ThrowInvalidOperationIf(isInvoiceDiscounted, $"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the AR Offsetting adjustment table");
 
-			var row = new APAROffsetRowDto(
-				remarks ?? string.Empty,
+			var row = new APAROffsetAPRowDto(
 				InvoiceDetails
 			);
 

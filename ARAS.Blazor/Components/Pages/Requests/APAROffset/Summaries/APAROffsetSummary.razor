@@ -11,13 +11,13 @@
     <div class="px-3 py-2 mt-2 mb-2">
         <RadzenRow Gap="1.5rem">
             <RadzenColumn Size="6">
-                <div style="font-size: 0.9rem;">
+                <div style="font-size: 1.2rem;">
                     <b>NAME:</b>
-                    <span class="pl-1">@nameof(APAROffsetAPRowDto.CustomerName)</span>
+                    <span class="pl-1">@APAdjustments.FirstOrDefault()?.CustomerName</span>
                 </div>
             </RadzenColumn>
             <RadzenColumn Size="6">
-                <div style="font-size: 0.9rem;">
+                <div style="font-size: 1.2rem;">
                     <b>REF. NO:</b>
                     @* <span class="pl-1">@ReferenceNumber</span> *@
                 </div>
@@ -124,5 +124,5 @@
     [Parameter] public IEnumerable<APAROffsetAPRowDto> APAdjustments { get; set; }
     [Parameter] public IEnumerable<APAROffsetARRowDto> ARAdjustments { get; set; }
     [Parameter] public RequestAuditDto RequestAudit { get; set; }
-    [Parameter] public IEnumerable<NoteRowDto> Notes { get; set; }
+    // [Parameter] public string ReferenceNumber { get; set; }
 }

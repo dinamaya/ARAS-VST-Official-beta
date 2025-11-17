@@ -14,6 +14,9 @@ namespace ARAS.Blazor.Models.DTOs
         {
             InvoiceAmount = details.InvoiceAmount;
             InvoiceNumber = details.InvoiceNumber;
+            CustomerName = details.CustomerName;
+            CustomerNumber = details.CustomerNumber;
+
         }
     }
 }

@@ -53,6 +53,15 @@
 
 			Guards.ThrowInvalidOperationIf(isInvoiceDiscounted, $"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the AR Offsetting adjustment table");
 
+			if (Rows.Any())
+			{
+				var firstInvoice = Rows.First();
+				if (firstInvoice.CustomerNumber != InvoiceDetails.CustomerNumber)
+				{
+					throw new InvalidOperationException("All invoices must belong to the same customer.");
+				}
+			}
+
 			var row = new APAROffsetAPRowDto(
 				InvoiceDetails
 			);

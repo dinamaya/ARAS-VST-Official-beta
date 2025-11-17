@@ -28,14 +28,14 @@
     [Parameter] public IEnumerable<NoteRowDto> Notes { get; set; }
     [Parameter] public Func<Task> OnSubmit { get; set; }
     [Parameter] public RequestAuditDto RequestAudit { get; set; }
-    [Parameter] public string SucccessSubmissionRoute { get; set; }
+    [Parameter] public string SuccessSubmissionRoute { get; set; }
 
     public async Task Submit()
     {
         try
         {
             await OnSubmit.Invoke();
-            NavigationManager.NavigateTo(SucccessSubmissionRoute, true);
+            NavigationManager.NavigateTo(SuccessSubmissionRoute, true);
         }
         catch (Exception ex)
         {

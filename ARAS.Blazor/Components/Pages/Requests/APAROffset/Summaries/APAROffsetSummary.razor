@@ -1,9 +1,30 @@
 ﻿@using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Components.Shared.Summaries
 
-<RadzenStack Gap="1.5rem">
-    <RequestAuditSummary Data="RequestAudit" />
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inherits ComponentBase
 
+<RadzenStack Gap="0">
+    <RadzenImage Path="@Assets["/img/icons/VST-ECS.png"]" Style="width: 170px" />
+
+    <div class="px-3 py-2 mt-2 mb-2">
+        <RadzenRow Gap="1.5rem">
+            <RadzenColumn Size="6">
+                <div style="font-size: 0.9rem;">
+                    <b>NAME:</b>
+                    <span class="pl-1">@nameof(APAROffsetAPRowDto.CustomerName)</span>
+                </div>
+            </RadzenColumn>
+            <RadzenColumn Size="6">
+                <div style="font-size: 0.9rem;">
+                    <b>REF. NO:</b>
+                    @* <span class="pl-1">@ReferenceNumber</span> *@
+                </div>
+            </RadzenColumn>
+        </RadzenRow>
+    </div>
+    
     <RadzenRow Gap="1.5rem">
         <RadzenColumn Size="6">
             <div class="text-center">
@@ -70,7 +91,33 @@
         </RadzenColumn>
     </RadzenRow>
 
-    <NotesSummary Notes="Notes" />
+    <RadzenTable class="w-100 pb-2" GridLines="DataGridGridLines.Both" AllowAlternatingRows="false">
+        <RadzenTableBody>
+            <RadzenTableRow>
+                <RadzenTableCell Style="width: 220px; text-align: center">
+                    <b>Requested By:</b>
+                </RadzenTableCell>
+                <RadzenTableCell Style="width: 170px; text-align: center">
+                    <b>Approved By:</b>
+                </RadzenTableCell>
+                <RadzenTableCell Style="width: 220px; text-align: center">
+                    <b>Validated By:</b>
+                </RadzenTableCell>
+            </RadzenTableRow>
+            <RadzenTableRow>
+                <RadzenTableCell Style="width: 220px; text-align: center">
+                    @RequestAudit?.Requestor
+                </RadzenTableCell>
+                <RadzenTableCell Style="width: 170px; text-align: center">
+                    @RequestAudit?.Approver
+                </RadzenTableCell>
+                <RadzenTableCell Style="width: 220p; text-align: center">
+                    @RequestAudit?.Validator
+                </RadzenTableCell>
+            </RadzenTableRow>
+        </RadzenTableBody>
+    </RadzenTable>
+    
 </RadzenStack>
 
 @code {

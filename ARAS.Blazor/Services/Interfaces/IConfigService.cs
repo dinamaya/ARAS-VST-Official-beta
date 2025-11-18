@@ -12,7 +12,8 @@
 		string GetAdjustmentsUrl(string route = null);
 		string GetApprovalsUrl(string route = null);
 		string GetCashDiscountsUrl(string route = null);
-		string GetDeclinesUrl(string route = null);
+        string GetAPAROffsetsUrl(string route = null);
+        string GetDeclinesUrl(string route = null);
 		string GetRejectionsUrl(string route = null);
 		string GetRequestsUrl(string route = null);
 		string GetTransactionsUrl(string route = null);

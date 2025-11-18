@@ -11,7 +11,8 @@ namespace ARAS.Blazor.App_Code.Globals.Extensions
 			services.AddScoped<IAuthService, AuthService>();
 			services.AddScoped<IBaseService, BaseService>();
 			services.AddScoped<ICashDiscountService, CashDiscountService>();
-			services.AddScoped<IConfigService, ConfigService>();
+            services.AddScoped<IAPAROffsetService, APAROffsetService>();
+            services.AddScoped<IConfigService, ConfigService>();
 			services.AddScoped<IEmailService, EmailService>();
 			services.AddScoped<IInvoiceService, InvoiceService>();
 			services.AddScoped<INoteService, NoteService>();

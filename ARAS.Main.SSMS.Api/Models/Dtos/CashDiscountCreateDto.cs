@@ -1,4 +1,4 @@
-﻿namespace ARAS.Main.Oracle.Api.Models.Dtos
+﻿namespace ARAS.Main.SSMS.Api.Models.Dtos
 {
 	public class CashDiscountCreateDto
 	{

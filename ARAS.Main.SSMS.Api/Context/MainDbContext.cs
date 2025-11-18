@@ -14,9 +14,10 @@ namespace ARAS.Main.SSMS.Api.Context
 		public virtual DbSet<Status> Statuses { get; set; }
 		public virtual DbSet<Transaction> Transactions { get; set; }
 		public virtual DbSet<TransactionRemarks> TransactionRemarks { get; set; }
+        public virtual DbSet<APAROffset> APAROffsets { get; set; }
 
-		// SQL VIEWS
-		public virtual DbSet<ActiveTransactionsV> VwActiveTransactions { get; set; }
+        // SQL VIEWS
+        public virtual DbSet<ActiveTransactionsV> VwActiveTransactions { get; set; }
 		public virtual DbSet<CashDiscountAdjustmentsV> VwCashDiscountAdjustments { get; set; }
 		public virtual DbSet<InvoiceNumbersV> VwInvoiceNumbers { get; set; }
 		public virtual DbSet<LatestRequestTransactionV> VwLatestRequestTransactions { get; set; }

@@ -1,10 +1,8 @@
-﻿using ARAS.Blazor.App_Code.Globals;
-using Newtonsoft.Json.Linq;
-
-namespace ARAS.Blazor.Models.DTOs
+﻿namespace ARAS.Blazor.Models.DTOs
 {
     public class APAROffsetAPRowDto
     {
+        public string Id { get; set; }
         public double InvoiceAmount { get; set; } = 1_000.00d;
         public string InvoiceNumber { get; set; } = string.Empty;
         public string CustomerName { get; set; } = string.Empty;
@@ -12,11 +10,12 @@ namespace ARAS.Blazor.Models.DTOs
 
         public APAROffsetAPRowDto(InvoiceDetailsDto details)
         {
+            Id = details.Id;
             InvoiceAmount = details.InvoiceAmount;
             InvoiceNumber = details.InvoiceNumber;
             CustomerName = details.CustomerName;
             CustomerNumber = details.CustomerNumber;
-
         }
     }
 }
+

@@ -2,6 +2,7 @@
 {
     public class APAROffsetARRowDto
     {
+        public string Id { get; set; }
         public ARRowType RowType { get; set; } = ARRowType.Invoice;
         public string InvoiceNumber { get; set; } = string.Empty;
         public string? AdjustmentReason { get; set; } = null;
@@ -14,3 +15,4 @@
         Adjustment
     }
 }
+

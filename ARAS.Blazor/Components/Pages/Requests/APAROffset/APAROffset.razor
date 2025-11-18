@@ -12,10 +12,9 @@
 
 @attribute [Authorize(Roles = "Requestor")]
 @inherits ComponentBase
-@inject DialogService DialogService
-@inject NavigationManager NavigationManager
+@inject<Component />@inject NavigationManager NavigationManager
 @inject IAuthService AuthService
-@inject ICashDiscountService CashDiscountService
+@inject IAPAROffsetService APAROffsetService
 
 <h2>AP AR : Offset</h2>
 
@@ -285,7 +284,7 @@
 
 	public async Task SubmitRequest()
 	{
-		// await CashDiscountService.Create(Adjustments, no);
+		await APAROffsetService.Create(APAdjustments, ARAdjustments, Notes);
 	}
 
 	private void HandleSearchChanged(bool value)

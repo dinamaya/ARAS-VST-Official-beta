@@ -1,5 +1,4 @@
-﻿using ARAS.Main.Oracle.Api.Models.Dtos;
-using ARAS.Main.SSMS.Api.Models.Dtos;
+﻿using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

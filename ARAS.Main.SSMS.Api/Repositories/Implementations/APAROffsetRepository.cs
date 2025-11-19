@@ -28,7 +28,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
             try
             {
-                string aparOffsetTypeId = await _context.AdjustmentTypes.Where(x => x.Code.Equals("APAR")).Select(x => x.Id).FirstAsync();
+                string aparOffsetTypeId = await _context.AdjustmentTypes.Where(x => x.Code.Equals("ARR")).Select(x => x.Id).FirstAsync();
                 string referenceNo = "APAR-" + DateTime.Now.Ticks;
 
                 var request = new RequestCreateDto(referenceNo, aparOffsetTypeId);

@@ -11,8 +11,22 @@
   {
     public new T? Result
     {
-      get => (T?)base.Result;
-      set => base.Result = value;
+            get
+            {
+                try
+                {
+                    if (base.Result == null)
+                    {
+                        return default(T);
+                    }
+                    return (T)base.Result;
+                }
+                catch (Exception)
+                {
+                    return default(T);
+                }
+            }
+            set => base.Result = value;
     }
   }
 }

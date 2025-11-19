@@ -29,8 +29,11 @@ namespace ARAS.Main.SSMS.Api.Controllers
             try
             {
                 var accountInfo = User.GetAccountBasicInfo();
+
                 var requestCreation = new RequestCreationDto<AdjustmentRequestCreationDto<APAROffsetCreateDto>>(data, accountInfo.GroupCode, accountInfo.FullName);
+
                 long requestId = await _aparOffsetRepo.CreateAsync(requestCreation, accountInfo.Id);
+
                 response.Result = requestId;
                 response.Message = "Request Created Successfully";
                 return response;

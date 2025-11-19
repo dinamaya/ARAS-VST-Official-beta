@@ -54,6 +54,11 @@ namespace ARAS.Blazor.Services.Implementations
                 Data = adjustmentRequestCreation
             });
 
+            if (!createResult.IsSuccess)
+            {
+                throw new InvalidOperationException(createResult.Message);
+            }
+
             await _noteService.Create(createResult.Result, notes);
         }
     }

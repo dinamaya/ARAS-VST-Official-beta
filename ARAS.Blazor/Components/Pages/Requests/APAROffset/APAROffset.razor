@@ -9,10 +9,11 @@
 @using ARAS.Blazor.Services.Interfaces
 @using ARAS.Blazor.Components.Shared.DataTables
 @using Microsoft.AspNetCore.Authorization
+@inject DialogService DialogService
 
 @attribute [Authorize(Roles = "Requestor")]
 @inherits ComponentBase
-@inject<Component />@inject NavigationManager NavigationManager
+@inject NavigationManager NavigationManager
 @inject IAuthService AuthService
 @inject IAPAROffsetService APAROffsetService
 

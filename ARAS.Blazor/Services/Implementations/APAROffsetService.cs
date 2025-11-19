@@ -30,16 +30,22 @@ namespace ARAS.Blazor.Services.Implementations
         {
             var apRequests = apRows.Select(r => new APAROffsetCreateDto()
             {
-                InvoiceId = r.Id,
+                InvoiceId = r.InvoiceNumber,
                 Amount = r.InvoiceAmount,
-                Type = "AP"
+                Type = "AP",
+                InvoiceDate = r.InvoiceDate,
+                CustomerName = r.CustomerName,
+                CustomerNumber = r.CustomerNumber
             });
 
             var arRequests = arRows.Select(r => new APAROffsetCreateDto()
             {
-                InvoiceId = r.Id,
+                InvoiceId = r.InvoiceNumber,
                 Amount = r.Amount,
-                Type = "AR"
+                Type = "AR",
+                InvoiceDate = DateTime.Now,
+                CustomerName = "",
+                CustomerNumber = ""
             });
 
             var requestsDto = apRequests.Concat(arRequests).ToList();
@@ -50,14 +56,9 @@ namespace ARAS.Blazor.Services.Implementations
             var createResult = await _baseService.SendAsync<long>(new RequestDto<AdjustmentRequestCreationDto<APAROffsetCreateDto>>()
             {
                 ApiType = ApiType.POST,
-                URL = _configService.GetAPAROffsetsUrl("create"),
+                URL = _configService.GetAPAROffsetsUrl(),
                 Data = adjustmentRequestCreation
             });
-
-            if (!createResult.IsSuccess)
-            {
-                throw new InvalidOperationException(createResult.Message);
-            }
 
             await _noteService.Create(createResult.Result, notes);
         }

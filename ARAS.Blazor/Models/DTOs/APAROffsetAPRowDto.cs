@@ -7,6 +7,7 @@
         public string InvoiceNumber { get; set; } = string.Empty;
         public string CustomerName { get; set; } = string.Empty;
         public string CustomerNumber { get; set; } = string.Empty;
+        public DateTime InvoiceDate { get; set; }
 
         public APAROffsetAPRowDto(InvoiceDetailsDto details)
         {

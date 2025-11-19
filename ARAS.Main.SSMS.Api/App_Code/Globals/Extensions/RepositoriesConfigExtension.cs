@@ -9,6 +9,7 @@ namespace ARAS.Main.SSMS.Api.App_Code.Globals.Extensions
 	{
 		public static void AddRepositoriesConfig(this IServiceCollection services)
 		{
+			services.AddScoped<IAPAROffsetRepository, APAROffsetRepository>();
 			services.AddScoped<IAdjustmentRepository, AdjustmentRepository>();
 			services.AddScoped<ICashDiscountRepository, CashDiscountRepository>();
 			services.AddScoped<IInvoiceRepository, InvoiceRepository>();

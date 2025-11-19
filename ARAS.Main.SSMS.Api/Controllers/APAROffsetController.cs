@@ -22,7 +22,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
             _aparOffsetRepo = aparOffsetRepo;
         }
 
-        [HttpPost("create"), Authorize(Roles = "Requestor")]
+        [HttpPost]
         public async Task<ResponseDto<long>> Create([FromBody] AdjustmentRequestCreationDto<APAROffsetCreateDto> data)
         {
             ResponseDto<long> response = new();
@@ -41,6 +41,20 @@ namespace ARAS.Main.SSMS.Api.Controllers
             catch (Exception ex)
             {
                 return response.Failed(ex.Message);
+            }
+        }
+
+        [HttpGet("test")]
+        public async Task<string> Create()
+        {
+            ResponseDto<long> response = new();
+            try
+            {
+                return "success";
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
             }
         }
     }

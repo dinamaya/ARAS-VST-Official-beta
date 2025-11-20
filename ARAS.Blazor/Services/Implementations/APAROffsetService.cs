@@ -62,5 +62,6 @@ namespace ARAS.Blazor.Services.Implementations
 
             await _noteService.Create(createResult.Result, notes);
         }
+
     }
 }

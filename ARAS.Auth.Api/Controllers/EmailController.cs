@@ -26,7 +26,8 @@ namespace ARAS.Auth.Api.Controllers
 			ResponseDto<IEnumerable<string>> _response = new();
 			try
 			{
-				_response.Result = await _emailService.GetAll();
+				//_response.Result = await _emailService.GetAll();
+				_response.Result = [];
 				return _response;
 			}
 			catch (Exception ex)
@@ -42,7 +43,8 @@ namespace ARAS.Auth.Api.Controllers
 			ResponseDto<IEnumerable<string>> _response = new();
 			try
 			{
-				_response.Result = await _emailService.GetApprovers();
+				//_response.Result = await _emailService.GetApprovers();
+				_response.Result = [];
 				return _response;
 			}
 			catch (Exception ex)
@@ -58,7 +60,8 @@ namespace ARAS.Auth.Api.Controllers
 			ResponseDto<IEnumerable<string>> _response = new();
 			try
 			{
-				_response.Result = await _emailService.GetValidators();
+				//_response.Result = await _emailService.GetValidators();
+				_response.Result = [];
 				return _response;
 			}
 			catch (Exception ex)

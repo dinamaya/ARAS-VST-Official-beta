@@ -4,7 +4,9 @@ using System.Threading.Tasks;
 
 namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 {
-    public interface IAPAROffsetRepository : ICreateRepository<RequestCreationDto<AdjustmentRequestCreationDto<APAROffsetCreateDto>>, long>
+    public interface IAPAROffsetRepository :
+        IGetTransactionRequestsRepository,
+        ICreateRepository<RequestCreationDto<AdjustmentRequestCreationDto<APAROffsetCreateDto>>, long>
     {
     }
 }

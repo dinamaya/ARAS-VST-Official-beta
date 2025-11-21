@@ -57,6 +57,23 @@ namespace ARAS.Main.SSMS.Api.Controllers
             {
                 return ex.Message;
             }
-        }   
+        }
+
+
+        [HttpGet("submissions"), Authorize]
+        public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetAllSubmissions()
+        {
+            var response = new ResponseDto<IEnumerable<TransactionRequestRowDto>>();
+            try
+            {
+                response.Message = "";
+                response.Result = await _aparOffsetRepo.GetAllSubmissions();
+                return response;
+            }
+            catch (Exception ex)
+            {
+                return response.Failed(ex.Message);
+            }
+        }
     }
 }

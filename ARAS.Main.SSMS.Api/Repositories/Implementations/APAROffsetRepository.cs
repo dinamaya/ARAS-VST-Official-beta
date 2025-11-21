@@ -1,4 +1,5 @@
-﻿using ARAS.Main.SSMS.Api.Context;
+﻿using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
+using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Models.Entities;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
@@ -101,5 +102,47 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
         {
             return await _invoiceRepo.IsInvoiceNumberAvailable(cashCreateValidationRequest.InvoiceNumber, "CDR");
         }
+
+        public async Task<IEnumerable<TransactionRequestRowDto>> GetAllSubmissions()
+        {
+            return await _context.VwLatestRequestTransactions
+                .OrderByDescending(t => t.TransactionId)
+                .Where(t => t.AdjustmentTypeCode == "ARR")
+                .Select(t => new TransactionRequestRowDto()
+                {
+                    RequestId = t.RequestId,
+                    RequestNumber = t.RequestNumber,
+
+                    Requestor = ValidateFullName(t.RequestorFirstName, t.RequestorLastName),
+                    DateRequested = t.DateRequested.ToString(Formats.Date.DISPLAY_COMPLETE),
+
+                    Approver = ValidateFullName(t.ApproverFirstName, t.ApproverLastName),
+                    DateApproved = t.DateApproved.HasValue ? ((DateTime)t.DateApproved).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
+
+                    Validator = ValidateFullName(t.ValidatorFirstName, t.ValidatorLastName),
+                    DateValidated = t.DateValidated.HasValue ? ((DateTime)t.DateValidated).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
+
+                    Creator = ValidateFullName(t.CreatorFirstName, t.CreatorLastName),
+                    DateCreated = t.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
+
+                    Status = t.Status,
+                })
+                .ToListAsync();
+        }
+
+        public Task<IEnumerable<TransactionRequestRowDto>> GetAllForApprovals()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<IEnumerable<TransactionRequestRowDto>> GetAllForValidations()
+        {
+            throw new NotImplementedException();
+        }
+
+
+        private static string ValidateFullName(string fName, string lName) =>
+            string.IsNullOrEmpty(lName) && string.IsNullOrEmpty(fName) ? string.Empty : lName + ", " + fName;
+
     }
 }

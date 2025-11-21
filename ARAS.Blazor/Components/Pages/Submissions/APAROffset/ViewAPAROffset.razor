@@ -46,6 +46,6 @@
 		var request = await APAROffsetService.GetRequestDetails(RequestId);
 		(apRows, arRows) = await APAROffsetService.GetAdjustments(RequestId);
 		notes = await NoteService.GetRows(RequestId);
-		requestAudit = new RequestAuditDto(request);
+		// requestAudit = new RequestAuditDto(request);
 	}
 }

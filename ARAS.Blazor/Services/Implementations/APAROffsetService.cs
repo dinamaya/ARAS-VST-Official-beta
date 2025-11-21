@@ -100,22 +100,10 @@ namespace ARAS.Blazor.Services.Implementations
 
         public async Task<Tuple<IEnumerable<APAROffsetAPRowDto>, IEnumerable<APAROffsetARRowDto>>> GetAdjustments(long requestId)
         {
-            var apResponse = await _baseService.SendAsync<IEnumerable<APAROffsetAPRowDto>>(new RequestDto()
-            {
-                URL = _configService.GetAdjustmentsUrl($"aar/{requestId}/ap"),
-            },
-                onSuccessSendCallBack: async (resp) =>
+            var arResponse = await _baseService.SendAsync<Tuple<IEnumerable<APAROffsetAPRowDto>, IEnumerable<APAROffsetARRowDto>>>(new RequestDto()
                 {
-                    await Task.Run(() =>
-                    {
-                        Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch the AP adjustments");
-                    });
-                });
-
-            var arResponse = await _baseService.SendAsync<IEnumerable<APAROffsetARRowDto>>(new RequestDto()
-            {
-                URL = _configService.GetAdjustmentsUrl($"aar/{requestId}/ar"),
-            },
+                    URL = _configService.GetAdjustmentsUrl($"aar/{requestId}"),
+                },
                 onSuccessSendCallBack: async (resp) =>
                 {
                     await Task.Run(() =>
@@ -124,7 +112,7 @@ namespace ARAS.Blazor.Services.Implementations
                     });
                 });
 
-            return new Tuple<IEnumerable<APAROffsetAPRowDto>, IEnumerable<APAROffsetARRowDto>>(apResponse.Result, arResponse.Result);
+            return arResponse.Result;
         }
 
 

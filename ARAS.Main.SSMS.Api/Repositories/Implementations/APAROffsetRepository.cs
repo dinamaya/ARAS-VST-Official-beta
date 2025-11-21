@@ -144,5 +144,38 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
         private static string ValidateFullName(string fName, string lName) =>
             string.IsNullOrEmpty(lName) && string.IsNullOrEmpty(fName) ? string.Empty : lName + ", " + fName;
 
+        public async Task<Tuple<IEnumerable<APAROffsetAPRowDto>, IEnumerable<APAROffsetARRowDto>>> GetAPAdjustmentsByRequestId(long requestId)
+        {
+            var ap = await _context.VwAparoffsetRows
+                .Where(r => r.Type == "AP" && r.RequestiD == requestId)
+                .Select(r => new APAROffsetAPRowDto()
+                {
+                    Id = r.Id.ToString(),
+                    InvoiceAmount = r.InvoiceAmount,
+                    InvoiceNumber = r.InvoiceNumber,
+                    InvoiceDate = r.InvoiceDate,
+                    CustomerName = r.CustomerName,
+                    CustomerNumber = r.CustomerNumber,
+                })
+            .ToListAsync();
+
+            var ar = await _context.VwAparoffsetRows
+             .Where(r => r.Type == "AR" && r.RequestiD == requestId)
+             .Select(r => new APAROffsetARRowDto()
+             {
+                 Id = r.Id.ToString(),
+                 Amount = r.InvoiceAmount,
+                 InvoiceNumber = r.InvoiceNumber,
+                 // Map the reason from the DB to the DTO
+                 //ReasonCode = r.AdjustmentReason,
+
+                 // LOGIC: If AdjustmentReason has text, it's an Adjustment. Else, Invoice.
+                 //RowType = !string.IsNullOrEmpty(r.AdjustmentReason)
+                 //  ? ARRowType.Adjustment
+                 // : ARRowType.Invoice
+             })
+            .ToListAsync();
+            return new Tuple<IEnumerable<APAROffsetAPRowDto>, IEnumerable<APAROffsetARRowDto>>(ap, ar);
+        }
     }
 }

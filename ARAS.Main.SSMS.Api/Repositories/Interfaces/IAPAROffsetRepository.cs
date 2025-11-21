@@ -8,5 +8,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
         IGetTransactionRequestsRepository,
         ICreateRepository<RequestCreationDto<AdjustmentRequestCreationDto<APAROffsetCreateDto>>, long>
     {
+		Task<Tuple<IEnumerable<APAROffsetAPRowDto>, IEnumerable<APAROffsetARRowDto> >> GetAPAdjustmentsByRequestId(long requestId);
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace ARAS.Blazor.Models.DTOs
+﻿namespace ARAS.Main.SSMS.Api.Models.Dtos
 {
     public class APAROffsetAPRowDto
     {
@@ -8,17 +8,5 @@
         public string CustomerName { get; set; } = string.Empty;
         public string CustomerNumber { get; set; } = string.Empty;
         public DateTime InvoiceDate { get; set; }
-
-        public APAROffsetAPRowDto() { }
-
-        public APAROffsetAPRowDto(InvoiceDetailsDto details)
-        {
-            Id = details.Id;
-            InvoiceAmount = details.InvoiceAmount;
-            InvoiceNumber = details.InvoiceNumber;
-            CustomerName = details.CustomerName;
-            CustomerNumber = details.CustomerNumber;
-        }
     }
 }
-

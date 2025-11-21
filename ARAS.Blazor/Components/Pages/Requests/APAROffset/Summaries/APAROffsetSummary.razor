@@ -13,7 +13,7 @@
             <RadzenColumn Size="6">
                 <div style="font-size: 1.2rem;">
                     <b>NAME:</b>
-                    <span class="pl-1">@APAdjustments.FirstOrDefault()?.CustomerName</span>
+                    <span class="pl-1">@APAdjustments?.FirstOrDefault()?.CustomerName</span>
                 </div>
             </RadzenColumn>
             <RadzenColumn Size="6">
@@ -47,7 +47,7 @@
                                 @data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
                             </Template>
                             <FooterTemplate>
-                                <b>@APAdjustments.Sum(a => a.InvoiceAmount).ToString("C2", new System.Globalization.CultureInfo("en-PH"))</b>
+                                <b>@APAdjustments?.Sum(a => a.InvoiceAmount).ToString("C2", new System.Globalization.CultureInfo("en-PH"))</b>
                             </FooterTemplate>
                         </RadzenDataGridColumn>
                     </Columns>
@@ -82,7 +82,7 @@
                                 @data.Amount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
                             </Template>
                             <FooterTemplate>
-                                <b>Total:</b> @ARAdjustments.Sum(a => a.Amount).ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+                                <b>Total:</b> @ARAdjustments?.Sum(a => a.Amount).ToString("C2", new System.Globalization.CultureInfo("en-PH"))
                             </FooterTemplate>
                         </RadzenDataGridColumn>
                     </Columns>

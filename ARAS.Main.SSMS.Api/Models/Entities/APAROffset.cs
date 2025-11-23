@@ -11,6 +11,7 @@ namespace ARAS.Main.SSMS.Api.Models.Entities
         public double Amount { get; set; }
         public string Type { get; set; }
         public string AdjustmentTypeId { get; set; }
+        public string ReasonCode { get; set; }
 
         public string CreatedBy { get; set; }
         public DateTime DateCreated { get; set; }

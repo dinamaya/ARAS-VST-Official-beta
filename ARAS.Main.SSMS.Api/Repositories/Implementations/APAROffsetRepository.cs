@@ -85,6 +85,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                 InvoiceId = invoiceId,
                 Amount = data.Amount,
                 Type = data.Type,
+                ReasonCode = data.ReasonCode,
                 AdjustmentTypeId = adjustmentTypeId,
 
                 CreatedBy = createdBy,

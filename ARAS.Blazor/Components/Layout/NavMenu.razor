@@ -28,7 +28,8 @@
 		else if (accountDetails.IsInRole("Requestor"))
 		{
 			<RadzenPanelMenuItem Text="Requests" Icon="assignment_add" Style="border: none">
-				<RadzenPanelMenuItem Text="AP-AR" Path="/requests/ap-ar" Style="background: transparent; border: none;" />
+				<RadzenPanelMenuItem Text="AR Invoice Offsetting" Path="/requests/ar-invoice-offsetting" Style="background: transparent; border: none;" />
+				<RadzenPanelMenuItem Text="AP-AR : Offset" Path="/requests/apar-offset" Style="background: transparent; border: none;" />
 				<RadzenPanelMenuItem Text="Cash Discount" Path="/requests/cash-discount" Style="background: transparent" />
 				<RadzenPanelMenuItem Text="Bank Charge" Path="/requests/bank-charge" Style="background: transparent" />
 				<RadzenPanelMenuItem Text="Small Amount" Path="/requests/small-amount" Style="background: transparent" />
@@ -55,6 +56,7 @@
 		}
 
 		<RadzenPanelMenuItem Text="Submissions" Icon="article_shortcut" Style="border: none">
+			<RadzenPanelMenuItem Text="AP-AR : Offset" Path="/submissions/apar-offset" Style="background: transparent; border: none;" />
 			<RadzenPanelMenuItem Text="Cash Discount" Path="/submissions/cash-discount" Style="background: transparent" />
 			<RadzenPanelMenuItem Text="Bank Charge" Path="/submissions/bank-charge" Style="background: transparent" />
 		</RadzenPanelMenuItem>

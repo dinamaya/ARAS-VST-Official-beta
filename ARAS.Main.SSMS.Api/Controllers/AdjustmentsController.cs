@@ -12,15 +12,17 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		private readonly ILogger<AdjustmentsController> _logger;
 		private readonly ICashDiscountRepository _cashDiscountRepo;
 		private readonly IBankChargeRepository _bankChargeRepo;
+		private readonly IAPAROffsetRepository _aparOffsetRepo;
 
-		public AdjustmentsController(ILogger<AdjustmentsController> logger, ICashDiscountRepository cashDiscountRepo, IBankChargeRepository bankChargeRepo)
-		{
-			_logger = logger;
-			_cashDiscountRepo = cashDiscountRepo;
+        public AdjustmentsController(ILogger<AdjustmentsController> logger, ICashDiscountRepository cashDiscountRepo, IAPAROffsetRepository aparOffsetRepo, IBankChargeRepository bankChargeRepo)
+        {
+            _logger = logger;
+            _cashDiscountRepo = cashDiscountRepo;
+            _aparOffsetRepo = aparOffsetRepo;
 			_bankChargeRepo = bankChargeRepo;
 		}
 
-		[HttpGet("cdr/{requestId:long}"), Authorize]
+        [HttpGet("cdr/{requestId:long}"), Authorize]
 		public async Task<ResponseDto<IEnumerable<CashDiscountRowDto>>> GetCashDiscountAdjustments(long requestId)
 		{
 			var response = new ResponseDto<IEnumerable<CashDiscountRowDto>>();
@@ -51,5 +53,21 @@ namespace ARAS.Main.SSMS.Api.Controllers
 				return response.Failed(ex.Message);
 			}
 		}
+
+		[HttpGet("aar/{requestId:long}"), Authorize]
+        public async Task<ResponseDto<Tuple<IEnumerable<APAROffsetAPRowDto>, IEnumerable<APAROffsetARRowDto>>>> GetAPAdjustments(long requestId)
+        {
+            var response = new ResponseDto<Tuple<IEnumerable<APAROffsetAPRowDto>, IEnumerable<APAROffsetARRowDto>>>();
+            try
+            {
+                response.Result = await _aparOffsetRepo.GetAPAdjustmentsByRequestId(requestId);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return response.Failed(ex.Message);
+            }
+        }
 	}
 }

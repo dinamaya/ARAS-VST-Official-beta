@@ -1,0 +1,79 @@
+﻿using ARAS.Blazor.App_Code.Globals.Extensions;
+using ARAS.Main.SSMS.Api.Models.Dtos;
+using ARAS.Main.SSMS.Api.Repositories.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace ARAS.Main.SSMS.Api.Controllers
+{
+    [Route("api/apar-offset")]
+    [ApiController]
+    public class APAROffsetController : ControllerBase
+    {
+        private readonly ILogger<APAROffsetController> _logger;
+        private readonly IAPAROffsetRepository _aparOffsetRepo;
+
+        public APAROffsetController(ILogger<APAROffsetController> logger, IAPAROffsetRepository aparOffsetRepo)
+        {
+            _logger = logger;
+            _aparOffsetRepo = aparOffsetRepo;
+        }
+
+        [HttpPost]
+        public async Task<ResponseDto<long>> Create([FromBody] AdjustmentRequestCreationDto<APAROffsetCreateDto> data)
+        {
+            ResponseDto<long> response = new();
+            try
+            {
+                var accountInfo = User.GetAccountBasicInfo();
+
+                var requestCreation = new RequestCreationDto<AdjustmentRequestCreationDto<APAROffsetCreateDto>>(data, accountInfo.GroupCode, accountInfo.FullName);
+
+                long requestId = await _aparOffsetRepo.CreateAsync(requestCreation, accountInfo.Id);
+
+                response.Result = requestId;
+                response.Message = "Request Created Successfully";
+                return response;
+            }
+            catch (Exception ex)
+            {
+                return response.Failed(ex.Message);
+            }
+        }
+
+        [HttpGet("test")]
+        public async Task<string> Create()
+        {
+            ResponseDto<long> response = new();
+            try
+            {
+                return "success";
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
+        }
+
+
+        [HttpGet("submissions"), Authorize]
+        public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetAllSubmissions()
+        {
+            var response = new ResponseDto<IEnumerable<TransactionRequestRowDto>>();
+            try
+            {
+                response.Message = "";
+                response.Result = await _aparOffsetRepo.GetAllSubmissions();
+                return response;
+            }
+            catch (Exception ex)
+            {
+                return response.Failed(ex.Message);
+            }
+        }
+    }
+}

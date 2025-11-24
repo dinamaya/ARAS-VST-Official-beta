@@ -14,8 +14,12 @@ namespace ARAS.Main.SSMS.Api.Context
 		public virtual DbSet<Status> Statuses { get; set; }
 		public virtual DbSet<Transaction> Transactions { get; set; }
 		public virtual DbSet<TransactionRemarks> TransactionRemarks { get; set; }
+        public virtual DbSet<APAROffset> APAROffsets { get; set; }
 
-		// SQL VIEWS
+        // SQL VIEWS
+        public virtual DbSet<ActiveTransactionsV> VwActiveTransactions { get; set; }
+        public virtual DbSet<AparoffsetRowV> VwAparoffsetRows { get; set; }
+		public virtual DbSet<CashDiscountAdjustmentsV> VwCashDiscountAdjustments { get; set; }
 		public virtual DbSet<ActiveTransactionsV> VwActiveTransactions { get; set; }
 		public virtual DbSet<InvoiceNumbersV> VwInvoiceNumbers { get; set; }
 		public virtual DbSet<LatestRequestTransactionV> VwLatestRequestTransactions { get; set; }
@@ -82,6 +86,13 @@ namespace ARAS.Main.SSMS.Api.Context
 				entity.Property(e => e.CreatorId).HasMaxLength(250);
 				entity.Property(e => e.StatusId).HasMaxLength(450);
 			});
+
+            modelBuilder.Entity<AparoffsetRowV>(entity =>
+            {
+                entity
+                    .HasNoKey()
+                    .ToView("APAROffsetRow_v");
+            });
 
 			modelBuilder.Entity<InvoiceNumbersV>(entity =>
 			{

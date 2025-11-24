@@ -103,6 +103,18 @@
 			"UpstreamHttpMethod": [ "GET", "POST" ]
 		},
 		{
+			"DownstreamPathTemplate": "/api/apar-offset/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/apar-offset/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
 			"DownstreamPathTemplate": "/api/decline/{everything}",
 			"DownstreamScheme": "https",
 			"DownstreamHostAndPorts": [

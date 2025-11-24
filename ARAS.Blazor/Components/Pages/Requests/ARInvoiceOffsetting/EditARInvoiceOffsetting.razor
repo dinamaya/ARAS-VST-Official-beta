@@ -1,0 +1,79 @@
+﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.UI
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+
+@inherits ComponentBase
+@inject DialogService DialogService
+@inject ICashDiscountService CashDiscountService
+
+<RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenFormField Text="Invoice Number to adjust" Variant="@Variant.Outlined">
+			<RadzenTextBox @bind-Value="@Data.InvoiceNumber" ReadOnly />
+		</RadzenFormField>
+		<ComponentValidator ValidationName="@nameof(ARInvoiceOffsettingCreateValidationDto.InvoiceNumber)" />
+	</RadzenStack>
+
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
+			<RadzenTextArea @bind-Value="@Data.Remarks" Rows="4" />
+		</RadzenFormField>
+		<ComponentValidator ValidationName="@nameof(ARInvoiceOffsettingCreateValidationDto.Remarks)" />
+	</RadzenStack>
+
+	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+		<button @onclick="@OnDelete" class="btn btn-dark">
+			Delete
+		</button>
+		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+			<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
+				Close
+			</button>
+			<button @onclick="OnEdit" class="btn btn-outline-primary">
+				Edit
+			</button>
+		</RadzenStack>
+	</RadzenStack>
+
+</RadzenStack>
+
+@code {
+
+	[Parameter] public IList<AROffsettingRowDto> Rows { get; set; }
+	[Parameter] public RadzenDataGrid<AROffsettingRowDto> Grid { get; set; }
+	[Parameter] public AROffsettingRowDto Data { get; set; }
+
+	private IEnumerable<string> invoices = new List<string>();
+	private string discountPercentage = string.Empty;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+	}
+
+	private async Task OnEdit()
+	{
+		try
+		{
+
+			var data = Rows.FirstOrDefault(r => r.Id == Data.Id) ?? throw new Exception("Data is not found in the AR Invoice Offsetting List");
+			data.SetValues(Data.Remarks);
+
+			await Grid.Reload();
+			DialogService.Close(true);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(Exceptions.GetMessage(ex), "Failed to Edit AR Offsetting Details");
+		}
+	}
+
+	private async Task OnDelete()
+	{
+		Rows.Remove(Data);
+		await Grid.Reload();
+		DialogService.Close(true);
+	}
+}
+

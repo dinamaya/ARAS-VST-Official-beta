@@ -12,6 +12,7 @@ namespace ARAS.Main.SSMS.Api.App_Code.Globals.Extensions
 		{
 			services.AddScoped(typeof(IBaseAdjustmentRepository<>), typeof(BaseAdjustmentRepository<>));
 
+			services.AddScoped<IAPAROffsetRepository, APAROffsetRepository>();
 			services.AddScoped<IAdjustmentRepository, AdjustmentRepository>();
 			services.AddScoped<IBankChargeRepository, BankChargeRepository>();
 			services.AddScoped<ICashDiscountRepository, CashDiscountRepository>();

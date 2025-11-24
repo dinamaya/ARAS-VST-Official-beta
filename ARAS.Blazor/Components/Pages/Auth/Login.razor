@@ -46,12 +46,24 @@
 						</div>
 					</div>
 					<div>
-						@if (showErrorAlert)
+						@if (QueryService.KeyHasValueOf("q", Queries.Auth.UNAUTHORIZED))
 						{
 							<RadzenAlert Size="AlertSize.Large" AllowClose="false" AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" Shade="Shade.Lighter">
 								<b>Account is not authorized.</b>
 								<br />
 								Please contact the administrator for role assignment.
+							</RadzenAlert>
+						}
+						else if (QueryService.KeyHasValueOf("q", Queries.Auth.SESSION_EXPIRE))
+						{
+							<RadzenAlert Size="AlertSize.Large" AllowClose="false" AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" Shade="Shade.Lighter">
+								<b>Your session has expired!</b> Please login again to continue.
+							</RadzenAlert>
+						}
+						else if (QueryService.KeyHasValueOf("q", Queries.Auth.INCORRECT))
+						{
+							<RadzenAlert Size="AlertSize.Large" AllowClose="false" AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" Shade="Shade.Lighter">
+								<b>Account not found! </b>Either your account is deactivated or the credentials provided are incorrect.
 							</RadzenAlert>
 						}
 					</div>
@@ -72,14 +84,10 @@
 </div>
 
 @code {
-	bool showErrorAlert = false;
 	protected override async Task OnInitializedAsync()
 	{
-		ShowAlert();
 		await Authenticate();
 	}
-
-	private void ShowAlert() => showErrorAlert = QueryService.KeyHasValueOf("q", Queries.Auth.UNAUTHORIZED);
 
 	private void SignIn() => Navigation.NavigateTo(Config.GetAuthUrl($"aad/login?url={QueryService.GetCurrentUrl()}"), forceLoad: true);
 
@@ -93,7 +101,7 @@
 		}
 		catch
 		{
-			
+
 		}
 	}
 }

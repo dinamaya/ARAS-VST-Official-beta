@@ -1,4 +1,5 @@
-﻿@using ARAS.Blazor.Models.DTOs
+﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
 
 @inject DialogService DialogService
@@ -40,31 +41,31 @@
 		<RadzenTable class="w-100 pb-2" GridLines="DataGridGridLines.Both" AllowAlternatingRows="false">
 			<RadzenTableHeader>
 				<RadzenTableHeaderRow>
-					<RadzenTableHeaderCell Style="width: 220px; text-align: center">
-						Adjustment Amount
+					<RadzenTableHeaderCell Style="min-width: 170px; width: 170px; text-align: center">
+						Adjustment <br />Amount
 					</RadzenTableHeaderCell>
-					<RadzenTableHeaderCell Style="width: 170px; text-align: center">
+					<RadzenTableHeaderCell Style="min-width: 170px; width: 170px; text-align: center">
 						Adjustment<br />Activity
 					</RadzenTableHeaderCell>
-					<RadzenTableHeaderCell Style="width: 220px; text-align: center">
+					<RadzenTableHeaderCell Style="min-width: 170px; width: 170px; text-align: center">
 						Invoice Amount
 					</RadzenTableHeaderCell>
-					<RadzenTableHeaderCell Style="width: 220px; text-align: center">
+					<RadzenTableHeaderCell Style="min-width: 220px; width: 220px; text-align: center">
 						Invoice Date
 					</RadzenTableHeaderCell>
-					<RadzenTableHeaderCell Style="width: 220px; text-align: center">
+					<RadzenTableHeaderCell Style="min-width: 220px; width: 220px; text-align: center">
 						Invoice Number
 					</RadzenTableHeaderCell>
-					<RadzenTableHeaderCell Style="width: 400px; text-align: center">
+					<RadzenTableHeaderCell Style="min-width: 400px; width: 400px; text-align: center">
 						Customer Name
 					</RadzenTableHeaderCell>
-					<RadzenTableHeaderCell Style="width: 220px; text-align: center">
+					<RadzenTableHeaderCell Style="min-width: 220px; width: 220px; text-align: center">
 						Customer Number
 					</RadzenTableHeaderCell>
-					<RadzenTableHeaderCell Style="width: 120px; text-align: center">
+					<RadzenTableHeaderCell Style="min-width: 120px; width: 120px; text-align: center">
 						Reason<br />Code
 					</RadzenTableHeaderCell>
-					<RadzenTableHeaderCell Style="width: 500px; text-align: center">
+					<RadzenTableHeaderCell Style="min-width: 500px; width: 500px; text-align: center">
 						Remarks
 					</RadzenTableHeaderCell>
 				</RadzenTableHeaderRow>
@@ -75,31 +76,31 @@
 					@foreach (var data in Rows)
 					{
 						<RadzenTableRow>
-							<RadzenTableCell Style="width: 220px">
-								@data.AdjustmentAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
-							</RadzenTableCell>
-							<RadzenTableCell Style="width: 170px; text-align: center">
+							<RadzenTableCell Style="min-width: 170px; width: 170px; text-align: end">
+                                @data.AdjustmentAmount.ToPhp()
+                            </RadzenTableCell>
+							<RadzenTableCell Style="min-width: 170px; width: 170px; text-align: center">
 								@data.AdjustmentActivity
 							</RadzenTableCell>
-							<RadzenTableCell Style="width: 220px">
-								@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+							<RadzenTableCell Style="min-width: 170px; width: 170px; text-align: end">
+								@data.InvoiceAmount.ToPhp()
 							</RadzenTableCell>
-							<RadzenTableCell Style="width: 220px">
+							<RadzenTableCell Style="min-width: 170px; width: 170px; text-align: center">
 								@data.InvoiceDate
 							</RadzenTableCell>
-							<RadzenTableCell Style="width: 220px">
+							<RadzenTableCell Style="min-width: 220px; width: 220px; text-align: center">
 								@data.InvoiceNumber
 							</RadzenTableCell>
-							<RadzenTableCell Style="width: 400px">
+							<RadzenTableCell Style="min-width: 400px; width: 400px; text-align: center">
 								@data.CustomerName
 							</RadzenTableCell>
-							<RadzenTableCell Style="width: 220px">
+							<RadzenTableCell Style="min-width: 220px; width: 220px; text-align: center">
 								@data.CustomerNumber
 							</RadzenTableCell>
-							<RadzenTableCell Style="width: 120px; text-align: center">
+							<RadzenTableCell Style="min-width: 120px; width: 120px; text-align: center">
 								@data.ReasonCode
 							</RadzenTableCell>
-							<RadzenTableCell Style="width: 500px">
+							<RadzenTableCell Style="min-width: 500px; width: 500px; text-align: center">
 								@data.Remarks
 							</RadzenTableCell>
 						</RadzenTableRow>

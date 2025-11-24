@@ -1,4 +1,5 @@
-﻿@using ARAS.Blazor.Components.UI
+﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.UI
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
 @inherits ComponentBase
@@ -87,10 +88,18 @@
 
 	private async Task OnSubmit()
 	{
-		bool isSuccess = await OpsService.Update(accountEditRequest);
-		if (!isSuccess) return;
+		try
+		{
+			bool isSuccess = await OpsService.Update(accountEditRequest);
+			if (!isSuccess) return;
 
-		DialogService.Close();
-		NavigationManager.NavigateTo("/ops/accounts", true);
+			DialogService.Close();
+			NavigationManager.NavigateTo("/ops/accounts", true);
+		}
+		catch(Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Failed to update account details");
+		}
+
 	}
 }

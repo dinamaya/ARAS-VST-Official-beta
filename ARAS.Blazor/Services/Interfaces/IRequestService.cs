@@ -6,5 +6,7 @@ namespace ARAS.Blazor.Services.Interfaces
 	{
 		Task<bool> IsApprovable(long requestId);
 		Task<bool> IsValidatable(long requestId);
+
+		Task<TransactionRequestRowDto> GetRequestDetails(long requestId);
 	}
 }

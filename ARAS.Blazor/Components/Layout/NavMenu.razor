@@ -30,23 +30,33 @@
 			<RadzenPanelMenuItem Text="Requests" Icon="assignment_add" Style="border: none">
 				<RadzenPanelMenuItem Text="AP-AR" Path="/requests/ap-ar" Style="background: transparent; border: none;" />
 				<RadzenPanelMenuItem Text="Cash Discount" Path="/requests/cash-discount" Style="background: transparent" />
+				<RadzenPanelMenuItem Text="Bank Charge" Path="/requests/bank-charge" Style="background: transparent" />
+				<RadzenPanelMenuItem Text="Small Amount" Path="/requests/small-amount" Style="background: transparent" />
+				
+				<RadzenPanelMenuItem Text="Write Off" Style="border: none">
+					<RadzenPanelMenuItem Text="Sales Return" Path="/approvals/cash-discount" Style="background: transparent" />
+					<RadzenPanelMenuItem Text="Write Off" Path="/approvals/bank-charge" Style="background: transparent" />
+				</RadzenPanelMenuItem>
 			</RadzenPanelMenuItem>
 		}
 		else if (accountDetails.IsInRole("Approver"))
 		{
 			<RadzenPanelMenuItem Text="Approvals" Icon="assignment_turned_in" Style="border: none">
 				<RadzenPanelMenuItem Text="Cash Discount" Path="/approvals/cash-discount" Style="background: transparent" />
+				<RadzenPanelMenuItem Text="Bank Charge" Path="/approvals/bank-charge" Style="background: transparent" />
 			</RadzenPanelMenuItem>
 		}
 		else if (accountDetails.IsInRole("Validator"))
 		{
 			<RadzenPanelMenuItem Text="Validations" Icon="fact_check" Style="border: none">
 				<RadzenPanelMenuItem Text="Cash Discount" Path="/validations/cash-discount" Style="background: transparent" />
+				<RadzenPanelMenuItem Text="Bank Charge" Path="/validations/bank-charge" Style="background: transparent" />
 			</RadzenPanelMenuItem>
 		}
 
 		<RadzenPanelMenuItem Text="Submissions" Icon="article_shortcut" Style="border: none">
 			<RadzenPanelMenuItem Text="Cash Discount" Path="/submissions/cash-discount" Style="background: transparent" />
+			<RadzenPanelMenuItem Text="Bank Charge" Path="/submissions/bank-charge" Style="background: transparent" />
 		</RadzenPanelMenuItem>
 
 	</RadzenPanelMenu>

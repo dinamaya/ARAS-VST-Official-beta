@@ -1,5 +1,5 @@
 ﻿using ARAS.Blazor.App_Code.Globals.Extensions;
-using ARAS.Main.Oracle.Api.Models.Dtos;
+using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using ARAS.Main.SSMS.Api.Services.Interfaces;
@@ -16,14 +16,16 @@ namespace ARAS.Main.SSMS.Api.Controllers
 	{
 		private readonly ILogger<CashDiscountController> _logger;
 		private readonly ICashDiscountRepository _cashDiscountRepo;
+		private readonly IRequestRepository _requestRepo;
 
-		public CashDiscountController(ILogger<CashDiscountController> logger, ICashDiscountRepository cashDiscountRepo)
+		public CashDiscountController(ILogger<CashDiscountController> logger, ICashDiscountRepository cashDiscountRepo, IRequestRepository requestRepo)
 		{
 			_logger = logger;
 			_cashDiscountRepo = cashDiscountRepo;
+			_requestRepo = requestRepo;
 		}
 
-		[HttpPost("create"), Authorize(Roles = "Requestor")]
+		[HttpPost, Authorize(Roles = "Requestor")]
 		public async Task<ResponseDto<long>> Create([FromBody] AdjustmentRequestCreationDto<CashDiscountCreateDto> data)
 		{
 			ResponseDto<long> response = new ();
@@ -58,52 +60,6 @@ namespace ARAS.Main.SSMS.Api.Controllers
 
 				response.Result = "Success";
 				response.Message = "Request Updated Successfully";
-				return response;
-			}
-			catch (Exception ex)
-			{
-				return response.Failed(ex.Message);
-			}
-		}
-
-		[HttpGet("submissions"), Authorize]
-		public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetAllSubmissions()
-		{
-			var response = new ResponseDto<IEnumerable<TransactionRequestRowDto>>();
-			try
-			{
-				response.Message = "";
-				response.Result = await _cashDiscountRepo.GetAllSubmissions();
-				return response;
-			}
-			catch (Exception ex)
-			{
-				return response.Failed(ex.Message);
-			}
-		}
-
-		[HttpGet("approvals"), Authorize(Roles = "Approver")]
-		public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetForApprovals()
-		{
-			var response = new ResponseDto<IEnumerable<TransactionRequestRowDto>>();
-			try
-			{
-				response.Result = await _cashDiscountRepo.GetAllForApprovals();
-				return response;
-			}
-			catch (Exception ex)
-			{
-				return response.Failed(ex.Message);
-			}
-		}
-
-		[HttpGet("validations"), Authorize(Roles = "Validator")]
-		public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetForValidations()
-		{
-			var response = new ResponseDto<IEnumerable<TransactionRequestRowDto>>();
-			try
-			{
-				response.Result = await _cashDiscountRepo.GetAllForValidations();
 				return response;
 			}
 			catch (Exception ex)

@@ -12,5 +12,10 @@
 			if (obj == null)
 				throw new NullReferenceException(message);
 		}
+		public static void ThrowNullOrEmpty(string value, string message)
+		{
+			if (string.IsNullOrEmpty(value))
+				throw new NullReferenceException(message);
+		}
 	}
 }

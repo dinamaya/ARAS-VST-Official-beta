@@ -365,3 +365,4 @@ FodyWeavers.xsd
 /ARAS.Main.SSMS.Api/ARAS.Main.SSMS.Api.http
 /ARAS.Auth.Api/Migrations/
 /ARAS.Auth.Api/Migrations/AuthDbContextModelSnapshot.cs
+/ARAS.Blazor/Migrations

@@ -10,8 +10,9 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 		public string AdjustmentTypeId { get; set; }
 		public float DiscountPercentage { get; set; }
 		public string Remarks { get; set; }
+		public string ReasonCode { get; set; }
 
-		public AdjustmentCreateDto(long invoiceId, long requestId, double adjustmentAmount, string adjustmentTypeId, float discountPercentage, string remarks)
+		public AdjustmentCreateDto(long invoiceId, long requestId, double adjustmentAmount, string adjustmentTypeId, float discountPercentage, string remarks, string reasonCode)
 		{
 			InvoiceId = invoiceId;
 			RequestId = requestId;
@@ -19,6 +20,7 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 			AdjustmentTypeId = adjustmentTypeId;
 			DiscountPercentage = discountPercentage;
 			Remarks = remarks;
+			ReasonCode = reasonCode;
 		}
 	}
 }

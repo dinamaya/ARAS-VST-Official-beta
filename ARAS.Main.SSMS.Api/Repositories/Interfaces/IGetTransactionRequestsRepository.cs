@@ -4,8 +4,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 {
 	public interface IGetTransactionRequestsRepository
 	{
-		Task<IEnumerable<TransactionRequestRowDto>> GetAllSubmissions();
-		Task<IEnumerable<TransactionRequestRowDto>> GetAllForApprovals();
-		Task<IEnumerable<TransactionRequestRowDto>> GetAllForValidations();
+		Task<IEnumerable<TransactionRequestRowDto>> GetAllSubmissionsByType(string adjustmentTypeCode);
+		Task<IEnumerable<TransactionRequestRowDto>> GetAllForApprovalsByType(string adjustmentTypeCode);
+		Task<IEnumerable<TransactionRequestRowDto>> GetAllForValidationsByType(string adjustmentTypeCode);
 	}
 }

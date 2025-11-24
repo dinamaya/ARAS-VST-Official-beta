@@ -1,8 +1,6 @@
-﻿using ARAS.Main.Oracle.Api.Models.Dtos;
-using ARAS.Main.SSMS.Api.Models.Dtos;
+﻿using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ARAS.Main.SSMS.Api.Controllers
@@ -13,11 +11,13 @@ namespace ARAS.Main.SSMS.Api.Controllers
 	{
 		private readonly ILogger<AdjustmentsController> _logger;
 		private readonly ICashDiscountRepository _cashDiscountRepo;
+		private readonly IBankChargeRepository _bankChargeRepo;
 
-		public AdjustmentsController(ILogger<AdjustmentsController> logger, ICashDiscountRepository cashDiscountRepo)
+		public AdjustmentsController(ILogger<AdjustmentsController> logger, ICashDiscountRepository cashDiscountRepo, IBankChargeRepository bankChargeRepo)
 		{
 			_logger = logger;
 			_cashDiscountRepo = cashDiscountRepo;
+			_bankChargeRepo = bankChargeRepo;
 		}
 
 		[HttpGet("cdr/{requestId:long}"), Authorize]
@@ -36,14 +36,13 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		//[HttpPost("cdr/validate")]
-		[HttpPost("cdr/validate"), Authorize]
-		public async Task<ResponseDto<bool>> ValidateCashDiscountAdjustments([FromBody] CashDiscountCreateValidationDto CashDiscountCreateValidation)
+		[HttpGet("bca/{requestId:long}"), Authorize]
+		public async Task<ResponseDto<IEnumerable<BankChargeRowDto>>> GetBankChargeAdjustments(long requestId)
 		{
-			var response = new ResponseDto<bool>();
+			var response = new ResponseDto<IEnumerable<BankChargeRowDto>>();
 			try
 			{
-				response.Result = await _cashDiscountRepo.IsValid(CashDiscountCreateValidation);
+				response.Result = await _bankChargeRepo.GetAdjustmentsByRequestId(requestId);
 				return response;
 			}
 			catch (Exception ex)

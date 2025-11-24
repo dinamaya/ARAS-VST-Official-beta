@@ -1,8 +1,7 @@
 ﻿using ARAS.Blazor.App_Code.Globals.Extensions;
 using ARAS.Main.SSMS.Api.Models.Dtos;
-using ARAS.Main.SSMS.Api.Repositories.Interfaces;
+using ARAS.Main.SSMS.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -14,22 +13,22 @@ namespace ARAS.Main.SSMS.Api.Controllers
 	public class ApprovalsController : ControllerBase
 	{
 		private readonly ILogger<ApprovalsController> _logger;
-		private readonly ICashDiscountRepository _cashDiscountRepo;
+		private readonly IAdjustmentService _adjustmentService;
 
-		public ApprovalsController(ILogger<ApprovalsController> logger, ICashDiscountRepository cashDiscountRepo)
+		public ApprovalsController(ILogger<ApprovalsController> logger, IAdjustmentService adjustmentService)
 		{
 			_logger = logger;
-			_cashDiscountRepo = cashDiscountRepo;
+			_adjustmentService = adjustmentService;
 		}
 
-		[HttpPost("cdr")]
-		public async Task<ResponseDto<string>> ApproveTransactionRequestByRequestId([FromBody] RequestUpdateDto data)
+		[HttpPost("{adjustmentTypeCode}")]
+		public async Task<ResponseDto<string>> Post(string adjustmentTypeCode, [FromBody] RequestUpdateDto data)
 		{
 			var response = new ResponseDto<string>();
 			try
 			{
 				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
-				await _cashDiscountRepo.CreateApproveTransaction(data, accountId);
+				await _adjustmentService.Approve(data, accountId, adjustmentTypeCode);
 
 				response.Result = "Success";
 				response.Message = "Request Approved";

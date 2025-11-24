@@ -12,5 +12,6 @@ namespace ARAS.Blazor.Services.Interfaces
 		Task<AccountDetailsDto> GetAccountDetails();
 		Task<string> GetLastFirstName();
 		void InitLazyState();
+		Task<bool> IsAccountSecurityHashValid();
 	}
 }

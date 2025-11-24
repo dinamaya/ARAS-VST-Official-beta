@@ -21,11 +21,13 @@ namespace ARAS.Blazor.Services.Implementations
 		private readonly ITokenService _tokenService;
 		private readonly IHttpClientFactory _httpClientFactory;
 		private readonly IValidationService _validationService;
+		private readonly IAuthService _authService;
+
 		private readonly ILogger<BaseService> _logger;
 		private readonly NotificationService _notifService;
 		private readonly DialogService _dialogService;
 
-		public BaseService(IHttpClientFactory httpClientFactory, ILogger<BaseService> logger, ITokenService tokenService, NotificationService notifService, DialogService dialogService, IValidationService validationService)
+		public BaseService(IHttpClientFactory httpClientFactory, ILogger<BaseService> logger, ITokenService tokenService, NotificationService notifService, DialogService dialogService, IValidationService validationService, IAuthService authService)
 		{
 			_tokenService = tokenService;
 			_httpClientFactory = httpClientFactory;
@@ -33,6 +35,7 @@ namespace ARAS.Blazor.Services.Implementations
 			_notifService = notifService;
 			_dialogService = dialogService;
 			_validationService = validationService;
+			_authService = authService;
 		}
 
 		/// <summary>
@@ -51,6 +54,9 @@ namespace ARAS.Blazor.Services.Implementations
 		{
 			try
 			{
+				//bool isSecurityHashValid = await _authService.IsAccountSecurityHashValid();
+				//Guards.ThrowInvalidOperationIf(!isSecurityHashValid, "Session expired. Please log in again.");
+
 				HttpClient client = _httpClientFactory.CreateClient("vstecs-aras-client");
 				HttpRequestMessage message = new();
 				ResponseDto<TResult> responseDto = new();

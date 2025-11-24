@@ -14,6 +14,16 @@
 		</RadzenFormField>
 		<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.InvoiceNumber)" />
 	</RadzenStack>
+	
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenRow>
+			<RadzenLabel Style="width: 100%;" Text="Reason Codes" />
+		</RadzenRow>
+		<RadzenRow>
+			<RadzenDropDown @bind-Value=@reasonCode Data=@ReasonCodes Style="width: 100%;" Name="Reason Codes" />
+		</RadzenRow>
+		<ComponentValidator ValidationName="Reason Code" />
+	</RadzenStack>
 
 	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
 		<RadzenFormField Text="@("Discount (%)")" Variant="Variant.Outlined">
@@ -52,16 +62,18 @@
 </RadzenStack>
 
 @code {
-
+	[Parameter] public IEnumerable<string> ReasonCodes { get; set; }
 	[Parameter] public IList<CashDiscountRowDto> Rows { get; set; }
 	[Parameter] public RadzenDataGrid<CashDiscountRowDto> Grid { get; set; }
 	[Parameter] public CashDiscountRowDto Data { get; set; }
 
 	private IEnumerable<string> invoices = new List<string>();
 	private string discountPercentage = string.Empty;
+	private string reasonCode = string.Empty;
 
 	protected override async Task OnInitializedAsync()
 	{
+		reasonCode = Data.ReasonCode.ToUpper();
 		await base.OnInitializedAsync();
 	}
 
@@ -86,9 +98,8 @@
 
 			if (!isValid) return;
 
-
 			var data = Rows.FirstOrDefault(r => r.Id == Data.Id) ?? throw new Exception("Data is not found in the cash-discount adjustment table");
-			data.SetValues(discountValue, Data.Remarks);
+			data.SetValues(discountValue, Data.Remarks, reasonCode);
 
 			await Grid.Reload();
 			DialogService.Close(true);

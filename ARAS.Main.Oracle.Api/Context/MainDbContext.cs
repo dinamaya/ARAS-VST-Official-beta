@@ -5,7 +5,7 @@ namespace ARAS.Main.Oracle.Api.Context
 {
 	public class MainDbContext : DbContext
 	{
-		public virtual DbSet<InvoiceDetails> InvoiceDetails { get; set; }
+		public virtual DbSet<ReasonCode> ReasonCodes { get; set; }
 
 		public MainDbContext(DbContextOptions<MainDbContext> options) : base(options)
 		{
@@ -13,6 +13,9 @@ namespace ARAS.Main.Oracle.Api.Context
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
+			modelBuilder.Entity<ReasonCode>()
+				.HasKey(e => new { e.LookupType, e.LookupCode });
+			
 			base.OnModelCreating(modelBuilder);
 		}
 	}

@@ -11,10 +11,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 	{
 		private readonly MainDbContext _context;
 
-		public RequestRepository(MainDbContext context)
-		{
-			_context = context;
-		}
+		public RequestRepository(MainDbContext context) => _context = context;
 
 		public async Task<Request> GetById(long id) => await _context.Requests.FindAsync(id) ?? throw new InvalidOperationException(Exceptions.NOTFOUND_REQUEST);
 		
@@ -108,5 +105,123 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.FirstOrDefaultAsync() ?? throw new InvalidOperationException(Exceptions.NOTFOUND_REQUEST);
 
 		}
+
+		public async Task<IEnumerable<TransactionRequestRowDto>> GetAllSubmissionsByType(string adjustmentTypeCode)
+		{
+			adjustmentTypeCode = adjustmentTypeCode.ToUpper();
+			return await _context.VwLatestRequestTransactions
+				.OrderByDescending(t => t.TransactionId)
+				.Where(t => t.AdjustmentTypeCode == adjustmentTypeCode)
+				.Select(t => new TransactionRequestRowDto()
+				{
+					RequestId = t.RequestId,
+					RequestNumber = t.RequestNumber,
+
+					Requestor = ValidateFullName(t.RequestorFirstName, t.RequestorLastName),
+					DateRequested = t.DateRequested.ToString(Formats.Date.DISPLAY_COMPLETE),
+
+					Approver = ValidateFullName(t.ApproverFirstName, t.ApproverLastName),
+					DateApproved = t.DateApproved.HasValue ? ((DateTime)t.DateApproved).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
+
+					Validator = ValidateFullName(t.ValidatorFirstName, t.ValidatorLastName),
+					DateValidated = t.DateValidated.HasValue ? ((DateTime)t.DateValidated).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
+
+					Creator = ValidateFullName(t.CreatorFirstName, t.CreatorLastName),
+					DateCreated = t.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
+
+					Status = t.Status,
+				})
+				.ToListAsync();
+		}
+
+		public async Task<IEnumerable<TransactionRequestRowDto>> GetAllForApprovalsByType(string adjustmentTypeCode)
+		{
+			adjustmentTypeCode = adjustmentTypeCode.ToUpper();
+			return await _context.VwLatestRequestTransactions
+				.Where(t =>
+					t.Status == "Pending" &&
+					t.ApproverId == null && t.ValidatorId == null &&
+					t.AdjustmentTypeCode == adjustmentTypeCode
+				)
+				.OrderByDescending(t => t.TransactionId)
+				.Select(t => new TransactionRequestRowDto()
+				{
+					RequestId = t.RequestId,
+					RequestNumber = t.RequestNumber,
+					Requestor = ValidateFullName(t.RequestorFirstName, t.RequestorLastName),
+					DateRequested = t.DateRequested.ToString(Formats.Date.DISPLAY_COMPLETE),
+
+					Approver = ValidateFullName(t.ApproverFirstName, t.ApproverLastName),
+					DateApproved = t.DateApproved.HasValue ? ((DateTime)t.DateApproved).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
+
+					Validator = ValidateFullName(t.ValidatorFirstName, t.ValidatorLastName),
+					DateValidated = t.DateValidated.HasValue ? ((DateTime)t.DateValidated).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
+
+					Creator = ValidateFullName(t.CreatorFirstName, t.CreatorLastName),
+					DateCreated = t.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
+
+					Status = t.Status,
+				})
+				.ToListAsync();
+		}
+
+		public async Task<IEnumerable<TransactionRequestRowDto>> GetAllForValidationsByType(string adjustmentTypeCode)
+		{
+			adjustmentTypeCode = adjustmentTypeCode.ToUpper();
+			return await _context.VwLatestRequestTransactions
+				.Where(t =>
+					(t.Status == "Approved" || t.Status == "Pending") &&
+					t.ApproverId != null && t.ValidatorId == null &&
+					t.AdjustmentTypeCode == adjustmentTypeCode
+				)
+				.OrderByDescending(t => t.TransactionId)
+				.Select(t => new TransactionRequestRowDto()
+				{
+					RequestId = t.RequestId,
+					RequestNumber = t.RequestNumber,
+					Requestor = ValidateFullName(t.RequestorFirstName, t.RequestorLastName),
+					DateRequested = t.DateRequested.ToString(Formats.Date.DISPLAY_COMPLETE),
+
+					Approver = ValidateFullName(t.ApproverFirstName, t.ApproverLastName),
+					DateApproved = t.DateApproved.HasValue ? ((DateTime)t.DateApproved).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
+
+					Validator = ValidateFullName(t.ValidatorFirstName, t.ValidatorLastName),
+					DateValidated = t.DateValidated.HasValue ? ((DateTime)t.DateValidated).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
+
+					Creator = ValidateFullName(t.CreatorFirstName, t.CreatorLastName),
+					DateCreated = t.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
+
+					Status = t.Status,
+				})
+				.ToListAsync();
+		}
+
+		public async Task<TransactionRequestRowDto> GetTransactionRequestByRequestId(long requestId)
+		{
+			return await _context.VwLatestRequestTransactions.Where(t => t.RequestId == requestId)
+				.Select(t => new TransactionRequestRowDto()
+				{
+					RequestId = t.RequestId,
+					RequestNumber = t.RequestNumber,
+					Requestor = ValidateFullName(t.RequestorFirstName, t.RequestorLastName),
+					DateRequested = t.DateRequested.ToString(Formats.Date.DISPLAY_COMPLETE),
+
+					Approver = ValidateFullName(t.ApproverFirstName, t.ApproverLastName),
+					DateApproved = t.DateApproved.HasValue ? ((DateTime)t.DateApproved).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
+
+					Validator = ValidateFullName(t.ValidatorFirstName, t.ValidatorLastName),
+					DateValidated = t.DateValidated.HasValue ? ((DateTime)t.DateValidated).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
+
+					Creator = ValidateFullName(t.CreatorFirstName, t.CreatorLastName),
+					DateCreated = t.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
+
+					Status = t.Status,
+				})
+				.FirstOrDefaultAsync();
+		}
+
+		private static string ValidateFullName(string fName, string lName) =>
+			string.IsNullOrEmpty(lName) && string.IsNullOrEmpty(fName) ? string.Empty : lName + ", " + fName;
+
 	}
 }

@@ -34,6 +34,10 @@ namespace ARAS.Main.SSMS.Api.Context.Seeders
 				new Status()
 				{
 					Name = "Rejected",
+				},
+				new Status()
+				{
+					Name = "Posted",
 				}
 			);
 

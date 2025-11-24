@@ -1,4 +1,5 @@
 using ARAS.Blazor.App_Code.Globals.Extensions;
+using ARAS.Blazor.App_Code.Globals.Middlewares;
 using ARAS.Blazor.Components;
 using Radzen;
 
@@ -9,8 +10,10 @@ builder.Services.AddHttpClient();
 
 // Add services to the container.
 builder.Services.AddLocalRepositories();
+builder.Services.AddComplexConfiguration();
 builder.Services.AddRadzenConfig();
 builder.Services.AddAuthConfig();
+builder.Services.AddValidationConfig();
 
 builder.Services.AddControllers();
 
@@ -29,6 +32,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 app.UseAuthentication();
+app.UseMiddleware<AccountSecurityHashValidatorMiddleware>();
 app.UseAuthorization(); 
 app.UseAntiforgery();
 

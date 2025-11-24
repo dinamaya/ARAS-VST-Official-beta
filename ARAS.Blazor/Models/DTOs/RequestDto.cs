@@ -17,7 +17,7 @@ namespace ARAS.Blazor.Models.DTOs
 	}
 
 
-	public class RequestDto<T> : RequestDto where T : class
+	public class RequestDto<T> : RequestDto
 	{
 		public new T? Data
 		{

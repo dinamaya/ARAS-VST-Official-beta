@@ -16,21 +16,30 @@ namespace ARAS.Blazor.Services.Implementations
 			_configService = configService;
 		}
 
-		public async Task<bool> IsApprovable(long requestId)
+		public async Task<bool> IsApprovable(long requestId) => await IsOnStatus(requestId, "is-approvable");
+		public async Task<bool> IsValidatable(long requestId) => await IsOnStatus(requestId, "is-validatable");
+		public async Task<TransactionRequestRowDto> GetRequestDetails(long requestId)
 		{
-			var response = await _baseService.SendAsync<bool>(new RequestDto()
-			{
-				URL = _configService.GetRequestsUrl($"cdr/is-approvable/{requestId}"),
-			});
+			var response = await _baseService.SendAsync<TransactionRequestRowDto>(new RequestDto()
+				{
+					URL = _configService.GetRequestsUrl($"details/{requestId}"),
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch the request");
+					});
+				});
 
-			return response.IsSuccess && response.Result;
+			return response.Result;
 		}
 
-		public async Task<bool> IsValidatable(long requestId)
+		private async Task<bool> IsOnStatus(long requestId, string stageStatus)
 		{
 			var response = await _baseService.SendAsync<bool>(new RequestDto()
 			{
-				URL = _configService.GetRequestsUrl($"cdr/is-validatable/{requestId}"),
+				URL = _configService.GetRequestsUrl($"{stageStatus}/{requestId}"),
 			});
 
 			return response.IsSuccess && response.Result;

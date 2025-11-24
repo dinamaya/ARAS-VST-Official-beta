@@ -14,4 +14,8 @@
     <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.9.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="App_Code\Globals\Extensions\" />
+  </ItemGroup>
+
 </Project>

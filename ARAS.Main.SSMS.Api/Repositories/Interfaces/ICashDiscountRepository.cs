@@ -1,17 +1,8 @@
-﻿using ARAS.Main.Oracle.Api.Models.Dtos;
-using ARAS.Main.SSMS.Api.Controllers;
-using ARAS.Main.SSMS.Api.Models.Dtos;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+﻿using ARAS.Main.SSMS.Api.Models.Dtos;
 
 namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 {
-	public interface ICashDiscountRepository : ICreateStatusRepository, IGetTransactionRequestsRepository, ICreateRepository<RequestCreationDto<AdjustmentRequestCreationDto<CashDiscountCreateDto>>, long>
+	public interface ICashDiscountRepository : IBaseAdjustmentCommandRepository<CashDiscountRowDto, CashDiscountCreateDto, CashDiscountCreateValidationDto>
 	{
-		Task<IEnumerable<CashDiscountRowDto>> GetAdjustmentsByRequestId(long requestId);
-		Task UpdateAsync(long requestId, RequestCreationDto<AdjustmentRequestCreationDto<CashDiscountCreateDto>> data, string modifiedBy);
-		Task<TransactionRequestRowDto> GetTransactionRequestByRequestId(long requestId);
-		Task<bool> IsValid(CashDiscountCreateValidationDto cashCreateValidationRequest);
 	}
 }

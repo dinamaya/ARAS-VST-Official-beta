@@ -75,6 +75,13 @@ namespace ARAS.Blazor.Services.Implementations
 						continue;
 					}
 
+
+					if (string.Equals(c.Type, ClaimTypes.Hash))
+					{
+						authClaims.Add(new Claim(ClaimTypes.Hash, c.Value));
+						continue;
+					}
+
 					authClaims.Add(new Claim(c.Type, c.Value));
 				}
 

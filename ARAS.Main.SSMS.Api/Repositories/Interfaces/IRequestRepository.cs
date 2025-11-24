@@ -3,7 +3,10 @@ using ARAS.Main.SSMS.Api.Models.Entities;
 
 namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 {
-	public interface IRequestRepository : IReadSingleRepository<Request, long>, ICreateRepository<RequestCreateDto, long>
+	public interface IRequestRepository : 
+		IReadSingleRepository<Request, long>, 
+		ICreateRepository<RequestCreateDto, long>,
+		IGetTransactionRequestsRepository
 	{
 		Task<bool> IsApprovable(long requestId);
 		Task<bool> IsValidatable (long requestId);
@@ -11,6 +14,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 		Task<bool> IsRejectable (long requestId);
 
 		Task<string> GetRequestNumberById (long requestId);
+
+		Task<TransactionRequestRowDto> GetTransactionRequestByRequestId(long requestId);
 		Task<RequestUpdateEmailDetailsDto> GetForEmailDetailsById (long requestId);
 	}
 }

@@ -1,4 +1,5 @@
-﻿@using ARAS.Blazor.Components.Shared.DataTables
+﻿@page "/approvals/cash-discount/{RequestId:long}"
+@using ARAS.Blazor.Components.Shared.DataTables
 @using ARAS.Blazor.Components.Shared.Modals
 @using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Models.DTOs
@@ -6,7 +7,6 @@
 @using ARAS.Blazor.Components.Pages.Requests.CashDiscount
 @using Microsoft.AspNetCore.Authorization
 
-@page "/approvals/cash-discount/{RequestId:long}"
 @attribute [Authorize(Roles = "Approver")]
 @inject ICashDiscountService CashDiscountService
 @inject IRequestService RequestService
@@ -54,7 +54,7 @@
 	{
 		await base.OnInitializedAsync();
 		isApprovable = await RequestService.IsApprovable(RequestId);
-		var request = await CashDiscountService.GetRequestDetails(RequestId);
+		var request = await RequestService.GetRequestDetails(RequestId);
 		rows = await CashDiscountService.GetAdjustments(RequestId);
 		notes = await NoteService.GetRows(RequestId);
 
@@ -67,7 +67,7 @@
 		if (!isConfirmed) return;
 
 		await CashDiscountService.Approve(RequestId, notes);
-		NavigationManager.NavigateTo("/approvals/cash-discount");
+		NavigationManager.NavigateTo("/approvals/cash-discount", true);
 	}
 
 	protected async Task OnDecline()
@@ -93,7 +93,7 @@
 		};
 
 		await CashDiscountService.Decline(createDto, notes);
-		NavigationManager.NavigateTo("/approvals/cash-discount");
+		NavigationManager.NavigateTo("/approvals/cash-discount", true);
 	}
 
 	protected async Task OnReject()
@@ -103,7 +103,7 @@
 			new Dictionary<string, object>()
 			{
 				{ "Message", "Are you sure you want to \"REJECT\" this request?" },
-				{ "SubmitButtonTitle", "Decline" },
+				{ "SubmitButtonTitle", "Reject" },
 				{ "OnSubmit", Reject}
 			},
 			new DialogOptions() { Width = "700px", Height = "auto" }
@@ -120,6 +120,6 @@
 		};
 
 		await CashDiscountService.Reject(createReject, notes);
-		NavigationManager.NavigateTo("/approvals/cash-discount");
+		NavigationManager.NavigateTo("/approvals/cash-discount", true);
 	}
 }

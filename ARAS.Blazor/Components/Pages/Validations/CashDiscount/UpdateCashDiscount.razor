@@ -1,4 +1,5 @@
 ﻿@page "/validations/cash-discount/{RequestId:long}"
+@using ARAS.Blazor.Components.Shared.DataTables
 @using ARAS.Blazor.Components.Shared.Modals
 @using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Models.DTOs
@@ -9,6 +10,7 @@
 @attribute [Authorize(Roles = "Validator")]
 @inject ICashDiscountService CashDiscountService
 @inject IRequestService RequestService
+@inject INoteService NoteService
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
 
@@ -17,7 +19,7 @@
 <h3>Update Cash Discount</h3>
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 	<RadzenRow>
-		@if (isApprovable)
+		@if (isValidatable)
 		{
 			<RadzenStack class="w-100" JustifyContent="JustifyContent.End" Orientation="Orientation.Horizontal">
 				<RadzenButton ButtonStyle="ButtonStyle.Danger" Text="Reject" class="btn-danger" Icon="cancel" Click="OnReject" />
@@ -31,21 +33,30 @@
 			<CashDiscountSummary Rows="rows" RequestAudit="requestAudit" />
 		</div>
 	</RadzenRow>
+	<RadzenRow>
+		<RadzenColumn Size="4">
+			<Timeline RequestId="@RequestId" />
+		</RadzenColumn>
+		<RadzenColumn Size="8">
+			<AttachmentsDatatable Notes="@notes" ShowOtherColumns=isValidatable />
+		</RadzenColumn>
+	</RadzenRow>
 </RadzenStack>
 
 @code {
 	[Parameter] public long RequestId { get; set; }
 	private IEnumerable<CashDiscountRowDto> rows;
-	private IEnumerable<NoteRowDto> notes;
+	private IList<NoteRowDto> notes;
 	private RequestAuditDto requestAudit;
-	private bool isApprovable = false;
+	private bool isValidatable = false;
 
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
-		isApprovable = await RequestService.IsValidatable(RequestId);
-		var request = await CashDiscountService.GetRequestDetails(RequestId);
+		isValidatable = await RequestService.IsValidatable(RequestId);
+		var request = await RequestService.GetRequestDetails(RequestId);
 		rows = await CashDiscountService.GetAdjustments(RequestId);
+		notes = await NoteService.GetRows(RequestId);
 
 		requestAudit = new RequestAuditDto(request);
 	}
@@ -56,7 +67,7 @@
 		if (!isConfirmed) return;
 
 		await CashDiscountService.Validate(RequestId, notes);
-		NavigationManager.NavigateTo("/validations/cash-discount");
+		NavigationManager.NavigateTo("/validations/cash-discount", true);
 	}
 
 	protected async Task OnDecline()
@@ -82,7 +93,7 @@
 		};
 
 		await CashDiscountService.Decline(createDto, notes);
-		NavigationManager.NavigateTo("/validations/cash-discount");
+		NavigationManager.NavigateTo("/validations/cash-discount", true);
 	}
 
 	protected async Task OnReject()
@@ -108,6 +119,6 @@
 		};
 
 		await CashDiscountService.Reject(negateDto, notes);
-		NavigationManager.NavigateTo("/validations/cash-discount");
+		NavigationManager.NavigateTo("/validations/cash-discount", true);
 	}
 }

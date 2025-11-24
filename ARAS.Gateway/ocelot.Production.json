@@ -1,23 +1,10 @@
 {
 	"Routes": [
 		// Test Endpoints
-		//// Auth API
-		{
-			"DownstreamPathTemplate": "/api/test",
-			"DownstreamScheme": "https",
-			"DownstreamHostAndPorts": [
-				{
-					"Host": "10.105.33.40",
-					"Port": 3002
-				}
-			],
-			"UpstreamPathTemplate": "/test/auth",
-			"UpstreamHttpMethod": [ "GET" ]
-		},
 		//// SSMS API
 		{
 			"DownstreamPathTemplate": "/api/test",
-			"DownstreamScheme": "https",
+			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
 					"Host": "10.105.33.40",
@@ -30,7 +17,7 @@
 		//// Oracle API
 		{
 			"DownstreamPathTemplate": "/api/test",
-			"DownstreamScheme": "https",
+			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
 					"Host": "10.105.33.40",
@@ -40,46 +27,155 @@
 			"UpstreamPathTemplate": "/test/oracle",
 			"UpstreamHttpMethod": [ "GET" ]
 		},
-
-		// Auth API : ": "https://10.105.33.40:3002"
+		// Main API : "http://localhost:3004"
 		{
-			"DownstreamPathTemplate": "/api/auth/{everything}",
+			"DownstreamPathTemplate": "/api/adjustments/{everything}",
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
 					"Host": "10.105.33.40",
-					"Port": 3002
+					"Port": 3003
 				}
 			],
-			"UpstreamPathTemplate": "/auth/{everything}",
+			"UpstreamPathTemplate": "/adjust/{everything}",
 			"UpstreamHttpMethod": [ "GET", "POST" ]
 		},
 		{
-			"DownstreamPathTemplate": "/api/email/{everything}",
+			"DownstreamPathTemplate": "/api/approve/{everything}",
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
 					"Host": "10.105.33.40",
-					"Port": 3002
+					"Port": 3003
 				}
 			],
-			"UpstreamPathTemplate": "/email/{everything}",
+			"UpstreamPathTemplate": "/approve/{everything}",
 			"UpstreamHttpMethod": [ "GET", "POST" ]
 		},
 		{
-			"DownstreamPathTemplate": "/api/ops/{everything}",
+			"DownstreamPathTemplate": "/api/cash-discount/{everything}",
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
 					"Host": "10.105.33.40",
-					"Port": 3002
+					"Port": 3003
 				}
 			],
-			"UpstreamPathTemplate": "/ops/{everything}",
+			"UpstreamPathTemplate": "/cash-discount/{everything}",
 			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/bank-charge/{everything}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "10.105.33.40",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/bank-charge/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/decline/{everything}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "10.105.33.40",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/decline/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/reject/{everything}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "10.105.33.40",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/reject/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/requests/{everything}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "10.105.33.40",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/request/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/transactions/{everything}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "10.105.33.40",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/transaction/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/validate/{everything}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "10.105.33.40",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/validate/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/files/{everything}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "10.105.33.40",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/file/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		
+		// Oracle API : "http://localhost:3004"
+		{
+			"DownstreamPathTemplate": "/api/invoice/{everything}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "10.105.33.40",
+					"Port": 3004
+				}
+			],
+			"UpstreamPathTemplate": "/erp/invoice/{everything}",
+			"UpstreamHttpMethod": [ "GET" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/adjustment/{everything}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "10.105.33.40",
+					"Port": 3004
+				}
+			],
+			"UpstreamPathTemplate": "/erp/adjustment/{everything}",
+			"UpstreamHttpMethod": [ "GET" ]
 		}
 	],
 	"GlobalConfiguration": {
-		"BaseUrl": "https://uat-aradjustment.vstecs.com.ph/api"
+		"BaseUrl": "https://uat-api-gateway.vstecs.com.ph/"
 	}
 }

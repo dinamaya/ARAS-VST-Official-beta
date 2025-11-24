@@ -1,19 +1,6 @@
 {
 	"Routes": [
 		// Test Endpoints
-		//// Auth API
-		{
-			"DownstreamPathTemplate": "/api/test",
-			"DownstreamScheme": "https",
-			"DownstreamHostAndPorts": [
-				{
-					"Host": "localhost",
-					"Port": 3002
-				}
-			],
-			"UpstreamPathTemplate": "/test/auth",
-			"UpstreamHttpMethod": [ "GET" ]
-		},
 		//// SSMS API
 		{
 			"DownstreamPathTemplate": "/api/test",
@@ -40,45 +27,6 @@
 			"UpstreamPathTemplate": "/test/erp",
 			"UpstreamHttpMethod": [ "GET" ]
 		},
-
-		// Auth API : "https://localhost:3002"
-		{
-			"DownstreamPathTemplate": "/api/auth/{everything}",
-			"DownstreamScheme": "https",
-			"DownstreamHostAndPorts": [
-				{
-					"Host": "localhost",
-					"Port": 3002
-				}
-			],
-			"UpstreamPathTemplate": "/auth/{everything}",
-			"UpstreamHttpMethod": [ "GET", "POST" ]
-		},
-		{
-			"DownstreamPathTemplate": "/api/email/{everything}",
-			"DownstreamScheme": "https",
-			"DownstreamHostAndPorts": [
-				{
-					"Host": "localhost",
-					"Port": 3002
-				}
-			],
-			"UpstreamPathTemplate": "/email/{everything}",
-			"UpstreamHttpMethod": [ "GET", "POST" ]
-		},
-		{
-			"DownstreamPathTemplate": "/api/ops/{everything}",
-			"DownstreamScheme": "https",
-			"DownstreamHostAndPorts": [
-				{
-					"Host": "localhost",
-					"Port": 3002
-				}
-			],
-			"UpstreamPathTemplate": "/ops/{everything}",
-			"UpstreamHttpMethod": [ "GET", "POST" ]
-		},
-
 		// Oracle API : "https://localhost:3004"
 		{
 			"DownstreamPathTemplate": "/api/invoice/{everything}",
@@ -90,7 +38,19 @@
 				}
 			],
 			"UpstreamPathTemplate": "/erp/invoice/{everything}",
-			"UpstreamHttpMethod": [ "GET", "POST" ]
+			"UpstreamHttpMethod": [ "GET" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/adjustment/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3004
+				}
+			],
+			"UpstreamPathTemplate": "/erp/adjustment/{everything}",
+			"UpstreamHttpMethod": [ "GET" ]
 		},
 
 		// Main API : "https://localhost:3004"
@@ -128,6 +88,18 @@
 				}
 			],
 			"UpstreamPathTemplate": "/cash-discount/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/bank-charge/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/bank-charge/{everything}",
 			"UpstreamHttpMethod": [ "GET", "POST" ]
 		},
 		{

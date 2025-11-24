@@ -8,6 +8,7 @@
 		public string InvoiceNumber { get; set; }
 		public string CustomerName { get; set; }
 		public string CustomerNumber { get; set; }
+		public string ReasonCode { get; set; }
 		public string Remarks { get; set; }
 	}
 }

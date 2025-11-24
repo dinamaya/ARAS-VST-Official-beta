@@ -1,13 +1,12 @@
 @ARAS.Main.Oracle.Api_HostAddress = https://localhost:3004
 
-GET {{ARAS.Main.Oracle.Api_HostAddress}}/weatherforecast/
-Accept: application/json
-
 ###
 
-@invoiceNo=219395
+@invoiceNo=500246072
 @count=10
 ###
 GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/invoice/no/219395
 
 ###
+
+GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/adjustment/reason-codes

@@ -1,13 +1,13 @@
-using ARAS.Main.Oracle.Api.App_Code.Globals.Extensions;
 using ARAS.Main.Oracle.Api.Context;
+using ARAS.Main.Oracle.Api.Factories.Implementations;
+using ARAS.Main.Oracle.Api.Factories.Interfaces;
 using ARAS.Main.Oracle.Api.Repositories.Implementations;
 using ARAS.Main.Oracle.Api.Repositories.Interfaces;
+using ARAS.Main.Oracle.Api.Services.Implementations;
+using ARAS.Main.Oracle.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Oracle.ManagedDataAccess.Client;
-using System;
-using System.Data;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -39,14 +39,11 @@ builder.Services.AddOpenApi();
 builder.Services.AddDbContext<MainDbContext>(options =>
 	options.UseOracle(mainDbConnection));
 
-builder.Services.AddTransient<Func<Task<OracleConnection>>>(sp => async () =>
-{
-	var conn = new OracleConnection(mainDbConnection);
-	await conn.OpenWithPolicyContextAsync();
-	return conn;
-});
+builder.Services.AddScoped<IOracleConnectionFactory, OracleConnectionFactory>();
 
+builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
 builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+builder.Services.AddScoped<IAdjustmentRepository, AdjustmentRepository>();
 
 var app = builder.Build();
 

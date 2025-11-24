@@ -2,6 +2,7 @@
 using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Models.Entities;
+using ARAS.Main.SSMS.Api.Models.SQLVIews;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,6 +29,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			adjustment.AdjustmentAmount = data.AdjustmentAmount;
 			adjustment.AdjustmentTypeId = data.AdjustmentTypeId;
 			adjustment.DiscountPercentage = data.DiscountPercentage;
+			adjustment.ReasonCode = data.ReasonCode;
 			adjustment.Remarks = data.Remarks;
 
 			adjustment.DateCreated = date;
@@ -102,7 +104,20 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			string datePart = today.ToString(Formats.Date.REFERNUMBER);
 			string indexPart = nextIndex.ToString("D3");
 
-			return $"{groupCode}-{adjustmentTypeCode}-{datePart}-{indexPart}";
+			return $"{groupCode}-{adjCode}-{datePart}-{indexPart}";
+		}
+
+		public async Task<AdjustmentBasicInfoDto> GetAdjustmentInfoByCode(string adjustmentTypeCode) => 
+			await _context.AdjustmentTypes
+			.Where(x => x.Code.Equals(adjustmentTypeCode))
+			.Select(x => new AdjustmentBasicInfoDto(x.Id, x.Name)).FirstOrDefaultAsync() ?? 
+			throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENTTYPE);
+
+		public async Task<IEnumerable<RequestAdjustmentsV>> GetAllByRequestIdAndCode(long requestId, string adjustmentTypeCode)
+		{
+			return await _context.VwRequestAdjustments
+				.Where(r => r.AdjustmentTypeCode == adjustmentTypeCode && r.RequestId == requestId)
+				.ToListAsync();
 		}
 	}
 }

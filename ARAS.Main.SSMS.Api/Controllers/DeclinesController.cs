@@ -1,6 +1,7 @@
 ﻿using ARAS.Blazor.App_Code.Globals.Extensions;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
+using ARAS.Main.SSMS.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,22 +15,23 @@ namespace ARAS.Main.SSMS.Api.Controllers
 	public class DeclinesController : ControllerBase
 	{
 		private readonly ILogger<DeclinesController> _logger;
-		private readonly ICashDiscountRepository _cashDiscountRepo;
+		private readonly IAdjustmentService _adjustmentService;
 
-		public DeclinesController(ILogger<DeclinesController> logger, ICashDiscountRepository cashDiscountRepo)
+		public DeclinesController(ILogger<DeclinesController> logger, IAdjustmentService adjustmentService)
 		{
 			_logger = logger;
-			_cashDiscountRepo = cashDiscountRepo;
+			_adjustmentService = adjustmentService;
 		}
 
-		[HttpPost("cdr")]
-		public async Task<ResponseDto<string>> DeclineTransactionRequestByRequestId([FromBody] NegateRequestDto createDecline)
+		[HttpPost("{adjustmentTypeCode}")]
+		public async Task<ResponseDto<string>> Post(string adjustmentTypeCode, [FromBody] NegateRequestDto createDecline)
 		{
 			var response = new ResponseDto<string>();
 			try
 			{
 				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
-				await _cashDiscountRepo.CreateDeclineTransaction(createDecline, accountId);
+				await _adjustmentService.Decline(createDecline, accountId, adjustmentTypeCode);
+
 				response.Result = "Success";
 				response.Message = "Request Declined";
 				return response;

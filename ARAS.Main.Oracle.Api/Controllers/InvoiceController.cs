@@ -9,7 +9,7 @@ using Oracle.ManagedDataAccess.Client;
 namespace ARAS.Main.Oracle.Api.Controllers
 {
 	[Route("api/invoice")]
-	[ApiController, Authorize]
+	[ApiController]
 	public class InvoiceController : ControllerBase
 	{
 		private readonly ILogger<InvoiceController> _logger;

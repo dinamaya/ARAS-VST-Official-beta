@@ -23,14 +23,13 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			_requestRepo = requestRepo;
 		}
 
-		//[HttpGet("cdr/{requestId:long}")]
-		[HttpGet("cdr/{requestId:long}"), Authorize]
+		[HttpGet("details/{requestId:long}"), Authorize]
 		public async Task<ResponseDto<TransactionRequestRowDto>> GetTransactionRequestByRequestId(long requestId)
 		{
 			var response = new ResponseDto<TransactionRequestRowDto>();
 			try
 			{
-				response.Result = await _cashDiscountRepo.GetTransactionRequestByRequestId(requestId);
+				response.Result = await _requestRepo.GetTransactionRequestByRequestId(requestId);
 				return response;
 			}
 			catch (Exception ex)
@@ -40,8 +39,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		//[HttpGet("cdr/is-approvable/{requestId:long}")]
-		[HttpGet("cdr/is-approvable/{requestId:long}"), Authorize(Roles = "Approver")]
+		[HttpGet("is-approvable/{requestId:long}"), Authorize(Roles = "Approver")]
 		public async Task<ResponseDto<bool>> IsApprovable(long requestId)
 		{
 			var response = new ResponseDto<bool>();
@@ -57,8 +55,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		//[HttpGet("cdr/is-validatable/{requestId:long}")]
-		[HttpGet("cdr/is-validatable/{requestId:long}"), Authorize(Roles = "Validator")]
+		[HttpGet("is-validatable/{requestId:long}"), Authorize(Roles = "Validator")]
 		public async Task<ResponseDto<bool>> IsValidatable(long requestId)
 		{
 			var response = new ResponseDto<bool>();
@@ -74,8 +71,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		//[HttpGet("cdr/is-declinable/{requestId:long}")]
-		[HttpGet("cdr/is-declinable/{requestId:long}"), Authorize]
+		[HttpGet("is-declinable/{requestId:long}"), Authorize]
 		public async Task<ResponseDto<bool>> IsDeclinable(long requestId)
 		{
 			var response = new ResponseDto<bool>();
@@ -91,8 +87,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		//[HttpGet("cdr/is-rejectable/{requestId:long}")]
-		[HttpGet("cdr/is-rejectable/{requestId:long}"), Authorize]
+		[HttpGet("is-rejectable/{requestId:long}"), Authorize]
 		public async Task<ResponseDto<bool>> IsRejectable(long requestId)
 		{
 			var response = new ResponseDto<bool>();
@@ -104,6 +99,52 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			catch (Exception ex)
 			{
 				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("submissions/{adjustmentTypeCode}"), Authorize]
+		public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetAllSubmissions(string adjustmentTypeCode)
+		{
+			var response = new ResponseDto<IEnumerable<TransactionRequestRowDto>>();
+			try
+			{
+				response.Message = "";
+				response.Result = await _requestRepo.GetAllSubmissionsByType(adjustmentTypeCode);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("approvals/{adjustmentTypeCode}"), Authorize(Roles = "Approver")]
+		public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetForApprovals(string adjustmentTypeCode)
+		{
+			var response = new ResponseDto<IEnumerable<TransactionRequestRowDto>>();
+			try
+			{
+				response.Result = await _requestRepo.GetAllForApprovalsByType(adjustmentTypeCode);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("validations/{adjustmentTypeCode}"), Authorize(Roles = "Validator")]
+		public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetForValidations(string adjustmentTypeCode)
+		{
+			var response = new ResponseDto<IEnumerable<TransactionRequestRowDto>>();
+			try
+			{
+				response.Result = await _requestRepo.GetAllForValidationsByType(adjustmentTypeCode);
+				return response;
+			}
+			catch (Exception ex)
+			{
 				return response.Failed(ex.Message);
 			}
 		}

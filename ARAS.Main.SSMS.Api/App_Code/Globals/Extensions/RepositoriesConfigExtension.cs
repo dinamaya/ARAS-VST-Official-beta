@@ -1,6 +1,7 @@
-﻿using ARAS.Main.SSMS.Api.Repositories.Implementations;
-using ARAS.Main.SSMS.Api.Services.Implementations;
+﻿using ARAS.Main.SSMS.Api.Models.Dtos;
+using ARAS.Main.SSMS.Api.Repositories.Implementations;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
+using ARAS.Main.SSMS.Api.Services.Implementations;
 using ARAS.Main.SSMS.Api.Services.Interfaces;
 
 namespace ARAS.Main.SSMS.Api.App_Code.Globals.Extensions
@@ -9,7 +10,10 @@ namespace ARAS.Main.SSMS.Api.App_Code.Globals.Extensions
 	{
 		public static void AddRepositoriesConfig(this IServiceCollection services)
 		{
+			services.AddScoped(typeof(IBaseAdjustmentRepository<>), typeof(BaseAdjustmentRepository<>));
+
 			services.AddScoped<IAdjustmentRepository, AdjustmentRepository>();
+			services.AddScoped<IBankChargeRepository, BankChargeRepository>();
 			services.AddScoped<ICashDiscountRepository, CashDiscountRepository>();
 			services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 			services.AddScoped<IRequestRepository, RequestRepository>();
@@ -19,6 +23,7 @@ namespace ARAS.Main.SSMS.Api.App_Code.Globals.Extensions
 
 			services.AddScoped<IFileManager, FileManager>();
 
+			services.AddScoped<IAdjustmentService, AdjustmentService>();
 			services.AddScoped<INoteService, NoteService>();
 			services.AddScoped<IBackgroundJobService, BackgroundJobService>();
 			services.AddScoped<IConfigurationService, ConfigurationService>();

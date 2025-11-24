@@ -26,11 +26,15 @@ namespace ARAS.Blazor.Services.Implementations
 		public string GetOracleInvoiceApiUrl(string route = null) =>
 			$"{_config.GetValue<string>("ApiConfig:external:OracleApi:Invoice")}{route}";
 		
+
+		public string GetOracleAdjustmentApiUrl(string route = null) =>
+			$"{_config.GetValue<string>("ApiConfig:external:OracleApi:Adjustments")}{route}";
+		
 		public string GetMainSSMSApiUrl(string route = null) => 
 			$"{_config.GetValue<string>("ApiConfig:external:SSMSMainApi")}{route}";
 
-		public string GetTokenName() => _config["ApiConfig:Cookie:Name"] ?? "";
-		public string GetTokenDomainName() => _config["ApiConfig:Cookie:Domain"] ?? "";
+		public string GetTokenName() => _config["AuthConfig:Cookie:Name"] ?? "";
+		public string GetTokenDomainName() => _config["AuthConfig:Cookie:Domain"] ?? "";
 
 		// -----------------------------
 		// MainApi URLs Implementation
@@ -44,6 +48,9 @@ namespace ARAS.Blazor.Services.Implementations
 
 		public string GetCashDiscountsUrl(string route = null) =>
 			$"{_config.GetValue<string>("ApiConfig:external:MainApi:CashDiscounts")}{route}";
+
+		public string GetBankChargesUrl(string route = null) =>
+			$"{_config.GetValue<string>("ApiConfig:external:MainApi:BankCharges")}{route}";
 
 		public string GetDeclinesUrl(string route = null) =>
 			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Declines")}{route}";
@@ -62,5 +69,7 @@ namespace ARAS.Blazor.Services.Implementations
 
 		public string GetFilesUrl(string route = null) =>
 			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Files")}{route}";
+
+		public bool IsOnTestRequest() => _config.GetValue<bool>("TestConfig:OnTestRequest");
 	}
 }

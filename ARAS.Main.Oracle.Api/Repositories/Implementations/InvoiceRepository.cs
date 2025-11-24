@@ -6,23 +6,25 @@ using ARAS.Main.Oracle.Api.Context;
 using ARAS.Main.Oracle.Api.Repositories.Interfaces;
 using ARAS.Main.Oracle.Api.Models.Dtos;
 using ARAS.Main.Oracle.Api.App_Code.Globals.Constants;
+using ARAS.Main.Oracle.Api.Factories.Interfaces;
+using ARAS.Main.Oracle.Api.Services.Interfaces;
 
 namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 {
 	public class InvoiceRepository : IInvoiceRepository
 	{
 		private readonly MainDbContext efContext;
-		private readonly Func<Task<OracleConnection>> dpContext;
+		private readonly IOracleConnectionFactory oracleConnection;
 
-		public InvoiceRepository(MainDbContext efContext, Func<Task<OracleConnection>> dpContext)
+		public InvoiceRepository(MainDbContext efContext, IOracleConnectionFactory oracleConnection)
 		{
 			this.efContext = efContext;
-			this.dpContext = dpContext;
+			this.oracleConnection = oracleConnection;
 		}
 
 		public async Task<InvoiceDetailsDto> GetInvoiceNo(string invoiceNo)
 		{
-			await using var conn = await dpContext();
+			await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
 			invoiceNo = invoiceNo.Trim();
 
 			var sql = @"

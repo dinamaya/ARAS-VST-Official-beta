@@ -42,20 +42,9 @@
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
-		var request = await CashDiscountService.GetRequestDetails(RequestId);
+		var request = await RequestService.GetRequestDetails(RequestId);
 		rows = await CashDiscountService.GetAdjustments(RequestId);
 		notes = await NoteService.GetRows(RequestId);
 		requestAudit = new RequestAuditDto(request);
 	}
-
-	protected async Task OnValidate()
-	{
-		bool isApprove = await DialogService.Confirm("Are you sure you want to validate this request?", "Validate Request") ?? false;
-
-		if(!isApprove)
-			return;
-
-		await CashDiscountService.Validate(RequestId, notes);
-	}
-
 }

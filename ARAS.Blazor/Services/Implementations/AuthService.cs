@@ -1,24 +1,24 @@
-﻿using ARAS.Blazor.App_Code.Globals.Constants;
-using ARAS.Blazor.App_Code.Globals.Enums;
+﻿using ARAS.Blazor.App_Code.Globals.Extensions;
 using ARAS.Blazor.Models.DTOs;
+using ARAS.Blazor.Models.Entities;
 using ARAS.Blazor.Services.Interfaces;
-using ARAS.Blazor.App_Code.Globals.Extensions;
-using Azure;
 using Microsoft.AspNetCore.Components.Authorization;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace ARAS.Blazor.Services.Implementations
 {
 	public class AuthService : IAuthService
 	{
-
 		private readonly CookieAuthStateProvider _authStateProvider;
+		private readonly UserManager<Account> _userManager;
 		private Lazy<Task<AuthenticationState>> _authStateLazy;
 
-		public AuthService(CookieAuthStateProvider authStateProvider)
+		public AuthService(CookieAuthStateProvider authStateProvider, UserManager<Account> usermanager)
 		{
 			_authStateProvider = authStateProvider;
+			_userManager = usermanager;
 			InitLazyState();
 		}
 
@@ -45,7 +45,7 @@ namespace ARAS.Blazor.Services.Implementations
 		public async Task<string> GetRole()
 		{
 			var user = await GetUser();
-			if(user.Identity is null || !user.Identity.IsAuthenticated)
+			if (user.Identity is null || !user.Identity.IsAuthenticated)
 				return string.Empty;
 
 			return user.GetClaim(ClaimTypes.Role) ?? string.Empty;
@@ -61,7 +61,7 @@ namespace ARAS.Blazor.Services.Implementations
 			return new AccountDetailsDto()
 			{
 				FullName = user.GetClaim(JwtRegisteredClaimNames.GivenName) + " " + user.GetClaim(JwtRegisteredClaimNames.FamilyName),
-				AccountRole =  role == "Ops" ? "Admin" : role,
+				AccountRole = role == "Ops" ? "Admin" : role,
 				GroupCode = user.GetClaim(ClaimTypes.GroupSid) ?? string.Empty,
 				Email = user.GetClaim(ClaimTypes.Email) ?? string.Empty
 			};
@@ -81,6 +81,28 @@ namespace ARAS.Blazor.Services.Implementations
 			_authStateLazy = new Lazy<Task<AuthenticationState>>(
 				() => _authStateProvider.GetAuthenticationStateAsync()
 			);
+		}
+
+		public async Task<bool> IsAccountSecurityHashValid()
+		{
+			var user = await GetUser();
+			if (user.Identity == null || !user.Identity.IsAuthenticated)
+				return true;
+
+			var email = user.Identity.Name;
+			var tokenHash = user.GetClaim(ClaimTypes.Hash);
+
+			if (email == null || tokenHash == null)
+				return true;
+
+			var account = await _userManager.FindByEmailAsync(email);
+			if (account == null)
+				return false;
+
+			if (user == null || account.SecurityHash != tokenHash)
+				return false;
+
+			return account.SecurityHash == tokenHash;
 		}
 	}
 }

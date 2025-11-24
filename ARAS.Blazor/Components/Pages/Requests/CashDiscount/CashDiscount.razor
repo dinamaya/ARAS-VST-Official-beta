@@ -11,17 +11,19 @@
 @inherits ComponentBase
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
+@inject ITestService TestService
 @inject IAuthService AuthService
+@inject ISearchOptionService SearchOptionService
 @inject ICashDiscountService CashDiscountService
 
-<h2>Cash Discount Adjustment</h2>
+<h2>Cash Discount</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 	<SearchInvoiceDetails OnAdd="OpenAdd" OnLoadingChanged="HandleLoadingChanged" OnSearchChanged="HandleSearchChanged" />
 
 	<RadzenRow>
 		<div>
-			<h3 class="pb-0 mb-0">Cash Discount</h3>
+			<h3 class="pb-0 mb-0">Cash Discount List</h3>
 		</div>
 		<div class="py-4 px-3 w-100 card">
 			<RadzenDataGrid class="border-0"
@@ -58,6 +60,7 @@
 					<RadzenDataGridColumn Property="@nameof(CashDiscountRowDto.InvoiceNumber)" Title="Invoice Number" />
 					<RadzenDataGridColumn Property="@nameof(CashDiscountRowDto.CustomerName)" Title="Customer Name" />
 					<RadzenDataGridColumn Property="@nameof(CashDiscountRowDto.CustomerNumber)" Title="Customer Number" />
+					<RadzenDataGridColumn Property="@nameof(CashDiscountRowDto.ReasonCode)" Title="Reason Code" />
 					<RadzenDataGridColumn Property="@nameof(CashDiscountRowDto.Remarks)" Title="Remarks" />
 				</Columns>
 			</RadzenDataGrid>
@@ -82,6 +85,7 @@
 @code {
 	[Parameter] public IList<CashDiscountRowDto> Adjustments { get; set; }
 	private IList<NoteRowDto> Notes { get; set; } = new List<NoteRowDto>();
+	private IEnumerable<string> reasonCodes { get; set; }
 
 	private InvoiceDetailsDto searchedInvoiceNumber;
 	private RadzenDataGrid<CashDiscountRowDto> adjustmentGrid;
@@ -97,45 +101,13 @@
 		Adjustments = new List<CashDiscountRowDto>();
 		searchedInvoiceNumber = new InvoiceDetailsDto();
 		requestAudit = new RequestAuditDto();
-		TestCashDiscountRows(); // For testing Only
+
+		reasonCodes = await SearchOptionService.GetReasonCodes();
+		await TestService.GenerateCashDiscountRows(Adjustments, reasonCodes);
+		await adjustmentGrid.Reload();
 
 		requestAudit.Requestor = await AuthService.GetLastFirstName();
 	}
-
-	private void TestCashDiscountRows()
-	{
-		// For Demo Purposes Only - Remove this on Production
-		string[] firstNames = { "James", "Emma", "Michael", "Olivia", "William", "Sophia", "Daniel", "Isabella", "Matthew", "Ava" };
-		string[] lastNames = { "Smith", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Garcia", "Rodriguez", "Martinez" };
-
-		Random rand = new Random();
-		double min = 1000.00;
-		double max = 10000000.00;
-
-		for (int x = 0; x < rand.Next(1, 10); x++)
-		{
-			float discountValue = (float)rand.NextDouble();
-
-			var invoiceDetails = new InvoiceDetailsDto();
-			string first = firstNames[rand.Next(firstNames.Length)];
-			string last = lastNames[rand.Next(lastNames.Length)];
-
-			invoiceDetails.InvoiceAmount = rand.NextDouble() * (max - min) + min;
-			invoiceDetails.InvoiceNumber = rand.Next(20_000, 9_000_000).ToString();
-			invoiceDetails.InvoiceDate = DateTime.Now.AddDays(-rand.Next(10, 200));
-			invoiceDetails.CustomerName = first + " " + last;
-			invoiceDetails.CustomerNumber = "09123456789";
-
-			var row = new CashDiscountRowDto(
-				discountValue,
-				$"{(discountValue * 100).ToString("N2")}% Discount Remarks",
-				invoiceDetails
-			);
-
-			Adjustments.Add(row);
-		}
-	}
-
 
 	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
 	{
@@ -143,9 +115,10 @@
 			"Add Cash Discount Adjustment",
 			new Dictionary<string, object>()
 			{
-				{ "Rows", Adjustments },
-				{ "Grid", adjustmentGrid },
-				{ "InvoiceDetails", invoiceDetails }
+				{ nameof(AddCashDiscount.ReasonCodes), reasonCodes },
+				{ nameof(AddCashDiscount.Rows), Adjustments },
+				{ nameof(AddCashDiscount.Grid), adjustmentGrid },
+				{ nameof(AddCashDiscount.InvoiceDetails), invoiceDetails }
 			},
 			new DialogOptions() { Width = "800px", Height = "auto" }
 		);
@@ -159,9 +132,10 @@
 				"Edit Cash Discount Adjustment",
 				new Dictionary<string, object>()
 				{
-				{ "Rows", Adjustments },
-				{ "Grid", adjustmentGrid },
-				{ "Data", data }
+				{ nameof(EditCashDiscount.ReasonCodes), reasonCodes },
+				{ nameof(EditCashDiscount.Rows), Adjustments },
+				{ nameof(EditCashDiscount.Grid), adjustmentGrid },
+				{ nameof(EditCashDiscount.Data), data }
 				},
 				new DialogOptions() { Width = "800px", Height = "auto" }
 			);

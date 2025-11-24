@@ -1,6 +1,7 @@
 ﻿using ARAS.Blazor.App_Code.Globals.Extensions;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
+using ARAS.Main.SSMS.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -12,22 +13,23 @@ namespace ARAS.Main.SSMS.Api.Controllers
 	public class RejectionsController : ControllerBase
 	{
 		private readonly ILogger<RejectionsController> _logger;
-		private readonly ICashDiscountRepository _cashDiscountRepo;
+		private readonly IAdjustmentService _adjustmentService;
 
-		public RejectionsController(ILogger<RejectionsController> logger, ICashDiscountRepository cashDiscountRepo)
+		public RejectionsController(ILogger<RejectionsController> logger, IAdjustmentService adjustmentService)
 		{
 			_logger = logger;
-			_cashDiscountRepo = cashDiscountRepo;
+			_adjustmentService = adjustmentService;
 		}
 
-		[HttpPost("cdr")]
-		public async Task<ResponseDto<string>> RejectTransactionRequestByRequestId([FromBody] NegateRequestDto createReject)
+		[HttpPost("{adjustmentTypeCode}")]
+		public async Task<ResponseDto<string>> Post(string adjustmentTypeCode, [FromBody] NegateRequestDto createReject)
 		{
 			var response = new ResponseDto<string>();
 			try
 			{
 				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
-				await _cashDiscountRepo.CreateRejectTransaction(createReject, accountId);
+				await _adjustmentService.Reject(createReject, accountId, adjustmentTypeCode);
+
 				response.Result = "Success";
 				response.Message = "Request Rejected";
 				return response;

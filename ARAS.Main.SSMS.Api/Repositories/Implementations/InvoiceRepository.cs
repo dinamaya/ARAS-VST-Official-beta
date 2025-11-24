@@ -44,10 +44,10 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			throw new InvalidOperationException(Exceptions.NOTFOUND_TRANSACTION);
 
 		public async Task<bool> IsInvoiceNumberAvailable(string invoiceNumber, string adjustmentTypeCode) =>
-			await _context.VwInvoiceNumbers.AnyAsync(inv => 
-				inv.InvoiceNumber == invoiceNumber && 
+			!(await _context.VwInvoiceNumbers.AnyAsync(inv =>
+				inv.InvoiceNumber == invoiceNumber &&
 				inv.Code == adjustmentTypeCode &&
-				inv.Status != "Declined"
-			);
+				inv.Status != "Rejected"
+			));
 	}
 }

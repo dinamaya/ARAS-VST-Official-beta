@@ -189,10 +189,10 @@
 
 		//(APAdjustments, ARAdjustments) = (await APAROffsetService.GetAdjustments(RequestId)).ToList();
 		searchedInvoiceNumber = new InvoiceDetailsDto();
-		var request = await APAROffsetService.GetRequestDetails(RequestId);
-		Notes = await NoteService.GetRows(RequestId);
+		// var request = await APAROffsetService.GetRequestDetails(RequestId);
+		// Notes = await NoteService.GetRows(RequestId);
 
-		requestAudit = new RequestAuditDto(request);
+		// requestAudit = new RequestAuditDto(request);
 	}
 
 	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
@@ -271,7 +271,7 @@
 
 	public async Task SubmitRequest()
 	{
-		await APAROffsetService.Update(RequestId, APAdjustments, ARAdjustments, Notes);
+		// await APAROffsetService.Update(RequestId, APAdjustments, ARAdjustments, Notes);
 	}
 
 	private void HandleSearchChanged(bool value)

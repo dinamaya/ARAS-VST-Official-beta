@@ -54,10 +54,10 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("aar/{requestId:long}"), Authorize]
-        public async Task<ResponseDto<Tuple<IEnumerable<APAROffsetAPRowDto>, IEnumerable<APAROffsetARRowDto>>>> GetAPAdjustments(long requestId)
+		[HttpGet("aar/{requestId:long}")]
+        public async Task<ResponseDto<APAROffsetRowDto>> GetAPAdjustments(long requestId)
         {
-            var response = new ResponseDto<Tuple<IEnumerable<APAROffsetAPRowDto>, IEnumerable<APAROffsetARRowDto>>>();
+            var response = new ResponseDto<APAROffsetRowDto>();
             try
             {
                 response.Result = await _aparOffsetRepo.GetAPAdjustmentsByRequestId(requestId);

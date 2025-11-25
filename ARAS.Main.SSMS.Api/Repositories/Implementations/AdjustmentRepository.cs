@@ -119,5 +119,30 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.Where(r => r.AdjustmentTypeCode == adjustmentTypeCode && r.RequestId == requestId)
 				.ToListAsync();
 		}
+
+		public async Task<long> CreateAPAROffsetAdjustmentAsync(APAROffsetCreateDto data, long invoiceId, string createdBy, long requestId, string adjustmentTypeId)
+		{
+
+			var aparOffset = new APAROffset
+			{
+				RequestId = requestId,
+				InvoiceId = invoiceId,
+				Amount = data.Amount,
+				Type = data.Type,
+				ReasonCode = data.ReasonCode ?? string.Empty,
+				AdjustmentTypeId = adjustmentTypeId,
+
+				CreatedBy = createdBy,
+				DateCreated = DateTime.Now,
+				ModifiedBy = createdBy,
+				DateModified = DateTime.Now,
+				IsActive = true
+			};
+
+			await _context.APAROffsets.AddAsync(aparOffset);
+			await _context.SaveChangesAsync();
+
+			return aparOffset.Id;
+		}
 	}
 }

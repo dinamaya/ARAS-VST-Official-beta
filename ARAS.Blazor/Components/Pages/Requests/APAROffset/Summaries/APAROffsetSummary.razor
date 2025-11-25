@@ -1,4 +1,5 @@
-﻿@using ARAS.Blazor.Models.DTOs
+﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Components.Shared.Summaries
 
 @inject DialogService DialogService
@@ -44,10 +45,10 @@
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="@nameof(APAROffsetAPRowDto.InvoiceAmount)" Title="Invoice Amount">
                             <Template Context="data">
-                                @data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+                                @data?.InvoiceAmount.ToPhp()
                             </Template>
                             <FooterTemplate>
-                                <b>@APAdjustments?.Sum(a => a.InvoiceAmount).ToString("C2", new System.Globalization.CultureInfo("en-PH"))</b>
+                                <b>@APAdjustments?.Sum(a => a.InvoiceAmount).ToPhp()</b>
                             </FooterTemplate>
                         </RadzenDataGridColumn>
                     </Columns>
@@ -79,10 +80,10 @@
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn Property="Amount" Title="Amount">
                             <Template Context="data">
-                                @data.Amount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+                                @data.Amount.ToPhp()
                             </Template>
                             <FooterTemplate>
-                                <b>Total:</b> @ARAdjustments?.Sum(a => a.Amount).ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+                                <b>Total:</b> @ARAdjustments?.Sum(a => a.Amount).ToPhp()
                             </FooterTemplate>
                         </RadzenDataGridColumn>
                     </Columns>

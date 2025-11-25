@@ -20,7 +20,10 @@
 	<RadzenRow>
 		<RadzenColumn Size="12">
 			<div class="py-4 px-3 w-100 card">
-				<APAROffsetSummary APAdjustments="apRows" ARAdjustments="arRows" RequestAudit="requestAudit" />
+				@if (rows != null && rows.APGroup != null && rows.ARGroup != null)
+				{
+					<APAROffsetSummary APAdjustments="rows.APGroup" ARAdjustments="rows.ARGroup" RequestAudit="requestAudit" />
+				}
 			</div>
 		</RadzenColumn>
 		<RadzenColumn Size="4">
@@ -34,8 +37,7 @@
 
 @code {
 	[Parameter] public long RequestId { get; set; }
-	private IEnumerable<APAROffsetAPRowDto> apRows;
-	private IEnumerable<APAROffsetARRowDto> arRows;
+	private APAROffsetRowDto rows;
 	private IList<NoteRowDto> notes;
 
 	private RequestAuditDto requestAudit;
@@ -43,9 +45,10 @@
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
-		var request = await APAROffsetService.GetRequestDetails(RequestId);
-		(apRows, arRows) = await APAROffsetService.GetAdjustments(RequestId);
+		var request = await RequestService.GetRequestDetails(RequestId);
+		rows = await APAROffsetService.GetAdjustments(RequestId);
 		notes = await NoteService.GetRows(RequestId);
-		// requestAudit = new RequestAuditDto(request);
+		requestAudit = new RequestAuditDto(request);
+		StateHasChanged();
 	}
 }

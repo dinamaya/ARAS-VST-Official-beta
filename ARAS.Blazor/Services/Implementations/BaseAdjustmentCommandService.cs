@@ -11,7 +11,9 @@ namespace ARAS.Blazor.Services.Implementations
 		IRequestSubmissionReaderRepository,
 		IInputValidatorRepository<TValidation>
 	{
-		private readonly IBaseAdjustmentService<TCreate, TRow, TValidation> _baseAdjustment;
+		protected readonly IBaseAdjustmentService<TCreate, TRow, TValidation> _baseAdjustment;
+		protected string baseUrl { get; }
+		protected string adjustmentTypeCode { get; }
 
 		public BaseAdjustmentCommandService(
 			IBaseAdjustmentService<TCreate, TRow, TValidation> baseAdjustment, 
@@ -25,8 +27,6 @@ namespace ARAS.Blazor.Services.Implementations
 			this.mapperCallBack = mapperCallBack;
 		}
 
-		private string baseUrl { get; }
-		private string adjustmentTypeCode { get; }
 		private Func<TRow, TCreate> mapperCallBack { get; }
 
 		public async Task<IEnumerable<TRow>> GetAdjustments(long requestId) => await _baseAdjustment.GetAdjustmentsByRequestIdAndTypeCode(requestId, adjustmentTypeCode);

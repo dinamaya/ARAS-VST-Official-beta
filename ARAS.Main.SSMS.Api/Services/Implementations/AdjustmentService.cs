@@ -10,11 +10,13 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 	{
 		private readonly ICashDiscountRepository _cashDiscountRepo;
 		private readonly IBankChargeRepository _bankChargeRepo;
+		private readonly IAPAROffsetRepository _aparOffsetRepo;
 
-		public AdjustmentService(ICashDiscountRepository cashDiscountRepo, IBankChargeRepository bankChargeRepo)
+		public AdjustmentService(ICashDiscountRepository cashDiscountRepo, IBankChargeRepository bankChargeRepo, IAPAROffsetRepository aparOffsetRepo)
 		{
 			_cashDiscountRepo = cashDiscountRepo;
 			_bankChargeRepo = bankChargeRepo;
+			_aparOffsetRepo = aparOffsetRepo;
 		}
 
 		/// <summary>
@@ -32,6 +34,7 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 			{
 				"cdr" => _cashDiscountRepo,
 				"bca" => _bankChargeRepo,
+				"arr" => _aparOffsetRepo,
 				_ => throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENTTYPE)
 			};
 		}

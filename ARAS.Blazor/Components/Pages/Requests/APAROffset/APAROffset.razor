@@ -182,30 +182,7 @@
 		ARAdjustments = new List<APAROffsetARRowDto>();
 		searchedInvoiceNumber = new InvoiceDetailsDto(); 
 		requestAudit = new RequestAuditDto();
-		//TestARInvoiceOffsettingRows(); // For testing Only
 		requestAudit.Requestor = await AuthService.GetLastFirstName();
-	}
-
-	private void TestARInvoiceOffsettingRows()
-	{
-		// For Demo Purposes Only - Remove this on Production
-		Random rand = new Random();
-		double min = 1000.00;
-		double max = 10000000.00;
-
-		for (int x = 0; x < rand.Next(1, 10); x++)
-		{
-			var invoiceDetails = new InvoiceDetailsDto();
-
-			invoiceDetails.InvoiceAmount = rand.NextDouble() * (max - min) + min;
-			invoiceDetails.InvoiceNumber = rand.Next(20_000, 9_000_000).ToString();
-
-			var row = new APAROffsetAPRowDto(
-				invoiceDetails
-			);
-
-			APAdjustments.Add(row);
-		}
 	}
 
 	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)

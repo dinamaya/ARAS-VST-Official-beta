@@ -1,16 +1,12 @@
 ﻿using ARAS.Blazor.Models.DTOs;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using ARAS.Blazor.Repositories.Interfaces;
 
 namespace ARAS.Blazor.Services.Interfaces
 {
-    public interface IAPAROffsetService
-    {
-        Task Create(IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes);
-        Task<IEnumerable<TransactionRequestRowDto>> GetSubmissions();
-        Task<TransactionRequestRowDto> GetRequestDetails(long requestId);
-        Task<Tuple<IEnumerable<APAROffsetAPRowDto>, IEnumerable<APAROffsetARRowDto>>> GetAdjustments(long requestId);
-        Task Update(long requestId, IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes);
-        Task Decline(NegateRequestDto createDecline, IEnumerable<NoteRowDto> notes);
-    }
+	public interface IAPAROffsetService : IBaseAdjustmentCommandRepository<APAROffsetRowDto, APAROffsetCreateDto, object>
+	{
+		Task Create(IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes);
+		Task Update(long requestId, IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes);
+		Task<APAROffsetRowDto> GetAdjustments(long requestId);
+	}
 }

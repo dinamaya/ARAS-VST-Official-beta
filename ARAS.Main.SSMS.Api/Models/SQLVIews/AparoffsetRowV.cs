@@ -20,6 +20,7 @@ public partial class AparoffsetRowV
     public DateTime InvoiceDate { get; set; }
 
     public string? RequestNumber { get; set; }
+    public string? ReasonCode { get; set; } 
 
     public string Type { get; set; } = null!;
 }

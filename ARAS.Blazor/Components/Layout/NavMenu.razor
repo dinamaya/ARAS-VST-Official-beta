@@ -43,6 +43,7 @@
 		else if (accountDetails.IsInRole("Approver"))
 		{
 			<RadzenPanelMenuItem Text="Approvals" Icon="assignment_turned_in" Style="border: none">
+				<RadzenPanelMenuItem Text="AP-AR : Offset" Path="/approvals/apar-offset" Style="background: transparent; border: none;" />
 				<RadzenPanelMenuItem Text="Cash Discount" Path="/approvals/cash-discount" Style="background: transparent" />
 				<RadzenPanelMenuItem Text="Bank Charge" Path="/approvals/bank-charge" Style="background: transparent" />
 			</RadzenPanelMenuItem>
@@ -50,6 +51,7 @@
 		else if (accountDetails.IsInRole("Validator"))
 		{
 			<RadzenPanelMenuItem Text="Validations" Icon="fact_check" Style="border: none">
+				<RadzenPanelMenuItem Text="AP-AR : Offset" Path="/validations/apar-offset" Style="background: transparent; border: none;" />
 				<RadzenPanelMenuItem Text="Cash Discount" Path="/validations/cash-discount" Style="background: transparent" />
 				<RadzenPanelMenuItem Text="Bank Charge" Path="/validations/bank-charge" Style="background: transparent" />
 			</RadzenPanelMenuItem>

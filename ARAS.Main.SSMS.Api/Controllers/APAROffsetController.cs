@@ -44,36 +44,5 @@ namespace ARAS.Main.SSMS.Api.Controllers
                 return response.Failed(ex.Message);
             }
         }
-
-        [HttpGet("test")]
-        public async Task<string> Create()
-        {
-            ResponseDto<long> response = new();
-            try
-            {
-                return "success";
-            }
-            catch (Exception ex)
-            {
-                return ex.Message;
-            }
-        }
-
-
-        [HttpGet("submissions"), Authorize]
-        public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetAllSubmissions()
-        {
-            var response = new ResponseDto<IEnumerable<TransactionRequestRowDto>>();
-            try
-            {
-                response.Message = "";
-                response.Result = await _aparOffsetRepo.GetAllSubmissions();
-                return response;
-            }
-            catch (Exception ex)
-            {
-                return response.Failed(ex.Message);
-            }
-        }
     }
 }

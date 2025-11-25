@@ -15,6 +15,7 @@
 @inherits ComponentBase
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
+@inject ISearchOptionService SearchOptionService
 @inject IAPAROffsetService APAROffsetService
 
 <h2>AP AR : Offset</h2>
@@ -28,7 +29,7 @@
 			<h3 class="pb-0 mb-0">AP GROUP</h3>
 		</div>
 			<div class="py-4 px-3 w-100 card">
-			<RadzenDataGrid @ref="adjustmentGrid"
+			<RadzenDataGrid @ref="apGrid"
 							AllowFiltering="false"
 							AllowColumnResize="true"
 							AllowAlternatingRows="false"
@@ -71,12 +72,6 @@
 								AllowPaging="false"
 								AllowSorting="false"
 								EditMode="DataGridEditMode.Single"
-								AllowRowInsert="true"
-								AllowRowEdit="true"
-								AllowRowDelete="true"
-								RowCreate="@OnCreateRow"
-								RowUpdate="@OnUpdateRow"
-								RowRemove="@OnRemoveRow"
 								ShowPagingSummary="false">
 
 					<Columns>
@@ -103,9 +98,7 @@
 								}
 								else
 								{
-									<RadzenDropDown @bind-Value="data.ReasonCode"
-													Data="@adjustmentReasons"
-													Style="width:100%" />
+									<RadzenDropDown @bind-Value="data.ReasonCode" Style="width:100%" Data="@reasonCodes" />
 								}
 							</EditTemplate>
 						</RadzenDataGridColumn>
@@ -166,9 +159,11 @@
 	[Parameter] public IList<APAROffsetAPRowDto> APAdjustments { get; set; }
 	[Parameter] public IList<APAROffsetARRowDto> ARAdjustments { get; set; }
 	private IList<NoteRowDto> Notes { get; set; } = new List<NoteRowDto>();
+	private IEnumerable<string> reasonCodes { get; set; }
 
 	private InvoiceDetailsDto searchedInvoiceNumber;
-	private RadzenDataGrid<APAROffsetAPRowDto> adjustmentGrid;
+	private RadzenDataGrid<APAROffsetAPRowDto> apGrid;
+	private RadzenDataGrid<APAROffsetARRowDto> arGrid;
 	private RequestAuditDto requestAudit;
 
 	private bool isOnSearch;
@@ -182,6 +177,8 @@
 		ARAdjustments = new List<APAROffsetARRowDto>();
 		searchedInvoiceNumber = new InvoiceDetailsDto(); 
 		requestAudit = new RequestAuditDto();
+
+		reasonCodes = await SearchOptionService.GetReasonCodes();
 		requestAudit.Requestor = await AuthService.GetLastFirstName();
 	}
 
@@ -192,7 +189,7 @@
 			new Dictionary<string, object>()
 			{
 				{ "Rows", APAdjustments },
-				{ "Grid", adjustmentGrid },
+				{ "Grid", apGrid },
 				{ "InvoiceDetails", invoiceDetails }
 			},
 			new DialogOptions() { Width = "800px", Height = "auto" }
@@ -208,7 +205,7 @@
 				new Dictionary<string, object>()
 				{
 				{ "Rows", APAdjustments },
-				{ "Grid", adjustmentGrid },
+				{ "Grid", apGrid },
 				{ "Data", data }
 				},
 				new DialogOptions() { Width = "800px", Height = "auto" }
@@ -224,20 +221,13 @@
 	{
 		try
 		{
-			if (!ARAdjustments.Any())
-				throw new InvalidOperationException("Can't submit request because there are no adjustment in the current request");
-
-			if (isLoading)
-				throw new InvalidOperationException("Can't submit request while search operation is ongoing");
+			Guards.ThrowInvalidOperationIf(!ARAdjustments.Any(), "Can't submit request because there are no adjustment in the current request");
+			Guards.ThrowInvalidOperationIf(isLoading, "Can't submit request while search operation is ongoing");
 
 			var apTotal = APAdjustments.Sum(a => a.InvoiceAmount);
 			var arTotal = ARAdjustments.Sum(a => a.Amount);
 
-			if (apTotal != arTotal)
-			{
-				await DialogService.Alert("AP and AR amounts must balance.");
-				return;
-			}
+			Guards.ThrowInvalidOperationIf((apTotal != arTotal), "AP and AR amounts must balance.");
 
 			await DialogService.OpenAsync<APAROffsetModalSummary>(
 				"Submit AP AR Offsetting",
@@ -275,8 +265,6 @@
 		isLoading = value;
 	}
 
-	private RadzenDataGrid<APAROffsetARRowDto> arGrid;
-
 	private async Task AddInvoiceRow()
 	{
 		var newRow = new APAROffsetARRowDto
@@ -288,10 +276,7 @@
 
 		ARAdjustments.Add(newRow);
 		await arGrid.Reload();
-		await InvokeAsync(() =>
-		{
-			arGrid.EditRow(newRow);
-		});
+		await arGrid.EditRow(newRow);
 	}
 
 	private async Task AddAdjustmentReasonRow()
@@ -299,26 +284,13 @@
 		var newRow = new APAROffsetARRowDto
 		{
 			RowType = ARRowType.Adjustment,
-			ReasonCode = null,
+			ReasonCode = reasonCodes.FirstOrDefault(),
 			Amount = 0.00d
 		};
 
 		ARAdjustments.Add(newRow);
 		await arGrid.Reload();
-		await InvokeAsync(() =>
-		{
-			arGrid.EditRow(newRow);
-		});
-	}
-
-	private void OnCreateRow(APAROffsetARRowDto item)
-	{
-		// ARAdjustments.Add(item);
-	}
-
-	private void OnUpdateRow(APAROffsetARRowDto item)
-	{
-		// Optionally save to temporary collection or validate
+		await arGrid.EditRow(newRow);
 	}
 
 	private async Task OnRemoveRow(APAROffsetARRowDto item)
@@ -326,12 +298,4 @@
 		ARAdjustments.Remove(item);
 		await arGrid.Reload();
 	}
-
-	private List<string> adjustmentReasons = new()
-	{
-		"Write Off",
-		"Bank Charge",
-		"Discount"
-	};
-
 }

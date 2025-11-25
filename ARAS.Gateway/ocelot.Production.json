@@ -77,6 +77,18 @@
 			"UpstreamHttpMethod": [ "GET", "POST" ]
 		},
 		{
+			"DownstreamPathTemplate": "/api/apar-offset/{everything}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "10.105.33.40",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/apar-offset/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
 			"DownstreamPathTemplate": "/api/decline/{everything}",
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
@@ -148,7 +160,7 @@
 			"UpstreamPathTemplate": "/file/{everything}",
 			"UpstreamHttpMethod": [ "GET", "POST" ]
 		},
-		
+
 		// Oracle API : "http://localhost:3004"
 		{
 			"DownstreamPathTemplate": "/api/invoice/{everything}",

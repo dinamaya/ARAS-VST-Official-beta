@@ -29,7 +29,7 @@ namespace ARAS.Blazor.Services.Implementations
 
 					invoiceDetails.InvoiceAmount = rand.NextDouble() * (max - min) + min;
 					invoiceDetails.InvoiceNumber = rand.Next(20_000, 9_000_000).ToString();
-					invoiceDetails.InvoiceDate = DateTime.Now.AddDays(-rand.Next(10, 200));
+					invoiceDetails.InvoiceDate = DateTime.UtcNow.ToLocalTime().AddDays(-rand.Next(10, 200));
 					invoiceDetails.CustomerName = first + " " + last;
 					invoiceDetails.CustomerNumber = "09123456789";
 
@@ -65,7 +65,7 @@ namespace ARAS.Blazor.Services.Implementations
 
 					invoiceDetails.InvoiceAmount = rand.NextDouble() * (max - min) + min;
 					invoiceDetails.InvoiceNumber = rand.Next(20_000, 9_000_000).ToString();
-					invoiceDetails.InvoiceDate = DateTime.Now.AddDays(-rand.Next(10, 200));
+					invoiceDetails.InvoiceDate = DateTime.UtcNow.ToLocalTime().AddDays(-rand.Next(10, 200));
 					invoiceDetails.CustomerName = first + " " + last;
 					invoiceDetails.CustomerNumber = "09123456789";
 

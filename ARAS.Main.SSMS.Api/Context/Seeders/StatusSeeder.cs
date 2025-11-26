@@ -9,7 +9,7 @@ namespace ARAS.Main.SSMS.Api.Context.Seeders
 		{
 			using var context = new MainDbContext(serviceProvider.GetRequiredService<DbContextOptions<MainDbContext>>());
 
-			var date = DateTime.Now;
+			var date = DateTime.UtcNow.ToLocalTime();
 
 			if (context.Statuses.Any())
 				return;

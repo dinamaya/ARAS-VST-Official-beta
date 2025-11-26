@@ -52,7 +52,7 @@ namespace ARAS.Blazor.Services.Implementations
 					_jwtOptions.Issuer,
 					_jwtOptions.Audience,
 					claims,
-					expires: DateTime.UtcNow.AddDays(_jwtOptions.DaysDuration),
+					expires: DateTime.UtcNow.ToLocalTime().AddDays(_jwtOptions.DaysDuration),
 					signingCredentials: credentials
 			);
 

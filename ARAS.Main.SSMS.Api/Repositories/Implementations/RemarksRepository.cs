@@ -16,7 +16,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 		public async Task<string> CreateAsync(RemarksCreateDto data, string createdBy)
 		{
-			var date = DateTime.UtcNow;
+			var date = DateTime.UtcNow.ToLocalTime();
 			var remarks = new TransactionRemarks
 			{
 				TransactionId = data.TransactionId,

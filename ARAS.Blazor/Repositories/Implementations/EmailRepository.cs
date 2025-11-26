@@ -12,5 +12,20 @@ namespace ARAS.Blazor.Repositories.Implementations
 		public async Task<IEnumerable<string>> GetAll() => await context.EmailAccountsVs.Select(a => a.Email).ToListAsync() ?? [];
 		public async Task<IEnumerable<string>> GetApprovers() => await context.EmailAccountsVs.Where(a => a.NormalizedName == "APPROVER").Select(a => a.Email).ToListAsync() ?? [];
 		public async Task<IEnumerable<string>> GetValidators() => await context.EmailAccountsVs.Where(a => a.NormalizedName == "VALIDATOR").Select(a => a.Email).ToListAsync() ?? [];
+		public async Task<IEnumerable<string>> GetRequestors() => await context.EmailAccountsVs.Where(a => a.NormalizedName == "REQUESTOR").Select(a => a.Email).ToListAsync() ?? [];
+
+		public async Task<IEnumerable<string>> GetNegateRecipients(string role) => role switch
+		{
+			"Approver" => await context.EmailAccountsVs.Where(a => a.NormalizedName == "APPROVER" || a.NormalizedName == "REQUESTOR").Select(a => a.Email).ToListAsync() ?? [],
+			"Validator" => await context.EmailAccountsVs.Where(a => a.NormalizedName == "VALIDATOR" || a.NormalizedName == "REQUESTOR").Select(a => a.Email).ToListAsync() ?? [],
+			_ => await GetAll()
+		};
+
+		public async Task<IEnumerable<string>> GetUpdateRecipients(string role) => role switch
+		{
+			"Requestor" => await GetApprovers(),
+			"Approver" => await GetValidators(),
+			_ => await GetAll()
+		};
 	}
 }

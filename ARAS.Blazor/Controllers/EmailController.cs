@@ -67,5 +67,37 @@ namespace ARAS.Blazor.Controllers
 				return _response.Failed(ex.Message);
 			}
 		}
+
+		[HttpGet("negate/{role}")]
+		public async Task<ResponseDto<IEnumerable<string>>> GetForNegateEmails(string role)
+		{
+			ResponseDto<IEnumerable<string>> _response = new();
+			try
+			{
+				_response.Result = await _emailRepo.GetNegateRecipients(role);
+				return _response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return _response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("update/{role}")]
+		public async Task<ResponseDto<IEnumerable<string>>> GetForUpdateEmails(string role)
+		{
+			ResponseDto<IEnumerable<string>> _response = new();
+			try
+			{
+				_response.Result = await _emailRepo.GetUpdateRecipients(role);
+				return _response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return _response.Failed(ex.Message);
+			}
+		}
 	}
 }

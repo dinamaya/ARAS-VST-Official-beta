@@ -68,7 +68,7 @@ namespace ARAS.Blazor.Services.Implementations
 				InvoiceId = r.InvoiceNumber,
 				Amount = r.Amount,
 				Type = "AR",
-				ReasonCode = r.ReasonCode,
+				ReasonCode = r.AdjustmentReason,
 				InvoiceDate = DateTime.Now,
 				CustomerName = "",
 				CustomerNumber = ""
@@ -94,7 +94,7 @@ namespace ARAS.Blazor.Services.Implementations
 				InvoiceId = r.InvoiceNumber,
 				Amount = r.Amount,
 				Type = "AR",
-				ReasonCode = r.ReasonCode,
+				ReasonCode = r.AdjustmentReason,
 				InvoiceDate = DateTime.Now,
 				CustomerName = "",
 				CustomerNumber = ""

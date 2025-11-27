@@ -1,6 +1,6 @@
 ﻿namespace ARAS.Main.Oracle.Api.Models.Dtos
 {
-	public class InvoiceAPDetailsDto
+	public class InvoiceDetailsDto
 	{
 		public string Id { get; set; }
 		public double InvoiceAmount { get; set; }

@@ -53,20 +53,19 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
         public async Task<InvoiceAPDetailsDto> GetAPInvoiceNo(string invoiceNo)
         {
-            await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
+            await using var conn = await oracleConnection.OpenWithoutPolicyAsync();
             invoiceNo = invoiceNo.Trim();
 
             var sql = @"
-					SELECT   apa.invoice_num AS invoice_number,
-							 apa.amount_paid AS amount,
-							 apa.invoice_date,
-							 pv.vendor_name,
-							 pv.vendor_id
-					FROM     ap_invoices_all apa,
-							 po_vendors pv
-					WHERE    TRIM(apa.invoice_num) = UPPER(:trxno)
-					  AND    apa.vendor_id = pv.vendor_id
-					ORDER BY apa.invoice_date DESC, apa.invoice_num;
+					SELECT    apa.invoice_num AS InvoiceNumber,
+							  apa.amount_paid AS InvoiceAmount,
+							  apa.invoice_date AS InvoiceDate,
+							  pv.vendor_name AS CustomerName,
+							  pv.vendor_id AS CustomerNumber
+					FROM      ap_invoices_all apa,
+							  po_vendors pv
+					WHERE     apa.vendor_id = pv.vendor_id AND TRIM(apa.invoice_num) = UPPER(:trxno)
+					ORDER BY  apa.invoice_date DESC, apa.invoice_num
 				";
 
             return await conn.QueryFirstOrDefaultAsync<InvoiceAPDetailsDto>(

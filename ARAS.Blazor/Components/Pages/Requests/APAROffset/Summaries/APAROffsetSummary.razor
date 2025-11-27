@@ -40,9 +40,10 @@
                     <Columns>
                         <RadzenDataGridColumn Property="@nameof(APAROffsetAPRowDto.InvoiceNumber)" Title="Invoice Number">
                             <FooterTemplate>
-                                <b>Total Amount:</b>
+                                <b>TOTAL</b>
                             </FooterTemplate>
                         </RadzenDataGridColumn>
+
                         <RadzenDataGridColumn Property="@nameof(APAROffsetAPRowDto.InvoiceAmount)" Title="Invoice Amount">
                             <Template Context="data">
                                 @data?.InvoiceAmount.ToPhp()
@@ -51,6 +52,7 @@
                                 <b>@APAdjustments?.Sum(a => a.InvoiceAmount).ToPhp()</b>
                             </FooterTemplate>
                         </RadzenDataGridColumn>
+
                     </Columns>
                 </RadzenDataGrid>
             </div>
@@ -77,15 +79,20 @@
                                     @data.AdjustmentReason
                                 }
                             </Template>
+                            <FooterTemplate>
+                                <b>TOTAL</b>
+                            </FooterTemplate>
                         </RadzenDataGridColumn>
+
                         <RadzenDataGridColumn Property="Amount" Title="Amount">
                             <Template Context="data">
                                 @data.Amount.ToPhp()
                             </Template>
                             <FooterTemplate>
-                                <b>Total:</b> @ARAdjustments?.Sum(a => a.Amount).ToPhp()
+                                <b>@ARAdjustments?.Sum(a => a.Amount).ToPhp()</b>
                             </FooterTemplate>
                         </RadzenDataGridColumn>
+
                     </Columns>
                 </RadzenDataGrid>
             </div>

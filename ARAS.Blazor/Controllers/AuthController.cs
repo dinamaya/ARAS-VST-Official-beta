@@ -70,7 +70,7 @@ namespace ARAS.Auth.Api.Controllers
 					SameSite = SameSiteMode.Strict,
 					Path = "/",
 					Domain = _config.GetTokenDomainName(),
-					Expires = DateTimeOffset.UtcNow.AddHours(8)
+					Expires = DateTimeOffset.Now.AddHours(8)
 				};
 
 				Response.Cookies.Append(tokenName, token, option);
@@ -106,7 +106,7 @@ namespace ARAS.Auth.Api.Controllers
 					SameSite = SameSiteMode.Strict,
 					Path = "/",
 					Domain = _config.GetTokenDomainName(),
-					Expires = DateTimeOffset.UtcNow.AddYears(-1)
+					Expires = DateTimeOffset.Now.AddYears(-1)
 				});
 
 				var callbackUrl = $"{Request.Scheme}://{Request.Host}/api/auth/login-callback?url={Uri.EscapeDataString(url)}";

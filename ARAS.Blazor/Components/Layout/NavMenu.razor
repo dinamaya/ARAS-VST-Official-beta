@@ -10,14 +10,18 @@
 @inject NavigationManager Navigation
 
 <!-- SIDEBAR -->
-<RadzenSidebar @bind-Expanded="@sidebarExpanded" class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-3 ps ps--active-y">
-	<NavLink href="/" class="navbar-brand m-0 px-4 pt-5 pb-4 d-flex align-items-center">
-		<img src="img/icons/icon_vst_sm.svg" style="max-height: 2.5rem;" alt="logo" />
-		<span class="ms-2 fs-6 fw-bold text-dark">AR-<span class="text-primary">Adjustments</span></span>
-	</NavLink>
-	<hr class="horizontal dark mt-0">
+<RadzenSidebar @bind-Expanded="@sidebarExpanded" class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-3 ps ps--active-y sidebar-container">
+
+	<div class="sidebar-header">
+		<NavLink href="/" class="navbar-brand m-0 px-4 pt-5 pb-4 d-flex align-items-center">
+			<img src="img/icons/icon_vst_sm.svg" style="max-height: 2.5rem;" alt="logo" />
+			<span class="ms-2 fs-6 fw-bold text-dark">AR-<span class="text-primary">Adjustments</span></span>
+		</NavLink>
+		<hr class="horizontal dark mt-0">
+	</div>
 	<!-- Navigation Menu -->
-	<RadzenPanelMenu Style="background: transparent; " class="px-1 h-100">
+	<div class="menu-wrapper">
+		<RadzenPanelMenu Style="background: transparent;" class="px-1">
 		<RadzenPanelMenuItem Text="Dashboard" Path="/" Icon="space_dashboard" Style="border: none" />
 		@if (accountDetails.IsInRole("Admin"))
 		{
@@ -63,6 +67,7 @@
 		</RadzenPanelMenuItem>
 
 	</RadzenPanelMenu>
+	</div>
 </RadzenSidebar>
 
 <!-- HEADER / TOP BAR -->

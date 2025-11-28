@@ -114,3 +114,17 @@ ul.rz-profile-menu .rz-navigation-item-icon-children {
   color: white !important;
   box-shadow: none !important;
 }
+
+.sidebar-container {
+  display: flex !important;
+  flex-direction: column;
+  height: calc(100vh - 2rem);
+}
+.sidebar-container .menu-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 1rem;
+}
+.sidebar-container .sidebar-header {
+  flex-shrink: 0;
+}

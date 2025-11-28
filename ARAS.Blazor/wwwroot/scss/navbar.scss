@@ -161,3 +161,19 @@ ul.rz-profile-menu {
 		box-shadow: none !important;
 	}
 }
+
+.sidebar-container {
+	display: flex !important;
+	flex-direction: column;
+	height: calc(100vh - 2rem);
+
+	.menu-wrapper {
+		flex: 1;
+		overflow-y: auto;
+		padding-bottom: 1rem;
+	}
+
+	.sidebar-header {
+		flex-shrink: 0;
+	}
+}

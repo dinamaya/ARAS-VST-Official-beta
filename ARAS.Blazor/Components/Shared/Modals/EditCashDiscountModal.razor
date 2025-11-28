@@ -93,7 +93,7 @@
 			{
 				InvoiceNumber = Data.InvoiceNumber,
 				DiscountPercentage = discountValue * 100,
-				Remarks = Data.Remarks
+				Remarks = string.IsNullOrEmpty(Data.Remarks) ? $"{(discountValue * 100).ToString("F2")}% Discount Remarks" : Data.Remarks,
 			});
 
 			if (!isValid) return;

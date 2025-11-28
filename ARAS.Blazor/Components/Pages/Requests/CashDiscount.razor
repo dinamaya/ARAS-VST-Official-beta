@@ -111,14 +111,14 @@
 
 	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
 	{
-		await DialogService.OpenAsync<AddCashDiscount>(
+		await DialogService.OpenAsync<AddCashDiscountModal>(
 			"Add Cash Discount Adjustment",
 			new Dictionary<string, object>()
 			{
-				{ nameof(AddCashDiscount.ReasonCodes), reasonCodes },
-				{ nameof(AddCashDiscount.Rows), Adjustments },
-				{ nameof(AddCashDiscount.Grid), adjustmentGrid },
-				{ nameof(AddCashDiscount.InvoiceDetails), invoiceDetails }
+				{ nameof(AddCashDiscountModal.ReasonCodes), reasonCodes },
+				{ nameof(AddCashDiscountModal.Rows), Adjustments },
+				{ nameof(AddCashDiscountModal.Grid), adjustmentGrid },
+				{ nameof(AddCashDiscountModal.InvoiceDetails), invoiceDetails }
 			},
 			new DialogOptions() { Width = "800px", Height = "auto" }
 		);
@@ -128,14 +128,14 @@
 	{
 		try
 		{
-			await DialogService.OpenAsync<EditCashDiscount>(
+			await DialogService.OpenAsync<EditCashDiscountModal>(
 				"Edit Cash Discount Adjustment",
 				new Dictionary<string, object>()
 				{
-				{ nameof(EditCashDiscount.ReasonCodes), reasonCodes },
-				{ nameof(EditCashDiscount.Rows), Adjustments },
-				{ nameof(EditCashDiscount.Grid), adjustmentGrid },
-				{ nameof(EditCashDiscount.Data), data }
+				{ nameof(EditCashDiscountModal.ReasonCodes), reasonCodes },
+				{ nameof(EditCashDiscountModal.Rows), Adjustments },
+				{ nameof(EditCashDiscountModal.Grid), adjustmentGrid },
+				{ nameof(EditCashDiscountModal.Data), data }
 				},
 				new DialogOptions() { Width = "800px", Height = "auto" }
 			);

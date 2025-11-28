@@ -113,7 +113,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
             string aparCode = "APAR";
 
             var requests = _context.VwRequestsNumberSources.Where(r =>
-                r.AdjustmentTypeCode == aparCode &&
+                r.AdjustmentTypeCode == "ARR" &&
 				r.RequestDate == today
             );
 

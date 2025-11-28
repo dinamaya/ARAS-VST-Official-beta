@@ -1,4 +1,5 @@
 ﻿using ARAS.Main.Oracle.Api.Factories.Interfaces;
+using ARAS.Main.Oracle.Api.Services.Interfaces;
 using Dapper;
 using Oracle.ManagedDataAccess.Client;
 
@@ -7,11 +8,15 @@ namespace ARAS.Main.Oracle.Api.Factories.Implementations
 	public class OracleConnectionFactory : IOracleConnectionFactory
 	{
 		private readonly IConfiguration config;
+		private readonly IConfigurationService configService;
 
-		public OracleConnectionFactory(IConfiguration config)
+		public OracleConnectionFactory(IConfiguration config, IConfigurationService configService)
 		{
 			this.config = config;
+			this.configService = configService;
 		}
+
+		public Task<OracleConnection> OpenContextAsync() => configService.IsOntest() ? OpenWithPolicyContextAsync() : OpenWithoutPolicyAsync();
 
 		public async Task<OracleConnection> OpenWithoutPolicyAsync()
 		{

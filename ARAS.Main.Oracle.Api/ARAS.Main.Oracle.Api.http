@@ -10,3 +10,12 @@ GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/invoice/no/219395
 ###
 
 GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/adjustment/reason-codes
+
+###
+GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/test/dt
+
+###
+
+GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/adjustment/reason-codes
+
+###

@@ -6,6 +6,7 @@ using ARAS.Main.Oracle.Api.Services.Interfaces;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Oracle.ManagedDataAccess.Client;
+using System.Numerics;
 
 namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 {
@@ -24,14 +25,20 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 		public async Task<IEnumerable<string>> GetReasonCodes()
 		{
-			if (_config.IsOntest()) return _config.GetReasonCodes();
-
 			var conn = await oracleConnection.OpenWithoutPolicyAsync();
+
 			var sql = @"
-				SELECT   lookup_code
-					FROM   apps.ar_lookups
-					WHERE   lookup_type = 'ADJUST_REASON' AND enabled_flag = 'Y'
-				ORDER BY   creation_date
+				SELECT
+					LV.LOOKUP_CODE
+				FROM
+					FND_LOOKUP_VALUES LV
+				WHERE
+					LV.VIEW_APPLICATION_ID = 222
+					AND LV.SECURITY_GROUP_ID = 0
+					AND lookup_type = 'ADJUST_REASON'
+					AND enabled_flag = 'Y'
+				ORDER BY
+					LV.LOOKUP_CODE
 			";
 
 			var result = await conn.QueryAsync<string>(sql);

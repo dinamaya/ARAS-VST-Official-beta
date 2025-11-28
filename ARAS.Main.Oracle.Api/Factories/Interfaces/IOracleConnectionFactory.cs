@@ -6,5 +6,6 @@ namespace ARAS.Main.Oracle.Api.Factories.Interfaces
 	{
 		Task<OracleConnection> OpenWithoutPolicyAsync();
 		Task<OracleConnection> OpenWithPolicyContextAsync();
+		Task<OracleConnection> OpenContextAsync();
 	}
 }

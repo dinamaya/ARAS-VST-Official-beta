@@ -42,5 +42,27 @@ namespace ARAS.Main.Oracle.Api.Controllers
 				return _response.Failed(ex.Message);
 			}
 		}
+
+		[HttpGet("details/{invoiceNo}")]
+		public async Task<ResponseDto<IEnumerable<InvoiceDetailsDto>>> GetInvoiceDetails(string invoiceNo)
+		{
+			ResponseDto<IEnumerable<InvoiceDetailsDto>> _response = new();
+			try
+			{
+				_response.Result = await _invoiceRepo.GetInvoiceDetails(invoiceNo);
+
+				return _response;
+			}
+			catch (OracleException ex)
+			{
+				_logger.LogError(Exceptions.CANT_CONNECT);
+				return _response.Failed(Exceptions.CANT_CONNECT);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return _response.Failed(ex.Message);
+			}
+		}
 	}
 }

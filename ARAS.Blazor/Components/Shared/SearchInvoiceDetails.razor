@@ -1,6 +1,8 @@
 ﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Components.Shared.Skeletons
 
 @inject IInvoiceService InvoiceService
 @inject DialogService DialogService
@@ -50,96 +52,50 @@
 							</div>
 							<div class="ms-3">
 								<h3 class="mb-0 d-block">Invoice Details</h3>
-								@if (isLoading)
-								{
-									<RadzenRow class="pt-2" Style="width: 15em">
-										<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:15px;" />
-									</RadzenRow>
-								}
-								else
-								{
-									<span class="text-sm text-dark opacity-8">@Utils.GetTimestamp("Date issued ", invoiceDetails.InvoiceDate)</span>
-								}
 							</div>
 						</div>
-					</RadzenColumn>
-
-					<RadzenColumn Size="12" SizeMD="6" SizeLG="4" class="d-flex align-items-center justify-content-end mt-md-0 mt-3">
-						@if (!isLoading)
-						{
-							<button class="btn btn-primary border-1 my-0 px-5 w-100 w-md-auto" @onclick="@(args => OnAdd.InvokeAsync(invoiceDetails))">
-								<i class="fa-regular fa-add d-md-none d-lg-inline-block"></i>
-								<span class="ms-1">Add to List</span>
-							</button>
-						}
 					</RadzenColumn>
 				</RadzenRow>
 			</div>
 			<div class="card-body overflow-auto overflow-x-hidden">
-				<RadzenRow class="py-3" Gap="1em">
-					<RadzenColumn Size="12" SizeLG="5">
-						<h4 class="mb-3">Invoice Number</h4>
-						<div class="border-dashed border-1 border-secondary border-radius-md p-3">
-							<div class="d-flex align-items-center">
-								<div class="form-group w-100">
-									@if (isLoading)
-									{
-										<RadzenRow class="w-100">
-											<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:25px;" />
-										</RadzenRow>
-									}
-									else
-									{
-										<div class="input-group bg-gray-200">
-											<input class="form-control form-control-sm" @bind-value="@invoiceDetails.InvoiceNumber" type="text" disabled>
-										</div>
-									}
-								</div>
-							</div>
-							<p class="text-xs mb-1">You cannot generate <b>Invoice Number</b></p>
-						</div>
-					</RadzenColumn>
-
-					<RadzenColumn Size="12" SizeLG="7" class="mt-3 mt-lg-0">
-						<h4 class="mb-3">Other Information</h4>
-						<RadzenRow Gap="1em" class="border-0 p-3 border-radius-md bg-gray-100">
-							@if (isLoading)
-							{
-								<RadzenColumn Size="12" SizeMD="6">
-									<div class="mb-2 text-sm">
-										Customer Name:
-										<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:15px;" />
-									</div>
-									<div class="mb-2 text-sm">
-										Customer Number:
-										<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:15px;" />
-									</div>
-								</RadzenColumn>
-								<RadzenColumn Size="12" SizeMD="6">
-									<div class="mb-2 text-sm">
-										Invoice Date:
-										<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:15px;" />
-									</div>
-									<div class="mb-2 text-sm">
-										Invoice Amount:
-										<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:15px;" />
-									</div>
-								</RadzenColumn>
-							}
-							else
-							{
-								<RadzenColumn Size="12" SizeMD="6">
-									<div class="mb-2 text-sm">Customer Name: <div class="text-dark font-weight-bold ms-2">@invoiceDetails.CustomerName</div></div>
-									<div class="mb-2 text-sm">Customer Number: <div class="text-dark ms-2 font-weight-bold letter-spacing-1">@invoiceDetails.CustomerNumber</div></div>
-								</RadzenColumn>
-								<RadzenColumn Size="12" SizeMD="6">
-									<div class="mb-2 text-sm">Invoice Date: <div class="text-dark font-weight-bold ms-2">@invoiceDetails.InvoiceDate</div></div>
-									<div class="mb-2 text-sm">Invoice Amount: <div class="text-dark font-weight-bold ms-2">@invoiceDetails.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))</div></div>
-								</RadzenColumn>
-							}
-						</RadzenRow>
-					</RadzenColumn>
-				</RadzenRow>
+				@if (isLoading)
+				{
+					<DatatableSkeleton RowCount="4" ColumnCount="5"/>
+				}
+				else {
+				<RadzenDataGrid @ref=dataGrid
+								class="border-0 mt-3"
+								AllowFiltering="true"
+								AllowColumnResize="true"
+								AllowAlternatingRows="false"
+								FilterMode="FilterMode.Advanced"
+								AllowSorting="true"
+								PageSize="20"
+								AllowPaging="true"
+								PagerHorizontalAlign="HorizontalAlign.Left"
+								ShowPagingSummary="true"
+								Data="@invoiceDetailsList"
+								LogicalFilterOperator="LogicalFilterOperator.Or"
+								SelectionMode="DataGridSelectionMode.Single">
+					<Columns>
+						<RadzenDataGridColumn Frozen="true" Title="Option" Sortable="false" Filterable="false" Width="180px" TextAlign="TextAlign.Center">
+							<Template Context="data">
+								<RadzenButton Icon="add" Text="Add To List" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Click="@(args => OnAddEvent(data))" />
+							</Template>
+						</RadzenDataGridColumn>
+						<RadzenDataGridColumn Visible=false Property="@nameof(InvoiceDetailsDto.Id)" Title="Id" />
+						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceAmount)" Title="Invoice Amount" >
+							<Template Context="data">
+								@data.InvoiceAmount.ToPhp()
+							</Template>
+						</RadzenDataGridColumn>
+						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceNumber)" Title="Invoice Number" />
+						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceDate)" Title="Invoice Date" />
+						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.CustomerName)" Title="Customer Name" />
+						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.CustomerNumber)" Title="Customer Number" />
+					</Columns>
+				</RadzenDataGrid>
+				}
 			</div>
 		</div>
 	</RadzenRow>
@@ -149,18 +105,25 @@
 	[Parameter] public EventCallback<bool> OnSearchChanged { get; set; }
 	[Parameter] public EventCallback<bool> OnLoadingChanged { get; set; }
 
-	private InvoiceDetailsDto invoiceDetails { get; set; }
+	private IEnumerable<InvoiceDetailsDto> invoiceDetailsList { get; set; }
 	private bool isOnSearch { get; set; }
 	private bool isLoading { get; set; }
 	private string searchInvoiceNo = "";
+	private RadzenDataGrid<InvoiceDetailsDto> dataGrid;
 
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
 	}
 
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+	}
+
 	public async Task SearchInvoice()
 	{
+		await Task.Delay(10);
 		try
 		{
 			Guards.ThrowInvalidOperationIf(searchInvoiceNo.Length < 3, "Please provided 3 or more character in the search invoice number field");
@@ -173,8 +136,12 @@
 
 			await SetIsOnSearch(true);
 			await SetIsLoading(true);
+			invoiceDetailsList = [];
+			await dataGrid.Reload();
 
-			invoiceDetails = await InvoiceService.GetDetails(searchInvoiceNo);
+			invoiceDetailsList = await InvoiceService.GetDetailsList(searchInvoiceNo);
+
+			await dataGrid.Reload();
 		}
 		catch (Exception ex)
 		{
@@ -195,5 +162,10 @@
 	{
 		isLoading = value;
 		await OnLoadingChanged.InvokeAsync(value);
+	}
+
+	private async Task OnAddEvent(InvoiceDetailsDto invoiceDetails)
+	{
+		await OnAdd.InvokeAsync(invoiceDetails);
 	}
 }

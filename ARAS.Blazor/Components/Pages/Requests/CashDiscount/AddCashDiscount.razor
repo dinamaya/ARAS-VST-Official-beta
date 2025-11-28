@@ -1,17 +1,15 @@
 ﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Components.UI
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
 @inherits ComponentBase
 @inject DialogService DialogService
-@* @inject ICashDiscountService CashDiscountService *@
 
 <RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
-	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
-		<RadzenFormField Text="Invoice Number to adjust" Variant="@Variant.Outlined">
-			<RadzenTextBox @bind-Value="@InvoiceDetails.InvoiceNumber" ReadOnly />
-		</RadzenFormField>
-		<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.InvoiceNumber)" />
+	<RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
+		<InvoiceSummary InvoiceDetails="InvoiceDetails"/>
 	</RadzenStack>
 
 	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">

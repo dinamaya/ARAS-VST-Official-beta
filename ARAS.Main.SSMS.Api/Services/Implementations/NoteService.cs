@@ -29,7 +29,7 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 		{
 			foreach (var note in data.Notes)
 			{
-				var date = DateTime.UtcNow.ToLocalTime();
+				var date = DateTime.Now;
 				string formattedName = $"{DateTime.Today.ToString("MMddyyyy")}_{Utils.Security.GenerateExtendedGuid(string.Empty, 2)}";
 				var _note = new Note();
 				_note.AttachmentName = string.Empty;

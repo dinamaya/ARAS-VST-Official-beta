@@ -86,7 +86,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 		private async Task CreateInvoiceAdjustments(string createdBy, long requestId, string adjustmentTypeId, APAROffsetCreateDto data)
 		{
-			var invoice = new InvoiceCreateDto(data.InvoiceId, data.Amount, invoiceDate: DateTime.UtcNow.ToLocalTime(), data.CustomerNumber, data.CustomerName);
+			var invoice = new InvoiceCreateDto(data.InvoiceId, data.Amount, invoiceDate: DateTime.Now, data.CustomerNumber, data.CustomerName);
 			var invoiceId = await _invoiceRepo.CreateAsync(invoice, createdBy);
 
 			await _adjustmentRepo.CreateAPAROffsetAdjustmentAsync(data, invoiceId, createdBy, requestId, adjustmentTypeId);

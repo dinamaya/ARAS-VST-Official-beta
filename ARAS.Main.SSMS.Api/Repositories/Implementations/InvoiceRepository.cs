@@ -18,7 +18,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 		public async Task<long> CreateAsync(InvoiceCreateDto data, string createdBy)
 		{
-			var date = DateTime.UtcNow.ToLocalTime();
+			var date = DateTime.Now;
 			var invoice = new Invoice();
 			
 			invoice.InvoiceNumber = data.InvoiceNumber;

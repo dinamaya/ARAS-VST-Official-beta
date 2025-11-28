@@ -35,7 +35,7 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 		}
 
 		public string GetAttachmentGroupDirectoryByDate(DateTime date) => Path.Combine(_storagePath, date.ToString(Formats.Date.INPUT));
-		public string GetAttachmentGroupDirectoryToday() => GetAttachmentGroupDirectoryByDate(DateTime.UtcNow.ToLocalTime());
+		public string GetAttachmentGroupDirectoryToday() => GetAttachmentGroupDirectoryByDate(DateTime.Now);
 		public async Task UploadAttachmentAsync(IFormFile file, string fileName, DateTime date)
 		{
 			string directory = GetAttachmentGroupDirectoryByDate(date);

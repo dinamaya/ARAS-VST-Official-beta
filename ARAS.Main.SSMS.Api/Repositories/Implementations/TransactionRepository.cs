@@ -19,7 +19,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			transaction.StatusId = statusId;
 
 			transaction.CreatedBy = createdBy;
-			transaction.DateCreated = DateTime.UtcNow.ToLocalTime();
+			transaction.DateCreated = DateTime.Now;
 
 			transaction.IsActive = true;
 

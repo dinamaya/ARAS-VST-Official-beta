@@ -1,18 +1,14 @@
 ﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Components.UI
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
 @inherits ComponentBase
 @inject DialogService DialogService
-@* @inject ICashDiscountService CashDiscountService *@
 
 <RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
-	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
-		<RadzenFormField Text="Invoice Number to adjust" Variant="@Variant.Outlined">
-			<RadzenTextBox @bind-Value="@InvoiceDetails.InvoiceNumber" ReadOnly />
-		</RadzenFormField>
-
-		<ComponentValidator ValidationName="@nameof(ARInvoiceOffsettingCreateValidationDto.InvoiceNumber)" />
+	<RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
+		<InvoiceSummary InvoiceDetails="InvoiceDetails"/>
 	</RadzenStack>
 
 	<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
@@ -62,9 +58,7 @@
 				}
 			}
 
-			var row = new APAROffsetAPRowDto(
-				InvoiceDetails
-			);
+			var row = new APAROffsetAPRowDto(InvoiceDetails);
 
 			Rows.Add(row);
 

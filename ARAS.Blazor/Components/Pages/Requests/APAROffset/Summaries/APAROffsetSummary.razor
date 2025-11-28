@@ -17,10 +17,10 @@
                     <span class="pl-1">@APAdjustments?.FirstOrDefault()?.CustomerName</span>
                 </div>
             </RadzenColumn>
-            <RadzenColumn Size="6">
+            <RadzenColumn Size="6"> 
                 <div style="font-size: 1.2rem;">
                     <b>REF. NO:</b>
-                    @* <span class="pl-1">@ReferenceNumber</span> *@
+                    <span class="pl-1">@RequestAudit?.ReferenceNumber</span>
                 </div>
             </RadzenColumn>
         </RadzenRow>
@@ -132,5 +132,5 @@
     [Parameter] public IEnumerable<APAROffsetAPRowDto> APAdjustments { get; set; }
     [Parameter] public IEnumerable<APAROffsetARRowDto> ARAdjustments { get; set; }
     [Parameter] public RequestAuditDto RequestAudit { get; set; }
-    // [Parameter] public string ReferenceNumber { get; set; }
+    [Parameter] public string ReferenceNumber { get; set; }
 }

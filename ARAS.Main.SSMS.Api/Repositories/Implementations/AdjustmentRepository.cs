@@ -107,7 +107,25 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			return $"{groupCode}-{adjCode}-{datePart}-{indexPart}";
 		}
 
-		public async Task<AdjustmentBasicInfoDto> GetAdjustmentInfoByCode(string adjustmentTypeCode) => 
+        public async Task<string> GenerateAPARReferenceNumber()
+        {
+            var today = DateOnly.FromDateTime(DateTime.Now.Date);
+            string aparCode = "APAR";
+
+            var requests = _context.VwRequestsNumberSources.Where(r =>
+                r.AdjustmentTypeCode == aparCode &&
+				r.RequestDate == today
+            );
+
+            int nextIndex = (await requests.CountAsync()) + 1;
+
+            string datePart = today.ToString("MM.dd.yyyy");
+            string indexPart = nextIndex.ToString("D3");
+
+            return $"APAR-{datePart}-{indexPart}";
+        }
+
+        public async Task<AdjustmentBasicInfoDto> GetAdjustmentInfoByCode(string adjustmentTypeCode) => 
 			await _context.AdjustmentTypes
 			.Where(x => x.Code.Equals(adjustmentTypeCode))
 			.Select(x => new AdjustmentBasicInfoDto(x.Id, x.Name)).FirstOrDefaultAsync() ?? 

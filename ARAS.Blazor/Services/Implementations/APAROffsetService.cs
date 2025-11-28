@@ -69,8 +69,8 @@ namespace ARAS.Blazor.Services.Implementations
 				Amount = r.Amount,
 				Type = "AR",
 				ReasonCode = r.AdjustmentReason,
-				InvoiceDate = DateTime.Now,
-				CustomerName = "",
+                InvoiceDate = DateTime.UtcNow.ToLocalTime(),
+                CustomerName = "",
 				CustomerNumber = ""
 			});
 
@@ -95,8 +95,8 @@ namespace ARAS.Blazor.Services.Implementations
 				Amount = r.Amount,
 				Type = "AR",
 				ReasonCode = r.AdjustmentReason,
-				InvoiceDate = DateTime.Now,
-				CustomerName = "",
+                InvoiceDate = DateTime.UtcNow.ToLocalTime(),
+                CustomerName = "",
 				CustomerNumber = ""
 			});
 

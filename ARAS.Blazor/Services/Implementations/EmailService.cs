@@ -46,5 +46,25 @@ namespace ARAS.Blazor.Services.Implementations
 
 			return response.Result;
 		}
+
+		public async Task<IEnumerable<string>> GetNegateRecipients(string role)
+		{
+			var response = await _baseService.SendAsync<IEnumerable<string>>(new RequestDto()
+			{
+				URL = _configService.GetAuthEmailUrl($"negate/{role}"),
+			});
+
+			return response.Result;
+		}
+
+		public async Task<IEnumerable<string>> GetUpdateRecipients(string role)
+		{
+			var response = await _baseService.SendAsync<IEnumerable<string>>(new RequestDto()
+			{
+				URL = _configService.GetAuthEmailUrl($"update/{role}"),
+			});
+
+			return response.Result;
+		}
 	}
 }

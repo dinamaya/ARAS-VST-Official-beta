@@ -5,5 +5,8 @@
 		Task<IEnumerable<string>> GetAll();
 		Task<IEnumerable<string>> GetApprovers();
 		Task<IEnumerable<string>> GetValidators();
+		Task<IEnumerable<string>> GetRequestors();
+		Task<IEnumerable<string>> GetNegateRecipients(string role);
+		Task<IEnumerable<string>> GetUpdateRecipients(string role);
 	}
 }

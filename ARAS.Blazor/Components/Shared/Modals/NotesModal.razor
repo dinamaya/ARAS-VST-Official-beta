@@ -146,6 +146,8 @@
 		try
 		{
 			var file = args.File;
+			string ext = Path.GetExtension(file.Name).ToLower();
+			Guards.ThrowInvalidOperationIf(!FileUploadRequirements.AllowedTypes.Any(t => t.Equals(ext)), $"Incorrect file format. Please choose another file with the following formats {FileUploadRequirements.AllowTypesMessage}");
 			Guards.ThrowNullReferenceIf(file, "Attachment is either broken or empty.");
 
 			Guards.ThrowInvalidOperationIf(file.Size > maxMbSize, $"The uploaded file exceeded {FileUploadRequirements.MaxSize}Mb. Please choose another file");

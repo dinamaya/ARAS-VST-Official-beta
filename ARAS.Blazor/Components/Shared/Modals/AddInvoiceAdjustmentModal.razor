@@ -1,0 +1,99 @@
+﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.UI
+@using ARAS.Blazor.Models.Complex
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+
+@inherits ComponentBase
+@inject DialogService DialogService
+@inject ICashDiscountService CashDiscountService
+
+@typeparam TRow where TRow : AdjustmentRow
+
+<RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenFormField Text="Invoice Number to adjust" Variant="@Variant.Outlined">
+			<RadzenTextBox @bind-Value="@InvoiceDetails.InvoiceNumber" ReadOnly />
+		</RadzenFormField>
+		<ComponentValidator ValidationName="@nameof(AdjustmentRow.InvoiceNumber)" />
+	</RadzenStack>
+
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenRow>
+			<RadzenLabel Style="width: 100%;" Text="Reason Codes" />
+		</RadzenRow>
+		<RadzenRow>
+			<RadzenDropDown @bind-Value=@reasonCode Data=@ReasonCodes Style="width: 100%;" Name="Reason Codes" />
+		</RadzenRow>
+		<ComponentValidator ValidationName="Reason Code" />
+	</RadzenStack>
+
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenFormField Text="Adjustment Amount" Variant="Variant.Outlined">
+			<RadzenNumeric @bind-Value="@adjustmentAmount" Max="(decimal)InvoiceDetails.InvoiceAmount" />
+		</RadzenFormField>
+		<ComponentValidator ValidationName="@nameof(AdjustmentRow.AdjustmentAmount)" />
+	</RadzenStack>
+
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
+			<RadzenTextArea @bind-Value="@remarks" Rows="4" />
+		</RadzenFormField>
+		<ComponentValidator ValidationName="@nameof(AdjustmentRow.Remarks)" />
+	</RadzenStack>
+
+	<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+		<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
+			Close
+		</button>
+		<button @onclick="Add" class="btn btn-outline-primary">
+			Add
+		</button>
+	</RadzenStack>
+</RadzenStack>
+
+@code {
+	[Parameter] public TRow T { get; set; }
+	[Parameter] public IEnumerable<string> ReasonCodes { get; set; }
+	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
+	[Parameter] public Action<double, string, string, InvoiceDetailsDto>? OnValidate { get; set; }
+	[Parameter] public Func<double, string, string, InvoiceDetailsDto, Task> OnAdd { get; set; }
+
+	private IEnumerable<string> invoices = new List<string>();
+	private string adjustmentAmount = string.Empty;
+	private string remarks = string.Empty;
+	private string reasonCode = string.Empty;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+		reasonCode = ReasonCodes.FirstOrDefault();
+	}
+
+	private async Task Add()
+	{
+		try
+		{
+			double parsedAmount;
+			// Multiple Invoice Number Validation
+			Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(adjustmentAmount), "The provided adjustment amount is empty. Please provide a valid and not greater than the current Invoice Amount");
+			bool isAdjustmentAmountValid = double.TryParse(adjustmentAmount, out parsedAmount);
+			Guards.ThrowInvalidOperationIf(!isAdjustmentAmountValid, $"The provided Invoice Amount contains unwanted characters. Please check the Invoice Amount or contact the administrator for help.");
+
+			OnValidate?.Invoke(parsedAmount, remarks, reasonCode, InvoiceDetails);
+
+			await OnAdd.Invoke(parsedAmount, remarks, reasonCode, InvoiceDetails);
+
+			DialogService.Close(true);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(Exceptions.GetMessage(ex), "Add Adjustment Failed");
+		}
+	}
+}

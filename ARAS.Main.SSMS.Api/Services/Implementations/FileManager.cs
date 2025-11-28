@@ -1,14 +1,10 @@
-﻿using ARAS.Main.SSMS.Api.App_Code.Globals;
-using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
+﻿using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
 using ARAS.Main.SSMS.Api.Models.Complex;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Services.Interfaces;
 using Humanizer;
-using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.Extensions.Options;
 using System.Net;
-using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 
 namespace ARAS.Main.SSMS.Api.Services.Implementations
 {
@@ -27,13 +23,19 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 			_fileManagerConfig = options.Value;
 		}
 
-		public async Task<FileUploadRequirementsDto> GetFileUploadRequirements() => await Task.Run(() => new FileUploadRequirementsDto()
+		public async Task<FileUploadRequirementsDto> GetFileUploadRequirements()
 		{
-			MaxSize = _fileManagerConfig.MaxSize,
-			AllowTypesMessage = _fileManagerConfig.AllowedFileTypes.Humanize("or")
-		});
+			var allowedTypes = _fileManagerConfig.AllowedFileTypes;
+			return await Task.Run(() => new FileUploadRequirementsDto()
+			{
+				MaxSize = _fileManagerConfig.MaxSize,
+				AllowTypesMessage = allowedTypes.Humanize("or"),
+				AllowedTypes = allowedTypes
+			});
+		}
+
 		public string GetAttachmentGroupDirectoryByDate(DateTime date) => Path.Combine(_storagePath, date.ToString(Formats.Date.INPUT));
-		public string GetAttachmentGroupDirectoryToday() => GetAttachmentGroupDirectoryByDate(DateTime.Now);
+		public string GetAttachmentGroupDirectoryToday() => GetAttachmentGroupDirectoryByDate(DateTime.UtcNow.ToLocalTime());
 		public async Task UploadAttachmentAsync(IFormFile file, string fileName, DateTime date)
 		{
 			string directory = GetAttachmentGroupDirectoryByDate(date);

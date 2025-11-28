@@ -12,13 +12,15 @@ namespace ARAS.Blazor.Services.Implementations
 		private readonly IConfigService _configService;
 		private readonly IEmailService _emailService;
 		private readonly INoteService _noteService;
+		private readonly IAuthService _authService;
 
-		public BaseAdjustmentService(IBaseService baseService, IConfigService configService, IEmailService emailService, INoteService noteService)
+		public BaseAdjustmentService(IBaseService baseService, IConfigService configService, IEmailService emailService, INoteService noteService, IAuthService authService)
 		{
 			_baseService = baseService;
 			_configService = configService;
 			_emailService = emailService;
 			_noteService = noteService;
+			_authService = authService;
 		}
 
 		public async Task Create(List<TCreate> rows, IEnumerable<NoteRowDto> notes, string route)
@@ -43,8 +45,8 @@ namespace ARAS.Blazor.Services.Implementations
 
 		public async Task Update(long requestId, IEnumerable<TCreate> rows, IEnumerable<NoteRowDto> notes, string route)
 		{
-
-			var emails = await _emailService.GetAll();
+			string role = await _authService.GetRole();
+			var emails = await _emailService.GetUpdateRecipients(role);
 			var adjustmentRequestUpdate = new AdjustmentRequestCreationDto<TCreate>(rows, emails);
 
 			await _baseService.SendAsync<string>(
@@ -111,7 +113,8 @@ namespace ARAS.Blazor.Services.Implementations
 
 		public async Task Decline(NegateRequestDto createDecline, IEnumerable<NoteRowDto> notes, string adjustmentTypeCode)
 		{
-			createDecline.ToEmail = await _emailService.GetAll();
+			string role = await _authService.GetRole();
+			createDecline.ToEmail = await _emailService.GetNegateRecipients(role);
 
 			await _baseService.SendAsync<string>(
 				new RequestDto<NegateRequestDto>()
@@ -133,7 +136,8 @@ namespace ARAS.Blazor.Services.Implementations
 
 		public async Task Reject(NegateRequestDto createReject, IEnumerable<NoteRowDto> notes, string adjustmentTypeCode)
 		{
-			createReject.ToEmail = await _emailService.GetAll();
+			string role = await _authService.GetRole();
+			createReject.ToEmail = await _emailService.GetNegateRecipients(role);
 
 			await _baseService.SendAsync<string>(
 				new RequestDto<NegateRequestDto>()

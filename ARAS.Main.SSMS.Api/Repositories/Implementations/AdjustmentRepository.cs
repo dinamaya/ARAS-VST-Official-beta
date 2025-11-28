@@ -21,7 +21,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 		public async Task<long> CreateAsync(AdjustmentCreateDto data, string createdBy)
 		{
-			var date = DateTime.UtcNow;
+			var date = DateTime.UtcNow.ToLocalTime();
 			var adjustment = new Adjustment();
 
 			adjustment.InvoiceId = data.InvoiceId;
@@ -88,7 +88,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		/// </returns>
 		public async Task<string> GenerateReferenceNumber(string groupCode, string adjustmentTypeCode)
 		{
-			var today = DateOnly.FromDateTime(DateTime.Now.Date);
+			var today = DateOnly.FromDateTime(DateTime.UtcNow.ToLocalTime().Date);
 			string grpCode = groupCode.ToUpper();
 			string adjCode = adjustmentTypeCode.ToUpper();
 
@@ -151,9 +151,9 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				AdjustmentTypeId = adjustmentTypeId,
 
 				CreatedBy = createdBy,
-				DateCreated = DateTime.Now,
+				DateCreated = DateTime.UtcNow.ToLocalTime(),
 				ModifiedBy = createdBy,
-				DateModified = DateTime.Now,
+				DateModified = DateTime.UtcNow.ToLocalTime(),
 				IsActive = true
 			};
 

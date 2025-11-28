@@ -17,7 +17,7 @@
 	</NavLink>
 	<hr class="horizontal dark mt-0">
 	<!-- Navigation Menu -->
-	<RadzenPanelMenu Style="background: transparent; " class="px-1">
+	<RadzenPanelMenu Style="background: transparent; " class="px-1 h-100">
 		<RadzenPanelMenuItem Text="Dashboard" Path="/" Icon="space_dashboard" Style="border: none" />
 		@if (accountDetails.IsInRole("Admin"))
 		{
@@ -32,11 +32,10 @@
 				<RadzenPanelMenuItem Text="AP-AR : Offset" Path="/requests/apar-offset" Style="background: transparent; border: none;" />
 				<RadzenPanelMenuItem Text="Cash Discount" Path="/requests/cash-discount" Style="background: transparent" />
 				<RadzenPanelMenuItem Text="Bank Charge" Path="/requests/bank-charge" Style="background: transparent" />
-				<RadzenPanelMenuItem Text="Small Amount" Path="/requests/small-amount" Style="background: transparent" />
 				
 				<RadzenPanelMenuItem Text="Write Off" Style="border: none">
-					<RadzenPanelMenuItem Text="Sales Return" Path="/approvals/cash-discount" Style="background: transparent" />
-					<RadzenPanelMenuItem Text="Write Off" Path="/approvals/bank-charge" Style="background: transparent" />
+					<RadzenPanelMenuItem Text="SR Auto Net" Path="/requests/cash-discount" Style="background: transparent" />
+					<RadzenPanelMenuItem Text="Small Amount" Path="/requests/small-amount" Style="background: transparent" />
 				</RadzenPanelMenuItem>
 			</RadzenPanelMenuItem>
 		}

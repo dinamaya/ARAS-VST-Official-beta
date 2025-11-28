@@ -77,7 +77,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			request.RequestNumber = data.RequestNumber;
 			request.AdjustmentTypeId = data.AdjustmentTypeId;
 			request.CreatedBy = createdBy;
-			request.DateCreated = DateTime.UtcNow;
+			request.DateCreated = DateTime.UtcNow.ToLocalTime();
 
 			await _context.Requests.AddAsync(request);
 			await _context.SaveChangesAsync();

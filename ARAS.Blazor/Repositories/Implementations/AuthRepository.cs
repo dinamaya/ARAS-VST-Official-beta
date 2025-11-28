@@ -41,7 +41,7 @@ namespace ARAS.Blazor.Repositories.Implementations
 			if (account == null)
 			{
 				Account other = new Account();
-				var date = DateTime.Now;
+				var date = DateTime.UtcNow.ToLocalTime();
 
 				other.Email = dto.Email;
 				other.UserName = dto.Email;

@@ -86,7 +86,7 @@ namespace ARAS.Blazor.App_Code.Globals
 
 		public static string GetTimestamp(string message, DateTime dateTime)
 		{
-			var now = DateTime.Now;
+			var now = DateTime.UtcNow.ToLocalTime();
 			var timeDiff = now - dateTime;
 
 			string humanizedTime = timeDiff.Humanize(precision: 1, maxUnit: Humanizer.Localisation.TimeUnit.Day);

@@ -1,4 +1,5 @@
-﻿using ARAS.Blazor.Models.DTOs;
+﻿using ARAS.Blazor.Models.Complex;
+using ARAS.Blazor.Models.DTOs;
 
 namespace ARAS.Blazor.Services.Interfaces
 {
@@ -6,5 +7,6 @@ namespace ARAS.Blazor.Services.Interfaces
 	{
 		Task GenerateCashDiscountRows(IList<CashDiscountRowDto> Adjustments, IEnumerable<string> reasonCodes);
 		Task GenerateBankChargeRows(IList<BankChargeRowDto> Adjustments, IEnumerable<string> reasonCodes);
+		Task GenerateAdjustmentRows(IList<SmallAmountRowDto> Adjustments, IEnumerable<string> reasonCodes);
 	}
 }

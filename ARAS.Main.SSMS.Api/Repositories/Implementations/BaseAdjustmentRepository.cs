@@ -18,11 +18,11 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		private readonly IRemarksRepository _remarksRepo;
 
 		public BaseAdjustmentRepository(
-			MainDbContext context, 
-			IBackgroundJobService bgJobService, 
-			IAdjustmentRepository adjustmentRepo, 
-			IRequestRepository requestRepo, 
-			ITransactionRepository transactionRepo, 
+			MainDbContext context,
+			IBackgroundJobService bgJobService,
+			IAdjustmentRepository adjustmentRepo,
+			IRequestRepository requestRepo,
+			ITransactionRepository transactionRepo,
 			IRemarksRepository remarksRepo)
 		{
 			_context = context;
@@ -118,10 +118,13 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				var transaction = new TransactionCreateDto(requestId, "Pending");
 				var transactId = await _transactionRepo.CreateAsync(transaction, modifiedBy);
 
-				await _adjustmentRepo.DeactivateAllByRequestId(requestId);
+				if(adjustmentTypeCode.Equals("arr"))
+					await _adjustmentRepo.DeactivateAPARByRequestId(requestId);
+				else
+					await _adjustmentRepo.DeactivateAllByRequestId(requestId);
 
 				foreach (var item in data.Model.Adjustments)
-					await updateInvoiceCallBack.Invoke(item, adjustmentType.Id, requestId);
+						await updateInvoiceCallBack.Invoke(item, adjustmentType.Id, requestId);
 
 				var updatedTimeline = await _transactionRepo.GetEmailHistoryByRequestId(requestId);
 				var updateEmail = new UpdateEmailDto();

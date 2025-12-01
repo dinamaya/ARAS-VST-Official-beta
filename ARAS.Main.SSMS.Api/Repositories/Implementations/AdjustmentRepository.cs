@@ -71,6 +71,18 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				await DeactivateDetails(exAdjustment.Id);
 		}
 
+		public async Task DeactivateAPARByRequestId(long requestId)
+		{
+			var rows = await _context.APAROffsets
+				.Where(a => a.RequestId == requestId && a.IsActive)
+				.ToListAsync();
+
+			foreach (var row in rows){
+				row.IsActive = false;
+				_context.APAROffsets.Update(row);
+			}
+		}
+
 		/// <summary>
 		/// Generates the Reference Number for Request Creation
 		/// </summary>

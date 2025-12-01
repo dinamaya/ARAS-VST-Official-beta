@@ -44,5 +44,26 @@ namespace ARAS.Main.SSMS.Api.Controllers
                 return response.Failed(ex.Message);
             }
         }
-    }
+
+		[HttpPost("update/{requestId:long}"), Authorize(Roles = "Requestor")]
+		public async Task<ResponseDto<string>> Update(long requestId, [FromBody] AdjustmentRequestCreationDto<APAROffsetCreateDto> data)
+		{
+			ResponseDto<string> response = new ResponseDto<string>();
+			try
+			{
+				var accountInfo = User.GetAccountBasicInfo();
+				var requestCreation = new RequestCreationDto<AdjustmentRequestCreationDto<APAROffsetCreateDto>>(data, accountInfo.GroupCode, accountInfo.FullName);
+
+				await _aparOffsetRepo.UpdateAsync(requestId, requestCreation, accountInfo.Id);
+
+				response.Result = "Success";
+				response.Message = "Request Updated Successfully";
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
+	}
 }

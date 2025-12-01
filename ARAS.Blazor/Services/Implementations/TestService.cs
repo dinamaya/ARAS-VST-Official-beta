@@ -105,7 +105,7 @@ namespace ARAS.Blazor.Services.Implementations
 
 					float adjustmentAmount = (float)(rand.NextDouble() * (invoiceDetails.InvoiceAmount - 0) + 0);
 
-					var row = new SmallAmountRowDto(adjustmentAmount, $"Charged {adjustmentAmount.ToPhp()}", reasonCodes.ElementAt(rand.Next(reasonCodeLastIndex)), invoiceDetails);
+					var row = new SmallAmountRowDto(adjustmentAmount, "SMALL AMOUNT", reasonCodes.ElementAt(rand.Next(reasonCodeLastIndex)), invoiceDetails);
 
 					Adjustments.Add(row);
 				}

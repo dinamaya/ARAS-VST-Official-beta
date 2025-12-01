@@ -11,6 +11,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 		Task<IEnumerable<Adjustment>> GetByRequestId(long requestId);
 		Task DeactivateDetails(long id);
 		Task DeactivateAllByRequestId(long requestId);
+		Task DeactivateAPARByRequestId(long requestId);
 		Task<string> GenerateReferenceNumber(string groupCode, string adjustmentTypeCode);
         Task<string> GenerateAPARReferenceNumber();
         Task<AdjustmentBasicInfoDto> GetAdjustmentInfoByCode(string adjustmentTypeCode);

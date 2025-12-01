@@ -9,10 +9,19 @@
 
 <RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
 	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
-		<RadzenFormField Text="Invoice Number to adjust" Variant="@Variant.Outlined">
-			<RadzenTextBox @bind-Value="@Data.InvoiceNumber" ReadOnly />
-		</RadzenFormField>
-		<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.InvoiceNumber)" />
+		<RadzenColumn Size="12">
+			<h4 class="mb-3">Invoice Number</h4>
+			<div class="border-dashed border-1 border-secondary border-radius-md p-3">
+				<div class="d-flex align-items-center">
+					<div class="form-group w-100">
+						<div class="input-group bg-gray-200">
+							<input class="form-control form-control-sm fs-6 letter-spacing-2 px-3 py-2" @bind-value="@Data.InvoiceNumber" type="text" disabled>
+						</div>
+					</div>
+				</div>
+				<p class="text-xs mb-1">You cannot generate <b>Invoice Number</b></p>
+			</div>
+		</RadzenColumn>
 	</RadzenStack>
 	
 	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">

@@ -1,4 +1,5 @@
 ﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Components.UI
 @using ARAS.Blazor.Models.Complex
 @using ARAS.Blazor.Models.DTOs
@@ -11,11 +12,8 @@
 @typeparam TRow where TRow : AdjustmentRow
 
 <RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
-	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
-		<RadzenFormField Text="Invoice Number to adjust" Variant="@Variant.Outlined">
-			<RadzenTextBox @bind-Value="@InvoiceDetails.InvoiceNumber" ReadOnly />
-		</RadzenFormField>
-		<ComponentValidator ValidationName="@nameof(AdjustmentRow.InvoiceNumber)" />
+	<RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
+		<InvoiceSummary InvoiceDetails="InvoiceDetails"/>
 	</RadzenStack>
 
 	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
@@ -56,7 +54,7 @@
 	[Parameter] public TRow T { get; set; }
 	[Parameter] public IEnumerable<string> ReasonCodes { get; set; }
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
-	[Parameter] public Action<double, string, string, InvoiceDetailsDto>? OnValidate { get; set; }
+	[Parameter] public Func<double, string, string, InvoiceDetailsDto, Task>? OnValidate { get; set; }
 	[Parameter] public Func<double, string, string, InvoiceDetailsDto, Task> OnAdd { get; set; }
 
 	private IEnumerable<string> invoices = new List<string>();

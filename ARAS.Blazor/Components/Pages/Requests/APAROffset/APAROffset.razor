@@ -84,7 +84,7 @@
 								}
 								else
 								{
-									@data.ReasonCode
+									@data.AdjustmentReason
 								}
 							</Template>
 
@@ -95,11 +95,20 @@
 							<EditTemplate Context="data">
 								@if (data.RowType == ARRowType.Invoice)
 								{
-									<RadzenTextBox @bind-Value="data.InvoiceNumber" Style="width:100%" />
+									<RadzenStack Orientation="Orientation.Vertical">  
+										<RadzenTextBox @bind-Value="data.InvoiceNumber"
+													   Name="InvoiceNumber"
+													   Style="width:100%" />
+
+										<RadzenRegexValidator Component="InvoiceNumber"
+															  Text="Please enter numbers only"
+															  Pattern="^\d+$"
+															  Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px"/>
+									</RadzenStack>
 								}
 								else
 								{
-									<RadzenDropDown @bind-Value="data.ReasonCode" Style="width:100%" Data="@reasonCodes" />
+									<RadzenDropDown @bind-Value="data.AdjustmentReason" Style="width:100%" Data="@reasonCodes" />
 								}
 							</EditTemplate>
 						</RadzenDataGridColumn>
@@ -109,10 +118,12 @@
 								@data.Amount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
 							</Template>
 							<EditTemplate Context="data">
+								<div style="position: relative; z-index: 1;">
 								<RadzenNumeric @bind-Value="data.Amount"
 											   Style="width:100%"
 											   Step="0.01"
 											    />
+								</div>
 							</EditTemplate>
 
 							<FooterTemplate>
@@ -285,7 +296,7 @@
 		var newRow = new APAROffsetARRowDto
 		{
 			RowType = ARRowType.Adjustment,
-			ReasonCode = reasonCodes.FirstOrDefault(),
+			AdjustmentReason = reasonCodes.FirstOrDefault(),
 			Amount = 0.00d
 		};
 

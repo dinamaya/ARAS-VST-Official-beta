@@ -87,7 +87,7 @@
 								}
 								else
 								{
-									@data.ReasonCode
+									@data.AdjustmentReason
 								}
 							</Template>
 
@@ -102,7 +102,7 @@
 								}
 								else
 								{
-									<RadzenDropDown @bind-Value="data.ReasonCode" Style="width:100%" Data="@reasonCodes" />
+									<RadzenDropDown @bind-Value="data.AdjustmentReason" Style="width:100%" Data="@reasonCodes" />
 								}
 							</EditTemplate>
 						</RadzenDataGridColumn>
@@ -308,7 +308,7 @@
 		var newRow = new APAROffsetARRowDto
 		{
 			RowType = ARRowType.Adjustment,
-			ReasonCode = reasonCodes.FirstOrDefault(),
+			AdjustmentReason = reasonCodes.FirstOrDefault(),
 			Amount = 0.00d
 		};
 

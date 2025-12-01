@@ -37,5 +37,16 @@ namespace ARAS.Blazor.Services.Implementations
 			Guards.ThrowNullReferenceIf(response?.Result, response.Message);
 			return response.Result;
 		}
-	}
+
+        public async Task<InvoiceAPDetailsDto> GetAPDetails(string invoiceNumber)
+        {
+            var response = await _baseService.SendAsync<InvoiceAPDetailsDto>(new RequestDto()
+            {
+                URL = _configService.GetOracleInvoiceApiUrl($"ap/no/{invoiceNumber}"),
+            });
+
+            Guards.ThrowNullReferenceIf(response?.Result, response.Message);
+            return response.Result;
+        }
+    }
 }

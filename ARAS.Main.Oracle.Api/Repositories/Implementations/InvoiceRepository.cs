@@ -80,5 +80,29 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 				commandTimeout: 120
 			) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
 		}
-	}
+
+        public async Task<InvoiceAPDetailsDto> GetAPInvoiceNo(string invoiceNo)
+        {
+            await using var conn = await oracleConnection.OpenWithoutPolicyAsync();
+            invoiceNo = invoiceNo.Trim();
+
+            var sql = @"
+					SELECT    apa.invoice_num AS InvoiceNumber,
+							  apa.amount_paid AS InvoiceAmount,
+							  apa.invoice_date AS InvoiceDate,
+							  pv.vendor_name AS CustomerName,
+							  pv.vendor_id AS CustomerNumber
+					FROM      ap_invoices_all apa,
+							  po_vendors pv
+					WHERE     apa.vendor_id = pv.vendor_id AND TRIM(apa.invoice_num) = UPPER(:trxno)
+					ORDER BY  apa.invoice_date DESC, apa.invoice_num
+				";
+
+            return await conn.QueryFirstOrDefaultAsync<InvoiceAPDetailsDto>(
+                sql,
+                new { trxno = $"{invoiceNo}" },
+                commandTimeout: 120
+            ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+        }
+    }
 }

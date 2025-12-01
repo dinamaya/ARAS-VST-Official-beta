@@ -43,6 +43,27 @@ namespace ARAS.Main.Oracle.Api.Controllers
 			}
 		}
 
+        [HttpGet("ap/no/{invoiceNo}")]
+        public async Task<ResponseDto<InvoiceAPDetailsDto>> GetAPInvoice(string invoiceNo)
+        {
+            ResponseDto<InvoiceAPDetailsDto> _response = new();
+            try
+            {
+                _response.Result = await _invoiceRepo.GetAPInvoiceNo(invoiceNo);
+                return _response;
+            }
+            catch (OracleException)
+            {
+                _logger.LogError(Exceptions.CANT_CONNECT);
+                return _response.Failed(Exceptions.CANT_CONNECT);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return _response.Failed(ex.Message);
+            }
+        }
+
 		[HttpGet("details/{invoiceNo}")]
 		public async Task<ResponseDto<IEnumerable<InvoiceDetailsDto>>> GetInvoiceDetails(string invoiceNo)
 		{

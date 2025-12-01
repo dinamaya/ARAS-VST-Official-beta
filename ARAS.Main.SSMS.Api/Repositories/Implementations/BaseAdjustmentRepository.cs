@@ -47,9 +47,17 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			try
 			{
 				var adjustmentType = await _adjustmentRepo.GetAdjustmentInfoByCode(adjustmentTypeCode);
-				string referenceNo = await _adjustmentRepo.GenerateReferenceNumber(data.GroupCode, adjustmentTypeCode);
+                string referenceNo;
+                if (adjustmentTypeCode.Equals("ARR", StringComparison.OrdinalIgnoreCase))
+                {
+                    referenceNo = await _adjustmentRepo.GenerateAPARReferenceNumber();
+                }
+                else
+                {
+                    referenceNo = await _adjustmentRepo.GenerateReferenceNumber(data.GroupCode, adjustmentTypeCode);
+                }
 
-				var request = new RequestCreateDto(referenceNo, adjustmentType.Id);
+                var request = new RequestCreateDto(referenceNo, adjustmentType.Id);
 				var requestId = await _requestRepo.CreateAsync(request, createdBy);
 
 				var transaction = new TransactionCreateDto(requestId, "Pending");

@@ -26,12 +26,12 @@
         </RadzenRow>
     </div>
     
-    <RadzenRow Gap="1.5rem">
+    <RadzenRow Gap="1rem">
         <RadzenColumn Size="6">
-            <div class="text-center">
-                <h3 class="pb-0 mb-0">AP GROUP</h3>
+            <div class="py-2 text-center border border-1">
+                <h3 class="mb-0">AP GROUP</h3>
             </div>
-            <div class="py-4 px-3 w-100 card">
+            <div class="py-4 w-100">
                 <RadzenDataGrid Data="@APAdjustments" TItem="APAROffsetAPRowDto"
                                 AllowFiltering="false"
                                 AllowPaging="false"
@@ -57,11 +57,11 @@
                 </RadzenDataGrid>
             </div>
         </RadzenColumn>
-        <RadzenColumn Size="6" Style="padding-bottom: 10px;">
-            <div class="text-center">
-                <h3 class="pb-0 mb-0">AR GROUP</h3>
+        <RadzenColumn Size="6" >
+            <div class="py-2 text-center border border-1">
+                <h3 class="mb-0">AR GROUP</h3>
             </div>
-            <div class="py-4 px-3 w-100 card">
+            <div class="py-4 w-100">
                 <RadzenDataGrid Data="@ARAdjustments" TItem="APAROffsetARRowDto"
                                 AllowFiltering="false"
                                 AllowPaging="false"

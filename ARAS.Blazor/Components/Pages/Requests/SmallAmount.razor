@@ -3,6 +3,7 @@
 @using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Components.Shared.Modals
 @using ARAS.Blazor.Components.Shared.Summaries
+@using ARAS.Blazor.Models.Complex
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
 @using ARAS.Blazor.Components.Shared.DataTables
@@ -120,7 +121,7 @@
 				{
 					{ nameof(AddInvoiceAdjustmentModal<SmallAmountRowDto>.ReasonCodes), reasonCodes },
 					{ nameof(AddInvoiceAdjustmentModal<SmallAmountRowDto>.InvoiceDetails), invoiceDetails},
-					{ nameof(AddInvoiceAdjustmentModal<SmallAmountRowDto>.OnValidate), OnAddValidate},
+					{ nameof(AddInvoiceAdjustmentModal<SmallAmountRowDto>.OnValidate), OnValidate},
 					{ nameof(AddInvoiceAdjustmentModal<SmallAmountRowDto>.OnAdd), OnAdd},
 				},
 				new DialogOptions() { Width = "800px", Height = "auto" }
@@ -136,14 +137,14 @@
 	{
 		try
 		{
-			await DialogService.OpenAsync<EditBankChargeModal>(
+			await DialogService.OpenAsync<EditInvoiceAdjustmentModal<SmallAmountRowDto>>(
 				"Edit Small Amount Adjustment",
 				new Dictionary<string, object>()
 				{
-					{ nameof(EditBankChargeModal.ReasonCodes), reasonCodes },
-					{ nameof(EditBankChargeModal.Rows), Adjustments },
-					{ nameof(EditBankChargeModal.Grid), adjustmentGrid },
-					{ nameof(EditBankChargeModal.Data), data }
+					{ nameof(EditInvoiceAdjustmentModal<SmallAmountRowDto>.ReasonCodes), reasonCodes },
+					{ nameof(EditInvoiceAdjustmentModal<SmallAmountRowDto>.InvoiceDetails), data},
+					{ nameof(EditInvoiceAdjustmentModal<SmallAmountRowDto>.OnEdit), OnEdit},
+					{ nameof(EditInvoiceAdjustmentModal<SmallAmountRowDto>.OnDelete), OnDelete},
 				},
 				new DialogOptions() { Width = "800px", Height = "auto" }
 			);
@@ -201,7 +202,21 @@
 		await adjustmentGrid.Reload();
 	}
 
-	private async Task OnAddValidate(double amount, string remarks, string reasonCode, InvoiceDetailsDto details)
+	private async Task OnEdit(double amount, string remarks, string reasonCode, SmallAmountRowDto details)
+	{
+		var data = Adjustments.FirstOrDefault(r => r.Id == details.Id) ?? throw new Exception("Data is not found in the Small Amount adjustment table");
+		data.SetValues((float) amount, remarks, reasonCode);
+
+		await adjustmentGrid.Reload();
+	}
+
+	private async Task OnDelete(SmallAmountRowDto details)
+	{
+		Adjustments.Remove(details);
+		await adjustmentGrid.Reload();
+	}
+
+	private async Task OnValidate(double amount, string remarks, string reasonCode, InvoiceDetailsDto details)
 	{
 		var adjustments = Adjustments.Where(a => a.InvoiceNumber.Trim() == details.InvoiceNumber);
 

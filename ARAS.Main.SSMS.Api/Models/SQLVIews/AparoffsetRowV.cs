@@ -23,4 +23,6 @@ public partial class AparoffsetRowV
     public string? ReasonCode { get; set; } 
 
     public string Type { get; set; } = null!;
+
+    public bool IsActive { get; set; }
 }

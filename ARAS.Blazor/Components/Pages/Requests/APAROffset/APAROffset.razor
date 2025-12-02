@@ -57,7 +57,7 @@
 							</FooterTemplate>
 					</RadzenDataGridColumn>
 
-						<RadzenDataGridColumn Context="data" TextAlign="TextAlign.Center" Width="70px" Sortable="false" Filterable="false">
+						<RadzenDataGridColumn TItem="APAROffsetAPRowDto" Context="data" TextAlign="TextAlign.Center" Width="150px">
 							<Template Context="data">
 								<RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Click="@((args) => OnRemoveAPRow(data))" />
 							</Template>

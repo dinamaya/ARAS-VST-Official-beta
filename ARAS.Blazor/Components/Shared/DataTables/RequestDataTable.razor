@@ -60,7 +60,7 @@
 								}
 							</Template>
 						</RadzenDataGridColumn>
-						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.RequestNumber)" Title="Request Number" Visible="false" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.RequestNumber)" Width="220px"  Title="Request Number" />
 						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Status)" Width="180px" Title="Status">
 							<Template Context="data">
 								<StatusBadge Status="@data.Status" Style="font-size: 0.9em" />

@@ -80,7 +80,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			foreach (var row in rows){
 				row.IsActive = false;
 				_context.APAROffsets.Update(row);
-			}
+                await _context.SaveChangesAsync();
+            }
 		}
 
 		/// <summary>

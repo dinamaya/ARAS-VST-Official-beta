@@ -57,7 +57,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			return new APAROffsetRowDto()
 			{
 				APGroup = await _context.VwAparoffsetRows
-					.Where(r => r.Type == "AP" && r.RequestiD == requestId)
+					.Where(r => r.Type == "AP" && r.RequestiD == requestId && r.IsActive)
 					.Select(r => new APAROffsetAPRowDto()
 					{
 						Id = r.Id.ToString(),
@@ -69,7 +69,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					})
 				.ToListAsync(),
 				ARGroup = await _context.VwAparoffsetRows
-					 .Where(r => r.Type == "AR" && r.RequestiD == requestId)
+					 .Where(r => r.Type == "AR" && r.RequestiD == requestId && r.IsActive)
 					 .Select(r => new APAROffsetARRowDto()
 					 {
 						 Id = r.Id.ToString(),

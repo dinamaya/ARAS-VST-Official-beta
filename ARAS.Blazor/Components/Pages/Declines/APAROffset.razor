@@ -59,6 +59,13 @@
 								<b>@APAdjustments?.Sum(a => a.InvoiceAmount).ToPhp()</b>
 							</FooterTemplate>
 						</RadzenDataGridColumn>
+
+						<RadzenDataGridColumn TItem="APAROffsetAPRowDto" Context="data" TextAlign="TextAlign.Center" Width="150px">
+							<Template Context="data">
+								<RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Click="@((args) => OnRemoveAPRow(data))" />
+							</Template>
+						</RadzenDataGridColumn>
+
 					</Columns>
 				</RadzenDataGrid>
 			</div>
@@ -324,5 +331,11 @@
 	{
 		ARAdjustments.Remove(item);
 		await arGrid.Reload();
+	}
+
+	private async Task OnRemoveAPRow(APAROffsetAPRowDto item)
+	{
+		APAdjustments.Remove(item);
+		await apGrid.Reload();
 	}
 }

@@ -424,7 +424,7 @@
 			if (ar.Amount == 0.0)
 			{
 				var id = ar.RowType == ARRowType.Invoice ? ar.InvoiceNumber : ar.AdjustmentReason;
-				message = $"AR Group: Amount must not be 0 for '{id ?? "unknown"}'.";
+				message = $"AR Group: Amount must not be 0.00 for '{id ?? "unknown"}'.";
 				return false;
 			}
 		}

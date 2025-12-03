@@ -16,7 +16,7 @@
 @inject ITestService TestService
 @inject IAuthService AuthService
 @inject ISearchOptionService SearchOptionService
-@inject IBankChargeService BankChargeService
+@inject ISmallAmountService SmallAmountService
 
 <h2>Small Amount Adjustment</h2>
 
@@ -182,7 +182,7 @@
 
 	public async Task SubmitRequest()
 	{
-		// await BankChargeService.Create(Adjustments, Notes);
+		await SmallAmountService.Create(Adjustments, Notes);
 	}
 
 	private void HandleSearchChanged(bool value)

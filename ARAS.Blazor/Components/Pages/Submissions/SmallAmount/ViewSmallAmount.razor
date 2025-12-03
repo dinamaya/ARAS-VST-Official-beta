@@ -1,10 +1,10 @@
-﻿@page "/submissions/bank-charge/{RequestId:long}"
+﻿@page "/submissions/small-amount/{RequestId:long}"
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
-@inject IBankChargeService Service
+@inject ISmallAmountService Service
 
 <ViewRequestAdjustment RequestId="RequestId" AdjustmentReaderService="Service" />
 
-@code {
+@code{
 	[Parameter] public long RequestId { get; set; }
 }

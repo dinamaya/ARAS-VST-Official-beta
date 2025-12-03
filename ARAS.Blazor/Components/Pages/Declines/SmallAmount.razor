@@ -1,22 +1,23 @@
-﻿@page "/requests/small-amount"
+﻿@page "/declines/small-amount/{RequestId:long}"
 @using ARAS.Blazor.App_Code.Globals
 @using ARAS.Blazor.App_Code.Globals.Extensions
-@using ARAS.Blazor.Components.Shared.Modals
-@using ARAS.Blazor.Components.Shared.Summaries
-@using ARAS.Blazor.Models.Complex
-@using ARAS.Blazor.Models.DTOs
-@using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Components.Shared
 @using ARAS.Blazor.Components.Shared.DataTables
+@using ARAS.Blazor.Components.Shared.Modals
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Implementations
+@using ARAS.Blazor.Services.Interfaces
 @using Microsoft.AspNetCore.Authorization
 
 @attribute [Authorize(Roles = "Requestor")]
 @inherits ComponentBase
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
-@inject ITestService TestService
 @inject IAuthService AuthService
-@inject ISearchOptionService SearchOptionService
+@inject INoteService NoteService
 @inject ISmallAmountService SmallAmountService
+@inject ISearchOptionService SearchOptionService
+@inject IRequestService RequestService
 
 <h2>Small Amount Adjustment</h2>
 
@@ -70,21 +71,28 @@
 
 	</RadzenRow>
 
-	<AttachmentsDatatable Notes="Notes" IsDownloadable=false />
-
 	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-
 		<RadzenRow>
 			<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
 				Submit
 			</button>
 		</RadzenRow>
 	</RadzenStack>
+
+	<RadzenRow>
+		<RadzenColumn Size="4">
+			<Timeline RequestId="@RequestId" />
+		</RadzenColumn>
+		<RadzenColumn Size="8">
+			<AttachmentsDatatable Notes="@Notes" ShowOtherColumns=true />
+		</RadzenColumn>
+	</RadzenRow>
 </RadzenStack>
 
 
 
 @code {
+	[Parameter] public long RequestId { get; set; }
 	[Parameter] public IList<SmallAmountRowDto> Adjustments { get; set; }
 	private IList<NoteRowDto> Notes { get; set; } = new List<NoteRowDto>();
 	private IEnumerable<string> reasonCodes { get; set; }
@@ -100,15 +108,12 @@
 	{
 		await base.OnInitializedAsync();
 
-		Adjustments = new List<SmallAmountRowDto>();
+		Adjustments = (await SmallAmountService.GetAdjustments(RequestId)).ToList();
 		searchedInvoiceNumber = new InvoiceDetailsDto();
-		requestAudit = new RequestAuditDto();
-
+		var request = await RequestService.GetRequestDetails(RequestId);
+		Notes = await NoteService.GetRows(RequestId);
 		reasonCodes = await SearchOptionService.GetReasonCodes();
-		await TestService.GenerateAdjustmentRows(Adjustments, reasonCodes);
-		await adjustmentGrid.Reload();
-
-		requestAudit.Requestor = await AuthService.GetLastFirstName();
+		requestAudit = new RequestAuditDto(request);
 	}
 
 	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
@@ -182,18 +187,11 @@
 
 	public async Task SubmitRequest()
 	{
-		await SmallAmountService.Create(Adjustments, Notes);
+		await SmallAmountService.Update(RequestId, Adjustments, Notes);
 	}
 
-	private void HandleSearchChanged(bool value)
-	{
-		isOnSearch = value;
-	}
-
-	private void HandleLoadingChanged(bool value)
-	{
-		isLoading = value;
-	}
+	private void HandleSearchChanged(bool value) => isOnSearch = value;
+	private void HandleLoadingChanged(bool value) => isLoading = value;
 
 	private async Task OnAdd(double amount, string remarks, string reasonCode, InvoiceDetailsDto details)
 	{
@@ -205,7 +203,7 @@
 	private async Task OnEdit(double amount, string remarks, string reasonCode, SmallAmountRowDto details)
 	{
 		var data = Adjustments.FirstOrDefault(r => r.Id == details.Id) ?? throw new Exception("Data is not found in the Small Amount adjustment table");
-		data.SetValues((float) amount, remarks, reasonCode);
+		data.SetValues((float)amount, remarks, reasonCode);
 
 		await adjustmentGrid.Reload();
 	}

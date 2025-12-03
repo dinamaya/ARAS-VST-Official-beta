@@ -112,20 +112,13 @@
 		isLoading = false;
 	}
 
-	protected override async Task OnParametersSetAsync()
-	{
-		await base.OnInitializedAsync();
-	}
+	protected override async Task OnParametersSetAsync() => await base.OnInitializedAsync();
 
 	private async Task OnSelect(string status, long requestId)
 	{
 		@if (status == "Declined" && accountDetails.IsInRole("Requestor"))
-		{
 			NavigationManager.NavigateTo($"/{UpdateRoute}/{requestId}");
-		}
 		else
-		{
 			NavigationManager.NavigateTo($"/{ViewRoute}/{requestId}");
-		}
 	}
 }

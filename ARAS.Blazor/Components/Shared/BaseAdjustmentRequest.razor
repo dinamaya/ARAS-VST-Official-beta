@@ -1,0 +1,38 @@
+﻿@using ARAS.Blazor.App_Code.Globals.Enums
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Repositories.Interfaces
+@using ARAS.Blazor.Components.Shared.DataTables;
+
+@inherits ComponentBase
+
+<h3>@Title Adjustment Approval</h3>
+
+<RequestDataTable ViewRoute="@_routeName" SelectButtonTitle="Update" OnDateLoad="@(OnDataLoad)" />
+
+@code {
+	[Parameter] public string RouteName { get; set; }
+	[Parameter] public string Title { get; set; }
+	[Parameter] public IRequestSubmissionReaderRepository RequestSubmissionReader { get; set; }
+	[Parameter] public AdjustmentStageType AdjustmentStage { get; set; }
+
+	private string _routeName = string.Empty;
+	private string _title = string.Empty;
+	
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+		_routeName = AdjustmentStage switch 
+		{
+			AdjustmentStageType.APPROVAL => $"approvals/{RouteName}",
+			AdjustmentStageType.VALIDATION => $"validations/{RouteName}",
+			_ => throw new InvalidOperationException("Invalid Adjustment Stage Type"),
+		};
+	}
+
+	private async Task<IEnumerable<TransactionRequestRowDto>> OnDataLoad() => AdjustmentStage switch
+	{
+		AdjustmentStageType.APPROVAL => await RequestSubmissionReader.GetApprovals(),
+		AdjustmentStageType.VALIDATION => await RequestSubmissionReader.GetValidations(),
+		_ => throw new InvalidOperationException("Invalid Adjustment Stage Type"),
+	};
+}

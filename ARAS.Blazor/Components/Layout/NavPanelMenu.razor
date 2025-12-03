@@ -1,0 +1,19 @@
+﻿<RadzenPanelMenuItem Text="@MenuText" Icon="@MenuIcon" Style="border: none">
+	<MenuItem Text="AP-AR : Offset" Route="@GetPath("apar-offset")" />
+	<MenuItem Text="Cash Discount" Route="@GetPath("cash-discount")" />
+	<MenuItem Text="Bank Charge" Route="@GetPath("bank-charge")" />
+	<MenuItem Text="Invoice Offsett" Route="@GetPath("invoice-offset")" />
+
+	<RadzenPanelMenuItem Text="Write Off" Style="border: none">
+		<MenuItem Text="SR Auto Net" Route="@GetPath("cash-discount")" />
+		<MenuItem Text="Small Amount" Route="@GetPath("small-amount")" />
+	</RadzenPanelMenuItem>
+</RadzenPanelMenuItem>
+
+@code{
+	[Parameter] public string MenuText { get; set; }
+	[Parameter] public string MenuIcon { get; set; }
+	[Parameter] public string RootDirectory { get; set; }
+
+	private string GetPath(string param) => $"/{RootDirectory}/{param}";
+}

@@ -1,0 +1,124 @@
+﻿@page "/approvals/small-amount/{RequestId:long}"
+@using ARAS.Blazor.Components.Shared.DataTables
+@using ARAS.Blazor.Components.Shared.Modals
+@using ARAS.Blazor.Components.Shared.Summaries
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Approver")]
+@inject ISmallAmountService SmallAmountService
+@inject IRequestService RequestService
+@inject INoteService NoteService
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+
+@inherits ComponentBase
+
+<h3>Update Small Amount</h3>
+<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+	<RadzenRow>
+		@if (isApprovable)
+		{
+			<RadzenStack class="w-100" JustifyContent="JustifyContent.End" Orientation="Orientation.Horizontal">
+				<RadzenButton ButtonStyle="ButtonStyle.Danger" Text="Reject" class="btn-danger" Icon="cancel" Click="OnReject" />
+				<RadzenButton ButtonStyle="ButtonStyle.Warning" Text="Decline" class="btn-dark" Icon="thumb_down" Click="OnDecline" />
+				<RadzenButton ButtonStyle="ButtonStyle.Success" Text="Approve" class="btn-primary" Icon="thumb_up" Click="OnApprove" />
+			</RadzenStack>
+		}
+	</RadzenRow>
+	<RadzenRow>
+		<div class="py-4 px-3 w-100 card">
+			<RequestAdjustmentsSummary Rows="rows" RequestAudit="requestAudit" />
+		</div>
+	</RadzenRow>
+	<RadzenRow>
+		<RadzenColumn Size="4">
+			<Timeline RequestId="@RequestId" />
+		</RadzenColumn>
+		<RadzenColumn Size="8">
+			<AttachmentsDatatable Notes="@notes" ShowOtherColumns=isApprovable />
+		</RadzenColumn>
+	</RadzenRow>
+</RadzenStack>
+
+@code {
+	[Parameter] public long RequestId { get; set; }
+	private IEnumerable<SmallAmountRowDto> rows;
+	private IList<NoteRowDto> notes;
+	private RequestAuditDto requestAudit;
+	private bool isApprovable = false;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		isApprovable = await RequestService.IsApprovable(RequestId);
+		var request = await RequestService.GetRequestDetails(RequestId);
+		rows = await SmallAmountService.GetAdjustments(RequestId);
+		notes = await NoteService.GetRows(RequestId);
+
+		requestAudit = new RequestAuditDto(request);
+	}
+
+	protected async Task OnApprove()
+	{
+		bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"APPROVE\" this request?", "Approve Request") ?? false;
+		if (!isConfirmed) return;
+
+		await SmallAmountService.Approve(RequestId, notes);
+		NavigationManager.NavigateTo("/approvals/small-amount", true);
+	}
+
+	protected async Task OnDecline()
+	{
+		await DialogService.OpenAsync<StatusUpdateAdjustmentModal>(
+			"Decline Request",
+			new Dictionary<string, object>()
+			{
+				{ "Message", "Are you sure you want to \"DECLINE\" this request?" },
+				{ "SubmitButtonTitle", "Decline" },
+				{ "OnSubmit", Decline}
+			},
+			new DialogOptions() { Width = "700px", Height = "auto" }
+		);
+	}
+
+	private async Task Decline(string remarks)
+	{
+		var createDto = new NegateRequestDto()
+		{
+			Remarks = remarks,
+			RequestId = RequestId
+		};
+
+		await SmallAmountService.Decline(createDto, notes);
+		NavigationManager.NavigateTo("/approvals/small-amount", true);
+	}
+
+	protected async Task OnReject()
+	{
+		await DialogService.OpenAsync<StatusUpdateAdjustmentModal>(
+			"Approve Request",
+			new Dictionary<string, object>()
+			{
+				{ "Message", "Are you sure you want to \"REJECT\" this request?" },
+				{ "SubmitButtonTitle", "Reject" },
+				{ "OnSubmit", Reject}
+			},
+			new DialogOptions() { Width = "700px", Height = "auto" }
+		);
+
+	}
+
+	private async Task Reject(string remarks)
+	{
+		var createReject = new NegateRequestDto()
+		{
+			Remarks = remarks,
+			RequestId = RequestId
+		};
+
+		await SmallAmountService.Reject(createReject, notes);
+		NavigationManager.NavigateTo("/approvals/small-amount", true);
+	}
+}

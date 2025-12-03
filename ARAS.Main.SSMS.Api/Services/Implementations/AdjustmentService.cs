@@ -6,18 +6,12 @@ using ARAS.Main.SSMS.Api.Services.Interfaces;
 
 namespace ARAS.Main.SSMS.Api.Services.Implementations
 {
-	public class AdjustmentService : IAdjustmentService
+	public class AdjustmentService(
+		ICashDiscountRepository cashDiscountRepo, 
+		IBankChargeRepository bankChargeRepo, 
+		IAPAROffsetRepository aparOffsetRepo, 
+		ISmallAmountRepository smallAmountRepo) : IAdjustmentService
 	{
-		private readonly ICashDiscountRepository _cashDiscountRepo;
-		private readonly IBankChargeRepository _bankChargeRepo;
-		private readonly IAPAROffsetRepository _aparOffsetRepo;
-
-		public AdjustmentService(ICashDiscountRepository cashDiscountRepo, IBankChargeRepository bankChargeRepo, IAPAROffsetRepository aparOffsetRepo)
-		{
-			_cashDiscountRepo = cashDiscountRepo;
-			_bankChargeRepo = bankChargeRepo;
-			_aparOffsetRepo = aparOffsetRepo;
-		}
 
 		/// <summary>
 		/// <para>Add the repositories here</para> 
@@ -32,9 +26,10 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 			adjustmentTypeCode = adjustmentTypeCode.ToLower();
 			return adjustmentTypeCode switch
 			{
-				"cdr" => _cashDiscountRepo,
-				"bca" => _bankChargeRepo,
-				"arr" => _aparOffsetRepo,
+				"cdr" => cashDiscountRepo,
+				"bca" => bankChargeRepo,
+				"arr" => aparOffsetRepo,
+				"sar" => smallAmountRepo,
 				_ => throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENTTYPE)
 			};
 		}

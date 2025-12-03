@@ -20,6 +20,7 @@
 		string GetRequestsUrl(string route = null);
 		string GetTransactionsUrl(string route = null);
 		string GetValidationsUrl(string route = null);
+		string GetSmallAmountUrl(string route = null);
 		string GetFilesUrl(string route = null);
 
 		string GetTokenName();

@@ -4,17 +4,16 @@ using ARAS.Blazor.Models.DTOs;
 namespace ARAS.Blazor.Services.Implementations
 {
     public class ARInvoiceOffsettingService :
-        BaseAdjustmentCommandService<ARInvoiceOffsettingCreateDto, AROffsettingRowDto, ARInvoiceOffsettingCreateValidationDto>,
+        BaseAdjustmentCommandService<ARInvoiceOffsettingCreateDto, ARInvoiceOffsettingRowDto, ARInvoiceOffsettingCreateValidationDto>,
         IARInvoiceOffsettingService
     {
-        public ARInvoiceOffsettingService(IConfigService configService, IBaseAdjustmentService<ARInvoiceOffsettingCreateDto, AROffsettingRowDto, ARInvoiceOffsettingCreateValidationDto> baseAdjustment) :
+        public ARInvoiceOffsettingService(IConfigService configService, IBaseAdjustmentService<ARInvoiceOffsettingCreateDto, ARInvoiceOffsettingRowDto, ARInvoiceOffsettingCreateValidationDto> baseAdjustment) :
     base(baseAdjustment, configService.GetARInvoiceOffsettingUrl(), "cdr", Map)
         {
         }
 
-        private static readonly Func<CashDiscountRowDto, CashDiscountCreateDto> Map = (row) => new()
+        private static readonly Func<ARInvoiceOffsettingRowDto, ARInvoiceOffsettingCreateDto> Map = (row) => new()
         {
-            DiscountValue = row.DiscountValue,
             InvoiceAmount = row.InvoiceAmount,
             InvoiceDate = DateTime.Parse(row.InvoiceDate),
             InvoiceNumber = row.InvoiceNumber,
@@ -23,5 +22,10 @@ namespace ARAS.Blazor.Services.Implementations
             ReasonCode = row.ReasonCode,
             Remarks = row.Remarks,
         };
+
+        public Task<IEnumerable<ARInvoiceOffsettingRowDto>> GetAdjustments(long requestId)
+        {
+            return _baseAdjustment.GetAdjustmentsByRequestIdAndTypeCode(requestId, adjustmentTypeCode);
+        }
     }
 }

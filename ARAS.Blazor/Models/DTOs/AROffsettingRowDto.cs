@@ -17,7 +17,7 @@ namespace ARAS.Blazor.Models.DTOs
 
         public AROffsettingRowDto(string remarks, InvoiceDetailsDto details)
         {
-            Id = Utils.Security.GenerateExtendedGuid("CD", 1);
+            Id = Utils.Security.GenerateExtendedGuid("ARIO", 1);
             InvoiceAmount = details.InvoiceAmount;
             InvoiceNumber = details.InvoiceNumber;
             InvoiceDate = details.InvoiceDate.ToString("dd MMM yyyy");

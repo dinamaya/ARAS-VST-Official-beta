@@ -46,6 +46,7 @@
 		else if (accountDetails.IsInRole("Approver"))
 		{
 			<RadzenPanelMenuItem Text="Approvals" Icon="assignment_turned_in" Style="border: none">
+				<RadzenPanelMenuItem Text="AR Invoice Offsetting" Path="/approvals/ar-invoice-offsetting" Style="background: transparent; border: none;" />
 				<RadzenPanelMenuItem Text="AP-AR : Offset" Path="/approvals/apar-offset" Style="background: transparent; border: none;" />
 				<RadzenPanelMenuItem Text="Cash Discount" Path="/approvals/cash-discount" Style="background: transparent" />
 				<RadzenPanelMenuItem Text="Bank Charge" Path="/approvals/bank-charge" Style="background: transparent" />
@@ -54,6 +55,7 @@
 		else if (accountDetails.IsInRole("Validator"))
 		{
 			<RadzenPanelMenuItem Text="Validations" Icon="fact_check" Style="border: none">
+				<RadzenPanelMenuItem Text="AR Invoice Offsetting" Path="/validations/ar-invoice-offsetting" Style="background: transparent; border: none;" />
 				<RadzenPanelMenuItem Text="AP-AR : Offset" Path="/validations/apar-offset" Style="background: transparent; border: none;" />
 				<RadzenPanelMenuItem Text="Cash Discount" Path="/validations/cash-discount" Style="background: transparent" />
 				<RadzenPanelMenuItem Text="Bank Charge" Path="/validations/bank-charge" Style="background: transparent" />
@@ -61,6 +63,7 @@
 		}
 
 		<RadzenPanelMenuItem Text="Submissions" Icon="article_shortcut" Style="border: none">
+			<RadzenPanelMenuItem Text="AR Invoice Offsetting" Path="/submissions/ar-invoice-offsetting" Style="background: transparent; border: none;" />
 			<RadzenPanelMenuItem Text="AP-AR : Offset" Path="/submissions/apar-offset" Style="background: transparent; border: none;" />
 			<RadzenPanelMenuItem Text="Cash Discount" Path="/submissions/cash-discount" Style="background: transparent" />
 			<RadzenPanelMenuItem Text="Bank Charge" Path="/submissions/bank-charge" Style="background: transparent" />

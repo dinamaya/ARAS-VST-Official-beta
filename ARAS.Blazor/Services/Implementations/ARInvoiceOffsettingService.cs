@@ -8,7 +8,7 @@ namespace ARAS.Blazor.Services.Implementations
         IARInvoiceOffsettingService
     {
         public ARInvoiceOffsettingService(IConfigService configService, IBaseAdjustmentService<ARInvoiceOffsettingCreateDto, ARInvoiceOffsettingRowDto, ARInvoiceOffsettingCreateValidationDto> baseAdjustment) :
-    base(baseAdjustment, configService.GetARInvoiceOffsettingUrl(), "aro", Map)
+    base(baseAdjustment, configService.GetARInvoiceOffsettingUrl(), "ofr", Map)
         {
         }
 

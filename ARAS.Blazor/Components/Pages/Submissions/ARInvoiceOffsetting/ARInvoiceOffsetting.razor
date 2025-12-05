@@ -9,7 +9,7 @@
 @inherits ComponentBase
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
-@inject ICashDiscountService CashDiscountService
+@inject IARInvoiceOffsettingService ARInvoiceOffsettingService
 
 <h3>AR Invoice Offsetting</h3>
 
@@ -24,6 +24,6 @@
 
 	private async Task<IEnumerable<TransactionRequestRowDto>> OnDataLoad()
 	{
-		return await CashDiscountService.GetSubmissions();
+		return await ARInvoiceOffsettingService.GetSubmissions();
 	}
 }

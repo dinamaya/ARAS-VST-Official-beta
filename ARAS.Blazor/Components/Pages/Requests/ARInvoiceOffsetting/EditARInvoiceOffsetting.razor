@@ -40,9 +40,9 @@
 
 @code {
 
-	[Parameter] public IList<AROffsettingRowDto> Rows { get; set; }
-	[Parameter] public RadzenDataGrid<AROffsettingRowDto> Grid { get; set; }
-	[Parameter] public AROffsettingRowDto Data { get; set; }
+	[Parameter] public IList<ARInvoiceOffsettingRowDto> Rows { get; set; }
+	[Parameter] public RadzenDataGrid<ARInvoiceOffsettingRowDto> Grid { get; set; }
+	[Parameter] public ARInvoiceOffsettingRowDto Data { get; set; }
 
 	private IEnumerable<string> invoices = new List<string>();
 	private string discountPercentage = string.Empty;

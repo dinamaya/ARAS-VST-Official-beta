@@ -13,16 +13,39 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		private readonly ICashDiscountRepository _cashDiscountRepo;
 		private readonly IBankChargeRepository _bankChargeRepo;
 		private readonly IAPAROffsetRepository _aparOffsetRepo;
+		private readonly IARInvoiceOffsettingRepository _arInvoiceOffsettingRepo;
 
-        public AdjustmentsController(ILogger<AdjustmentsController> logger, ICashDiscountRepository cashDiscountRepo, IAPAROffsetRepository aparOffsetRepo, IBankChargeRepository bankChargeRepo)
+		public AdjustmentsController(
+			ILogger<AdjustmentsController> logger,
+			ICashDiscountRepository cashDiscountRepo,
+			IAPAROffsetRepository aparOffsetRepo,
+			IBankChargeRepository bankChargeRepo,
+			IARInvoiceOffsettingRepository arInvoiceOffsettingRepo)
         {
             _logger = logger;
             _cashDiscountRepo = cashDiscountRepo;
             _aparOffsetRepo = aparOffsetRepo;
 			_bankChargeRepo = bankChargeRepo;
+			_arInvoiceOffsettingRepo = arInvoiceOffsettingRepo;
 		}
 
-        [HttpGet("cdr/{requestId:long}"), Authorize]
+		[HttpGet("aro/{requestId:long}"), Authorize]
+		public async Task<ResponseDto<IEnumerable<ARInvoiceOffsettingRowDto>>> GetARInvoiceOffsettingAdjustments(long requestId)
+		{
+			var response = new ResponseDto<IEnumerable<ARInvoiceOffsettingRowDto>>();
+			try
+			{
+				response.Result = await _arInvoiceOffsettingRepo.GetAdjustmentsByRequestId(requestId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("cdr/{requestId:long}"), Authorize]
 		public async Task<ResponseDto<IEnumerable<CashDiscountRowDto>>> GetCashDiscountAdjustments(long requestId)
 		{
 			var response = new ResponseDto<IEnumerable<CashDiscountRowDto>>();

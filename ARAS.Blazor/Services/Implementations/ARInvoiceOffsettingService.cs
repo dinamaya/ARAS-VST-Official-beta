@@ -8,7 +8,7 @@ namespace ARAS.Blazor.Services.Implementations
         IARInvoiceOffsettingService
     {
         public ARInvoiceOffsettingService(IConfigService configService, IBaseAdjustmentService<ARInvoiceOffsettingCreateDto, ARInvoiceOffsettingRowDto, ARInvoiceOffsettingCreateValidationDto> baseAdjustment) :
-    base(baseAdjustment, configService.GetARInvoiceOffsettingUrl(), "cdr", Map)
+    base(baseAdjustment, configService.GetARInvoiceOffsettingUrl(), "aro", Map)
         {
         }
 
@@ -21,10 +21,5 @@ namespace ARAS.Blazor.Services.Implementations
             CustomerNumber = row.CustomerNumber,
             Remarks = row.Remarks,
         };
-
-        public Task<IEnumerable<ARInvoiceOffsettingRowDto>> GetAdjustments(long requestId)
-        {
-            return _baseAdjustment.GetAdjustmentsByRequestIdAndTypeCode(requestId, adjustmentTypeCode);
-        }
     }
 }

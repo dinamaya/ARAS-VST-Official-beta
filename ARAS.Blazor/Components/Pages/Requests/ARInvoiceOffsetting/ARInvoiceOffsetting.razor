@@ -6,6 +6,7 @@
 @using ARAS.Blazor.Components.Shared.Modals
 @using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Implementations
 @using ARAS.Blazor.Services.Interfaces
 @using ARAS.Blazor.Components.Shared.DataTables
 @using Microsoft.AspNetCore.Authorization
@@ -195,7 +196,7 @@
 
 	public async Task SubmitRequest()
 	{
-		// await CashDiscountService.Create(Adjustments, no);
+		await ARInvoiceOffsettingService.Create(Adjustments, Notes);
 	}
 
 	private void HandleSearchChanged(bool value)

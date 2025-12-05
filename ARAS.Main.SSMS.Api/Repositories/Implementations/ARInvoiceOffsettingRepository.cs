@@ -15,7 +15,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
             IBaseAdjustmentRepository<ARInvoiceOffsettingCreateDto> baseAdjustmentRepo,
             IAdjustmentRepository adjustmentRepo,
             IInvoiceRepository invoiceRepo) :
-            base("aro", Map, baseAdjustmentRepo, adjustmentRepo, invoiceRepo)
+            base("ofr", Map, baseAdjustmentRepo, adjustmentRepo, invoiceRepo)
         {
         }
 
@@ -65,7 +65,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
             var invoice = new InvoiceCreateDto(data.InvoiceNumber, data.InvoiceAmount, data.InvoiceDate, data.CustomerNumber, data.CustomerName);
             var invoiceId = await _invoiceRepo.CreateAsync(invoice, createdBy);
 
-            var adjustment = new AdjustmentCreateDto(invoiceId, requestId, data.InvoiceAmount, adjustmentTypeId, 0, data.Remarks, null);
+            var adjustment = new AdjustmentCreateDto(invoiceId, requestId, data.InvoiceAmount, adjustmentTypeId, 0, data.Remarks, string.Empty);
             await _adjustmentRepo.CreateAsync(adjustment, createdBy);
         }
     }

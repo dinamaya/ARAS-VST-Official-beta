@@ -91,6 +91,18 @@
 			"UpstreamHttpMethod": [ "GET", "POST" ]
 		},
 		{
+			"DownstreamPathTemplate": "/api/ar-invoice-offsetting/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/ar-invoice-offsetting/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
 			"DownstreamPathTemplate": "/api/bank-charge/{everything}",
 			"DownstreamScheme": "https",
 			"DownstreamHostAndPorts": [

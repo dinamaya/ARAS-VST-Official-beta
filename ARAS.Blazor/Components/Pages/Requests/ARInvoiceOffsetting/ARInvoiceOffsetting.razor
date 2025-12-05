@@ -15,6 +15,7 @@
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
+@inject IARInvoiceOffsettingService ARInvoiceOffsettingService
 
 <h2>AR Invoice Offsetting</h2>
 
@@ -195,7 +196,7 @@
 
 	public async Task SubmitRequest()
 	{
-		// await CashDiscountService.Create(Adjustments, no);
+		await ARInvoiceOffsettingService.Create(Adjustments, Notes);
 	}
 
 	private void HandleSearchChanged(bool value)

@@ -1,0 +1,123 @@
+﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.Shared.DataTables
+@using ARAS.Blazor.Models.Complex
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Repositories.Interfaces
+
+@inherits ComponentBase
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inject IAuthService AuthService
+@inject INoteService NoteService
+@inject ISearchOptionService SearchOptionService
+@inject IRequestService RequestService
+
+@typeparam TCreate where TCreate : class
+@typeparam TRow where TRow : AdjustmentRow
+
+<h2>@Title</h2>
+
+<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+	<SearchInvoiceDetails OnAdd="OpenAdd" OnLoadingChanged="HandleLoadingChanged" OnSearchChanged="HandleSearchChanged" />
+
+	<RadzenRow>
+		<AdjustmentDataTable 
+			Title="@($"{Title} Adjustments")" 
+			Adjustments="adjustments" 
+			@ref="adjustmentGrid" 
+			OpenEdit="OpenEdit" />
+	</RadzenRow>
+
+	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+		<RadzenRow>
+			<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
+				Submit
+			</button>
+		</RadzenRow>
+	</RadzenStack>
+
+	<RadzenRow>
+		<RadzenColumn Size="4">
+			<Timeline RequestId="@RequestId" />
+		</RadzenColumn>
+		<RadzenColumn Size="8">
+			<AttachmentsDatatable Notes="@notes" ShowOtherColumns=true />
+		</RadzenColumn>
+	</RadzenRow>
+</RadzenStack>
+
+@code{
+	[Parameter] public long RequestId { get; set; }
+	[Parameter] public string Title { get; set; }
+	[Parameter] public string SubmissionRoute { get; set; }
+	[Parameter] public ICreateStatusRepository<TRow> CreateStatusRepository { get; set; }
+	[Parameter] public IAdjustmentReaderRepository<TRow> AdjustmentReaderRepository { get; set; }
+	[Parameter] public Func<IList<TRow>, IEnumerable<string>, InvoiceDetailsDto, Task> OnOpenAdd { get; set; }
+	[Parameter] public Func<IList<TRow>, IEnumerable<string>, TRow, RadzenDataGrid<TRow>, Task> OnOpenEdit { get; set; }
+
+	private IList<NoteRowDto> notes;
+	private IEnumerable<string> reasonCodes;
+	private IList<TRow> adjustments;
+
+	private AdjustmentDataTable<TRow> adjustmentGrid;
+	private RequestAuditDto requestAudit;
+
+	private bool isOnSearch;
+	private bool isLoading;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+
+		var request = await RequestService.GetRequestDetails(RequestId);
+		adjustments = (await AdjustmentReaderRepository.GetAdjustments(RequestId)).ToList();
+		reasonCodes = await SearchOptionService.GetReasonCodes();
+		notes = await NoteService.GetRows(RequestId);
+		
+		requestAudit = new RequestAuditDto(request);
+		await adjustmentGrid.Reload();
+	}
+
+	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
+	{
+		try
+		{
+			await OnOpenAdd.Invoke(adjustments, reasonCodes, invoiceDetails);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Add Adjustment Failed");
+		}
+	}
+
+	public async Task OpenEdit(TRow data)
+	{
+		try
+		{
+			await OnOpenEdit.Invoke(adjustments, reasonCodes, data, adjustmentGrid.DataGrid);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Edit Adjustment Failed");
+		}
+	}
+
+	public async Task OnSubmit()
+	{
+		try
+		{
+			Guards.ThrowInvalidOperationIf(!adjustments.Any(), "Can't submit request because there are no adjustment in the current request");
+			Guards.ThrowInvalidOperationIf(isLoading, "Can't submit request while search operation is ongoing");
+
+			await ModalTemplates.Summary.Adjustment(DialogService, Title, adjustments, requestAudit, SubmissionRoute, SubmitRequest);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Submission Failed");
+		}
+	}
+
+	public async Task SubmitRequest() => await CreateStatusRepository.Update(RequestId, adjustments, notes);
+	private void HandleSearchChanged(bool value) => isOnSearch = value;
+	private void HandleLoadingChanged(bool value) => isLoading = value;
+}

@@ -1,0 +1,62 @@
+﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Models.Complex
+
+@typeparam TRow where TRow : AdjustmentRow
+
+<div>
+	<div>
+		<h3 class="pb-3 mb-0">@Title</h3>
+	</div>
+	<div class="py-4 px-3 w-100 card">
+		<RadzenDataGrid 
+			class="border-0"
+			@ref="DataGrid"
+			AllowFiltering="true"
+			AllowColumnResize="true"
+			AllowAlternatingRows="false"
+			FilterMode="FilterMode.Advanced"
+			AllowSorting="true"
+			PageSize="20"
+			AllowPaging="true"
+			PagerHorizontalAlign="HorizontalAlign.Left"
+			ShowPagingSummary="true"
+			Data="@Adjustments"
+			LogicalFilterOperator="LogicalFilterOperator.Or"
+			SelectionMode="DataGridSelectionMode.Single">
+
+			<Columns>
+				<RadzenDataGridColumn Frozen="true" Title="Edit" Sortable="false" Filterable="false" Width="80px" TextAlign="TextAlign.Center">
+					<Template Context="data">
+						<RadzenButton Icon="Edit" Variant="Variant.Outlined" Click="@(args => OpenEdit(data))" />
+					</Template>
+				</RadzenDataGridColumn>
+				<RadzenDataGridColumn Property="@nameof(AdjustmentRow.AdjustmentAmount)" Width="120px" Title="Adjustment Amount">
+					<Template Context="data">
+						@data.AdjustmentAmount.ToPhp()
+					</Template>
+				</RadzenDataGridColumn>
+				<RadzenDataGridColumn Property="@nameof(AdjustmentRow.InvoiceAmount)" Title="Invoice Amount">
+					<Template Context="data">
+						@data.InvoiceAmount.ToPhp()
+					</Template>
+				</RadzenDataGridColumn>
+				<RadzenDataGridColumn Property="@nameof(AdjustmentRow.InvoiceDate)" Title="Invoice Date" />
+				<RadzenDataGridColumn Property="@nameof(AdjustmentRow.InvoiceNumber)" Title="Invoice Number" />
+				<RadzenDataGridColumn Property="@nameof(AdjustmentRow.CustomerName)" Title="Customer Name" />
+				<RadzenDataGridColumn Property="@nameof(AdjustmentRow.CustomerNumber)" Title="Customer Number" />
+				<RadzenDataGridColumn Property="@nameof(AdjustmentRow.ReasonCode)" Title="Reason Code" />
+				<RadzenDataGridColumn Property="@nameof(AdjustmentRow.Remarks)" Title="Remarks" />
+			</Columns>
+		</RadzenDataGrid>
+	</div>
+</div>
+
+@code{
+	[Parameter] public string Title { get; set; }
+	[Parameter] public IEnumerable<TRow> Adjustments { get; set; }
+	[Parameter] public Func<TRow, Task> OpenEdit { get; set; }
+
+	public RadzenDataGrid<TRow> DataGrid { private set; get; }
+
+	public Task Reload() => DataGrid.Reload();
+}

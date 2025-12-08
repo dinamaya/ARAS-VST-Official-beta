@@ -10,7 +10,7 @@ namespace ARAS.Blazor.Services.Implementations
 		private string[] firstNames = { "James", "Emma", "Michael", "Olivia", "William", "Sophia", "Daniel", "Isabella", "Matthew", "Ava" };
 		private string[] lastNames = { "Smith", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Garcia", "Rodriguez", "Martinez" };
 
-		public async Task GenerateCashDiscountRows(IList<CashDiscountRowDto> Adjustments, IEnumerable<string> reasonCodes)
+		public async Task GenerateAdjustmentRows(IList<CashDiscountRowDto> Adjustments, IEnumerable<string> reasonCodes)
 		{
 			if (!configService.IsOnTestRequest()) return;
 
@@ -46,7 +46,7 @@ namespace ARAS.Blazor.Services.Implementations
 			});
 		}
 
-		public async Task GenerateBankChargeRows(IList<BankChargeRowDto> Adjustments, IEnumerable<string> reasonCodes)
+		public async Task GenerateAdjustmentRows(IList<BankChargeRowDto> Adjustments, IEnumerable<string> reasonCodes)
 		{
 			if (!configService.IsOnTestRequest()) return;
 			int reasonCodeLastIndex = reasonCodes.Count() - 1;

@@ -19,7 +19,6 @@ namespace ARAS.Blazor.App_Code.Globals.Extensions
 			services.AddScoped<IBaseService, BaseService>();
 			services.AddScoped<IBankChargeService, BankChargeService>();
 			services.AddScoped<ICashDiscountService, CashDiscountService>();
-            services.AddScoped<IConfigService, ConfigService>();
 			services.AddScoped<IEmailService, EmailService>();
 			services.AddScoped<IInvoiceService, InvoiceService>();
 			services.AddScoped<INoteService, NoteService>();
@@ -34,6 +33,8 @@ namespace ARAS.Blazor.App_Code.Globals.Extensions
 			services.AddScoped<IValidationService, ValidationService>();
 
 			services.AddScoped(typeof(IBaseAdjustmentService<,,>), typeof(BaseAdjustmentService<,,>));
+            
+			services.AddSingleton<IConfigService, ConfigService>();
 		}
 	}
 }

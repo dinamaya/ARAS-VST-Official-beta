@@ -1,4 +1,4 @@
-﻿@page "/declines/apar-offset/{RequestId:long}"
+﻿@page "/declines/ar-invoice-offsetting/{RequestId:long}"
 
 @using ARAS.Blazor.App_Code.Globals
 @using ARAS.Blazor.App_Code.Globals.Extensions
@@ -251,7 +251,7 @@
 		try
 		{
 			await DialogService.OpenAsync<EditARInvoiceOffsetting>(
-				"Edit Cash Discount Adjustment",
+				"Edit AR Invoice Offsetting Adjustment",
 				new Dictionary<string, object>()
 				{
 				{ "Rows", APAdjustments },

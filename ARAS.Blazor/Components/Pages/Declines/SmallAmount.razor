@@ -49,15 +49,4 @@
 			null
 		);
 	}
-
-	// private async Task OnValidate(double amount, string remarks, string reasonCode, InvoiceDetailsDto details)
-	// {
-	// 	var adjustments = Adjustments.Where(a => a.InvoiceNumber.Trim() == details.InvoiceNumber);
-
-	// 	if (!adjustments.Any()) return;
-
-	// 	var sum = adjustments.Sum(a => a.AdjustmentAmount);
-
-	// 	Guards.ThrowInvalidOperationIf(sum > details.InvoiceAmount, "The sum of the adjustment amount already exceeded the invoice amount");
-	// }
 }

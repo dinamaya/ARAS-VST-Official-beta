@@ -108,7 +108,7 @@
 			Guards.ThrowInvalidOperationIf(!adjustments.Any(), "Can't submit request because there are no adjustment in the current request");
 			Guards.ThrowInvalidOperationIf(isLoading, "Can't submit request while search operation is ongoing");
 
-			await ModalTemplates.Summary.Adjustment(DialogService, Title, adjustments, requestAudit, RequestRoute, SubmitRequest);
+			await ModalTemplates.Summary.Adjustment(DialogService, Title, adjustments, requestAudit, $"requests/{RequestRoute}", SubmitRequest);
 		}
 		catch (Exception ex)
 		{

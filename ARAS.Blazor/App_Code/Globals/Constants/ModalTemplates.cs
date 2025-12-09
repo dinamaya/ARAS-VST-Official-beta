@@ -9,8 +9,9 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 {
 	public class ModalTemplates
 	{
-		public static class Size
+		public static class Variant
 		{
+			public static DialogOptions XSMALL = new DialogOptions() { Width = "700px", Height = "auto" };
 			public static DialogOptions SMALL = new DialogOptions() { Width = "800px", Height = "auto" };
 			public static DialogOptions WIDE = new DialogOptions() { Width = "1500px", Height = "auto" };
 		}
@@ -37,7 +38,7 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 						{ "InvoiceDetails", invoiceDetails },
 						{ "OnAdjustmentRowCreate", createRowCallBack }
 					},
-					Size.SMALL
+					Variant.SMALL
 				);
 			}
 
@@ -58,7 +59,7 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 						{ nameof(AddCashDiscountModal.Grid), grid },
 						{ nameof(AddCashDiscountModal.InvoiceDetails), invoiceDetails }
 					},
-					Size.SMALL
+					Variant.SMALL
 				);
 			}
 
@@ -119,7 +120,45 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 					{  "Grid", grid},
 					{  "OnValidate", validateCallback },
 					},
-					Size.SMALL
+					Variant.SMALL
+				);
+			}
+		}
+
+		public static class UpdateStatus
+		{
+
+			public static async Task Decline(
+				DialogService dialogService,
+				Func<string, Task> submitCallBack
+			)
+			{
+				await dialogService.OpenAsync<StatusUpdateAdjustmentModal>(
+					"Decline Request",
+					new Dictionary<string, object>()
+					{
+						{ nameof(StatusUpdateAdjustmentModal.Message), "Are you sure you want to \"DECLINE\" this request?" },
+						{ nameof(StatusUpdateAdjustmentModal.SubmitButtonTitle), "Decline" },
+						{ nameof(StatusUpdateAdjustmentModal.OnSubmit), submitCallBack}
+					},
+					Variant.XSMALL
+				);
+			}
+
+			public static async Task Reject(
+				DialogService dialogService,
+				Func<string, Task> submitCallBack
+			)
+			{
+				await dialogService.OpenAsync<StatusUpdateAdjustmentModal>(
+					"Reject Request",
+					new Dictionary<string, object>()
+					{
+						{ nameof(StatusUpdateAdjustmentModal.Message), "Are you sure you want to \"REJECT\" this request?" },
+						{ nameof(StatusUpdateAdjustmentModal.SubmitButtonTitle), "Reject" },
+						{ nameof(StatusUpdateAdjustmentModal.OnSubmit), submitCallBack}
+					},
+					Variant.XSMALL
 				);
 			}
 		}
@@ -142,7 +181,7 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 						{ "OnSubmit", submitCallBack },
 						{ "SucccessSubmissionRoute", "/requests/cash-discount" },
 					},
-					Size.WIDE
+					Variant.WIDE
 				);
 			}
 
@@ -151,7 +190,7 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 				string title,
 				IEnumerable<AdjustmentRow> rows,
 				RequestAuditDto requestAudit,
-				string requestRoute,
+				string submissionRoute,
 				Func<Task> submitCallBack
 			)
 			{
@@ -162,9 +201,9 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 						{ "Rows", rows },
 						{ "RequestAudit", requestAudit },
 						{ "OnSubmit", submitCallBack },
-						{ "SucccessSubmissionRoute", $"/requests/{requestRoute}" },
+						{ "SucccessSubmissionRoute", $"/{submissionRoute}" },
 					},
-					Size.WIDE
+					Variant.WIDE
 				);
 			}
 		}

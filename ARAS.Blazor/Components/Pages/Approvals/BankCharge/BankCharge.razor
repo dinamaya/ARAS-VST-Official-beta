@@ -1,30 +1,8 @@
 ﻿@page "/approvals/bank-charge"
-@using ARAS.Blazor.App_Code.Globals
-@using ARAS.Blazor.Models.DTOs
-@using ARAS.Blazor.Services.Interfaces
-@using ARAS.Blazor.Components.Shared.DataTables;
-@using Microsoft.AspNetCore.Authorization
-
 @attribute [Authorize(Roles = "Approver")]
 
-@inherits ComponentBase
-@inject DialogService DialogService
-@inject NavigationManager NavigationManager
-@inject IBankChargeService BankChargeService
+@using ARAS.Blazor.App_Code.Globals.Enums
+@using Microsoft.AspNetCore.Authorization
+@inject IBankChargeService Service
 
-<h2>Bank Charge Adjustment Approval</h2>
-
-
-<RequestDataTable ViewRoute="approvals/bank-charge" SelectButtonTitle="Update" OnDateLoad="@(OnDataLoad)" />
-
-@code {
-	protected override async Task OnInitializedAsync()
-	{
-		await base.OnInitializedAsync();
-	}
-
-	private async Task<IEnumerable<TransactionRequestRowDto>> OnDataLoad()
-	{
-		return await BankChargeService.GetApprovals();
-	}
-}
+<BaseAdjustmentRequestUpdate RouteName="bank-charge" Title="Bank Charge" RequestSubmissionReader="Service" AdjustmentStage="@AdjustmentStageType.APPROVAL" />

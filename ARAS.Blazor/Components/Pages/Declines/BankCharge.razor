@@ -1,198 +1,55 @@
 ﻿@page "/declines/bank-charge/{RequestId:long}"
-@using ARAS.Blazor.Components.Shared
-@using ARAS.Blazor.Components.Shared.DataTables
-@using ARAS.Blazor.Components.Shared.Modals
-@using ARAS.Blazor.Models.DTOs
-@using ARAS.Blazor.Services.Implementations
-@using ARAS.Blazor.Services.Interfaces
-@using Microsoft.AspNetCore.Authorization
-
 @attribute [Authorize(Roles = "Requestor")]
-@inherits ComponentBase
+
+@using ARAS.Blazor.Models.DTOs
+@using Microsoft.AspNetCore.Authorization
 @inject DialogService DialogService
-@inject NavigationManager NavigationManager
-@inject IAuthService AuthService
-@inject INoteService NoteService
-@inject IBankChargeService BankChargeService
-@inject ISearchOptionService SearchOptionService
-@inject IRequestService RequestService
+@inject IBankChargeService IService
+@inject ITestService TestService
 
-<h2>Bank Charge Adjustment</h2>
+<BaseAdjustmentRequestDecline
+	TRow="@BankChargeRowDto"
+	TCreate="@AdjustmentCreateDto"
+	RequestId="RequestId"
+	Title="Bank Charge"
+	SubmissionRoute="bank-charge"
+	CreateStatusRepository="IService"
+	AdjustmentReaderRepository="IService"
+	OnOpenAdd="OpenAdd"
+	OnOpenEdit="OpenEdit"
+	/>
 
-<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<SearchInvoiceDetails OnAdd="OpenAdd" OnLoadingChanged="HandleLoadingChanged" OnSearchChanged="HandleSearchChanged" />
-
-	<RadzenRow>
-		<div>
-			<h3 class="pb-0 mb-0">Bank Charge</h3>
-		</div>
-		<div class="py-4 px-3 w-100 card">
-			<RadzenDataGrid class="border-0"
-							@ref="adjustmentGrid"
-							AllowFiltering="true"
-							AllowColumnResize="true"
-							AllowAlternatingRows="false"
-							FilterMode="FilterMode.Advanced"
-							AllowSorting="true"
-							PageSize="20"
-							AllowPaging="true"
-							PagerHorizontalAlign="HorizontalAlign.Left"
-							ShowPagingSummary="true"
-							Data="@Adjustments"
-							LogicalFilterOperator="LogicalFilterOperator.Or"
-							SelectionMode="DataGridSelectionMode.Single">
-				<Columns>
-					<RadzenDataGridColumn Frozen="true" Title="Edit" Sortable="false" Filterable="false" Width="80px" TextAlign="TextAlign.Center">
-						<Template Context="data">
-							<RadzenButton Icon="Edit" Variant="Variant.Outlined" Click="@(args => OpenEdit(data))" />
-						</Template>
-					</RadzenDataGridColumn>
-					<RadzenDataGridColumn Property="@nameof(BankChargeRowDto.AdjustmentAmount)" Width="120px" Title="Adjustment Amount">
-						<Template Context="data">
-							@data.AdjustmentAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
-						</Template>
-					</RadzenDataGridColumn>
-					<RadzenDataGridColumn Property="@nameof(BankChargeRowDto.InvoiceAmount)" Title="Invoice Amount">
-						<Template Context="data">
-							@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
-						</Template>
-					</RadzenDataGridColumn>
-					<RadzenDataGridColumn Property="@nameof(BankChargeRowDto.InvoiceDate)" Title="Invoice Date" />
-					<RadzenDataGridColumn Property="@nameof(BankChargeRowDto.InvoiceNumber)" Title="Invoice Number" />
-					<RadzenDataGridColumn Property="@nameof(BankChargeRowDto.CustomerName)" Title="Customer Name" />
-					<RadzenDataGridColumn Property="@nameof(BankChargeRowDto.CustomerNumber)" Title="Customer Number" />
-					<RadzenDataGridColumn Property="@nameof(BankChargeRowDto.ReasonCode)" Title="Reason Code" />
-					<RadzenDataGridColumn Property="@nameof(BankChargeRowDto.Remarks)" Title="Remarks" />
-				</Columns>
-			</RadzenDataGrid>
-		</div>
-
-	</RadzenRow>
-
-	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-		<RadzenRow>
-			<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
-				Submit
-			</button>
-		</RadzenRow>
-	</RadzenStack>
-
-	<RadzenRow>
-		<RadzenColumn Size="4">
-			<Timeline RequestId="@RequestId" />
-		</RadzenColumn>
-		<RadzenColumn Size="8">
-			<AttachmentsDatatable Notes="@notes" ShowOtherColumns=true />
-		</RadzenColumn>
-	</RadzenRow>
-</RadzenStack>
-
-
-
-@code {
+@code{
 	[Parameter] public long RequestId { get; set; }
-	[Parameter] public IList<BankChargeRowDto> Adjustments { get; set; }
-	private IList<NoteRowDto> notes { get; set; }
-	private IEnumerable<string> reasonCodes { get; set; }
 
-	private InvoiceDetailsDto searchedInvoiceNumber;
-	private RadzenDataGrid<BankChargeRowDto> adjustmentGrid;
-	private RequestAuditDto requestAudit;
-
-	private bool isOnSearch;
-	private bool isLoading;
-
-	protected override async Task OnInitializedAsync()
+	public async Task OpenAdd(
+		IList<BankChargeRowDto> rows,
+		IEnumerable<string> reasonCodes,
+		InvoiceDetailsDto invoiceDetails)
 	{
-		await base.OnInitializedAsync();
-
-		Adjustments = (await BankChargeService.GetAdjustments(RequestId)).ToList();
-		searchedInvoiceNumber = new InvoiceDetailsDto();
-		var request = await RequestService.GetRequestDetails(RequestId);
-		notes = await NoteService.GetRows(RequestId);
-		reasonCodes = await SearchOptionService.GetReasonCodes();
-		requestAudit = new RequestAuditDto(request);
-	}
-
-
-	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
-	{
-		await DialogService.OpenAsync<AddBankChargeModal>(
-			"Add Bank Charge Adjustment",
-			new Dictionary<string, object>()
-			{
-				{ nameof(AddBankChargeModal.ReasonCodes), reasonCodes },
-				{ nameof(AddBankChargeModal.Rows), Adjustments },
-				{ nameof(AddBankChargeModal.Grid), adjustmentGrid },
-				{ nameof(AddBankChargeModal.InvoiceDetails), invoiceDetails }
-			},
-			new DialogOptions() { Width = "800px", Height = "auto" }
+		await ModalTemplates.Add.BankCharge(
+			DialogService,
+			rows,
+			reasonCodes,
+			invoiceDetails
 		);
 	}
 
-	public async Task OpenEdit(BankChargeRowDto data)
+	public async Task OpenEdit(
+		IList<BankChargeRowDto> rows,
+		IEnumerable<string> reasonCodes,
+		BankChargeRowDto data,
+		RadzenDataGrid<BankChargeRowDto> dataGrid
+	)
 	{
-		try
-		{
-			await DialogService.OpenAsync<EditBankChargeModal>(
-				"Edit Bank Charge Adjustment",
-				new Dictionary<string, object>()
-				{
-				{  nameof(EditBankChargeModal.ReasonCodes), reasonCodes },
-				{  nameof(EditBankChargeModal.Rows), Adjustments },
-				{  nameof(EditBankChargeModal.Grid), adjustmentGrid },
-				{  nameof(EditBankChargeModal.Data), data }
-				},
-				new DialogOptions() { Width = "800px", Height = "auto" }
-			);
-		}
-		catch (Exception ex)
-		{
-			await DialogService.Alert(ex.Message, "Edit Adjustment Failed");
-		}
+		await ModalTemplates.Edit<BankChargeRowDto>.Adjustment(
+			DialogService,
+			"Bank Charge",
+			data,
+			rows,
+			reasonCodes,
+			dataGrid,
+			null
+		);
 	}
-
-	public async Task OnSubmit()
-	{
-		try
-		{
-			if (!Adjustments.Any())
-				throw new InvalidOperationException("Can't submit request because there are no adjustment in the current request");
-
-			if (isLoading)
-				throw new InvalidOperationException("Can't submit request while search operation is ongoing");
-
-			await DialogService.OpenAsync<RequestAdjustmentsModalSummary>(
-				"Submit Bank Charge Adjustment",
-				new Dictionary<string, object>()
-				{
-					{ nameof(RequestAdjustmentsModalSummary.Rows), Adjustments },
-					{ nameof(RequestAdjustmentsModalSummary.RequestAudit), requestAudit },
-					{ nameof(RequestAdjustmentsModalSummary.OnSubmit), SubmitRequest },
-					{ nameof(RequestAdjustmentsModalSummary.SucccessSubmissionRoute), $"/submissions/bank-charge/" },
-				},
-				new DialogOptions() { Width = "1500px", Height = "auto" }
-			);
-		}
-		catch (Exception ex)
-		{
-			await DialogService.Alert(ex.Message, "Request Submission Failed");
-		}
-	}
-
-	public async Task SubmitRequest()
-	{
-		await BankChargeService.Update(RequestId, Adjustments, notes);
-	}
-
-	private void HandleSearchChanged(bool value)
-	{
-		isOnSearch = value;
-	}
-
-	private void HandleLoadingChanged(bool value)
-	{
-		isLoading = value;
-	}
-
 }

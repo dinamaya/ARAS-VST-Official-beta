@@ -6,6 +6,7 @@
 
 @inherits ComponentBase
 @inject DialogService DialogService
+@inject NotificationService NotifService;
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
 @inject INoteService NoteService
@@ -17,34 +18,36 @@
 
 <h2>@Title</h2>
 
-<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<SearchInvoiceDetails OnAdd="OpenAdd" OnLoadingChanged="HandleLoadingChanged" OnSearchChanged="HandleSearchChanged" />
+@if (isDeclined)
+{
+	<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+		<SearchInvoiceDetails OnAdd="OpenAdd" OnLoadingChanged="HandleLoadingChanged" OnSearchChanged="HandleSearchChanged" />
 
-	<RadzenRow>
-		<AdjustmentDataTable 
-			Title="@($"{Title} Adjustments")" 
-			Adjustments="adjustments" 
-			@ref="adjustmentGrid" 
-			OpenEdit="OpenEdit" />
-	</RadzenRow>
-
-	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
 		<RadzenRow>
-			<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
-				Submit
-			</button>
+			<AdjustmentDataTable Title="@($"{Title} Adjustments")"
+								 Adjustments="adjustments"
+								 @ref="adjustmentGrid"
+								 OpenEdit="OpenEdit" />
+		</RadzenRow>
+
+		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+			<RadzenRow>
+				<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
+					Submit
+				</button>
+			</RadzenRow>
+		</RadzenStack>
+
+		<RadzenRow>
+			<RadzenColumn Size="4">
+				<Timeline RequestId="@RequestId" />
+			</RadzenColumn>
+			<RadzenColumn Size="8">
+				<AttachmentsDatatable Notes="@notes" ShowOtherColumns=true />
+			</RadzenColumn>
 		</RadzenRow>
 	</RadzenStack>
-
-	<RadzenRow>
-		<RadzenColumn Size="4">
-			<Timeline RequestId="@RequestId" />
-		</RadzenColumn>
-		<RadzenColumn Size="8">
-			<AttachmentsDatatable Notes="@notes" ShowOtherColumns=true />
-		</RadzenColumn>
-	</RadzenRow>
-</RadzenStack>
+}
 
 @code{
 	[Parameter] public long RequestId { get; set; }
@@ -64,18 +67,29 @@
 
 	private bool isOnSearch;
 	private bool isLoading;
+	private bool isDeclined;
 
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
+		try
+		{
+			isDeclined = await RequestService.IsDeclined(RequestId);
+			Guards.ThrowInvalidOperationIf(!isDeclined, "The request is not declined. Please contact the administrator");
 
-		var request = await RequestService.GetRequestDetails(RequestId);
-		adjustments = (await AdjustmentReaderRepository.GetAdjustments(RequestId)).ToList();
-		reasonCodes = await SearchOptionService.GetReasonCodes();
-		notes = await NoteService.GetRows(RequestId);
-		
-		requestAudit = new RequestAuditDto(request);
-		await adjustmentGrid.Reload();
+			var request = await RequestService.GetRequestDetails(RequestId);
+			adjustments = (await AdjustmentReaderRepository.GetAdjustments(RequestId)).ToList();
+			reasonCodes = await SearchOptionService.GetReasonCodes();
+			notes = await NoteService.GetRows(RequestId);
+
+			requestAudit = new RequestAuditDto(request);
+			StateHasChanged();
+			await adjustmentGrid.Reload();
+		}
+		catch (Exception ex)
+		{
+			NotifService.Notify(NotifTemplates.Error("Failed to load request details", ex.Message, null));
+		}
 	}
 
 	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)

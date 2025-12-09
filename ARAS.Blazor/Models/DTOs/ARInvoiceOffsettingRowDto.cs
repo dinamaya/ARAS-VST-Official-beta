@@ -15,6 +15,7 @@ namespace ARAS.Blazor.Models.DTOs
         public string ReasonCode { get; set; } = string.Empty;
         public string Remarks { get; set; } = string.Empty;
 
+        public ARInvoiceOffsettingRowDto() { }
         public ARInvoiceOffsettingRowDto(string remarks, InvoiceDetailsDto details)
         {
             Id = Utils.Security.GenerateExtendedGuid("ARIO", 1);

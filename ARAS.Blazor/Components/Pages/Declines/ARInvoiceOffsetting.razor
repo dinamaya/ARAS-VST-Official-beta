@@ -1,5 +1,196 @@
-﻿<h3>ARInvoiceOffsetting</h3>
+﻿@page "/declines/ar-invoice-offsetting/{RequestId:long}"
+
+@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting
+@using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting.Modal
+@using ARAS.Blazor.Components.Shared.Modals
+@using ARAS.Blazor.Components.Shared.Summaries
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Implementations
+@using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Components.Shared.DataTables
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Requestor")]
+@inherits ComponentBase
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inject IAuthService AuthService
+@inject IARInvoiceOffsettingService ARInvoiceOffsettingService
+@inject IRequestService RequestService
+@inject INoteService NoteService
+@inject ISearchOptionService SearchOptionService
+
+<h2>AR Invoice Offsetting</h2>
+
+<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+	<SearchInvoiceDetails OnAdd="OpenAdd" OnLoadingChanged="HandleLoadingChanged" OnSearchChanged="HandleSearchChanged" />
+
+	<RadzenRow>
+		<div>
+			<h3 class="pb-0 mb-0">AR Invoice Offsetting List</h3>
+		</div>
+		<div class="py-4 px-3 w-100 card">
+			<RadzenDataGrid class="border-0"
+							@ref="adjustmentGrid"
+							AllowFiltering="true"
+							AllowColumnResize="true"
+							AllowAlternatingRows="false"
+							FilterMode="FilterMode.Advanced"
+							AllowSorting="true"
+							PageSize="20"
+							AllowPaging="true"
+							PagerHorizontalAlign="HorizontalAlign.Left"
+							ShowPagingSummary="true"
+							Data="@Adjustments"
+							LogicalFilterOperator="LogicalFilterOperator.Or"
+							SelectionMode="DataGridSelectionMode.Single">
+				<Columns>
+					<RadzenDataGridColumn Frozen="true" Title="Edit" Sortable="false" Filterable="false" Width="80px" TextAlign="TextAlign.Center">
+						<Template Context="data">
+							<RadzenButton Icon="Edit" Variant="Variant.Outlined" Click="@(args => OpenEdit(data))" />
+						</Template>
+					</RadzenDataGridColumn>
+					<RadzenDataGridColumn Property="@nameof(ARInvoiceOffsettingRowDto.InvoiceNumber)" Title="Invoice Number" />
+					<RadzenDataGridColumn Property="@nameof(ARInvoiceOffsettingRowDto.InvoiceAmount)" Title="Invoice Amount">
+						<Template Context="data">
+							@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+						</Template>
+					</RadzenDataGridColumn>
+					<RadzenDataGridColumn Property="@nameof(ARInvoiceOffsettingRowDto.InvoiceDate)" Title="Invoice Date" />
+					<RadzenDataGridColumn Property="@nameof(ARInvoiceOffsettingRowDto.CustomerName)" Title="Customer Name" />
+					<RadzenDataGridColumn Property="@nameof(ARInvoiceOffsettingRowDto.CustomerNumber)" Title="Customer Number" />
+					<RadzenDataGridColumn Property="@nameof(ARInvoiceOffsettingRowDto.Remarks)" Title="Remarks" />
+				</Columns>
+			</RadzenDataGrid>
+		</div>
+
+	</RadzenRow>
+
+	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+
+		<RadzenRow>
+			<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
+				Submit
+			</button>
+		</RadzenRow>
+	</RadzenStack>
+
+	<RadzenRow>
+		<RadzenColumn Size="4">
+			<Timeline RequestId="@RequestId" />
+		</RadzenColumn>
+		<RadzenColumn Size="8">
+			<AttachmentsDatatable Notes="@Notes" ShowOtherColumns=true />
+		</RadzenColumn>
+	</RadzenRow>
+
+</RadzenStack>
+
+
 
 @code {
+	[Parameter] public long RequestId { get; set; }
+	[Parameter] public IList<ARInvoiceOffsettingRowDto> Adjustments { get; set; }
+	private IList<NoteRowDto> Notes { get; set; } = new List<NoteRowDto>();
+	private InvoiceDetailsDto searchedInvoiceNumber;
+	private RadzenDataGrid<ARInvoiceOffsettingRowDto> adjustmentGrid;
+	private RequestAuditDto requestAudit;
+	private IEnumerable<string> reasonCodes { get; set; }
+
+	private bool isOnSearch;
+	private bool isLoading;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+
+		Adjustments = (await ARInvoiceOffsettingService.GetAdjustments(RequestId)).ToList();
+		searchedInvoiceNumber = new InvoiceDetailsDto();
+		var request = await RequestService.GetRequestDetails(RequestId);
+		Notes = await NoteService.GetRows(RequestId);
+		reasonCodes = await SearchOptionService.GetReasonCodes();
+		requestAudit = new RequestAuditDto();
+
+		requestAudit.Requestor = await AuthService.GetLastFirstName();
+	}
+
+	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
+	{
+		await DialogService.OpenAsync<AddARInvoiceOffsetting>(
+			"Add AR Adjustment",
+			new Dictionary<string, object>()
+			{
+				{ "Rows", Adjustments },
+				{ "Grid", adjustmentGrid },
+				{ "InvoiceDetails", invoiceDetails }
+			},
+			new DialogOptions() { Width = "800px", Height = "auto" }
+		);
+	}
+
+	public async Task OpenEdit(ARInvoiceOffsettingRowDto data)
+	{
+		try
+		{
+			await DialogService.OpenAsync<EditARInvoiceOffsetting>(
+				"Edit AR Invoice Offsetting",
+				new Dictionary<string, object>()
+				{
+				{ "Rows", Adjustments },
+				{ "Grid", adjustmentGrid },
+				{ "Data", data }
+				},
+				new DialogOptions() { Width = "800px", Height = "auto" }
+			);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Edit Adjustment Failed");
+		}
+	}
+
+	public async Task OnSubmit()
+	{
+		try
+		{
+			if (!Adjustments.Any())
+				throw new InvalidOperationException("Can't submit request because there are no adjustment in the current request");
+
+			if (isLoading)
+				throw new InvalidOperationException("Can't submit request while search operation is ongoing");
+
+			await DialogService.OpenAsync<ARInvoiceOffsettingModalSummary>(
+				"Submit AR Invoice Offsetting",
+				new Dictionary<string, object>()
+				{
+					{ "Rows", Adjustments },
+					{ "RequestAudit", requestAudit },
+					{ "OnSubmit", SubmitRequest },
+					{ "SucccessSubmissionRoute", "/submissions/ar-invoice-offsetting" },
+				},
+				new DialogOptions() { Width = "1500px", Height = "auto" }
+			);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Submission Failed");
+		}
+	}
+
+	public async Task SubmitRequest()
+	{
+		await ARInvoiceOffsettingService.Update(RequestId, Adjustments, Notes);
+	}
+
+	private void HandleSearchChanged(bool value)
+	{
+		isOnSearch = value;
+	}
+
+	private void HandleLoadingChanged(bool value)
+	{
+		isLoading = value;
+	}
 
 }

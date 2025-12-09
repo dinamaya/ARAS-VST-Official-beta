@@ -11,23 +11,25 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 		private readonly ICashDiscountRepository _cashDiscountRepo;
 		private readonly IBankChargeRepository _bankChargeRepo;
 		private readonly IAPAROffsetRepository _aparOffsetRepo;
+		private readonly IARInvoiceOffsettingRepository _arInvoiceOffsettingRepo;
 
-		public AdjustmentService(ICashDiscountRepository cashDiscountRepo, IBankChargeRepository bankChargeRepo, IAPAROffsetRepository aparOffsetRepo)
-		{
-			_cashDiscountRepo = cashDiscountRepo;
-			_bankChargeRepo = bankChargeRepo;
-			_aparOffsetRepo = aparOffsetRepo;
-		}
+        public AdjustmentService(ICashDiscountRepository cashDiscountRepo, IBankChargeRepository bankChargeRepo, IAPAROffsetRepository aparOffsetRepo, IARInvoiceOffsettingRepository arInvoiceOffsettingRepo)
+        {
+            _cashDiscountRepo = cashDiscountRepo;
+            _bankChargeRepo = bankChargeRepo;
+            _aparOffsetRepo = aparOffsetRepo;
+            _arInvoiceOffsettingRepo = arInvoiceOffsettingRepo;
+        }
 
-		/// <summary>
-		/// <para>Add the repositories here</para> 
-		/// <para>Throws Invalid Operation Exception when the adjustment type code incorrect or does not exist</para> 
-		/// </summary>
-		/// <param name="adjustmentTypeCode">
-		/// </param>
-		/// <returns></returns>
-		/// <exception cref="InvalidOperationException"></exception>
-		private ICreateStatusRepository AdjustmentTypeCheck(string adjustmentTypeCode)
+        /// <summary>
+        /// <para>Add the repositories here</para> 
+        /// <para>Throws Invalid Operation Exception when the adjustment type code incorrect or does not exist</para> 
+        /// </summary>
+        /// <param name="adjustmentTypeCode">
+        /// </param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        private ICreateStatusRepository AdjustmentTypeCheck(string adjustmentTypeCode)
 		{
 			adjustmentTypeCode = adjustmentTypeCode.ToLower();
 			return adjustmentTypeCode switch
@@ -35,6 +37,7 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 				"cdr" => _cashDiscountRepo,
 				"bca" => _bankChargeRepo,
 				"arr" => _aparOffsetRepo,
+				"ofr" => _arInvoiceOffsettingRepo,
 				_ => throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENTTYPE)
 			};
 		}

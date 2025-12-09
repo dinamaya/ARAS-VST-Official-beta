@@ -3,7 +3,7 @@ using ARAS.Blazor.Repositories.Interfaces;
 
 namespace ARAS.Blazor.Services.Interfaces
 {
-    public interface IARInvoiceOffsettingService : IBaseAdjustmentCommandRepository<ARInvoiceOffsettingRowDto, ARInvoiceOffsettingCreateDto, ARInvoiceOffsettingCreateValidationDto>
+    public interface IARInvoiceOffsettingService : IBaseAdjustmentCommandRepository<ARInvoiceOffsettingRowDto, ARInvoiceOffsettingCreateDto, object>
     {
         Task Create(IEnumerable<ARInvoiceOffsettingRowDto> rows, IEnumerable<NoteRowDto> notes);
         Task Update(long requestId, IEnumerable<ARInvoiceOffsettingRowDto> rows, IEnumerable<NoteRowDto> notes);

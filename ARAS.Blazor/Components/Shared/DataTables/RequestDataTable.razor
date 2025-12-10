@@ -1,4 +1,5 @@
 ﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Components.Shared.Skeletons
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
 @using ARAS.Blazor.Components.UI.Badges
@@ -13,24 +14,7 @@
 		<div class="py-4 px-3 w-100 card">
 			@if (isLoading)
 			{
-				<RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
-					<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:30px;" />
-					<RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" class="w-100">
-						@for (int i = 0; i < 7; i++)
-						{
-							<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:30px;" />
-						}
-					</RadzenStack>
-					@for (int i = 0; i < 3; i++)
-					{
-						<RadzenStack Orientation="Orientation.Horizontal" Gap="1rem">
-							@for (int j = 0; j < 7; j++)
-							{
-								<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:25px;" />
-							}
-						</RadzenStack>
-					}
-				</RadzenStack>
+				<DatatableSkeleton ColumnCount="7" RowCount="3"/>
 			}
 			else
 			{

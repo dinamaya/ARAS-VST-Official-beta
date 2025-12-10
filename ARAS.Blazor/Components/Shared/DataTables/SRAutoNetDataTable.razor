@@ -1,0 +1,50 @@
+﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Components.Shared.Modals
+@using ARAS.Blazor.Models.DTOs
+
+@inject DialogService DialogService
+
+<RadzenRow>
+	<div>
+		<h3 class="pb-0 mb-0">Cash Discount List</h3>
+	</div>
+	<div class="py-4 px-3 w-100 card">
+		<RadzenDataGrid class="border-0"
+						AllowFiltering="true"
+						AllowColumnResize="true"
+						AllowAlternatingRows="false"
+						FilterMode="FilterMode.Advanced"
+						AllowSorting="true"
+						PageSize="20"
+						AllowPaging="true"
+						PagerHorizontalAlign="HorizontalAlign.Left"
+						ShowPagingSummary="true"
+						Data="@Adjustments"
+						LogicalFilterOperator="LogicalFilterOperator.Or"
+						SelectionMode="DataGridSelectionMode.Single">
+			<Columns>
+				<RadzenDataGridColumn Frozen="true" Title="Edit" Sortable="false" Filterable="false" Width="80px" TextAlign="TextAlign.Center">
+					<Template Context="data">
+						<RadzenButton Icon="Edit" Variant="Variant.Outlined" />
+					</Template>
+				</RadzenDataGridColumn>
+				<RadzenDataGridColumn Property="@nameof(SRAutoNetRowDto.AdjustmentAmount)" Width="120px" Title="Adjustment Amount">
+					<Template Context="data">
+						@data.AdjustmentAmount.ToPhp()
+					</Template>
+				</RadzenDataGridColumn>
+				<RadzenDataGridColumn Property="@nameof(SRAutoNetRowDto.GLDate)" Title="Invoice Amount" />
+				<RadzenDataGridColumn Property="@nameof(SRAutoNetRowDto.AdjustmentActivity)" Title="Invoice Date" />
+				<RadzenDataGridColumn Property="@nameof(SRAutoNetRowDto.InvoiceNumber)" Title="Invoice Number" />
+				<RadzenDataGridColumn Property="@nameof(SRAutoNetRowDto.CustomerName)" Title="Customer Name" />
+				<RadzenDataGridColumn Property="@nameof(SRAutoNetRowDto.CustomerNumber)" Title="Customer Number" />
+				<RadzenDataGridColumn Property="@nameof(SRAutoNetRowDto.ReasonCode)" Title="Reason Code" />
+			</Columns>
+		</RadzenDataGrid>
+	</div>
+
+</RadzenRow>
+
+@code {
+	[Parameter] public IEnumerable<SRAutoNetRowDto> Adjustments { get; set; }
+}

@@ -25,5 +25,7 @@ namespace ARAS.Blazor.Models.Complex
 			ReasonCodes = await SearchOptionService.GetReasonCodes();
 			RequestAudit = new RequestAuditDto(request);
 		}
+
+		protected override async Task SubmitRequest() => await AdjustmentService.Update(RequestId, Adjustments, Notes);
 	}
 }

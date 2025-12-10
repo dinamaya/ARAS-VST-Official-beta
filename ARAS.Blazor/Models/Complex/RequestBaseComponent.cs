@@ -32,7 +32,7 @@ namespace ARAS.Blazor.Models.Complex
 			Guards.ThrowInvalidOperationIf(IsLoading, "Can't submit request while search operation is ongoing");
 		}
 
-		protected async Task SubmitRequest() => await AdjustmentService.Create(Adjustments, Notes);
+		protected virtual async Task SubmitRequest() => await AdjustmentService.Create(Adjustments, Notes);
 		protected void OnSearchToggle(bool value) => IsOnSearch = value;
 		protected void OnLoadingChanged(bool value) => IsLoading = value;
 	}

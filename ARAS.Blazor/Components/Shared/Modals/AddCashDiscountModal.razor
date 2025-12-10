@@ -6,6 +6,7 @@
 @using ARAS.Blazor.Services.Interfaces
 @inherits ComponentBase
 @inject DialogService DialogService
+@inject ICashDiscountService CashDiscountService
 
 <RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
 	<RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
@@ -79,16 +80,26 @@
 	{
 		try
 		{
-			bool isInvoiceDiscounted = Rows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
-
-			Guards.ThrowInvalidOperationIf(isInvoiceDiscounted, $"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the cash-discount adjustment table");
-
 			var row = new CashDiscountRowDto(
 				GetDiscountValue(),
 				string.IsNullOrEmpty(remarks) ? $"{discountPercentage}% Discount Remarks" : remarks,
 				reasonCode,
 				InvoiceDetails
 			);
+
+
+			bool isValid = await CashDiscountService.IsValid(new CashDiscountCreateValidationDto()
+			{
+				InvoiceNumber = row.InvoiceNumber,
+				DiscountPercentage = row.DiscountValue * 100,
+				Remarks = row.Remarks,
+			});
+
+			if (!isValid) return;
+
+			bool isInvoiceDiscounted = Rows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
+
+			Guards.ThrowInvalidOperationIf(isInvoiceDiscounted, $"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the cash-discount adjustment table");
 
 			Rows.Add(row);
 

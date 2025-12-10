@@ -43,11 +43,14 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			await _context.Invoices.Where(i => i.Id == id && i.IsActive).FirstOrDefaultAsync() ?? 
 			throw new InvalidOperationException(Exceptions.NOTFOUND_TRANSACTION);
 
-		public async Task<bool> IsInvoiceNumberAvailable(string invoiceNumber, string adjustmentTypeCode) =>
-			!(await _context.VwInvoiceNumbers.AnyAsync(inv =>
+		public async Task<bool> IsInvoiceNumberAvailable(string invoiceNumber, string adjustmentTypeCode)
+		{
+			string[] invalidStatuses = ["Rejected", "Declined"];
+			return !(await _context.VwInvoiceNumbers.AnyAsync(inv =>
 				inv.InvoiceNumber == invoiceNumber &&
 				inv.Code == adjustmentTypeCode &&
-				inv.Status != "Rejected"
+				!invalidStatuses.Contains(inv.Status)
 			));
+		}
 	}
 }

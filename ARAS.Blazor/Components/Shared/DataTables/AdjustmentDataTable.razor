@@ -57,6 +57,6 @@
 	[Parameter] public Func<TRow, Task> OpenEdit { get; set; }
 
 	public RadzenDataGrid<TRow> DataGrid { private set; get; }
-
+	
 	public Task Reload() => DataGrid.Reload();
 }

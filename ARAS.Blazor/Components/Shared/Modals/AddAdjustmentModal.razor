@@ -57,16 +57,15 @@
 		try
 		{
 			double parsedAmount;
-			
+			Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(adjustmentAmount), "The provided adjustment amount is empty. Please provide a valid and not greater than the current Invoice Amount");
+
 			bool isInvoiceExist = Rows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
 			Guards.ThrowInvalidOperationIf(isInvoiceExist, $"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the " + Title + " adjustment table");
 
-			Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(adjustmentAmount), "The provided adjustment amount is empty. Please provide a valid and not greater than the current Invoice Amount");
 			bool isAdjustmentAmountValid = double.TryParse(adjustmentAmount, out parsedAmount);
 			Guards.ThrowInvalidOperationIf(!isAdjustmentAmountValid, $"The provided Invoice Amount contains unwanted characters. Please check the Invoice Amount or contact the administrator for help.");
 			
 			TRow row = OnAdjustmentRowCreate?.Invoke(parsedAmount, remarks, reasonCode, InvoiceDetails);
-			
 			await base.OnAdd(DialogService, row);
 		}
 		catch (Exception ex)

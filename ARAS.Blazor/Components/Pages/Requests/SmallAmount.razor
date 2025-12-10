@@ -27,12 +27,14 @@
 	public async Task OpenAdd(
 		IList<SmallAmountRowDto> rows,
 		IEnumerable<string> reasonCodes,
+		RadzenDataGrid<SmallAmountRowDto> dataGrid,
 		InvoiceDetailsDto invoiceDetails)
 	{
 		await ModalTemplates.Add.SmallAmount(
 			DialogService,
 			rows,
 			reasonCodes,
+			dataGrid,
 			invoiceDetails
 		);
 	}

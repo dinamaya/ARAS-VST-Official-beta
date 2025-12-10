@@ -39,7 +39,7 @@
 		<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
 			Close
 		</button>
-		<button @onclick="OnAdd" class="btn btn-outline-primary">
+		<button @onclick="OnAdd" class="btn btn-primary">
 			Add
 		</button>
 	</RadzenStack>
@@ -65,7 +65,7 @@
 			bool isAdjustmentAmountValid = double.TryParse(adjustmentAmount, out parsedAmount);
 			Guards.ThrowInvalidOperationIf(!isAdjustmentAmountValid, $"The provided Invoice Amount contains unwanted characters. Please check the Invoice Amount or contact the administrator for help.");
 			
-			var row = OnAdjustmentRowCreate.Invoke(parsedAmount, remarks, reasonCode, InvoiceDetails);
+			TRow row = OnAdjustmentRowCreate?.Invoke(parsedAmount, remarks, reasonCode, InvoiceDetails);
 			
 			await base.OnAdd(DialogService, row);
 		}

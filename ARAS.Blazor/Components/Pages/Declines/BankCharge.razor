@@ -25,12 +25,14 @@
 	public async Task OpenAdd(
 		IList<BankChargeRowDto> rows,
 		IEnumerable<string> reasonCodes,
+		RadzenDataGrid<BankChargeRowDto> dataGrid,
 		InvoiceDetailsDto invoiceDetails)
 	{
 		await ModalTemplates.Add.BankCharge(
 			DialogService,
 			rows,
 			reasonCodes,
+			dataGrid,
 			invoiceDetails
 		);
 	}

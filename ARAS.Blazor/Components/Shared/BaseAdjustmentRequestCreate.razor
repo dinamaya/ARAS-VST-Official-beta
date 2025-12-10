@@ -48,7 +48,7 @@
 	[Parameter] public string RequestRoute { get; set; }
 	[Parameter] public ICreateStatusRepository<TRow> CreateStatusRepository { get; set; }
 	[Parameter] public Func<IList<TRow>, IEnumerable<string>, Task> TestCallBack { get; set; }
-	[Parameter] public Func<IList<TRow>, IEnumerable<string>, InvoiceDetailsDto, Task> OnOpenAdd { get; set; }
+	[Parameter] public Func<IList<TRow>, IEnumerable<string>, RadzenDataGrid<TRow>, InvoiceDetailsDto, Task> OnOpenAdd { get; set; }
 	[Parameter] public Func<IList<TRow>, IEnumerable<string>, TRow, RadzenDataGrid<TRow>, Task> OnOpenEdit { get; set; }
 
 	private IList<NoteRowDto> Notes { get; set; } = new List<NoteRowDto>();
@@ -81,7 +81,7 @@
 	{
 		try
 		{
-			await OnOpenAdd.Invoke(adjustments, reasonCodes,invoiceDetails);
+			await OnOpenAdd.Invoke(adjustments, reasonCodes, adjustmentGrid.DataGrid, invoiceDetails);
 		}
 		catch (Exception ex)
 		{

@@ -55,7 +55,7 @@
 	[Parameter] public string SubmissionRoute { get; set; }
 	[Parameter] public ICreateStatusRepository<TRow> CreateStatusRepository { get; set; }
 	[Parameter] public IAdjustmentReaderRepository<TRow> AdjustmentReaderRepository { get; set; }
-	[Parameter] public Func<IList<TRow>, IEnumerable<string>, InvoiceDetailsDto, Task> OnOpenAdd { get; set; }
+	[Parameter] public Func<IList<TRow>, IEnumerable<string>, RadzenDataGrid<TRow>, InvoiceDetailsDto, Task> OnOpenAdd { get; set; }
 	[Parameter] public Func<IList<TRow>, IEnumerable<string>, TRow, RadzenDataGrid<TRow>, Task> OnOpenEdit { get; set; }
 
 	private IList<NoteRowDto> notes;
@@ -96,7 +96,7 @@
 	{
 		try
 		{
-			await OnOpenAdd.Invoke(adjustments, reasonCodes, invoiceDetails);
+			await OnOpenAdd.Invoke(adjustments, reasonCodes, adjustmentGrid.DataGrid, invoiceDetails);
 		}
 		catch (Exception ex)
 		{

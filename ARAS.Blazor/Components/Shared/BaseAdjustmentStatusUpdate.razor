@@ -27,11 +27,11 @@
 				
 				@if (AdjustmentStage == AdjustmentStageType.APPROVAL)
 				{
-					<RadzenButton ButtonStyle="ButtonStyle.Success" Text="Approve" class="btn-success" Icon="thumb_up" Click="OnApprove" />
+					<RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Approve" class="btn-primary" Icon="thumb_up" Click="OnApprove" />
 				}
 				else if (AdjustmentStage == AdjustmentStageType.VALIDATION)
 				{
-					<RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Validate" class="btn-primary" Icon="assignment_turned_in" Click="OnValidate" />
+					<RadzenButton ButtonStyle="ButtonStyle.Success" Text="Validate" class="btn-success" Icon="assignment_turned_in" Click="OnValidate" />
 				}
 
 			</RadzenStack>

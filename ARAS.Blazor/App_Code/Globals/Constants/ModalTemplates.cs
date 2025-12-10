@@ -19,16 +19,18 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 		public static class Add
 		{
 
-			public static async Task Adjustment(
+			public static async Task Adjustment<TRow>(
 				DialogService dialogService,
 				string title,
-				IEnumerable<AdjustmentRow> rows,
+				IEnumerable<TRow> rows,
 				IEnumerable<string> reasonCodes,
 				InvoiceDetailsDto invoiceDetails,
-				Func<double, string, string, InvoiceDetailsDto, AdjustmentRow> createRowCallBack
+				RadzenDataGrid<TRow> grid,
+				Func<double, string, string, InvoiceDetailsDto, TRow> createRowCallBack
 			)
+				where TRow : AdjustmentRow
 			{
-				await dialogService.OpenAsync<AddAdjustmentModal<AdjustmentRow>>(
+				await dialogService.OpenAsync<AddAdjustmentModal<TRow>>(
 					$"Add {title} Adjustment",
 					new Dictionary<string, object>()
 					{
@@ -36,6 +38,7 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 						{ "Rows", rows },
 						{ "ReasonCodes", reasonCodes },
 						{ "InvoiceDetails", invoiceDetails },
+						{ "Grid", grid },
 						{ "OnAdjustmentRowCreate", createRowCallBack }
 					},
 					Variant.SMALL
@@ -67,6 +70,7 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 				DialogService dialogService,
 				IEnumerable<BankChargeRowDto> rows,
 				IEnumerable<string> reasonCodes,
+				RadzenDataGrid<BankChargeRowDto> grid,
 				InvoiceDetailsDto invoiceDetails
 			)
 			{
@@ -76,6 +80,7 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 					rows, 
 					reasonCodes, 
 					invoiceDetails, 
+					grid,
 					(amt, remarks, reason, inv) => new BankChargeRowDto(amt, remarks, reason, inv)
 				);
 			}
@@ -84,6 +89,7 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 				DialogService dialogService,
 				IEnumerable<SmallAmountRowDto> rows,
 				IEnumerable<string> reasonCodes,
+				RadzenDataGrid<SmallAmountRowDto> grid,
 				InvoiceDetailsDto invoiceDetails
 			)
 			{
@@ -92,8 +98,10 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 					"Small Amount", 
 					rows, 
 					reasonCodes, 
-					invoiceDetails, 
-					(amt, remarks, reason, inv) => new SmallAmountRowDto(amt, remarks, reason, inv));
+					invoiceDetails,
+					grid,
+					(amt, remarks, reason, inv) => new SmallAmountRowDto(amt, remarks, reason, inv)
+				);
 			}
 
 		}

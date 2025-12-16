@@ -17,5 +17,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 
 		Task<TransactionRequestRowDto> GetTransactionRequestByRequestId(long requestId);
 		Task<RequestUpdateEmailDetailsDto> GetForEmailDetailsById (long requestId);
-	}
+        //Task<TransactionRequestRowDto> GetTransactionRequestForReport(long requestId);       
+    }
 }

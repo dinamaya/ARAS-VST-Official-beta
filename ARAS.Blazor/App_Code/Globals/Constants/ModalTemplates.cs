@@ -13,6 +13,7 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 		{
 			public static DialogOptions XSMALL = new DialogOptions() { Width = "700px", Height = "auto" };
 			public static DialogOptions SMALL = new DialogOptions() { Width = "800px", Height = "auto" };
+			public static DialogOptions MEDIUM = new DialogOptions() { Width = "1000px", Height = "auto" };
 			public static DialogOptions WIDE = new DialogOptions() { Width = "1500px", Height = "auto" };
 		}
 
@@ -63,6 +64,26 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 						{ nameof(AddCashDiscountModal.InvoiceDetails), invoiceDetails }
 					},
 					Variant.SMALL
+				);
+			}
+			public static async Task SRAutoNet(
+				DialogService dialogService,
+				RadzenDataGrid<SRAutoNetRowDto> grid,
+				IEnumerable<SRAutoNetRowDto> rows,
+				IEnumerable<string> reasonCodes,
+				InvoiceDetailsDto invoiceDetails
+			)
+			{
+				await dialogService.OpenAsync<AddSRAutoNetModal>(
+					"Add Write Off Sales Return Auto Net Adjustment",
+					new Dictionary<string, object>()
+					{
+						{ nameof(AddSRAutoNetModal.ReasonCodes), reasonCodes },
+						{ nameof(AddSRAutoNetModal.Rows), rows },
+						{ nameof(AddSRAutoNetModal.Grid), grid },
+						{ nameof(AddSRAutoNetModal.InvoiceDetails), invoiceDetails },
+					},
+					Variant.MEDIUM
 				);
 			}
 

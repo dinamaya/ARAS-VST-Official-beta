@@ -90,7 +90,7 @@
 							</Template>
 						</RadzenDataGridColumn>
 						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceNumber)" Title="Invoice Number" />
-						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceDate)" Title="Invoice Date" />
+						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceDate)" Title="@InvoiceDateText" />
 						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.CustomerName)" Title="Customer Name" />
 						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.CustomerNumber)" Title="Customer Number" />
 					</Columns>
@@ -104,6 +104,7 @@
 	[Parameter] public EventCallback<InvoiceDetailsDto> OnAdd { get; set; }
 	[Parameter] public EventCallback<bool> OnSearchChanged { get; set; }
 	[Parameter] public EventCallback<bool> OnLoadingChanged { get; set; }
+	[Parameter] public string InvoiceDateText { get; set; } = "Invoice Date";
 
 	private IEnumerable<InvoiceDetailsDto> invoiceDetailsList { get; set; }
 	private bool isOnSearch { get; set; }

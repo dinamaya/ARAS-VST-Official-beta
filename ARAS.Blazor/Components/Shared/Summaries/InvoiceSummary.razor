@@ -24,7 +24,7 @@
 				<div class="mb-2 text-sm">Customer Number: <div class="text-dark ms-2 font-weight-bold letter-spacing-1">@InvoiceDetails.CustomerNumber</div></div>
 			</RadzenColumn>
 			<RadzenColumn Size="12" SizeXS="6">
-				<div class="mb-2 text-sm">Invoice Date: <div class="text-dark font-weight-bold ms-2">@InvoiceDetails.InvoiceDate</div></div>
+				<div class="mb-2 text-sm">@InvoiceDateText: <div class="text-dark font-weight-bold ms-2">@InvoiceDetails.InvoiceDate</div></div>
 				<div class="mb-2 text-sm">Invoice Amount: <div class="text-dark font-weight-bold ms-2">@InvoiceDetails.InvoiceAmount.ToPhp()</div></div>
 			</RadzenColumn>
 		</RadzenRow>
@@ -33,4 +33,5 @@
 
 @code{
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
+	[Parameter] public string InvoiceDateText { get; set; } = "Invoice Date";
 }

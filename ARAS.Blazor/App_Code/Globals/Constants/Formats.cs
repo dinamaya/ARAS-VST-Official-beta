@@ -6,6 +6,7 @@
 		{
 			public const string DISPLAY = "MMM. d, yyyy";
 			public const string DISPLAY2 = "MMMM d, yyyy";
+			public const string DISPLAY3 = "yyMMddfff";
 			public const string DISPLAY_COMPLETE = "MMMM d, yyyy (hh:mm tt)";
 			public const string SEARCH = "MM/dd/yyyy";
 			public const string INPUT = "MMddyyyy";

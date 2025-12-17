@@ -10,6 +10,7 @@
 	</div>
 	<div class="py-4 px-3 w-100 card">
 		<RadzenDataGrid class="border-0"
+						@ref="DataGrid"
 						AllowFiltering="true"
 						AllowColumnResize="true"
 						AllowAlternatingRows="false"
@@ -25,7 +26,7 @@
 			<Columns>
 				<RadzenDataGridColumn Frozen="true" Title="Edit" Sortable="false" Filterable="false" Width="80px" TextAlign="TextAlign.Center">
 					<Template Context="data">
-						<RadzenButton Icon="Edit" Variant="Variant.Outlined" />
+						<RadzenButton Icon="Edit" Variant="Variant.Outlined" Click="(args) => OpenEdit(data)" />
 					</Template>
 				</RadzenDataGridColumn>
 				<RadzenDataGridColumn Property="@nameof(SRAutoNetRowDto.AdjustmentAmount)" Width="120px" Title="Adjustment Amount">
@@ -33,12 +34,17 @@
 						@data.AdjustmentAmount.ToPhp()
 					</Template>
 				</RadzenDataGridColumn>
-				<RadzenDataGridColumn Property="@nameof(SRAutoNetRowDto.GLDate)" Title="Invoice Amount" />
+				<RadzenDataGridColumn Property="@nameof(SRAutoNetRowDto.GLDate)" Title="GL Date" />
 				<RadzenDataGridColumn Property="@nameof(SRAutoNetRowDto.AdjustmentActivity)" Title="Invoice Date" />
 				<RadzenDataGridColumn Property="@nameof(SRAutoNetRowDto.InvoiceNumber)" Title="Invoice Number" />
 				<RadzenDataGridColumn Property="@nameof(SRAutoNetRowDto.CustomerName)" Title="Customer Name" />
 				<RadzenDataGridColumn Property="@nameof(SRAutoNetRowDto.CustomerNumber)" Title="Customer Number" />
 				<RadzenDataGridColumn Property="@nameof(SRAutoNetRowDto.ReasonCode)" Title="Reason Code" />
+				<RadzenDataGridColumn Title="Remarks">
+					<Template Context="data">
+						@data.Remarks.Count Item(s)
+					</Template>
+				</RadzenDataGridColumn>
 			</Columns>
 		</RadzenDataGrid>
 	</div>
@@ -47,4 +53,36 @@
 
 @code {
 	[Parameter] public IEnumerable<SRAutoNetRowDto> Adjustments { get; set; }
+	[Parameter] public IEnumerable<string> ReasonCodes { get; set; }
+
+	public RadzenDataGrid<SRAutoNetRowDto> DataGrid;
+
+	public Task Reload() => DataGrid.Reload();
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+	}
+
+	private async Task OpenEdit(SRAutoNetRowDto data)
+	{
+		try
+		{
+			await DialogService.OpenAsync<EditSRAutoNetModal>(
+				$"Edit Write Off Sales Return Auto Net Adjustment",
+				new Dictionary<string, object>()
+				{
+					{ nameof(EditSRAutoNetModal.ReasonCodes), ReasonCodes },
+					{ nameof(EditSRAutoNetModal.Rows), Adjustments },
+					{ nameof(EditSRAutoNetModal.Grid), DataGrid },
+					{ nameof(EditSRAutoNetModal.Row), data },
+				},
+				ModalTemplates.Variant.MEDIUM
+			);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Edit Adjustment Failed");
+		}
+	}
 }

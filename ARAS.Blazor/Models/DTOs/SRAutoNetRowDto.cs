@@ -5,7 +5,6 @@ namespace ARAS.Blazor.Models.DTOs
 {
 	public class SRAutoNetRowDto : AdjustmentRow
 	{
-		public string GLDate { get; set; } // OR Invoice Date
 		public string ReasonCode { get; set; } = string.Empty;
 		public  IList<SRAutoNetRemarksDto> Remarks { get; set; }
 
@@ -23,8 +22,6 @@ namespace ARAS.Blazor.Models.DTOs
 
 			AdjustmentAmount = remarks.Sum(r => r.WT);
 			AdjustmentActivity = "Offset to Other Income/Expense";
-
-			GLDate = details.InvoiceDate.ToString(Formats.Date.DISPLAY3);
 		}
 	}
 }

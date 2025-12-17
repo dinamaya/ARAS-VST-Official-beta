@@ -54,9 +54,8 @@
 	{
 		try
 		{
-			// await base.OnSubmit();
-
-			// await ModalTemplates.Summary.CashDiscount(DialogService, Adjustments, RequestAudit, SubmitRequest);
+			await base.OnSubmit();
+			await ModalTemplates.Summary.SRAutoNet(DialogService, Adjustments, RequestAudit, SubmitRequest);
 		}
 		catch (Exception ex)
 		{

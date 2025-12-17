@@ -8,7 +8,7 @@ namespace ARAS.Blazor.Services.Implementations
 		ISRAutoNetService
 	{
 		public SRAutoNetService(IConfigService configService, IBaseAdjustmentService<AdjustmentCreateDto, SRAutoNetRowDto, object> baseAdjustment) :
-			base(baseAdjustment, configService.GetCashDiscountsUrl(), "srn", Map)
+			base(baseAdjustment, configService.GetSRAutoNetUrl(), "srr", Map)
 		{
 		}
 

@@ -1,5 +1,6 @@
 ﻿using ARAS.Blazor.Components.Pages.Approvals.BankCharge;
 using ARAS.Blazor.Components.Shared.Modals;
+using ARAS.Blazor.Components.Shared.Summaries;
 using ARAS.Blazor.Models.Complex;
 using ARAS.Blazor.Models.DTOs;
 using Radzen;
@@ -209,6 +210,26 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 						{ "RequestAudit", requestAudit },
 						{ "OnSubmit", submitCallBack },
 						{ "SucccessSubmissionRoute", "/requests/cash-discount" },
+					},
+					Variant.WIDE
+				);
+			}
+
+			public static async Task SRAutoNet(
+				DialogService dialogService,
+				IEnumerable<SRAutoNetRowDto> rows,
+				RequestAuditDto requestAudit,
+				Func<Task> submitCallBack
+			)
+			{
+				await dialogService.OpenAsync<SRAutoNetModalSummary>(
+					"Submit Cash Discount Adjustment",
+					new Dictionary<string, object>()
+					{
+						{ "Rows", rows },
+						{ "RequestAudit", requestAudit },
+						{ "OnSubmit", submitCallBack },
+						{ "SucccessSubmissionRoute", "/requests/sr-auto-net" },
 					},
 					Variant.WIDE
 				);

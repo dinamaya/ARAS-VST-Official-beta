@@ -25,8 +25,8 @@ namespace ARAS.Main.SSMS.Api.Context.Seeders
 				},
 				new AdjustmentType()
 				{
-					Name = "Credit Note / Invoice: Off Set",
-					Code = "CNR",
+					Name = "AR Invoice Offsetting",
+					Code = "OFR",
 					IsActive = true,
 				},
 				new AdjustmentType()

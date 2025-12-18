@@ -23,7 +23,7 @@
 	</RadzenStack>
 </RadzenStack>
 @code {
-	[Parameter] public IEnumerable<AROffsettingRowDto> Rows { get; set; }
+	[Parameter] public IEnumerable<ARInvoiceOffsettingRowDto> Rows { get; set; }
 	[Parameter] public Func<Task> OnSubmit { get; set; }
 	[Parameter] public RequestAuditDto RequestAudit { get; set; }
 	[Parameter] public string SucccessSubmissionRoute { get; set; }

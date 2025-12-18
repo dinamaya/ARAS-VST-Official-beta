@@ -26,36 +26,36 @@
 
 	<RadzenRow Gap="1.5rem">
 		<RadzenColumn Size="6">
-		<div class="text-center pb-3">
-			<h3 class="pb-0 mb-0">AP GROUP</h3>
-		</div>
+			<div class="text-center pb-3">
+				<h3 class="pb-0 mb-0">AP GROUP</h3>
+			</div>
 			<div class="py-4 px-3 w-100 card">
-			<RadzenDataGrid @ref="apGrid"
-							AllowFiltering="false"
-							AllowColumnResize="true"
-							AllowAlternatingRows="false"
-							AllowSorting="true"
-							PageSize="20"
-							AllowPaging="true"
-							PagerHorizontalAlign="HorizontalAlign.Left"
-							ShowPagingSummary="true"
-							Data="@APAdjustments"
-							LogicalFilterOperator="LogicalFilterOperator.Or"
-							SelectionMode="DataGridSelectionMode.Single">
-				<Columns>
+				<RadzenDataGrid @ref="apGrid"
+								AllowFiltering="false"
+								AllowColumnResize="true"
+								AllowAlternatingRows="false"
+								AllowSorting="true"
+								PageSize="20"
+								AllowPaging="true"
+								PagerHorizontalAlign="HorizontalAlign.Left"
+								ShowPagingSummary="true"
+								Data="@APAdjustments"
+								LogicalFilterOperator="LogicalFilterOperator.Or"
+								SelectionMode="DataGridSelectionMode.Single">
+					<Columns>
 						<RadzenDataGridColumn Property="@nameof(APAROffsetAPRowDto.InvoiceNumber)" Title="Invoice No.">
-						<FooterTemplate>
-							<b>Total Amount:</b>
-						</FooterTemplate>
+							<FooterTemplate>
+								<b>Total Amount:</b>
+							</FooterTemplate>
 						</RadzenDataGridColumn>
 						<RadzenDataGridColumn Property="@nameof(APAROffsetAPRowDto.InvoiceAmount)" Title="Amount">
-						<Template Context="data">
-							@data.InvoiceAmount.ToPhp()
-						</Template>
-						<FooterTemplate>
+							<Template Context="data">
+								@data.InvoiceAmount.ToPhp()
+							</Template>
+							<FooterTemplate>
 								<b>@APAdjustments?.Sum(a => a.InvoiceAmount).ToPhp()</b>
 							</FooterTemplate>
-					</RadzenDataGridColumn>
+						</RadzenDataGridColumn>
 
 						<RadzenDataGridColumn TItem="APAROffsetAPRowDto" Context="data" TextAlign="TextAlign.Center" Width="150px">
 							<Template Context="data">
@@ -63,9 +63,9 @@
 							</Template>
 						</RadzenDataGridColumn>
 
-				</Columns>
-			</RadzenDataGrid>
-		</div>
+					</Columns>
+				</RadzenDataGrid>
+			</div>
 		</RadzenColumn>
 		<RadzenColumn Size="6">
 			<div class="text-center pb-3">
@@ -102,20 +102,28 @@
 							<EditTemplate Context="data">
 								@if (data.RowType == ARRowType.Invoice)
 								{
-									<RadzenStack Orientation="Orientation.Vertical">  
+									<RadzenStack Orientation="Orientation.Vertical">
 										<RadzenTextBox @bind-Value="data.InvoiceNumber"
-													   Name="InvoiceNumber"
+													   Name="@($"InvoiceNumber_{data.Id}")"
 													   Style="width:100%" />
 
-										<RadzenRegexValidator Component="InvoiceNumber"
+										<RadzenRequiredValidator Component="@($"InvoiceNumber_{data.Id}")"
+																 Text="Invoice number is required"
+																 Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
+
+										<RadzenRegexValidator Component="@($"InvoiceNumber_{data.Id}")"
 															  Text="Please enter numbers only"
 															  Pattern="^\d+$"
-															  Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px"/>
+															  Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
 									</RadzenStack>
 								}
 								else
 								{
-									<RadzenDropDown @bind-Value="data.AdjustmentReason" Style="width:100%" Data="@reasonCodes" />
+									<RadzenDropDown @bind-Value="data.AdjustmentReason" Style="width:100%" Data="@reasonCodes"
+													Name="@($"AdjustmentReason_{data.Id}")" />
+									<RadzenRequiredValidator Component="@($"AdjustmentReason_{data.Id}")"
+															 Text="Adjustment reason is required"
+															 Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
 								}
 							</EditTemplate>
 						</RadzenDataGridColumn>
@@ -126,11 +134,17 @@
 							</Template>
 							<EditTemplate Context="data">
 								<div style="position: relative; z-index: 1;">
-								<RadzenNumeric @bind-Value="data.Amount"
-											   Style="width:100%"
-											   Step="0.01"
-											    />
+									<RadzenNumeric @bind-Value="data.Amount"
+												   Name="@($"Amount_{data.Id}")"
+												   Style="width:100%"
+												   Step="0.01" />
 								</div>
+
+								<RadzenRequiredValidator Component="@($"Amount_{data.Id}")"
+														 Text="Amount is required"
+														 Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
+
+
 							</EditTemplate>
 
 							<FooterTemplate>
@@ -145,7 +159,7 @@
 							</Template>
 							<EditTemplate Context="data">
 								<RadzenButton Icon="save" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success" Click="@((args) => arGrid.UpdateRow(data))" />
-								<RadzenButton Icon="cancel" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="@((args) => arGrid.CancelEditRow(data))" />
+								<RadzenButton Icon="cancel" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="@((args) => CancelEditRow(data))" />
 							</EditTemplate>
 						</RadzenDataGridColumn>
 					</Columns>
@@ -157,7 +171,7 @@
 					<RadzenButton Text="Add Adjustment Reason" Icon="add_circle" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Shade="Shade.Lighter"
 								   Click="@(args => AddAdjustmentReasonRow())" Style="min-width:200px" Size="ButtonSize.Medium" />
 				</RadzenStack>
-		</div>
+			</div>
 
 		</RadzenColumn>
 	</RadzenRow>
@@ -188,13 +202,16 @@
 	private bool isOnSearch;
 	private bool isLoading;
 
+	// track newly added rows so we can remove them on cancel if they remain empty
+	private HashSet<string> newlyAddedRowIds = new();
+
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
 
 		APAdjustments = new List<APAROffsetAPRowDto>();
 		ARAdjustments = new List<APAROffsetARRowDto>();
-		searchedInvoiceNumber = new InvoiceDetailsDto(); 
+		searchedInvoiceNumber = new InvoiceDetailsDto();
 		requestAudit = new RequestAuditDto();
 
 		reasonCodes = await SearchOptionService.GetReasonCodes();
@@ -243,6 +260,13 @@
 			Guards.ThrowInvalidOperationIf(!ARAdjustments.Any(), "Can't submit request because there are no adjustment in the current request");
 			Guards.ThrowInvalidOperationIf(isLoading, "Can't submit request while search operation is ongoing");
 
+			// row-level validation before opening modal
+			if (!ValidateARRows(out var message))
+			{
+				await DialogService.Alert(message, "Validation Failed");
+				return;
+			}
+
 			var apTotal = APAdjustments.Sum(a => a.InvoiceAmount);
 			var arTotal = ARAdjustments.Sum(a => a.Amount);
 
@@ -288,12 +312,14 @@
 	{
 		var newRow = new APAROffsetARRowDto
 		{
+			Id = Guid.NewGuid().ToString(),
 			RowType = ARRowType.Invoice,
 			InvoiceNumber = string.Empty,
 			Amount = 0.00d
 		};
 
 		ARAdjustments.Add(newRow);
+		newlyAddedRowIds.Add(newRow.Id);
 		await arGrid.Reload();
 		await arGrid.EditRow(newRow);
 	}
@@ -302,12 +328,14 @@
 	{
 		var newRow = new APAROffsetARRowDto
 		{
+			Id = Guid.NewGuid().ToString(),
 			RowType = ARRowType.Adjustment,
 			AdjustmentReason = reasonCodes.FirstOrDefault(),
 			Amount = 0.00d
 		};
 
 		ARAdjustments.Add(newRow);
+		newlyAddedRowIds.Add(newRow.Id);
 		await arGrid.Reload();
 		await arGrid.EditRow(newRow);
 	}
@@ -315,6 +343,7 @@
 	private async Task OnRemoveRow(APAROffsetARRowDto item)
 	{
 		ARAdjustments.Remove(item);
+		newlyAddedRowIds.Remove(item?.Id);
 		await arGrid.Reload();
 	}
 
@@ -322,5 +351,84 @@
 	{
 		APAdjustments.Remove(item);
 		await apGrid.Reload();
+	}
+
+	private async Task CancelEditRow(APAROffsetARRowDto data)
+	{
+		arGrid.CancelEditRow(data);
+
+		if (data != null && !string.IsNullOrEmpty(data.Id) && newlyAddedRowIds.Contains(data.Id))
+		{
+			if (IsRowEffectivelyEmpty(data))
+			{
+				ARAdjustments.Remove(data);
+				newlyAddedRowIds.Remove(data.Id);
+				await arGrid.Reload();
+			}
+			else
+			{
+				newlyAddedRowIds.Remove(data.Id);
+			}
+		}
+	}
+
+	private bool IsRowEffectivelyEmpty(APAROffsetARRowDto row)
+	{
+		if (row == null) return true;
+
+		if (row.RowType == ARRowType.Invoice)
+		{
+			return string.IsNullOrWhiteSpace(row.InvoiceNumber) && (row.Amount == 0.0);
+		}
+		else 
+		{
+			return string.IsNullOrWhiteSpace(row.AdjustmentReason) && (row.Amount == 0.0);
+		}
+	}
+
+	private bool ValidateARRows(out string message)
+	{
+		message = string.Empty;
+
+		if (ARAdjustments == null || !ARAdjustments.Any())
+		{
+			message = "AR Group has no rows.";
+			return false;
+		}
+
+		foreach (var ar in ARAdjustments)
+		{
+			if (ar == null)
+			{
+				message = "AR Group contains an invalid row.";
+				return false;
+			}
+
+			if (ar.RowType == ARRowType.Invoice)
+			{
+				if (string.IsNullOrWhiteSpace(ar.InvoiceNumber))
+				{
+					message = "AR Group: Invoice number is required for invoice rows.";
+					return false;
+				}
+			}
+			else
+			{
+				if (string.IsNullOrWhiteSpace(ar.AdjustmentReason))
+				{
+					message = "AR Group: Adjustment reason is required for adjustment rows.";
+					return false;
+				}
+			}
+
+			if (ar.Amount == 0.0)
+			{
+				var id = ar.RowType == ARRowType.Invoice ? ar.InvoiceNumber : ar.AdjustmentReason;
+				message = $"AR Group: Amount must not be 0.00 for '{id ?? "unknown"}'.";
+				return false;
+			}
+		}
+
+		return true;
 	}
 }

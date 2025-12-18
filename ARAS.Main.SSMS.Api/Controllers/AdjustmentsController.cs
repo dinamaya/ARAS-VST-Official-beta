@@ -15,16 +15,34 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		private readonly IAPAROffsetRepository _aparOffsetRepo;
 		private readonly ISmallAmountRepository _smallAmountRepo;
 		private readonly ISRAutoNetRepository _srAutoNetRepo;
+        private readonly IARInvoiceOffsettingRepository _arInvoiceOffsettingRepo;
 
-		public AdjustmentsController(ILogger<AdjustmentsController> logger, ICashDiscountRepository cashDiscountRepo, IAPAROffsetRepository aparOffsetRepo, IBankChargeRepository bankChargeRepo, ISmallAmountRepository smallAmountRepo, ISRAutoNetRepository srAutoNetRepo)
-		{
-			_logger = logger;
-			_cashDiscountRepo = cashDiscountRepo;
-			_aparOffsetRepo = aparOffsetRepo;
+        public AdjustmentsController(ILogger<AdjustmentsController> logger, ICashDiscountRepository cashDiscountRepo, IAPAROffsetRepository aparOffsetRepo, IBankChargeRepository bankChargeRepo, IARInvoiceOffsettingRepository arInvoiceOffsettingRepo, ISmallAmountRepository smallAmountRepo, ISRAutoNetRepository srAutoNetRepo)
+        {
+            _logger = logger;
+            _cashDiscountRepo = cashDiscountRepo;
+            _aparOffsetRepo = aparOffsetRepo;
 			_bankChargeRepo = bankChargeRepo;
+            _arInvoiceOffsettingRepo = arInvoiceOffsettingRepo;
 			_smallAmountRepo = smallAmountRepo;
 			_srAutoNetRepo = srAutoNetRepo;
-		}
+        }
+
+        [HttpGet("ofr/{requestId:long}"), Authorize]
+        public async Task<ResponseDto<IEnumerable<ARInvoiceOffsettingRowDto>>> GetARInvoiceOffsettingAdjustments(long requestId)
+        {
+            var response = new ResponseDto<IEnumerable<ARInvoiceOffsettingRowDto>>();
+            try
+            {
+                response.Result = await _arInvoiceOffsettingRepo.GetAdjustmentsByRequestId(requestId);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return response.Failed(ex.Message);
+            }
+        }
 
 		[HttpGet("cdr/{requestId:long}"), Authorize]
 		public async Task<ResponseDto<IEnumerable<CashDiscountRowDto>>> GetCashDiscountAdjustments(long requestId)

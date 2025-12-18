@@ -13,6 +13,7 @@
 		string GetAdjustmentsUrl(string route = null);
 		string GetApprovalsUrl(string route = null);
 		string GetCashDiscountsUrl(string route = null);
+        string GetARInvoiceOffsettingUrl(string route = null);
         string GetAPAROffsetsUrl(string route = null);
 		string GetBankChargesUrl(string route = null);
 		string GetDeclinesUrl(string route = null);

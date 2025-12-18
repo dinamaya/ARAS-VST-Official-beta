@@ -1,11 +1,8 @@
-﻿using ARAS.Blazor.App_Code.Globals;
-using Newtonsoft.Json.Linq;
-
-namespace ARAS.Blazor.Models.DTOs
+﻿namespace ARAS.Main.SSMS.Api.Models.Dtos
 {
-    public class AROffsettingRowDto
+    public class ARInvoiceOffsettingRowDto
     {
-        public string Id { get; private set; }
+        public string Id { get; set; }
         public string AdjustmentActivity { get; set; } = string.Empty;
         public double InvoiceAmount { get; set; } = 1_000.00d;
         public string InvoiceDate { get; set; } = string.Empty;
@@ -15,21 +12,19 @@ namespace ARAS.Blazor.Models.DTOs
         public string ReasonCode { get; set; } = string.Empty;
         public string Remarks { get; set; } = string.Empty;
 
-        public AROffsettingRowDto(string remarks, InvoiceDetailsDto details)
+        public ARInvoiceOffsettingRowDto()
         {
-            Id = Utils.Security.GenerateExtendedGuid("CD", 1);
-            InvoiceAmount = details.InvoiceAmount;
-            InvoiceNumber = details.InvoiceNumber;
-            InvoiceDate = details.InvoiceDate.ToString("dd MMM yyyy");
-            CustomerName = details.CustomerName;
-            CustomerNumber = details.CustomerNumber;
-            SetValues( remarks);
+        }
+
+        public ARInvoiceOffsettingRowDto(string remarks)
+        {
+            SetValues(remarks);
         }
 
         public void SetValues(string remarks)
         {
             Remarks = remarks;
-            AdjustmentActivity = "AR Offsetting";
+            AdjustmentActivity = "AR Invoice Offsetting";
             ReasonCode = "Offsetting";
         }
     }

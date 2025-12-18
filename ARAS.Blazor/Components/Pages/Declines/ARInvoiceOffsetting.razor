@@ -1,4 +1,4 @@
-﻿@page "/requests/ar-invoice-offsetting"
+﻿@page "/declines/ar-invoice-offsetting/{RequestId:long}"
 
 @using ARAS.Blazor.App_Code.Globals
 @using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting
@@ -17,6 +17,9 @@
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
 @inject IARInvoiceOffsettingService ARInvoiceOffsettingService
+@inject IRequestService RequestService
+@inject INoteService NoteService
+@inject ISearchOptionService SearchOptionService
 
 <h2>AR Invoice Offsetting</h2>
 
@@ -54,7 +57,7 @@
 							@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
 						</Template>
 					</RadzenDataGridColumn>
-					<RadzenDataGridColumn Property="@nameof(ARInvoiceOffsettingRowDto.InvoiceDate)" Title="Invoice Date" />				
+					<RadzenDataGridColumn Property="@nameof(ARInvoiceOffsettingRowDto.InvoiceDate)" Title="Invoice Date" />
 					<RadzenDataGridColumn Property="@nameof(ARInvoiceOffsettingRowDto.CustomerName)" Title="Customer Name" />
 					<RadzenDataGridColumn Property="@nameof(ARInvoiceOffsettingRowDto.CustomerNumber)" Title="Customer Number" />
 					<RadzenDataGridColumn Property="@nameof(ARInvoiceOffsettingRowDto.Remarks)" Title="Remarks" />
@@ -64,8 +67,6 @@
 
 	</RadzenRow>
 
-	<AttachmentsDatatable Notes="Notes" IsDownloadable=false/>
-
 	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
 
 		<RadzenRow>
@@ -74,17 +75,28 @@
 			</button>
 		</RadzenRow>
 	</RadzenStack>
+
+	<RadzenRow>
+		<RadzenColumn Size="4">
+			<Timeline RequestId="@RequestId" />
+		</RadzenColumn>
+		<RadzenColumn Size="8">
+			<AttachmentsDatatable Notes="@Notes" ShowOtherColumns=true />
+		</RadzenColumn>
+	</RadzenRow>
+
 </RadzenStack>
 
 
 
 @code {
+	[Parameter] public long RequestId { get; set; }
 	[Parameter] public IList<ARInvoiceOffsettingRowDto> Adjustments { get; set; }
 	private IList<NoteRowDto> Notes { get; set; } = new List<NoteRowDto>();
-
 	private InvoiceDetailsDto searchedInvoiceNumber;
 	private RadzenDataGrid<ARInvoiceOffsettingRowDto> adjustmentGrid;
 	private RequestAuditDto requestAudit;
+	private IEnumerable<string> reasonCodes { get; set; }
 
 	private bool isOnSearch;
 	private bool isLoading;
@@ -93,44 +105,15 @@
 	{
 		await base.OnInitializedAsync();
 
-		Adjustments = new List<ARInvoiceOffsettingRowDto>();
+		Adjustments = (await ARInvoiceOffsettingService.GetAdjustments(RequestId)).ToList();
 		searchedInvoiceNumber = new InvoiceDetailsDto();
+		var request = await RequestService.GetRequestDetails(RequestId);
+		Notes = await NoteService.GetRows(RequestId);
+		reasonCodes = await SearchOptionService.GetReasonCodes();
 		requestAudit = new RequestAuditDto();
-		TestARInvoiceOffsettingRows(); // For testing Only
 
 		requestAudit.Requestor = await AuthService.GetLastFirstName();
 	}
-
-	private void TestARInvoiceOffsettingRows()
-	{
-		// For Demo Purposes Only - Remove this on Production
-		string[] CustomerNames = { "BODEGA SITE COMPUTER SALES, SERVICES AND RENTALS", "SOLUTIONS PROVIDING & LOGISTIC TECHNOLOGIES CORP.", "LUCKY SURVIVOR PERSONAL COMPUTER REPAIR/SERVICES", "AJ SOFTDRIVE INTERNET CAFE & COMPUTER STUDIO", "SYSTEMS & SOFTWARE CONSULTING GROUP, INC.", "TECHNOLOGY LINKS INTERNATIONAL CORPORATION", "(L-ETL) WELLCOM TELECOM SUPERMARKET INC.", "APPLE SOUTH ASIA PTE LTD", "CONCEPT COMPUTER CENTER", "E-PLUS STATIONERY" };
-		string[] Remarks = { "please see attached page 1-3", "please see attached page 4", "please see attached page 5-6", "please see attached page 7", "please see attached page 8-10", " ", " ", " ", " ", " " };
-
-		Random rand = new Random();
-		double min = 1000.00;
-		double max = 10000000.00;
-
-		for (int x = 0; x < rand.Next(1, 10); x++)
-		{
-			var invoiceDetails = new InvoiceDetailsDto();
-			string first = CustomerNames[rand.Next(CustomerNames.Length)];
-
-			invoiceDetails.InvoiceAmount = rand.NextDouble() * (max - min) + min;
-			invoiceDetails.InvoiceNumber = rand.Next(20_000, 9_000_000).ToString();
-			invoiceDetails.InvoiceDate = DateTime.Now.AddDays(-rand.Next(10, 200));
-			invoiceDetails.CustomerName = first;
-			invoiceDetails.CustomerNumber = "09123456789";
-
-			var row = new ARInvoiceOffsettingRowDto(
-				Remarks[rand.Next(Remarks.Length)],
-				invoiceDetails
-			);
-
-			Adjustments.Add(row);
-		}
-	}
-
 
 	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
 	{
@@ -184,7 +167,7 @@
 					{ "Rows", Adjustments },
 					{ "RequestAudit", requestAudit },
 					{ "OnSubmit", SubmitRequest },
-					{ "SucccessSubmissionRoute", "/requests/ar-invoice-offsetting" },
+					{ "SucccessSubmissionRoute", "/submissions/ar-invoice-offsetting" },
 				},
 				new DialogOptions() { Width = "1500px", Height = "auto" }
 			);
@@ -197,7 +180,7 @@
 
 	public async Task SubmitRequest()
 	{
-		await ARInvoiceOffsettingService.Create(Adjustments, Notes);
+		await ARInvoiceOffsettingService.Update(RequestId, Adjustments, Notes);
 	}
 
 	private void HandleSearchChanged(bool value)

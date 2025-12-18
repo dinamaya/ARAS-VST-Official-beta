@@ -34,6 +34,7 @@ namespace ARAS.Blazor.App_Code.Globals.Extensions
 			services.AddScoped<ISRAutoNetService, SRAutoNetService>();
 
 			services.AddScoped<IValidationService, ValidationService>();
+            services.AddScoped<IARInvoiceOffsettingService, ARInvoiceOffsettingService>();
 
 			services.AddScoped(typeof(IBaseAdjustmentService<,,>), typeof(BaseAdjustmentService<,,>));
             

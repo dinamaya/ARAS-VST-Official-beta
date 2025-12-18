@@ -35,8 +35,8 @@
 
 @code {
 
-	[Parameter] public IList<AROffsettingRowDto> Rows { get; set; }
-	[Parameter] public RadzenDataGrid<AROffsettingRowDto> Grid { get; set; }
+	[Parameter] public IList<ARInvoiceOffsettingRowDto> Rows { get; set; }
+	[Parameter] public RadzenDataGrid<ARInvoiceOffsettingRowDto> Grid { get; set; }
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
 
 	private IEnumerable<string> invoices = new List<string>();
@@ -61,7 +61,7 @@
 
 			Guards.ThrowInvalidOperationIf(isInvoiceDiscounted, $"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the AR Offsetting adjustment table");
 
-			var row = new AROffsettingRowDto(
+			var row = new ARInvoiceOffsettingRowDto(
 				remarks ?? string.Empty,
 				InvoiceDetails
 			);

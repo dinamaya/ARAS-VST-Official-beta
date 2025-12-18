@@ -9,7 +9,8 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 	public class AdjustmentService(
 		ICashDiscountRepository cashDiscountRepo, 
 		IBankChargeRepository bankChargeRepo, 
-		IAPAROffsetRepository aparOffsetRepo, 
+		IAPAROffsetRepository aparOffsetRepo,
+		IARInvoiceOffsettingRepository arInvoiceOffsettingRepo,
 		ISmallAmountRepository smallAmountRepo,
 		ISRAutoNetRepository srAutoNetRepo) : IAdjustmentService
 	{
@@ -32,6 +33,7 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 				"arr" => aparOffsetRepo,
 				"sar" => smallAmountRepo,
 				"srr" => srAutoNetRepo,
+				"ofr" => arInvoiceOffsettingRepo,
 				_ => throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENTTYPE)
 			};
 		}

@@ -105,11 +105,23 @@
 							<EditTemplate Context="data">
 								@if (data.RowType == ARRowType.Invoice)
 								{
-									<RadzenTextBox @bind-Value="data.InvoiceNumber" Style="width:100%" />
+									<RadzenStack Orientation="Orientation.Vertical">
+										<RadzenTextBox @bind-Value="data.InvoiceNumber" Name="@($"InvoiceNumber_{data.Id}")" Style="width:100%" />
+										<RadzenRequiredValidator Component="@($"InvoiceNumber_{data.Id}")"
+																 Text="Invoice number is required"
+																 Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
+										<RadzenRegexValidator Component="@($"InvoiceNumber_{data.Id}")"
+															  Text="Please enter numbers only"
+															  Pattern="^\d+$"
+															  Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
+									</RadzenStack>
 								}
 								else
 								{
-									<RadzenDropDown @bind-Value="data.AdjustmentReason" Style="width:100%" Data="@reasonCodes" />
+									<RadzenDropDown @bind-Value="data.AdjustmentReason" Style="width:100%" Data="@reasonCodes" Name="@($"AdjustmentReason_{data.Id}")" />
+									<RadzenRequiredValidator Component="@($"AdjustmentReason_{data.Id}")"
+															 Text="Adjustment reason is required"
+															 Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
 								}
 							</EditTemplate>
 						</RadzenDataGridColumn>
@@ -119,9 +131,15 @@
 								@data?.Amount.ToPhp()
 							</Template>
 							<EditTemplate Context="data">
-								<RadzenNumeric @bind-Value="data.Amount"
+								<RadzenNumeric @bind-Value="data.Amount" Name="@($"Amount_{data.Id}")"
 											   Style="width:100%"
 											   Step="0.01" />
+								<RadzenRequiredValidator Component="@($"Amount_{data.Id}")"
+														 Text="Amount is required"
+														 Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
+								<RadzenRangeValidator Component="@($"Amount_{data.Id}")" Min="0.01"
+													   Text="Amount must be greater than 0"
+													   Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
 							</EditTemplate>
 
 							<FooterTemplate>
@@ -136,7 +154,7 @@
 							</Template>
 							<EditTemplate Context="data">
 								<RadzenButton Icon="save" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success" Click="@((args) => arGrid.UpdateRow(data))" />
-								<RadzenButton Icon="cancel" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="@((args) => arGrid.CancelEditRow(data))" />
+								<RadzenButton Icon="cancel" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="@((args) => CancelEditRow(data))" />
 							</EditTemplate>
 						</RadzenDataGridColumn>
 					</Columns>
@@ -187,6 +205,9 @@
 	private bool isOnSearch;
 	private bool isLoading;
 
+	// track newly added rows so we can remove them on cancel if they remain empty
+	private HashSet<string> newlyAddedRowIds = new();
+
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
@@ -194,6 +215,13 @@
 		var adjustments = await APAROffsetService.GetAdjustments(RequestId);
 		APAdjustments = adjustments.APGroup.ToList();
 		ARAdjustments = adjustments.ARGroup.ToList();
+
+		// ensure every AR row has an Id for per-row validators and cancel logic
+		foreach (var ar in ARAdjustments)
+		{
+			if (string.IsNullOrEmpty(ar.Id))
+				ar.Id = Guid.NewGuid().ToString();
+		}
 
 		searchedInvoiceNumber = new InvoiceDetailsDto();
 		var request = await RequestService.GetRequestDetails(RequestId);
@@ -223,7 +251,7 @@
 		try
 		{
 			await DialogService.OpenAsync<EditARInvoiceOffsetting>(
-				"Edit Cash Discount Adjustment",
+				"Edit AR  Adjustment",
 				new Dictionary<string, object>()
 				{
 				{ "Rows", APAdjustments },
@@ -248,6 +276,13 @@
 
 			if (isLoading)
 				throw new InvalidOperationException("Can't submit request while search operation is ongoing");
+
+			// validate AR rows (description + amount)
+			if (!ValidateARRows(out var validationMessage))
+			{
+				await DialogService.Alert(validationMessage, "Validation Failed");
+				return;
+			}
 
 			var apTotal = APAdjustments.Sum(a => a.InvoiceAmount);
 			var arTotal = ARAdjustments.Sum(a => a.Amount);
@@ -297,12 +332,14 @@
 	{
 		var newRow = new APAROffsetARRowDto
 		{
+			Id = Guid.NewGuid().ToString(),
 			RowType = ARRowType.Invoice,
 			InvoiceNumber = string.Empty,
 			Amount = 0.00d
 		};
 
 		ARAdjustments.Add(newRow);
+		newlyAddedRowIds.Add(newRow.Id);
 		await arGrid.Reload();
 		await InvokeAsync(() =>
 		{
@@ -314,12 +351,14 @@
 	{
 		var newRow = new APAROffsetARRowDto
 		{
+			Id = Guid.NewGuid().ToString(),
 			RowType = ARRowType.Adjustment,
 			AdjustmentReason = reasonCodes.FirstOrDefault(),
 			Amount = 0.00d
 		};
 
 		ARAdjustments.Add(newRow);
+		newlyAddedRowIds.Add(newRow.Id);
 		await arGrid.Reload();
 		await InvokeAsync(() =>
 		{
@@ -330,6 +369,8 @@
 	private async Task OnRemoveRow(APAROffsetARRowDto item)
 	{
 		ARAdjustments.Remove(item);
+		if (item != null && !string.IsNullOrEmpty(item.Id))
+			newlyAddedRowIds.Remove(item.Id);
 		await arGrid.Reload();
 	}
 
@@ -337,5 +378,84 @@
 	{
 		APAdjustments.Remove(item);
 		await apGrid.Reload();
+	}
+
+	private async Task CancelEditRow(APAROffsetARRowDto data)
+	{
+		arGrid.CancelEditRow(data);
+
+		if (data != null && !string.IsNullOrEmpty(data.Id) && newlyAddedRowIds.Contains(data.Id))
+		{
+			if (IsRowEffectivelyEmpty(data))
+			{
+				ARAdjustments.Remove(data);
+				newlyAddedRowIds.Remove(data.Id);
+				await arGrid.Reload();
+			}
+			else
+			{
+				newlyAddedRowIds.Remove(data.Id);
+			}
+		}
+	}
+
+	private bool IsRowEffectivelyEmpty(APAROffsetARRowDto row)
+	{
+		if (row == null) return true;
+
+		if (row.RowType == ARRowType.Invoice)
+		{
+			return string.IsNullOrWhiteSpace(row.InvoiceNumber) && (row.Amount == 0.0);
+		}
+		else
+		{
+			return string.IsNullOrWhiteSpace(row.AdjustmentReason) && (row.Amount == 0.0);
+		}
+	}
+
+	private bool ValidateARRows(out string message)
+	{
+		message = string.Empty;
+
+		if (ARAdjustments == null || !ARAdjustments.Any())
+		{
+			message = "AR Group has no rows.";
+			return false;
+		}
+
+		foreach (var ar in ARAdjustments)
+		{
+			if (ar == null)
+			{
+				message = "AR Group contains an invalid row.";
+				return false;
+			}
+
+			if (ar.RowType == ARRowType.Invoice)
+			{
+				if (string.IsNullOrWhiteSpace(ar.InvoiceNumber))
+				{
+					message = "AR Group: Invoice number is required for invoice rows.";
+					return false;
+				}
+			}
+			else
+			{
+				if (string.IsNullOrWhiteSpace(ar.AdjustmentReason))
+				{
+					message = "AR Group: Adjustment reason is required for adjustment rows.";
+					return false;
+				}
+			}
+
+			if (ar.Amount == 0.0)
+			{
+				var id = ar.RowType == ARRowType.Invoice ? ar.InvoiceNumber : ar.AdjustmentReason;
+				message = $"AR Group: Amount must not be 0.00 for '{id ?? "unknown"}'.";
+				return false;
+			}
+		}
+
+		return true;
 	}
 }

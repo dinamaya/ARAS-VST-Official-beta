@@ -1,4 +1,4 @@
-﻿@page "/validations/ar-invoice-offsetting/{RequestId:long}"
+﻿@page "/approvals/ar-invoice-offsetting/{RequestId:long}"
 @using ARAS.Blazor.Components.Shared.DataTables
 @using ARAS.Blazor.Components.Shared.Modals
 @using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting.Summaries
@@ -6,7 +6,7 @@
 @using ARAS.Blazor.Services.Interfaces
 @using Microsoft.AspNetCore.Authorization
 
-@attribute [Authorize(Roles = "Validator")]
+@attribute [Authorize(Roles = "Approver")]
 @inject IARInvoiceOffsettingService ARInvoiceOffsettingService
 @inject IRequestService RequestService
 @inject INoteService NoteService
@@ -18,12 +18,12 @@
 <h3>Update AR Invoice Offsetting</h3>
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 	<RadzenRow>
-		@if (isValidatable)
+		@if (isApprovable)
 		{
 			<RadzenStack class="w-100" JustifyContent="JustifyContent.End" Orientation="Orientation.Horizontal">
 				<RadzenButton ButtonStyle="ButtonStyle.Danger" Text="Reject" class="btn-danger" Icon="cancel" Click="OnReject" />
 				<RadzenButton ButtonStyle="ButtonStyle.Warning" Text="Decline" class="btn-dark" Icon="thumb_down" Click="OnDecline" />
-				<RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Validate" class="btn-primary" Icon="assignment_turned_in" Click="OnValidate" />
+				<RadzenButton ButtonStyle="ButtonStyle.Success" Text="Approve" class="btn-primary" Icon="thumb_up" Click="OnApprove" />
 			</RadzenStack>
 		}
 	</RadzenRow>
@@ -37,7 +37,7 @@
 			<Timeline RequestId="@RequestId" />
 		</RadzenColumn>
 		<RadzenColumn Size="8">
-			<AttachmentsDatatable Notes="@notes" ShowOtherColumns=isValidatable />
+			<AttachmentsDatatable Notes="@notes" ShowOtherColumns=isApprovable />
 		</RadzenColumn>
 	</RadzenRow>
 </RadzenStack>
@@ -47,12 +47,12 @@
 	private IEnumerable<ARInvoiceOffsettingRowDto> rows;
 	private IList<NoteRowDto> notes;
 	private RequestAuditDto requestAudit;
-	private bool isValidatable = false;
+	private bool isApprovable = false;
 
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
-		isValidatable = await RequestService.IsValidatable(RequestId);
+		isApprovable = await RequestService.IsApprovable(RequestId);
 		var request = await RequestService.GetRequestDetails(RequestId);
 		rows = await ARInvoiceOffsettingService.GetAdjustments(RequestId);
 		notes = await NoteService.GetRows(RequestId);
@@ -60,13 +60,13 @@
 		requestAudit = new RequestAuditDto(request);
 	}
 
-	protected async Task OnValidate()
+	protected async Task OnApprove()
 	{
-		bool isConfirmed = await DialogService.Confirm("Are you sure you want to validate this request?", "Validate Request") ?? false;
+		bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"APPROVE\" this request?", "Approve Request") ?? false;
 		if (!isConfirmed) return;
 
-		await ARInvoiceOffsettingService.Validate(RequestId, notes);
-		NavigationManager.NavigateTo("/validations/ar-invoice-offsetting", true);
+		await ARInvoiceOffsettingService.Approve(RequestId, notes);
+		NavigationManager.NavigateTo("/approvals/ar-invoice-offsetting", true);
 	}
 
 	protected async Task OnDecline()
@@ -92,7 +92,7 @@
 		};
 
 		await ARInvoiceOffsettingService.Decline(createDto, notes);
-		NavigationManager.NavigateTo("/validations/ar-invoice-offsetting", true);
+		NavigationManager.NavigateTo("/approvals/ar-invoice-offsetting", true);
 	}
 
 	protected async Task OnReject()
@@ -107,17 +107,18 @@
 			},
 			new DialogOptions() { Width = "700px", Height = "auto" }
 		);
+
 	}
 
 	private async Task Reject(string remarks)
 	{
-		var negateDto = new NegateRequestDto()
+		var createReject = new NegateRequestDto()
 		{
 			Remarks = remarks,
 			RequestId = RequestId
 		};
 
-		await ARInvoiceOffsettingService.Reject(negateDto, notes);
-		NavigationManager.NavigateTo("/validations/ar-invoice-offsetting", true);
+		await ARInvoiceOffsettingService.Reject(createReject, notes);
+		NavigationManager.NavigateTo("/approvals/ar-invoice-offsetting", true);
 	}
 }

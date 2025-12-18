@@ -49,6 +49,9 @@ namespace ARAS.Blazor.Services.Implementations
 		public string GetCashDiscountsUrl(string route = null) =>
 			$"{_config.GetValue<string>("ApiConfig:external:MainApi:CashDiscounts")}{route}";
 
+        public string GetARInvoiceOffsettingUrl(string route = null) =>
+            $"{_config.GetValue<string>("ApiConfig:external:MainApi:ARInvoiceOffsetting")}{route}";
+
         public string GetAPAROffsetsUrl(string route = null) =>
             $"{_config.GetValue<string>("ApiConfig:external:MainApi:APAROffsets")}{route}";
 

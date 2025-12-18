@@ -3,8 +3,9 @@
 	public static class Exceptions
 	{
 		public static string EMPTY_GROUP_CODE = "Your account is not assigned to any Group. Please contact the administrator.";
-		public static string EMPTY_CASHDISCOUNT_ROWS = "There are no cash discount adjustment rows for creation. Please check before submission or contact the administrator";
+        public static string EMPTY_ARINVOICEOFFSETTING_ROWS = "There are no create ar invoice offsetting adjustment rows. Please check before submission or contact the administrator";
 		public static string EMPTY_BANKCHARGE_ROWS = "There are no bank charge adjustment rows for creation. Please check before submission or contact the administrator";
+		public static string EMPTY_CASHDISCOUNT_ROWS = "There are no cash discount adjustment rows for creation. Please check before submission or contact the administrator";
 		public static string EMPTY_SMALLAMOUNT_ROWS = "There are no small amount adjustment rows for creation. Please check before submission or contact the administrator";
 		public static string EMPTY_SRAUTONET_ROWS = "There are no write-off: sales return auto net of cwt adjustment rows for creation. Please check before submission or contact the administrator";
 		

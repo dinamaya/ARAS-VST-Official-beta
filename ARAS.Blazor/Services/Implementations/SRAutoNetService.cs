@@ -4,21 +4,21 @@ using ARAS.Blazor.Services.Interfaces;
 namespace ARAS.Blazor.Services.Implementations
 {
 	public class SRAutoNetService : 
-		BaseAdjustmentCommandService<AdjustmentCreateDto, SRAutoNetRowDto, object>,
+		BaseAdjustmentCommandService<SRAutoNetCreateDto, SRAutoNetRowDto, object>,
 		ISRAutoNetService
 	{
-		public SRAutoNetService(IConfigService configService, IBaseAdjustmentService<AdjustmentCreateDto, SRAutoNetRowDto, object> baseAdjustment) :
+		public SRAutoNetService(IConfigService configService, IBaseAdjustmentService<SRAutoNetCreateDto, SRAutoNetRowDto, object> baseAdjustment) :
 			base(baseAdjustment, configService.GetSRAutoNetUrl(), "srr", Map)
 		{
 		}
 
-		private static readonly Func<SRAutoNetRowDto, AdjustmentCreateDto> Map = (row) => new()
+		private static readonly Func<SRAutoNetRowDto, SRAutoNetCreateDto> Map = (row) => new()
 		{
-			InvoiceAmount = row.InvoiceAmount,
 			InvoiceNumber = row.InvoiceNumber,
 			CustomerName = row.CustomerName,
 			CustomerNumber = row.CustomerNumber,
 			ReasonCode = row.ReasonCode,
+			Remarks = row.Remarks
 		};
 	}
 }

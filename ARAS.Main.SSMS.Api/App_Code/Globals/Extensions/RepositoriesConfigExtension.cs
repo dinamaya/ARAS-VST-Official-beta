@@ -21,6 +21,7 @@ namespace ARAS.Main.SSMS.Api.App_Code.Globals.Extensions
 			services.AddScoped<IRemarksRepository, RemarksRepository>();
 			services.AddScoped<IStatusRepository, StatusRepository>();
 			services.AddScoped<ISmallAmountRepository, SmallAmountRepository>();
+			services.AddScoped<ISRAutoNetRepository, SRAutoNetRepository>();
 			services.AddScoped<ITransactionRepository, TransactionRepository>();
 
 			services.AddScoped<IFileManager, FileManager>();

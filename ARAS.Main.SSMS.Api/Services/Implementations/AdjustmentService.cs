@@ -10,7 +10,8 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 		ICashDiscountRepository cashDiscountRepo, 
 		IBankChargeRepository bankChargeRepo, 
 		IAPAROffsetRepository aparOffsetRepo, 
-		ISmallAmountRepository smallAmountRepo) : IAdjustmentService
+		ISmallAmountRepository smallAmountRepo,
+		ISRAutoNetRepository srAutoNetRepo) : IAdjustmentService
 	{
 
 		/// <summary>
@@ -30,6 +31,7 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 				"bca" => bankChargeRepo,
 				"arr" => aparOffsetRepo,
 				"sar" => smallAmountRepo,
+				"srr" => srAutoNetRepo,
 				_ => throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENTTYPE)
 			};
 		}

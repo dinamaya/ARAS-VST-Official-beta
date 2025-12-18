@@ -8,13 +8,14 @@ namespace ARAS.Main.SSMS.Api.Context
 	{
 		public virtual DbSet<Adjustment> Adjustments { get; set; }
 		public virtual DbSet<AdjustmentType> AdjustmentTypes { get; set; }
+        public virtual DbSet<APAROffset> APAROffsets { get; set; }
+        public virtual DbSet<CNDetails> CNDetails { get; set; }
 		public virtual DbSet<Invoice> Invoices { get; set; }
 		public virtual DbSet<Note> Notes { get; set; }
 		public virtual DbSet<Request> Requests { get; set; }
 		public virtual DbSet<Status> Statuses { get; set; }
 		public virtual DbSet<Transaction> Transactions { get; set; }
 		public virtual DbSet<TransactionRemarks> TransactionRemarks { get; set; }
-        public virtual DbSet<APAROffset> APAROffsets { get; set; }
 
         // SQL VIEWS
         public virtual DbSet<ActiveTransactionsV> VwActiveTransactions { get; set; }
@@ -29,6 +30,10 @@ namespace ARAS.Main.SSMS.Api.Context
 		public MainDbContext(DbContextOptions<MainDbContext> options) : base(options) { }
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
+			modelBuilder.Entity<CNDetails>()
+			  .HasOne(a => a.Invoice)
+			  .WithMany()
+			  .HasForeignKey(a => a.InvoiceId);
 
 			modelBuilder.Entity<Transaction>()
 			  .HasOne(a => a.Request)

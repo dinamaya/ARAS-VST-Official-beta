@@ -127,6 +127,18 @@
 			"UpstreamHttpMethod": [ "GET", "POST" ]
 		},
 		{
+			"DownstreamPathTemplate": "/api/write-off/srr/{everything}",
+			"DownstreamScheme": "https",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "localhost",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/write-off/srr/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
 			"DownstreamPathTemplate": "/api/decline/{everything}",
 			"DownstreamScheme": "https",
 			"DownstreamHostAndPorts": [

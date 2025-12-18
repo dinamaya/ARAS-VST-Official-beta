@@ -37,8 +37,8 @@ namespace ARAS.Main.SSMS.Api.Context.Seeders
 				},
 				new AdjustmentType()
 				{
-					Name = "Write-Off",
-					Code = "WOR",
+					Name = "Write-Off: Sales Return Auto Net",
+					Code = "SRR",
 					IsActive = true,
 				},
 				new AdjustmentType()
@@ -49,7 +49,7 @@ namespace ARAS.Main.SSMS.Api.Context.Seeders
 				},
 				new AdjustmentType()
 				{
-					Name = "Small Amount",
+					Name = "Write-Off: Small Amount",
 					Code = "SAR",
 					IsActive = true,
 				}

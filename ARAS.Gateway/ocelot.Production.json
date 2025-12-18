@@ -89,6 +89,30 @@
 			"UpstreamHttpMethod": [ "GET", "POST" ]
 		},
 		{
+			"DownstreamPathTemplate": "/api/write-off/sar/{everything}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "10.105.33.40",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/write-off/sar/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
+			"DownstreamPathTemplate": "/api/write-off/srr/{everything}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "10.105.33.40",
+					"Port": 3003
+				}
+			],
+			"UpstreamPathTemplate": "/write-off/srr/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST" ]
+		},
+		{
 			"DownstreamPathTemplate": "/api/decline/{everything}",
 			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [

@@ -1,0 +1,24 @@
+﻿@page "/validations/sr-auto-net/{RequestId:long}"
+
+@using ARAS.Blazor.App_Code.Globals.Enums
+@using ARAS.Blazor.Components.Shared.Summaries
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Validator")]
+@inject ISRAutoNetService Service
+
+<BaseAdjustmentStatusUpdate 
+	AdjustmentStage="AdjustmentStageType.VALIDATION"
+	RequestId="@RequestId"
+	Title="Write Off: Sales Return Auto Net of CWT"
+	Route="sr-auto-net"
+	CreateStatusRepository="Service"
+	AdjustmentReaderRepository="Service">
+		<Summary Context="data">
+			<SRAutoNetSummary Rows="data.Rows" RequestAudit="data.RequestAudit" />
+		</Summary>
+</BaseAdjustmentStatusUpdate>
+
+@code{
+	[Parameter] public long RequestId { get; set; }
+}

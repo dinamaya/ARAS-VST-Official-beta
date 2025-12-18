@@ -12,12 +12,20 @@
 
 @inherits ComponentBase
 
-<h3>Update Bank Charge</h3>
+<h3>Update @Title</h3>
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 	<RadzenRow>
 		<RadzenColumn Size="12">
 			<div class="py-4 px-3 w-100 card">
-				<RequestAdjustmentsSummary Rows="rows" RequestAudit="requestAudit" />
+				@if (Summary == null)
+				{
+					
+					<RequestAdjustmentsSummary Rows="rows" RequestAudit="requestAudit" Title="@Title" />
+				}
+				else
+				{
+					@Summary(new(){ Rows = rows, RequestAudit = requestAudit})
+				}
 			</div>
 		</RadzenColumn>
 		<RadzenColumn Size="4">
@@ -32,8 +40,10 @@
 @code {
 	[Parameter] public long RequestId { get; set; }
 	[Parameter] public IAdjustmentReaderRepository<TRow> AdjustmentReaderService { get; set; }
+	[Parameter] public string Title { get; set; }
+	[Parameter] public RenderFragment<SummaryDataTableContext<TRow>>? Summary { get; set; }
 
-	private IEnumerable<AdjustmentRow> rows;
+	private IEnumerable<TRow> rows;
 	private IList<NoteRowDto> notes;
 
 	private RequestAuditDto requestAudit;

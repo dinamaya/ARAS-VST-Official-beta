@@ -14,6 +14,8 @@ namespace ARAS.Blazor.Services.Implementations
 
 		private static readonly Func<SRAutoNetRowDto, SRAutoNetCreateDto> Map = (row) => new()
 		{
+			InvoiceAmount = row.InvoiceAmount,
+			InvoiceDate = DateTime.Parse(row.InvoiceDate),
 			InvoiceNumber = row.InvoiceNumber,
 			CustomerName = row.CustomerName,
 			CustomerNumber = row.CustomerNumber,

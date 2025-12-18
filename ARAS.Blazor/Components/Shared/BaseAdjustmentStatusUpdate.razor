@@ -39,7 +39,14 @@
 	</RadzenRow>
 	<RadzenRow>
 		<div class="py-4 px-3 w-100 card">
-			<RequestAdjustmentsSummary Rows="rows" RequestAudit="requestAudit" />
+			@if (Summary == null)
+			{
+				<RequestAdjustmentsSummary Rows="rows" RequestAudit="requestAudit" Title="@Title" />
+			}
+			else
+			{
+				@Summary(new() { Rows = rows, RequestAudit = requestAudit })
+			}
 		</div>
 	</RadzenRow>
 	<RadzenRow>
@@ -59,6 +66,7 @@
 	[Parameter] public string Route { get; set; }
 	[Parameter] public ICreateStatusRepository<TRow> CreateStatusRepository { get; set; }
 	[Parameter] public IAdjustmentReaderRepository<TRow> AdjustmentReaderRepository { get; set; }
+	[Parameter] public RenderFragment<SummaryDataTableContext<TRow>>? Summary { get; set; }
 
 	private IEnumerable<TRow> rows;
 	private IList<NoteRowDto> notes;

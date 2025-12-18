@@ -1,0 +1,7 @@
+﻿@page "/submissions/sr-auto-net"
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@inject ISRAutoNetService ReaderService
+
+<BaseAdjustmentSubmission RouteName="sr-auto-net" Title="Write Off: Sales Return Auto Net for CWT" RequestSubmissionReader="ReaderService" />

@@ -1,0 +1,12 @@
+﻿@page "/approvals/sr-auto-net"
+@attribute [Authorize(Roles = "Approver")]
+
+@using ARAS.Blazor.App_Code.Globals.Enums
+@using Microsoft.AspNetCore.Authorization
+@inject ISRAutoNetService Service
+
+<BaseAdjustmentRequestUpdate 
+	RouteName="sr-auto-net" 
+	Title="Write Off: Sales Return Auto Net for CWT" 
+	RequestSubmissionReader="Service" 
+	AdjustmentStage="@AdjustmentStageType.APPROVAL" />

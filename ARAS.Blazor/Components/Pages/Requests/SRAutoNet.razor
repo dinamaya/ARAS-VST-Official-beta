@@ -1,0 +1,62 @@
+﻿@page "/requests/sr-auto-net"
+@attribute [Authorize(Roles = "Requestor")]
+@inherits CreateRequestBaseComponent<SRAutoNetRowDto, ISRAutoNetService>
+
+@using ARAS.Blazor.Models.Complex
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Components.Shared.DataTables
+@using Microsoft.AspNetCore.Authorization
+
+@inject DialogService DialogService
+
+<h2>Write Off: Sales Return Auto Net</h2>
+
+<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+	<SearchInvoiceDetails OnAdd="OpenAdd" OnLoadingChanged="OnLoadingChanged" OnSearchChanged="OnSearchToggle" InvoiceDateText="GL Date"/>
+	<SRAutoNetDataTable @ref="dataTable" Adjustments="Adjustments" ReasonCodes="ReasonCodes" />
+	<AttachmentsDatatable Notes="Notes" IsDownloadable=false />
+
+	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+
+		<RadzenRow>
+			<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
+				Submit
+			</button>
+		</RadzenRow>
+	</RadzenStack>
+</RadzenStack>
+
+@code {
+	private SRAutoNetDataTable dataTable;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		await dataTable.Reload();
+	}
+
+	protected async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
+	{
+		await ModalTemplates.Add.SRAutoNet(
+			DialogService,
+			dataTable.DataGrid,
+			Adjustments,
+			ReasonCodes,
+			invoiceDetails
+		);
+	}
+
+	protected override async Task OnSubmit()
+	{
+		try
+		{
+			await base.OnSubmit();
+			await ModalTemplates.Summary.SRAutoNet(DialogService, Adjustments, RequestAudit, SubmitRequest);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Submission Failed");
+		}
+	}
+}

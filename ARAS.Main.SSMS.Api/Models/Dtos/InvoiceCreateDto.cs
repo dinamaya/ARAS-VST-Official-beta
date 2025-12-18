@@ -11,6 +11,8 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 		public string CustomerNumber { get; set; }
 		public string CustomerName { get; set; }
 
+		public InvoiceCreateDto() { }
+
 		public InvoiceCreateDto(string invoiceNumber, double invoiceAmount, DateTime invoiceDate, string customerNumber, string customerName)
 		{
 			InvoiceNumber = invoiceNumber;

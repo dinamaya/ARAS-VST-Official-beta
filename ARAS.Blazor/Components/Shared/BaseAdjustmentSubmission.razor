@@ -1,0 +1,20 @@
+﻿@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Repositories.Interfaces
+@using ARAS.Blazor.Components.Shared.DataTables;
+
+@inherits ComponentBase
+
+<h3>@Title</h3>
+
+<RequestDataTable ViewRoute="@($"submissions/{RouteName}")" UpdateRoute="@($"declines/{RouteName}")" SelectButtonTitle="View" OnDateLoad="@(OnDataLoad)" />
+
+@code {
+	[Parameter] public string RouteName { get; set; }
+	[Parameter] public string Title { get; set; }
+	[Parameter] public IRequestSubmissionReaderRepository RequestSubmissionReader { get; set; }
+
+	protected override async Task OnInitializedAsync() => await base.OnInitializedAsync();
+	protected override async Task OnParametersSetAsync() => await base.OnParametersSetAsync();
+
+	private async Task<IEnumerable<TransactionRequestRowDto>> OnDataLoad() => await RequestSubmissionReader.GetSubmissions();
+}

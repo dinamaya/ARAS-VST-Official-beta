@@ -103,6 +103,22 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
+		[HttpGet("is-declined/{requestId:long}"), Authorize]
+		public async Task<ResponseDto<bool>> IsDeclined(long requestId)
+		{
+			var response = new ResponseDto<bool>();
+			try
+			{
+				response.Result = await _requestRepo.IsDeclined(requestId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
 		[HttpGet("submissions/{adjustmentTypeCode}"), Authorize]
 		public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetAllSubmissions(string adjustmentTypeCode)
 		{

@@ -1,0 +1,10 @@
+﻿@page "/submissions/small-amount/{RequestId:long}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject ISmallAmountService Service
+
+<ViewRequestAdjustment RequestId="RequestId" AdjustmentReaderService="Service" />
+
+@code{
+	[Parameter] public long RequestId { get; set; }
+}

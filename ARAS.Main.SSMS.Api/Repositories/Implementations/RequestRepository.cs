@@ -71,6 +71,13 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			);
 		}
 
+		/// <summary>
+		/// Checks if the request is currently declined
+		/// </summary>
+		/// <param name="requestId"></param>
+		/// <returns></returns>
+		public async Task<bool> IsDeclined(long requestId) => await _context.VwLatestRequestTransactions.AnyAsync(t => t.RequestId == requestId && t.Status == "Declined");
+
 		public async Task<long> CreateAsync(RequestCreateDto data, string createdBy)
 		{
 			var request = new Request();

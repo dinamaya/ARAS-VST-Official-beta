@@ -1,0 +1,19 @@
+﻿@page "/approvals/small-amount/{RequestId:long}"
+
+@using ARAS.Blazor.App_Code.Globals.Enums
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Approver")]
+@inject ISmallAmountService Service
+
+<BaseAdjustmentStatusUpdate 
+	AdjustmentStage="AdjustmentStageType.APPROVAL"
+	RequestId="@RequestId"
+	Title="Small Amount"
+	Route="small-amount"
+	CreateStatusRepository="Service"
+	AdjustmentReaderRepository="Service" />
+
+@code {
+	[Parameter] public long RequestId { get; set; }
+}

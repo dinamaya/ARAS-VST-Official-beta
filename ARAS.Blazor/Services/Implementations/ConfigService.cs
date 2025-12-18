@@ -73,6 +73,12 @@ namespace ARAS.Blazor.Services.Implementations
 		public string GetValidationsUrl(string route = null) =>
 			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Validations")}{route}";
 
+		public string GetSmallAmountUrl(string route = null) =>
+			$"{_config.GetValue<string>("ApiConfig:external:MainApi:SmallAmount")}{route}";
+		
+		public string GetSRAutoNetUrl(string route = null) =>
+			$"{_config.GetValue<string>("ApiConfig:external:MainApi:SRAutoNet")}{route}";
+
 		public string GetFilesUrl(string route = null) =>
 			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Files")}{route}";
 

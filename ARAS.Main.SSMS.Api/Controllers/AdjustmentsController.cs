@@ -13,16 +13,19 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		private readonly ICashDiscountRepository _cashDiscountRepo;
 		private readonly IBankChargeRepository _bankChargeRepo;
 		private readonly IAPAROffsetRepository _aparOffsetRepo;
+		private readonly ISmallAmountRepository _smallAmountRepo;
+		private readonly ISRAutoNetRepository _srAutoNetRepo;
         private readonly IARInvoiceOffsettingRepository _arInvoiceOffsettingRepo;
 
-
-        public AdjustmentsController(ILogger<AdjustmentsController> logger, ICashDiscountRepository cashDiscountRepo, IAPAROffsetRepository aparOffsetRepo, IBankChargeRepository bankChargeRepo, IARInvoiceOffsettingRepository arInvoiceOffsettingRepo)
+        public AdjustmentsController(ILogger<AdjustmentsController> logger, ICashDiscountRepository cashDiscountRepo, IAPAROffsetRepository aparOffsetRepo, IBankChargeRepository bankChargeRepo, IARInvoiceOffsettingRepository arInvoiceOffsettingRepo, ISmallAmountRepository smallAmountRepo, ISRAutoNetRepository srAutoNetRepo)
         {
             _logger = logger;
             _cashDiscountRepo = cashDiscountRepo;
             _aparOffsetRepo = aparOffsetRepo;
 			_bankChargeRepo = bankChargeRepo;
             _arInvoiceOffsettingRepo = arInvoiceOffsettingRepo;
+			_smallAmountRepo = smallAmountRepo;
+			_srAutoNetRepo = srAutoNetRepo;
         }
 
         [HttpGet("ofr/{requestId:long}"), Authorize]
@@ -41,7 +44,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
             }
         }
 
-        [HttpGet("cdr/{requestId:long}"), Authorize]
+		[HttpGet("cdr/{requestId:long}"), Authorize]
 		public async Task<ResponseDto<IEnumerable<CashDiscountRowDto>>> GetCashDiscountAdjustments(long requestId)
 		{
 			var response = new ResponseDto<IEnumerable<CashDiscountRowDto>>();
@@ -87,6 +90,38 @@ namespace ARAS.Main.SSMS.Api.Controllers
                 _logger.LogError(ex.Message);
                 return response.Failed(ex.Message);
             }
-        }
+		}
+
+		[HttpGet("sar/{requestId:long}"), Authorize]
+		public async Task<ResponseDto<IEnumerable<SmallAmountRowDto>>> GeSmallAmountAdjustments(long requestId)
+		{
+			var response = new ResponseDto<IEnumerable<SmallAmountRowDto>>();
+			try
+			{
+				response.Result = await _smallAmountRepo.GetAdjustmentsByRequestId(requestId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("srr/{requestId:long}"), Authorize]
+		public async Task<ResponseDto<IEnumerable<SRAutoNetRowDto>>> GetSRAutoNetAdjustments(long requestId)
+		{
+			var response = new ResponseDto<IEnumerable<SRAutoNetRowDto>>();
+			try
+			{
+				response.Result = await _srAutoNetRepo.GetAdjustmentsByRequestId(requestId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
 	}
 }

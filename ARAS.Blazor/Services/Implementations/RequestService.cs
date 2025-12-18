@@ -18,6 +18,8 @@ namespace ARAS.Blazor.Services.Implementations
 
 		public async Task<bool> IsApprovable(long requestId) => await IsOnStatus(requestId, "is-approvable");
 		public async Task<bool> IsValidatable(long requestId) => await IsOnStatus(requestId, "is-validatable");
+		public async Task<bool> IsDeclined(long requestId) => await IsOnStatus(requestId, "is-declined");
+
 		public async Task<TransactionRequestRowDto> GetRequestDetails(long requestId)
 		{
 			var response = await _baseService.SendAsync<TransactionRequestRowDto>(new RequestDto()

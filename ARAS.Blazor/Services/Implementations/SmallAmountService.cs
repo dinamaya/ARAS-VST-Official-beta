@@ -4,14 +4,14 @@ using ARAS.Blazor.Services.Interfaces;
 
 namespace ARAS.Blazor.Services.Implementations
 {
-	public class WriteOffService :
+	public class SmallAmountService :
 		BaseAdjustmentCommandService<AdjustmentCreateDto, SmallAmountRowDto, object>,
-		IWriteOffService
+		ISmallAmountService
 	{
-		public WriteOffService(
+		public SmallAmountService(
 			IConfigService configService,
 			IBaseAdjustmentService<AdjustmentCreateDto, SmallAmountRowDto, object> baseAdjustmentService) :
-			base(baseAdjustmentService, configService.GetBankChargesUrl(), "bca", Map)
+			base(baseAdjustmentService, configService.GetSmallAmountUrl(), "sar", Map)
 		{
 
 		}

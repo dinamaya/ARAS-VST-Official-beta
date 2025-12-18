@@ -1,49 +1,10 @@
-﻿@using ARAS.Blazor.Components.Shared
-@using ARAS.Blazor.Components.Shared.Summaries
-@using ARAS.Blazor.Models.DTOs
-@using ARAS.Blazor.Services.Interfaces
-@using ARAS.Blazor.Components.Shared.DataTables
-
+﻿@page "/submissions/bank-charge/{RequestId:long}"
 @using Microsoft.AspNetCore.Authorization
-@page "/submissions/bank-charge/{RequestId:long}"
 @attribute [Authorize]
-@inject IBankChargeService BankChargeService
-@inject IRequestService RequestService
-@inject INoteService NoteService
-@inject DialogService DialogService
+@inject IBankChargeService Service
 
-@inherits ComponentBase
-
-<h3>Update Bank Charge</h3>
-<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<RadzenRow>
-		<RadzenColumn Size="12">
-			<div class="py-4 px-3 w-100 card">
-				<RequestAdjustmentsSummary Rows="rows" RequestAudit="requestAudit" />
-			</div>
-		</RadzenColumn>
-		<RadzenColumn Size="4">
-			<Timeline RequestId="@RequestId" />
-		</RadzenColumn>
-		<RadzenColumn Size="8">
-			<AttachmentsDatatable Notes="@notes" IsReadOnly="true" ShowOtherColumns=true ShowAddButton=false />
-		</RadzenColumn>
-	</RadzenRow>
-</RadzenStack>
+<ViewRequestAdjustment RequestId="RequestId" AdjustmentReaderService="Service" />
 
 @code {
 	[Parameter] public long RequestId { get; set; }
-	private IEnumerable<BankChargeRowDto> rows;
-	private IList<NoteRowDto> notes;
-
-	private RequestAuditDto requestAudit;
-
-	protected override async Task OnInitializedAsync()
-	{
-		await base.OnInitializedAsync();
-		var request = await RequestService.GetRequestDetails(RequestId);
-		rows = await BankChargeService.GetAdjustments(RequestId);
-		notes = await NoteService.GetRows(RequestId);
-		requestAudit = new RequestAuditDto(request);
-	}
 }

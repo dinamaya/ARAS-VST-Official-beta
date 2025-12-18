@@ -1,0 +1,8 @@
+﻿@page "/validations/small-amount"
+@attribute [Authorize(Roles = "Validator")]
+
+@using ARAS.Blazor.App_Code.Globals.Enums
+@using Microsoft.AspNetCore.Authorization
+@inject ISmallAmountService Service
+
+<BaseAdjustmentRequestUpdate RouteName="small-amount" Title="Small Amount" RequestSubmissionReader="Service" AdjustmentStage="@AdjustmentStageType.VALIDATION" />

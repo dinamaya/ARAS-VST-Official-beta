@@ -7,7 +7,6 @@
 
 @inherits ComponentBase
 @inject DialogService DialogService
-@inject ICashDiscountService CashDiscountService
 
 @typeparam TRow where TRow : AdjustmentRow
 
@@ -41,17 +40,16 @@
 	</RadzenStack>
 
 	<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
-		<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
+		<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-outline-dark">
 			Close
 		</button>
-		<button @onclick="Add" class="btn btn-outline-primary">
+		<button @onclick="Add" class="btn btn-primary">
 			Add
 		</button>
 	</RadzenStack>
 </RadzenStack>
 
 @code {
-	[Parameter] public TRow T { get; set; }
 	[Parameter] public IEnumerable<string> ReasonCodes { get; set; }
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
 	[Parameter] public Func<double, string, string, InvoiceDetailsDto, Task>? OnValidate { get; set; }
@@ -62,10 +60,7 @@
 	private string remarks = string.Empty;
 	private string reasonCode = string.Empty;
 
-	protected override async Task OnInitializedAsync()
-	{
-		await base.OnInitializedAsync();
-	}
+	protected override async Task OnInitializedAsync() => await base.OnInitializedAsync();
 
 	protected override async Task OnParametersSetAsync()
 	{

@@ -1,0 +1,61 @@
+﻿@using ARAS.Blazor.Components.Shared.DataTables
+@using ARAS.Blazor.Components.Shared.Summaries
+@using ARAS.Blazor.Models.Complex
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Repositories.Interfaces
+@using Microsoft.AspNetCore.Authorization
+
+@typeparam TRow where TRow : AdjustmentRow
+@inject IRequestService RequestService
+@inject INoteService NoteService
+@inject DialogService DialogService
+
+@inherits ComponentBase
+
+<h3>Update @Title</h3>
+<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+	<RadzenRow>
+		<RadzenColumn Size="12">
+			<div class="py-4 px-3 w-100 card">
+				@if (Summary == null)
+				{
+					
+					<RequestAdjustmentsSummary Rows="rows" RequestAudit="requestAudit" Title="@Title" />
+				}
+				else
+				{
+					@Summary(new(){ Rows = rows, RequestAudit = requestAudit})
+				}
+			</div>
+		</RadzenColumn>
+		<RadzenColumn Size="4">
+			<Timeline RequestId="@RequestId" />
+		</RadzenColumn>
+		<RadzenColumn Size="8">
+			<AttachmentsDatatable Notes="@notes" IsReadOnly="true" ShowOtherColumns=true ShowAddButton=false />
+		</RadzenColumn>
+	</RadzenRow>
+</RadzenStack>
+
+@code {
+	[Parameter] public long RequestId { get; set; }
+	[Parameter] public IAdjustmentReaderRepository<TRow> AdjustmentReaderService { get; set; }
+	[Parameter] public string Title { get; set; }
+	[Parameter] public RenderFragment<SummaryDataTableContext<TRow>>? Summary { get; set; }
+
+	private IEnumerable<TRow> rows;
+	private IList<NoteRowDto> notes;
+
+	private RequestAuditDto requestAudit;
+
+	protected override Task OnParametersSetAsync() => base.OnParametersSetAsync();
+	
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		var request = await RequestService.GetRequestDetails(RequestId);
+		rows = await AdjustmentReaderService.GetAdjustments(RequestId);
+		notes = await NoteService.GetRows(RequestId);
+		requestAudit = new RequestAuditDto(request);
+	}
+}

@@ -14,13 +14,6 @@ namespace ARAS.Main.SSMS.Api.Models.Entities
 		public string CustomerNumber { get; set; }
 		public string CustomerName { get; set; }
 
-		// Extra Info
-		public string? GLDate { get; set; }
-		public string? CNRef { get; set; }
-		public string? CNAMT { get; set; }
-		public string? WT { get; set; }
-
-
 		public string CreatedBy { get; set; }
 		public DateTime DateCreated { get; set; }
 		public string? ModifiedBy { get; set; }

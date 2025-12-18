@@ -25,8 +25,11 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 		public async Task<IEnumerable<string>> GetReasonCodes()
 		{
-			var conn = await oracleConnection.OpenWithoutPolicyAsync();
+			if (_config.IsOntest())
+				return _config.GetReasonCodes();
 
+			var conn = await oracleConnection.OpenWithoutPolicyAsync();
+			
 			var sql = @"
 				SELECT
 					LV.LOOKUP_CODE

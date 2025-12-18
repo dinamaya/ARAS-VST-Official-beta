@@ -34,7 +34,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		public async Task ValidateAsync(RequestUpdateDto data, string createdBy) => await _baseAdjustmentRepo.Validate(data, createdBy, AdjustmentTypeCode);
 		public async Task DeclineAsync(NegateRequestDto data, string createdBy) => await _baseAdjustmentRepo.Decline(data, createdBy, AdjustmentTypeCode);
 		public async Task RejectAsync(NegateRequestDto data, string createdBy) => await _baseAdjustmentRepo.Reject(data, createdBy, AdjustmentTypeCode);
-		public async Task<IEnumerable<TRow>> GetAdjustmentsByRequestId(long requestId) =>
+		public virtual async Task<IEnumerable<TRow>> GetAdjustmentsByRequestId(long requestId) =>
 			(await _adjustmentRepo.GetAllByRequestIdAndCode(requestId, AdjustmentTypeCode)).Select(MapperCallBack);
 	}
 }

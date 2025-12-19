@@ -7,6 +7,7 @@ namespace ARAS.Main.SSMS.Api.Models.Entities
 	{
 		public AdjustmentType() :base("AT", 1) { }
 		
+		public string Activity { get; set; }
 		public string Name { get; set; }
 		public string Code { get; set; }
 		public bool IsActive { get; set; }

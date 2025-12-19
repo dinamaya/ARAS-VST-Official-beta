@@ -23,7 +23,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			_context = context;
 		}
 
-
 		public async Task<long> CreateAsync(RequestCreationDto<AdjustmentRequestCreationDto<SRAutoNetCreateDto>> data, string createdBy)
 		{
 			ArgumentNullException.ThrowIfNull(data, nameof(SRAutoNetCreateDto));

@@ -19,36 +19,42 @@ namespace ARAS.Main.SSMS.Api.Context.Seeders
 			await context.AdjustmentTypes.AddRangeAsync(
 				new AdjustmentType()
 				{
+					Activity = "AP/AR Adjustment",
 					Name = "AP-AR: Off Set",
 					Code = "ARR",
 					IsActive = true,
 				},
 				new AdjustmentType()
 				{
+					Activity = "AR Adjustment",
 					Name = "AR Invoice Offsetting",
 					Code = "OFR",
 					IsActive = true,
 				},
 				new AdjustmentType()
 				{
+					Activity = "Bank Charges",
 					Name = "Bank Charges",
 					Code = "BCA",
 					IsActive = true,
 				},
 				new AdjustmentType()
 				{
+					Activity = "Offset to Other Income/Expense",
 					Name = "Write-Off: Sales Return Auto Net",
 					Code = "SRR",
 					IsActive = true,
 				},
 				new AdjustmentType()
 				{
+					Activity = "Cash Discount",
 					Name = "Cash Discount",
 					Code = "CDR",
 					IsActive = true,
 				},
 				new AdjustmentType()
 				{
+					Activity = "Write-off Other Expense/Income",
 					Name = "Write-Off: Small Amount",
 					Code = "SAR",
 					IsActive = true,

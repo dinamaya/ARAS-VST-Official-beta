@@ -16,19 +16,37 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		private readonly ISmallAmountRepository _smallAmountRepo;
 		private readonly ISRAutoNetRepository _srAutoNetRepo;
         private readonly IARInvoiceOffsettingRepository _arInvoiceOffsettingRepo;
+        private readonly IAdjustmentRepository _adjustmentRepo;
 
-        public AdjustmentsController(ILogger<AdjustmentsController> logger, ICashDiscountRepository cashDiscountRepo, IAPAROffsetRepository aparOffsetRepo, IBankChargeRepository bankChargeRepo, IARInvoiceOffsettingRepository arInvoiceOffsettingRepo, ISmallAmountRepository smallAmountRepo, ISRAutoNetRepository srAutoNetRepo)
-        {
-            _logger = logger;
-            _cashDiscountRepo = cashDiscountRepo;
-            _aparOffsetRepo = aparOffsetRepo;
+		public AdjustmentsController(ILogger<AdjustmentsController> logger, ICashDiscountRepository cashDiscountRepo, IAPAROffsetRepository aparOffsetRepo, IBankChargeRepository bankChargeRepo, IARInvoiceOffsettingRepository arInvoiceOffsettingRepo, ISmallAmountRepository smallAmountRepo, ISRAutoNetRepository srAutoNetRepo, IAdjustmentRepository adjustmentRepo)
+		{
+			_logger = logger;
+			_cashDiscountRepo = cashDiscountRepo;
+			_aparOffsetRepo = aparOffsetRepo;
 			_bankChargeRepo = bankChargeRepo;
-            _arInvoiceOffsettingRepo = arInvoiceOffsettingRepo;
+			_arInvoiceOffsettingRepo = arInvoiceOffsettingRepo;
 			_smallAmountRepo = smallAmountRepo;
 			_srAutoNetRepo = srAutoNetRepo;
-        }
+			_adjustmentRepo = adjustmentRepo;
+		}
 
-        [HttpGet("ofr/{requestId:long}"), Authorize]
+		[HttpGet("activity/{adjustmentTypeCode}")]
+		public async Task<ResponseDto<string>> GetAdjustmentActivity(string adjustmentTypeCode)
+		{
+			var response = new ResponseDto<string>();
+			try
+			{
+				response.Result = await _adjustmentRepo.GetActivityNameByCode(adjustmentTypeCode);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("ofr/{requestId:long}"), Authorize]
         public async Task<ResponseDto<IEnumerable<ARInvoiceOffsettingRowDto>>> GetARInvoiceOffsettingAdjustments(long requestId)
         {
             var response = new ResponseDto<IEnumerable<ARInvoiceOffsettingRowDto>>();

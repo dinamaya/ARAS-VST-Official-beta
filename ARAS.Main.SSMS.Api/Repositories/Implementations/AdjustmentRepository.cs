@@ -178,5 +178,11 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 			return aparOffset.Id;
 		}
+
+		public async Task<string> GetActivityNameByCode(string adjustmentTypeCode)
+		{
+			adjustmentTypeCode = adjustmentTypeCode.ToUpper();
+			return await _context.AdjustmentTypes.Where(a => a.Code == adjustmentTypeCode).Select(a => a.Activity).FirstAsync();
+		}
 	}
 }

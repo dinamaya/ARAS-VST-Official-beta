@@ -117,6 +117,9 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			string datePart = today.ToString(Formats.Date.REFERNUMBER);
 			string indexPart = nextIndex.ToString("D3");
 
+			if(adjCode == "SRR" || adjCode == "SAR")
+				return $"{groupCode}-WOR-{datePart}-{indexPart}";
+			
 			return $"{groupCode}-{adjCode}-{datePart}-{indexPart}";
 		}
 

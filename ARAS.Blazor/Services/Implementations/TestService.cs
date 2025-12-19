@@ -10,7 +10,7 @@ namespace ARAS.Blazor.Services.Implementations
 		private string[] firstNames = { "James", "Emma", "Michael", "Olivia", "William", "Sophia", "Daniel", "Isabella", "Matthew", "Ava" };
 		private string[] lastNames = { "Smith", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Garcia", "Rodriguez", "Martinez" };
 
-		public async Task GenerateAdjustmentRows(IList<CashDiscountRowDto> Adjustments, IEnumerable<string> reasonCodes)
+		public async Task GenerateAdjustmentRows(IList<CashDiscountRowDto> Adjustments, IEnumerable<string> reasonCodes, string adjustmentActivity)
 		{
 			if (!configService.IsOnTestRequest()) return;
 
@@ -38,6 +38,7 @@ namespace ARAS.Blazor.Services.Implementations
 						discountValue,
 						$"{(discountValue * 100).ToString("N2")}% Discount Remarks",
 						reasonCodes.ElementAt(rand.Next(reasonCodeLastIndex)),
+						adjustmentActivity,
 						invoiceDetails
 					);
 
@@ -46,7 +47,7 @@ namespace ARAS.Blazor.Services.Implementations
 			});
 		}
 
-		public async Task GenerateAdjustmentRows(IList<BankChargeRowDto> Adjustments, IEnumerable<string> reasonCodes)
+		public async Task GenerateAdjustmentRows(IList<BankChargeRowDto> Adjustments, IEnumerable<string> reasonCodes, string adjustmentActivity)
 		{
 			if (!configService.IsOnTestRequest()) return;
 			int reasonCodeLastIndex = reasonCodes.Count() - 1;
@@ -72,14 +73,14 @@ namespace ARAS.Blazor.Services.Implementations
 
 					float adjustmentAmount = (float)(rand.NextDouble() * (invoiceDetails.InvoiceAmount - 0) + 0);
 
-					var row = new BankChargeRowDto(adjustmentAmount, $"Charged {adjustmentAmount.ToPhp()}", reasonCodes.ElementAt(rand.Next(reasonCodeLastIndex)), invoiceDetails);
+					var row = new BankChargeRowDto(adjustmentAmount, $"Charged {adjustmentAmount.ToPhp()}", reasonCodes.ElementAt(rand.Next(reasonCodeLastIndex)), adjustmentActivity, invoiceDetails);
 
 					Adjustments.Add(row);
 				}
 			});
 		}
 
-		public async Task GenerateAdjustmentRows(IList<SmallAmountRowDto> Adjustments, IEnumerable<string> reasonCodes)
+		public async Task GenerateAdjustmentRows(IList<SmallAmountRowDto> Adjustments, IEnumerable<string> reasonCodes, string adjustmentActivity)
 		{
 			if (!configService.IsOnTestRequest()) return;
 			int reasonCodeLastIndex = reasonCodes.Count() - 1;
@@ -105,7 +106,7 @@ namespace ARAS.Blazor.Services.Implementations
 
 					float adjustmentAmount = (float)(rand.NextDouble() * (invoiceDetails.InvoiceAmount - 0) + 0);
 
-					var row = new SmallAmountRowDto(adjustmentAmount, "SMALL AMOUNT", reasonCodes.ElementAt(rand.Next(reasonCodeLastIndex)), invoiceDetails);
+					var row = new SmallAmountRowDto(adjustmentAmount, "SMALL AMOUNT", reasonCodes.ElementAt(rand.Next(reasonCodeLastIndex)), adjustmentActivity, invoiceDetails);
 
 					Adjustments.Add(row);
 				}

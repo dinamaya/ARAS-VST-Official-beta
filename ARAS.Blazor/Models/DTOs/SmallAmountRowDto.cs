@@ -6,17 +6,17 @@ namespace ARAS.Blazor.Models.DTOs
 	public class SmallAmountRowDto : AdjustmentRow
 	{
 		public SmallAmountRowDto() { }
-		public SmallAmountRowDto(double adjustmentAmount, string remarks, string reasonCode, InvoiceDetailsDto details) : base(details)
+		public SmallAmountRowDto(double adjustmentAmount, string remarks, string reasonCode, string adjustmentActivity, InvoiceDetailsDto details) : base(details)
 		{
-			SetValues((float) adjustmentAmount, remarks, reasonCode);
+			SetValues((float) adjustmentAmount, remarks, reasonCode, adjustmentActivity);
 		}
 
-		public override void SetValues(float adjustmentAmount, string remarks, string reasonCode)
+		public override void SetValues(float adjustmentAmount, string remarks, string reasonCode, string adjustmentActivity)
 		{
 			AdjustmentAmount = adjustmentAmount;
 			Remarks = string.IsNullOrEmpty(remarks) ? "SMALL BALANCE" : remarks;
 
-			AdjustmentActivity = "Write-off Other Expense/Income";
+			AdjustmentActivity = adjustmentActivity;
 			ReasonCode = reasonCode;
 		}
 	}

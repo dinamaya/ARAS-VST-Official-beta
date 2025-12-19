@@ -11,18 +11,18 @@ namespace ARAS.Blazor.Models.DTOs
 		
 		public CashDiscountRowDto() { }
 
-		public CashDiscountRowDto(float discountValue, string remarks, string reasonCode, InvoiceDetailsDto details) :base(details)
+		public CashDiscountRowDto(float discountValue, string remarks, string reasonCode, string adjustmentActivity, InvoiceDetailsDto details) :base(details)
 		{
-			SetValues(discountValue, remarks, reasonCode);
+			SetValues(discountValue, remarks, reasonCode, adjustmentActivity);
 		}
 
-		public override void SetValues(float discountValue, string remarks, string reasonCode)
+		public override void SetValues(float discountValue, string remarks, string reasonCode, string adjustmentActivity)
 		{
 			DiscountValue = discountValue;
 			AdjustmentAmount = Math.Round(discountValue * InvoiceAmount, 2);
 			Remarks = string.IsNullOrEmpty(remarks) ? (DiscountValue * 100) + "% Discount Remarks" : remarks; ;
 
-			AdjustmentActivity = "Cash Discount";
+			AdjustmentActivity = adjustmentActivity;
 			ReasonCode = reasonCode;
 		}
 	}

@@ -23,6 +23,7 @@
 		IList<SmallAmountRowDto> rows,
 		IEnumerable<string> reasonCodes,
 		RadzenDataGrid<SmallAmountRowDto> dataGrid,
+		string adjustmentActivity,
 		InvoiceDetailsDto invoiceDetails)
 	{
 		await ModalTemplates.Add.SmallAmount(
@@ -30,7 +31,8 @@
 			rows,
 			reasonCodes,
 			dataGrid,
-			invoiceDetails
+			invoiceDetails,
+			adjustmentActivity
 		);
 	}
 

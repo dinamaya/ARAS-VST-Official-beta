@@ -9,15 +9,16 @@
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
 @inject ITestService TestService
-@inject ISmallAmountService SmallAmountService
+@inject ISmallAmountService Service
 
 <BaseAdjustmentRequestCreate
 	TRow="@SmallAmountRowDto"
 	TCreate="@AdjustmentCreateDto"
 	Title="Small Amount"
 	RequestRoute="small-amount"
-	CreateStatusRepository="SmallAmountService"
-	TestCallBack="(rows, reasons) => TestService.GenerateAdjustmentRows(rows, reasons)"
+	CreateStatusRepository="Service"
+	AdjustmentReaderRepository="Service"
+	TestCallBack="(rows, reasons, activity) => TestService.GenerateAdjustmentRows(rows, reasons, activity)"
 	OnOpenAdd="OpenAdd"
 	OnOpenEdit="OpenEdit"
 	/>
@@ -28,6 +29,7 @@
 		IList<SmallAmountRowDto> rows,
 		IEnumerable<string> reasonCodes,
 		RadzenDataGrid<SmallAmountRowDto> dataGrid,
+		string adjustmentActivity,
 		InvoiceDetailsDto invoiceDetails)
 	{
 		await ModalTemplates.Add.SmallAmount(
@@ -35,7 +37,8 @@
 			rows,
 			reasonCodes,
 			dataGrid,
-			invoiceDetails
+			invoiceDetails,
+			adjustmentActivity
 		);
 	}
 

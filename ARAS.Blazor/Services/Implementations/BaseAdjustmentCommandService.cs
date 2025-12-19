@@ -56,5 +56,7 @@ namespace ARAS.Blazor.Services.Implementations
 		public async Task<IEnumerable<TransactionRequestRowDto>> GetValidations() => await _baseAdjustment.GetValidations(adjustmentTypeCode);
 
 		public async Task<bool> IsValid(TValidation inputValidation) => await _baseAdjustment.IsValid(adjustmentTypeCode, inputValidation);
+
+		public async Task<string> GetActivityByCode() => await _baseAdjustment.GetActivityByCode(adjustmentTypeCode);
 	}
 }

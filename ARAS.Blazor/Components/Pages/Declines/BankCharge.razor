@@ -26,6 +26,7 @@
 		IList<BankChargeRowDto> rows,
 		IEnumerable<string> reasonCodes,
 		RadzenDataGrid<BankChargeRowDto> dataGrid,
+		string adjustmentActivity,
 		InvoiceDetailsDto invoiceDetails)
 	{
 		await ModalTemplates.Add.BankCharge(
@@ -33,7 +34,8 @@
 			rows,
 			reasonCodes,
 			dataGrid,
-			invoiceDetails
+			invoiceDetails,
+			adjustmentActivity
 		);
 	}
 

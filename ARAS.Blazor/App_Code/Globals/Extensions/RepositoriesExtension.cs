@@ -32,6 +32,7 @@ namespace ARAS.Blazor.App_Code.Globals.Extensions
 			services.AddScoped<ISRAutoNetService, SRAutoNetService>();
 			services.AddScoped<ISmallAmountService, SmallAmountService>();
 			services.AddScoped<ISRAutoNetService, SRAutoNetService>();
+			services.AddScoped<IOracleStagingService, OracleStagingService>();
 
 			services.AddScoped<IValidationService, ValidationService>();
             services.AddScoped<IARInvoiceOffsettingService, ARInvoiceOffsettingService>();

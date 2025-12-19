@@ -60,7 +60,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			var conn = await oracleConnection.OpenWithoutPolicyAsync();
 
 			var sql = @"
-				SELECT   
+				SELECT   DISTINCT
 					RECEIVABLES_TRX_ID Id,
 					NAME Name
 				FROM   ar_receivables_trx_all

@@ -112,5 +112,49 @@ namespace ARAS.Blazor.Services.Implementations
 				}
 			});
 		}
+
+		public async Task GenerateAdjustmentRows(IList<SRAutoNetRowDto> Adjustments, IEnumerable<string> reasonCodes, string adjustmentActivity)
+		{
+			if (!configService.IsOnTestRequest()) return;
+			int reasonCodeLastIndex = reasonCodes.Count() - 1;
+
+			await Task.Run(() =>
+			{
+				Random rand = new Random();
+				double min = 10.00;
+				double max = 10000000.00;
+
+				for (int x = 0; x < rand.Next(1, 10); x++)
+				{
+
+					var invoiceDetails = new InvoiceDetailsDto();
+					string first = firstNames[rand.Next(firstNames.Length)];
+					string last = lastNames[rand.Next(lastNames.Length)];
+
+					invoiceDetails.InvoiceAmount = rand.NextDouble() * (max - min) + min;
+					invoiceDetails.InvoiceNumber = rand.Next(20_000, 9_000_000).ToString();
+					invoiceDetails.InvoiceDate = DateTime.Now.AddDays(-rand.Next(10, 200));
+					invoiceDetails.CustomerName = first + " " + last;
+					invoiceDetails.CustomerNumber = "09123456789";
+					var remarks = new List<SRAutoNetRemarksDto>();
+
+					for (int y = 0; y < rand.Next(1, 5); y++)
+					{
+						var _remarks = new SRAutoNetRemarksDto
+						{
+							CNRef = rand.Next(20_000, 9_000_000).ToString(),
+							CNAmt = (float)(rand.NextDouble() * (invoiceDetails.InvoiceAmount - 0) + 0),
+							WT = (float)(rand.NextDouble() * (invoiceDetails.InvoiceAmount - 0) + 0),
+						};
+
+						remarks.Add(_remarks);
+					}
+
+					var row = new SRAutoNetRowDto(reasonCodes.ElementAt(rand.Next(reasonCodeLastIndex)), remarks, invoiceDetails);
+
+					Adjustments.Add(row);
+				}
+			});
+		}
 	}
 }

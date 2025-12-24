@@ -8,5 +8,6 @@ namespace ARAS.Blazor.Services.Interfaces
 		Task GenerateAdjustmentRows(IList<CashDiscountRowDto> Adjustments, IEnumerable<string> reasonCodes, string adjustmentActivity);
 		Task GenerateAdjustmentRows(IList<BankChargeRowDto> Adjustments, IEnumerable<string> reasonCodes, string adjustmentActivity);
 		Task GenerateAdjustmentRows(IList<SmallAmountRowDto> Adjustments, IEnumerable<string> reasonCodes, string adjustmentActivity);
+		Task GenerateAdjustmentRows(IList<SRAutoNetRowDto> Adjustments, IEnumerable<string> reasonCodes, string adjustmentActivity);
 	}
 }

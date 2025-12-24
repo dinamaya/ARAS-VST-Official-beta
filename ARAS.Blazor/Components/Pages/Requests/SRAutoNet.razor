@@ -9,6 +9,7 @@
 @using Microsoft.AspNetCore.Authorization
 
 @inject DialogService DialogService
+@inject ITestService TestService
 
 <h2>Write Off: Sales Return Auto Net</h2>
 
@@ -33,6 +34,8 @@
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
+		
+		await TestService.GenerateAdjustmentRows(Adjustments, ReasonCodes, AdjustmentActivity);
 		await dataTable.Reload();
 	}
 

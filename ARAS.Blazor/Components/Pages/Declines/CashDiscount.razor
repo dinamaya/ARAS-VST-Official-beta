@@ -14,7 +14,7 @@
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 	<SearchInvoiceDetails OnAdd="OpenAdd" OnLoadingChanged="OnLoadingChanged" OnSearchChanged="OnSearchToggle" />
-	<CashDiscountDataTable @ref="dataTable" Adjustments="Adjustments" ReasonCodes="ReasonCodes" />
+	<CashDiscountDataTable @ref="dataTable" Adjustments="Adjustments" ReasonCodes="ReasonCodes" AdjustmentActivity="@AdjustmentActivity" />
 
 	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
 		<RadzenRow>
@@ -50,7 +50,8 @@
 			dataTable.DataGrid,
 			Adjustments,
 			ReasonCodes,
-			invoiceDetails
+			invoiceDetails,
+			AdjustmentActivity
 		);
 	}
 

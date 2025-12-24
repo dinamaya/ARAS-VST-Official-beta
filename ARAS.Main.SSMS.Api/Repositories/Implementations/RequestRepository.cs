@@ -22,7 +22,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		/// <returns></returns>
 		public async Task<bool> IsApprovable(long requestId)
 		{
-			return await _context.VwLatestRequestTransactions.AnyAsync(t =>
+			return await _context.VwLatestRequestTransactions.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
 				t.Status == "Pending" &&
 				t.ApproverId == null && t.ValidatorId == null
@@ -36,7 +36,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		/// <returns></returns>
 		public async Task<bool> IsDeclinable(long requestId)
 		{
-			var latest = await _context.VwLatestRequestTransactions.Where(t =>
+			var latest = await _context.VwLatestRequestTransactions.AsNoTracking().Where(t =>
 				t.RequestId == requestId &&
 				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "Validated")
 			).ToListAsync();
@@ -51,7 +51,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		/// <returns></returns>
 		public async Task<bool> IsValidatable(long requestId)
 		{
-			return await _context.VwLatestRequestTransactions.AnyAsync(t =>
+			return await _context.VwLatestRequestTransactions.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
 				(t.Status == "Approved" || t.Status == "Pending") &&
 				t.ApproverId != null && t.ValidatorId == null
@@ -65,7 +65,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		/// <returns></returns>
 		public async Task<bool> IsRejectable(long requestId)
 		{
-			return await _context.VwLatestRequestTransactions.AnyAsync(t =>
+			return await _context.VwLatestRequestTransactions.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
 				!(t.Status == "Rejected" || t.Status == "Declined")
 			);
@@ -76,7 +76,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		/// </summary>
 		/// <param name="requestId"></param>
 		/// <returns></returns>
-		public async Task<bool> IsDeclined(long requestId) => await _context.VwLatestRequestTransactions.AnyAsync(t => t.RequestId == requestId && t.Status == "Declined");
+		public async Task<bool> IsDeclined(long requestId) => await _context.VwLatestRequestTransactions.AsNoTracking().AnyAsync(t => t.RequestId == requestId && t.Status == "Declined");
 
 		public async Task<long> CreateAsync(RequestCreateDto data, string createdBy)
 		{
@@ -95,6 +95,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		public async Task<string> GetRequestNumberById(long requestId)
 		{
 			return await _context.Requests
+				.AsNoTracking()
 				.Where(r => r.Id == requestId)
 				.Select(r => r.RequestNumber)
 				.FirstOrDefaultAsync() ?? throw new InvalidOperationException(Exceptions.NOTFOUND_REQUEST);
@@ -103,6 +104,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		public async Task<RequestUpdateEmailDetailsDto> GetForEmailDetailsById(long requestId)
 		{
 			return await _context.VwLatestRequestTransactions
+				.AsNoTracking()
 				.Where(r => r.RequestId == requestId)
 				.Select(r => new RequestUpdateEmailDetailsDto
 				{
@@ -117,6 +119,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			adjustmentTypeCode = adjustmentTypeCode.ToUpper();
 			return await _context.VwLatestRequestTransactions
+				.AsNoTracking()
 				.OrderByDescending(t => t.TransactionId)
 				.Where(t => t.AdjustmentTypeCode == adjustmentTypeCode)
 				.Select(t => new TransactionRequestRowDto()
@@ -145,6 +148,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			adjustmentTypeCode = adjustmentTypeCode.ToUpper();
 			return await _context.VwLatestRequestTransactions
+				.AsNoTracking()
 				.Where(t =>
 					t.Status == "Pending" &&
 					t.ApproverId == null && t.ValidatorId == null &&
@@ -176,6 +180,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			adjustmentTypeCode = adjustmentTypeCode.ToUpper();
 			return await _context.VwLatestRequestTransactions
+				.AsNoTracking()
 				.Where(t =>
 					(t.Status == "Approved" || t.Status == "Pending") &&
 					t.ApproverId != null && t.ValidatorId == null &&
@@ -205,7 +210,9 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 		public async Task<TransactionRequestRowDto> GetTransactionRequestByRequestId(long requestId)
 		{
-			return await _context.VwLatestRequestTransactions.Where(t => t.RequestId == requestId)
+			return await _context.VwLatestRequestTransactions
+				.AsNoTracking()
+				.Where(t => t.RequestId == requestId)
 				.Select(t => new TransactionRequestRowDto()
 				{
 					RequestId = t.RequestId,

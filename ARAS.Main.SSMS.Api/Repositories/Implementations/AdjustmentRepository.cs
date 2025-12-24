@@ -106,7 +106,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			string adjCode = adjustmentTypeCode.ToUpper();
 
 			// Get all requests for same groupCode and same date
-			var requests = _context.VwRequestsNumberSources.Where(r =>
+			var requests = _context.VwRequestsNumberSources.AsNoTracking().Where(r =>
 				r.GroupCode == grpCode &&
 				r.AdjustmentTypeCode == adjCode &&
 				r.RequestDate == today
@@ -128,7 +128,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
             var today = DateOnly.FromDateTime(DateTime.Now.Date);
             string aparCode = "APAR";
 
-            var requests = _context.VwRequestsNumberSources.Where(r =>
+            var requests = _context.VwRequestsNumberSources.AsNoTracking().Where(r =>
                 r.AdjustmentTypeCode == "ARR" &&
 				r.RequestDate == today
             );
@@ -142,14 +142,14 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
         }
 
         public async Task<AdjustmentBasicInfoDto> GetAdjustmentInfoByCode(string adjustmentTypeCode) => 
-			await _context.AdjustmentTypes
+			await _context.AdjustmentTypes.AsNoTracking()
 			.Where(x => x.Code.Equals(adjustmentTypeCode))
 			.Select(x => new AdjustmentBasicInfoDto(x.Id, x.Name)).FirstOrDefaultAsync() ?? 
 			throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENTTYPE);
 
 		public async Task<IEnumerable<RequestAdjustmentsV>> GetAllByRequestIdAndCode(long requestId, string adjustmentTypeCode)
 		{
-			return await _context.VwRequestAdjustments
+			return await _context.VwRequestAdjustments.AsNoTracking()
 				.Where(r => r.AdjustmentTypeCode == adjustmentTypeCode && r.RequestId == requestId)
 				.ToListAsync();
 		}
@@ -182,7 +182,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		public async Task<string> GetActivityNameByCode(string adjustmentTypeCode)
 		{
 			adjustmentTypeCode = adjustmentTypeCode.ToUpper();
-			return await _context.AdjustmentTypes.Where(a => a.Code == adjustmentTypeCode).Select(a => a.Activity).FirstAsync();
+			return await _context.AdjustmentTypes.AsNoTracking().Where(a => a.Code == adjustmentTypeCode).Select(a => a.Activity).FirstAsync();
 		}
 	}
 }

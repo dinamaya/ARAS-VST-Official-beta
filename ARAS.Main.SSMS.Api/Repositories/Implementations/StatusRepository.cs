@@ -13,9 +13,11 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			_context = context;
 		}
 
-		public async Task<string> GetIdByName(string name)
-		{
-			return await _context.Statuses.Where(s => s.Name == name).Select(s => s.Id).FirstOrDefaultAsync();
-		}
+		public async Task<string> GetIdByName(string name) => 
+			await _context.Statuses
+			.AsNoTracking()
+			.Where(s => s.Name == name)
+			.Select(s => s.Id)
+			.FirstOrDefaultAsync();
 	}
 }

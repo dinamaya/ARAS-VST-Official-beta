@@ -52,6 +52,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.ToList();
 
 			var remarksLookup = await _context.CNDetails
+				.AsNoTracking()
 				.Where(c => invoiceIds.Contains(c.InvoiceId))
 				.Select(c => new
 				{

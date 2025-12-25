@@ -1,4 +1,5 @@
-﻿using ARAS.Blazor.App_Code.Globals.Extensions;
+﻿using ARAS.Blazor.App_Code.Globals;
+using ARAS.Blazor.App_Code.Globals.Extensions;
 using ARAS.Blazor.Models.Complex;
 using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Services.Interfaces;
@@ -28,16 +29,16 @@ namespace ARAS.Blazor.Services.Implementations
 					string first = firstNames[rand.Next(firstNames.Length)];
 					string last = lastNames[rand.Next(lastNames.Length)];
 
-					invoiceDetails.InvoiceAmount = rand.NextDouble() * (max - min) + min;
+					invoiceDetails.InvoiceAmount = Utils.RandomGenerator.GetDouble(rand, max, min);
 					invoiceDetails.InvoiceNumber = rand.Next(20_000, 9_000_000).ToString();
-					invoiceDetails.InvoiceDate = DateTime.Now.AddDays(-rand.Next(10, 200));
+					invoiceDetails.InvoiceDate = Utils.RandomGenerator.GetEarlyDateTime(rand, 200, 10);
 					invoiceDetails.CustomerName = first + " " + last;
 					invoiceDetails.CustomerNumber = "09123456789";
 
 					var row = new CashDiscountRowDto(
 						discountValue,
 						$"{(discountValue * 100).ToString("N2")}% Discount Remarks",
-						reasonCodes.ElementAt(rand.Next(reasonCodeLastIndex)),
+						Utils.RandomGenerator.GetElement(reasonCodes, rand, reasonCodeLastIndex),
 						adjustmentActivity,
 						invoiceDetails
 					);
@@ -65,15 +66,16 @@ namespace ARAS.Blazor.Services.Implementations
 					string first = firstNames[rand.Next(firstNames.Length)];
 					string last = lastNames[rand.Next(lastNames.Length)];
 
-					invoiceDetails.InvoiceAmount = rand.NextDouble() * (max - min) + min;
+					invoiceDetails.InvoiceAmount = Utils.RandomGenerator.GetDouble(rand, max, min);
 					invoiceDetails.InvoiceNumber = rand.Next(20_000, 9_000_000).ToString();
-					invoiceDetails.InvoiceDate = DateTime.Now.AddDays(-rand.Next(10, 200));
+					invoiceDetails.InvoiceDate = Utils.RandomGenerator.GetEarlyDateTime(rand, 200, 10);
 					invoiceDetails.CustomerName = first + " " + last;
 					invoiceDetails.CustomerNumber = "09123456789";
 
-					float adjustmentAmount = (float)(rand.NextDouble() * (invoiceDetails.InvoiceAmount - 0) + 0);
+					float adjustmentAmount = Utils.RandomGenerator.GetFloat(rand, invoiceDetails.InvoiceAmount);
 
-					var row = new BankChargeRowDto(adjustmentAmount, $"Charged {adjustmentAmount.ToPhp()}", reasonCodes.ElementAt(rand.Next(reasonCodeLastIndex)), adjustmentActivity, invoiceDetails);
+					string _reasonCode = Utils.RandomGenerator.GetElement(reasonCodes, rand, reasonCodeLastIndex);
+					var row = new BankChargeRowDto(adjustmentAmount, $"Charged {adjustmentAmount.ToPhp()}", _reasonCode, adjustmentActivity, invoiceDetails);
 
 					Adjustments.Add(row);
 				}
@@ -98,15 +100,16 @@ namespace ARAS.Blazor.Services.Implementations
 					string first = firstNames[rand.Next(firstNames.Length)];
 					string last = lastNames[rand.Next(lastNames.Length)];
 
-					invoiceDetails.InvoiceAmount = rand.NextDouble() * (max - min) + min;
+					invoiceDetails.InvoiceAmount = Utils.RandomGenerator.GetDouble(rand, max, min);
 					invoiceDetails.InvoiceNumber = rand.Next(20_000, 9_000_000).ToString();
-					invoiceDetails.InvoiceDate = DateTime.Now.AddDays(-rand.Next(10, 200));
+					invoiceDetails.InvoiceDate = Utils.RandomGenerator.GetEarlyDateTime(rand, 200, 10);
 					invoiceDetails.CustomerName = first + " " + last;
 					invoiceDetails.CustomerNumber = "09123456789";
 
-					float adjustmentAmount = (float)(rand.NextDouble() * (invoiceDetails.InvoiceAmount - 0) + 0);
+					float adjustmentAmount = Utils.RandomGenerator.GetFloat(rand, invoiceDetails.InvoiceAmount);
 
-					var row = new SmallAmountRowDto(adjustmentAmount, "SMALL AMOUNT", reasonCodes.ElementAt(rand.Next(reasonCodeLastIndex)), adjustmentActivity, invoiceDetails);
+					string _reasonCode = Utils.RandomGenerator.GetElement(reasonCodes, rand, reasonCodeLastIndex);
+					var row = new SmallAmountRowDto(adjustmentAmount, "SMALL AMOUNT", _reasonCode, adjustmentActivity, invoiceDetails);
 
 					Adjustments.Add(row);
 				}
@@ -131,32 +134,38 @@ namespace ARAS.Blazor.Services.Implementations
 					string first = firstNames[rand.Next(firstNames.Length)];
 					string last = lastNames[rand.Next(lastNames.Length)];
 
-					invoiceDetails.InvoiceAmount = rand.NextDouble() * (max - min) + min;
+					invoiceDetails.InvoiceAmount = Utils.RandomGenerator.GetDouble(rand, max, min);
 					invoiceDetails.InvoiceNumber = rand.Next(20_000, 9_000_000).ToString();
-					invoiceDetails.InvoiceDate = DateTime.Now.AddDays(-rand.Next(10, 200));
+					invoiceDetails.InvoiceDate = Utils.RandomGenerator.GetEarlyDateTime(rand, 200, 10);
 					invoiceDetails.CustomerName = first + " " + last;
 					invoiceDetails.CustomerNumber = "09123456789";
-					var remarks = new List<SRAutoNetRemarksDto>();
 
-					for (int y = 0; y < rand.Next(1, 5); y++)
+					var remarks = new List<SRAutoNetRemarksDto>();
+					int remarksCount = rand.Next(1, 5);
+					double sum = invoiceDetails.InvoiceAmount;
+
+					for (int y = 0; y < remarksCount; y++)
 					{
 						var _remarks = new SRAutoNetRemarksDto
 						{
 							CNRef = rand.Next(20_000, 9_000_000).ToString(),
-							CNAmt = (float)(rand.NextDouble() * (invoiceDetails.InvoiceAmount - 0) + 0),
-							WT = (float)(rand.NextDouble() * (invoiceDetails.InvoiceAmount - 0) + 0),
+							CNAmt = Utils.RandomGenerator.GetDouble(rand, invoiceDetails.InvoiceAmount),
+							WT = (x == remarksCount - 1) ? sum : Utils.RandomGenerator.GetDouble(rand, sum, min)
 						};
+
+						sum -= _remarks.WT;
 
 						remarks.Add(_remarks);
 					}
 
-					var row = new SRAutoNetRowDto(reasonCodes.ElementAt(rand.Next(reasonCodeLastIndex)), remarks, invoiceDetails);
+					string _reasonCode = Utils.RandomGenerator.GetElement(reasonCodes, rand, reasonCodeLastIndex);
+					var row = new SRAutoNetRowDto(_reasonCode, remarks, invoiceDetails);
 
 					Adjustments.Add(row);
 				}
 			});
 		}
-		
+
 		public async Task GenerateAdjustmentRows(IList<APAROffsetAPRowDto> apGroup, IList<APAROffsetARRowDto> arGroup, IEnumerable<string> reasonCodes, string adjustmentActivity)
 		{
 			if (!configService.IsOnTestRequest()) return;
@@ -168,9 +177,6 @@ namespace ARAS.Blazor.Services.Implementations
 				double min = 10.00;
 				double max = 10000000.00;
 
-				// 3,000
-				// 7,000
-				// sum = 10,000
 				for (int x = 0; x < rand.Next(1, 5); x++)
 				{
 
@@ -178,9 +184,9 @@ namespace ARAS.Blazor.Services.Implementations
 					string first = firstNames[rand.Next(firstNames.Length)];
 					string last = lastNames[rand.Next(lastNames.Length)];
 
-					invoiceDetails.InvoiceAmount = rand.NextDouble() * (max - min) + min;
+					invoiceDetails.InvoiceAmount = Utils.RandomGenerator.GetDouble(rand, max, min);
 					invoiceDetails.InvoiceNumber = rand.Next(20_000, 9_000_000).ToString();
-					invoiceDetails.InvoiceDate = DateTime.Now.AddDays(-rand.Next(10, 200));
+					invoiceDetails.InvoiceDate = Utils.RandomGenerator.GetEarlyDateTime(rand, 200, 10);
 					invoiceDetails.CustomerName = first + " " + last;
 					invoiceDetails.CustomerNumber = "09123456789";
 
@@ -191,35 +197,23 @@ namespace ARAS.Blazor.Services.Implementations
 
 				double sum = apGroup.Sum(a => a.InvoiceAmount);
 
-				// count = 5
-				// 1 = 1,000
-					// sum = 9,000
-				// 2 = 2,000
-					// sum = 7,000
-				// 3 = 2,000
-					// sum = 5,000
-				// 4 = 3,500
-					// sum = 1,500
-				// 5 = 1,500
-					// sum = 9,000
 				int arCount = rand.Next(1, 10);
 				for (int x = 0; x < arCount; x++)
 				{
 
-					var row = new APAROffsetARRowDto();
-					row.RowType = (ARRowType)rand.Next(0, 2);
-					if (x == arCount - 1)
-						row.Amount = sum;
-					else
-						row.Amount = rand.NextDouble() * (sum - 0) + 0;
+					var row = new APAROffsetARRowDto
+					{
+						RowType = (ARRowType)rand.Next(0, 2),
+						Amount = (x == arCount - 1) ? sum : Utils.RandomGenerator.GetDouble(rand, sum, min)
+					};
 
 					sum -= row.Amount;
 
 					if (row.RowType == ARRowType.Invoice)
 						row.InvoiceNumber = rand.Next(20_000, 9_000_000).ToString();
 					else
-						row.AdjustmentReason = reasonCodes.ElementAt(rand.Next(reasonCodeLastIndex));
-					
+						row.AdjustmentReason = Utils.RandomGenerator.GetElement(reasonCodes, rand, reasonCodeLastIndex);
+
 					arGroup.Add(row);
 				}
 			});

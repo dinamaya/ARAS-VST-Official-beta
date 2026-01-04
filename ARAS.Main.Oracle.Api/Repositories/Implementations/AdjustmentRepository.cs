@@ -15,14 +15,16 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 	public class AdjustmentRepository : IAdjustmentRepository
 	{
 		private readonly MainDbContext efContext;
-		private IOracleConnectionFactory oracleConnection;
+		private readonly IOracleConnectionFactory oracleConnection;
 		private readonly IConfigurationService _config;
+		private readonly ILogger<IAdjustmentRepository> _logger;
 
-		public AdjustmentRepository(MainDbContext efContext, IOracleConnectionFactory oracleConnection, IConfigurationService config)
+		public AdjustmentRepository(MainDbContext efContext, IOracleConnectionFactory oracleConnection, IConfigurationService config, ILogger<IAdjustmentRepository> logger)
 		{
 			this.efContext = efContext;
 			this.oracleConnection = oracleConnection;
 			_config = config;
+			_logger = logger;
 		}
 
 		public async Task<IEnumerable<string>> GetReasonCodes()

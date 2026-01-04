@@ -42,6 +42,7 @@ builder.Services.AddDbContext<MainDbContext>(options =>
 builder.Services.AddScoped<IOracleConnectionFactory, OracleConnectionFactory>();
 
 builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
+
 builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<IAdjustmentRepository, AdjustmentRepository>();
 

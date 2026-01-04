@@ -1,7 +1,4 @@
-﻿using ARAS.Main.Oracle.Api.Context;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace ARAS.Main.Oracle.Api.Controllers
 {

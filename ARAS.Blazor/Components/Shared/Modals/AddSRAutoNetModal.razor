@@ -22,6 +22,10 @@
 	</RadzenStack>
 
 	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<SearchCNDetails OnAdd="(data) => OnAddRemarks(data)" OnSearchChanged="(isOnSearch) => null" OnLoadingChanged="(isLoading) => null" />
+	</RadzenStack>
+
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
 		<RadzenDataGrid TItem="SRAutoNetRemarksDto"
 						@ref="dataGrid"
 						Data="@remarks"
@@ -203,6 +207,35 @@
 		}
 	}
 
+	private async Task OnAddRemarks(SearchCNDetailsRowDto data)
+	{
+		try
+		{
+			var newRow = new SRAutoNetRemarksDto();
+			newRow.CNRef = data.CNRef;
+			newRow.CNAmt = data.CNAmt;
+			newRow.WT = data.WT;
+
+			if (editingRow != null)
+			{
+				bool isAdjusted = remarks.Any(r => r.CNRef == data.CNRef);
+				Guards.ThrowInvalidOperationIf(isAdjusted, $"CN is already adjusted. Please input another CN Reference");
+				Validate(editingRow);
+			}
+			else
+				Validate(newRow);
+
+			remarks.Add(newRow);
+			editingRow = newRow;
+			await dataGrid.Reload();
+			await dataGrid.EditRow(newRow);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(Exceptions.GetMessage(ex), "Add Adjustment Failed");
+		}
+	}
+
 	private async Task OnAddAdjustment()
 	{
 		try
@@ -222,8 +255,6 @@
 	private void Validate(SRAutoNetRemarksDto data)
 	{
 		Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(data.CNRef), $"CN Ref is Empty. CN Ref is required");
-		Guards.ThrowInvalidOperationIf(data.CNAmt <= 0, $"CN Amount should be greater than 0");
-		Guards.ThrowInvalidOperationIf(data.WT <= 0, $"WT should be greater than 0 and less than or equals to {InvoiceDetails.InvoiceAmount.ToPhp()}");
 
 		bool isExceeded = remarks.Sum(r => r.WT) > InvoiceDetails.InvoiceAmount;
 		Guards.ThrowInvalidOperationIf(isExceeded, $"WT should be less than or equals to {InvoiceDetails.InvoiceAmount.ToPhp()}");

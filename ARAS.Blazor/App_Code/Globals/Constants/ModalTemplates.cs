@@ -86,7 +86,7 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 						{ nameof(AddSRAutoNetModal.Grid), grid },
 						{ nameof(AddSRAutoNetModal.InvoiceDetails), invoiceDetails },
 					},
-					Variant.MEDIUM
+					Variant.WIDE
 				);
 			}
 

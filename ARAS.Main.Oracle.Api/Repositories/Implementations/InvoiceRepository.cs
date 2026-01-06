@@ -1,6 +1,4 @@
 ﻿using Dapper;
-using Microsoft.EntityFrameworkCore;
-using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using ARAS.Main.Oracle.Api.Context;
 using ARAS.Main.Oracle.Api.Repositories.Interfaces;
@@ -15,17 +13,32 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 	{
 		private readonly MainDbContext efContext;
 		private readonly IOracleConnectionFactory oracleConnection;
+		private readonly IConfigurationService _config;
 
-		public InvoiceRepository(MainDbContext efContext, IOracleConnectionFactory oracleConnection)
+		public InvoiceRepository(MainDbContext efContext, IOracleConnectionFactory oracleConnection, IConfigurationService config)
 		{
 			this.efContext = efContext;
 			this.oracleConnection = oracleConnection;
+			_config = config;
 		}
 
 		public async Task<IEnumerable<InvoiceDetailsDto>> GetInvoiceDetails(string invoiceNumber)
 		{
-			await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
 			invoiceNumber = invoiceNumber.Trim();
+
+			if (_config.IsOntest())
+				return Enumerable.Range(1, 100)
+					.Select(i => new InvoiceDetailsDto
+					{
+						Id = $"INV-{i:000}",
+						InvoiceNumber = $"5{i:00000}",
+						InvoiceAmount = 10000 + (i * 50),
+						InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
+						CustomerName = $"Customer {i}",
+						CustomerNumber = $"CUST-{1000 + i}"
+					}).Where(c => c.InvoiceNumber.Equals(invoiceNumber));
+
+			await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
 
 			var sql = @"
 					    SELECT   apsa.amount_due_original InvoiceAmount,
@@ -104,5 +117,25 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                 commandTimeout: 120
             ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
         }
-    }
+
+		public async Task<IEnumerable<SearchCNDetailsRowDto>> GetSRAutoNetCNDetails(string invoiceNumber)
+		{
+			invoiceNumber = invoiceNumber.Trim();
+
+			if (_config.IsOntest())
+				return Enumerable.Range(1, 100)
+					.Select(i => new SearchCNDetailsRowDto
+					{
+						Id = $"CN-{i:000}",
+						CNRef = $"7{i:00000}",
+						CNAmt = 10000 + (i * 50),
+						WT = 500 + (i * 5),
+						InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
+						CustomerName = $"Customer {i}",
+						CustomerNumber = $"CUST-{1000 + i}"
+					}).Where(c => c.CNRef.Equals(invoiceNumber));
+
+			throw new Exception("Not implemented yet.");
+		}
+	}
 }

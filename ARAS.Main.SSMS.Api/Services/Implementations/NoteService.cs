@@ -59,6 +59,7 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 		public async Task<IEnumerable<NoteRowDto>> GetByRequestId(long requestId)
 		{
 			return await _context.VwNotes
+				.AsNoTracking()
 				.Where(n => n.RequestId == requestId)
 				.OrderBy(n => n.DateCreated)
 				.Select(n => new NoteRowDto()
@@ -76,6 +77,7 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 		public async Task<AttachmentDto> GetById(string Id)
 		{
 			return await _context.Notes
+				.AsNoTracking()
 				.Where(n => n.Id == Id)
 				.Select(n => new AttachmentDto()
 				{

@@ -25,6 +25,7 @@ namespace ARAS.Blazor.Models.Complex
 
 		protected bool IsOnSearch { get; private set; }
 		protected bool IsLoading { get; private set; }
+		protected string AdjustmentActivity { get; set; }
 
 		protected virtual async Task OnSubmit()
 		{

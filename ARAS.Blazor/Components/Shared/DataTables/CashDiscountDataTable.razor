@@ -54,6 +54,7 @@
 @code{
 	[Parameter] public IList<CashDiscountRowDto> Adjustments { get; set; }
 	[Parameter] public IEnumerable<string> ReasonCodes { get; set; }
+	[Parameter] public string AdjustmentActivity { get; set; }
 
 	public RadzenDataGrid<CashDiscountRowDto> DataGrid;
 
@@ -70,7 +71,8 @@
 						{ nameof(EditCashDiscountModal.Rows), Adjustments },
 						{ nameof(EditCashDiscountModal.ReasonCodes), ReasonCodes },
 						{ nameof(EditCashDiscountModal.Grid), DataGrid },
-						{ nameof(EditCashDiscountModal.Data), data }
+						{ nameof(EditCashDiscountModal.Data), data },
+						{ nameof(EditCashDiscountModal.AdjustmentActivity), AdjustmentActivity }
 				},
 				new DialogOptions() { Width = "800px", Height = "auto" }
 			);

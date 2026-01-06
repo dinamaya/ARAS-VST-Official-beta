@@ -23,7 +23,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			_context = context;
 		}
 
-
 		public async Task<long> CreateAsync(RequestCreationDto<AdjustmentRequestCreationDto<SRAutoNetCreateDto>> data, string createdBy)
 		{
 			ArgumentNullException.ThrowIfNull(data, nameof(SRAutoNetCreateDto));
@@ -53,6 +52,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.ToList();
 
 			var remarksLookup = await _context.CNDetails
+				.AsNoTracking()
 				.Where(c => invoiceIds.Contains(c.InvoiceId))
 				.Select(c => new
 				{

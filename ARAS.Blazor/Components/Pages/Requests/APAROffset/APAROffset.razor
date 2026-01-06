@@ -18,7 +18,7 @@
 @inject IAuthService AuthService
 @inject ISearchOptionService SearchOptionService
 @inject IAPAROffsetService APAROffsetService
-
+@inject ITestService TestService
 <h2>AP AR : Offset</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
@@ -216,6 +216,10 @@
 
 		reasonCodes = await SearchOptionService.GetReasonCodes();
 		requestAudit.Requestor = await AuthService.GetLastFirstName();
+		await TestService.GenerateAdjustmentRows(APAdjustments, ARAdjustments, reasonCodes, string.Empty);
+
+		await apGrid.Reload();
+		await arGrid.Reload();
 	}
 
 	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)

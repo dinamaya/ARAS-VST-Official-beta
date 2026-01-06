@@ -56,7 +56,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			return new APAROffsetRowDto()
 			{
-				APGroup = await _context.VwAparoffsetRows
+				APGroup = await _context.VwAparoffsetRows.AsNoTracking()
 					.Where(r => r.Type == "AP" && r.RequestiD == requestId && r.IsActive)
 					.Select(r => new APAROffsetAPRowDto()
 					{
@@ -68,7 +68,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 						CustomerNumber = r.CustomerNumber,
 					})
 				.ToListAsync(),
-				ARGroup = await _context.VwAparoffsetRows
+				ARGroup = await _context.VwAparoffsetRows.AsNoTracking()
 					 .Where(r => r.Type == "AR" && r.RequestiD == requestId && r.IsActive)
 					 .Select(r => new APAROffsetARRowDto()
 					 {

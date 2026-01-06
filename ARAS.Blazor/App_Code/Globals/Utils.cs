@@ -106,5 +106,23 @@ namespace ARAS.Blazor.App_Code.Globals
 				return $"{message} {years} year/s ago ({dateTime:MMM d, yyyy, h:mmtt})";
 			}
 		}
+
+		public static class RandomGenerator
+		{
+			public static double GetDouble(Random random, double max, double min = 0) => (random ?? new Random()).NextDouble() * (max - min) + min;
+			public static float GetFloat(Random random, double max, double min = 0) => (float)GetDouble(random, max, min);
+			public static DateTime GetEarlyDateTime(Random random, int max, int min = 0)
+			{
+				random ??= new Random();
+				return DateTime.Now.AddDays(-random.Next(min, max));
+			}
+
+			public static T GetElement<T>(IEnumerable<T> list, Random? random, int? lastIndex)
+			{
+				random ??= new Random();
+				lastIndex ??= list.Count() - 1;
+				return list.ElementAt(random.Next(0, lastIndex.Value));
+			}
+		}
 	}
 }

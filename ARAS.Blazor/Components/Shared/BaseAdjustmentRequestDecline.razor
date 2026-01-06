@@ -55,7 +55,7 @@
 	[Parameter] public string SubmissionRoute { get; set; }
 	[Parameter] public ICreateStatusRepository<TRow> CreateStatusRepository { get; set; }
 	[Parameter] public IAdjustmentReaderRepository<TRow> AdjustmentReaderRepository { get; set; }
-	[Parameter] public Func<IList<TRow>, IEnumerable<string>, RadzenDataGrid<TRow>, InvoiceDetailsDto, Task> OnOpenAdd { get; set; }
+	[Parameter] public Func<IList<TRow>, IEnumerable<string>, RadzenDataGrid<TRow>, string, InvoiceDetailsDto, Task> OnOpenAdd { get; set; }
 	[Parameter] public Func<IList<TRow>, IEnumerable<string>, TRow, RadzenDataGrid<TRow>, Task> OnOpenEdit { get; set; }
 
 	private IList<NoteRowDto> notes;
@@ -69,6 +69,8 @@
 	private bool isLoading;
 	private bool isDeclined;
 
+	private string adjustmentActivity = string.Empty;
+
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
@@ -76,6 +78,8 @@
 		{
 			isDeclined = await RequestService.IsDeclined(RequestId);
 			Guards.ThrowInvalidOperationIf(!isDeclined, "The request is not declined. Please contact the administrator");
+
+			adjustmentActivity = await AdjustmentReaderRepository.GetActivityByCode();
 
 			var request = await RequestService.GetRequestDetails(RequestId);
 			adjustments = (await AdjustmentReaderRepository.GetAdjustments(RequestId)).ToList();
@@ -96,7 +100,7 @@
 	{
 		try
 		{
-			await OnOpenAdd.Invoke(adjustments, reasonCodes, adjustmentGrid.DataGrid, invoiceDetails);
+			await OnOpenAdd.Invoke(adjustments, reasonCodes, adjustmentGrid.DataGrid, adjustmentActivity, invoiceDetails);
 		}
 		catch (Exception ex)
 		{

@@ -52,7 +52,8 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 				RadzenDataGrid<CashDiscountRowDto> grid,
 				IEnumerable<CashDiscountRowDto> rows,
 				IEnumerable<string> reasonCodes,
-				InvoiceDetailsDto invoiceDetails
+				InvoiceDetailsDto invoiceDetails,
+				string adjustmentActivity
 			)
 			{
 				await dialogService.OpenAsync<AddCashDiscountModal>(
@@ -62,7 +63,8 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 						{ nameof(AddCashDiscountModal.ReasonCodes), reasonCodes },
 						{ nameof(AddCashDiscountModal.Rows), rows },
 						{ nameof(AddCashDiscountModal.Grid), grid },
-						{ nameof(AddCashDiscountModal.InvoiceDetails), invoiceDetails }
+						{ nameof(AddCashDiscountModal.InvoiceDetails), invoiceDetails },
+						{ nameof(AddCashDiscountModal.AdjustmentActivity), adjustmentActivity }
 					},
 					Variant.SMALL
 				);
@@ -84,7 +86,7 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 						{ nameof(AddSRAutoNetModal.Grid), grid },
 						{ nameof(AddSRAutoNetModal.InvoiceDetails), invoiceDetails },
 					},
-					Variant.MEDIUM
+					Variant.WIDE
 				);
 			}
 
@@ -93,7 +95,8 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 				IEnumerable<BankChargeRowDto> rows,
 				IEnumerable<string> reasonCodes,
 				RadzenDataGrid<BankChargeRowDto> grid,
-				InvoiceDetailsDto invoiceDetails
+				InvoiceDetailsDto invoiceDetails,
+				string adjustmentActivity
 			)
 			{
 				await Adjustment(
@@ -103,7 +106,7 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 					reasonCodes, 
 					invoiceDetails, 
 					grid,
-					(amt, remarks, reason, inv) => new BankChargeRowDto(amt, remarks, reason, inv)
+					(amt, remarks, reason, inv) => new BankChargeRowDto(amt, remarks, reason, adjustmentActivity, inv)
 				);
 			}
 
@@ -112,7 +115,8 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 				IEnumerable<SmallAmountRowDto> rows,
 				IEnumerable<string> reasonCodes,
 				RadzenDataGrid<SmallAmountRowDto> grid,
-				InvoiceDetailsDto invoiceDetails
+				InvoiceDetailsDto invoiceDetails,
+				string adjustmentActivity
 			)
 			{
 				await Adjustment(
@@ -122,7 +126,7 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 					reasonCodes, 
 					invoiceDetails,
 					grid,
-					(amt, remarks, reason, inv) => new SmallAmountRowDto(amt, remarks, reason, inv)
+					(amt, remarks, reason, inv) => new SmallAmountRowDto(amt, remarks, reason, adjustmentActivity, inv)
 				);
 			}
 
@@ -141,7 +145,7 @@ namespace ARAS.Blazor.App_Code.Globals.Constants
 			)
 			{
 				await dialogService.OpenAsync<EditInvoiceAdjustmentModal<TRow>>(
-					$"Edit {title} Charge Adjustment",
+					$"Edit {title} Adjustment",
 					new Dictionary<string, object>()
 					{
 					{  "InvoiceDetails", row },

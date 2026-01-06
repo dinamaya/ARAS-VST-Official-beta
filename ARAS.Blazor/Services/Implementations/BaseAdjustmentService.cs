@@ -13,14 +13,16 @@ namespace ARAS.Blazor.Services.Implementations
 		private readonly IEmailService _emailService;
 		private readonly INoteService _noteService;
 		private readonly IAuthService _authService;
+		private readonly IOracleStagingService _stagingService;
 
-		public BaseAdjustmentService(IBaseService baseService, IConfigService configService, IEmailService emailService, INoteService noteService, IAuthService authService)
+		public BaseAdjustmentService(IBaseService baseService, IConfigService configService, IEmailService emailService, INoteService noteService, IAuthService authService, IOracleStagingService stagingService)
 		{
 			_baseService = baseService;
 			_configService = configService;
 			_emailService = emailService;
 			_noteService = noteService;
 			_authService = authService;
+			_stagingService = stagingService;
 		}
 
 		public async Task Create(List<TCreate> rows, IEnumerable<NoteRowDto> notes, string route)
@@ -108,6 +110,8 @@ namespace ARAS.Blazor.Services.Implementations
 				}
 			);
 
+			// Call Staging Post here
+			//await _stagingService.Create({);
 			await _noteService.Create(requestId, notes);
 		}
 
@@ -205,6 +209,18 @@ namespace ARAS.Blazor.Services.Implementations
 
 			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to connect. Please Check internet connection or contact the administrator");
 			Guards.ThrowInvalidOperationIf(!response.Result, "Inputs Invalid: " + response.Message);
+
+			return response.Result;
+		}
+
+		public async Task<string> GetActivityByCode(string adjustmentTypeCode)
+		{
+			var response = await _baseService.SendAsync<string>(new RequestDto<TValidation>()
+			{
+				URL = _configService.GetAdjustmentsUrl($"activity/{adjustmentTypeCode}"),
+			});
+
+			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to connect. Please Check internet connection or contact the administrator");
 
 			return response.Result;
 		}

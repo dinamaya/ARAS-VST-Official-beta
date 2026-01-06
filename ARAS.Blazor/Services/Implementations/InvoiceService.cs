@@ -48,5 +48,16 @@ namespace ARAS.Blazor.Services.Implementations
             Guards.ThrowNullReferenceIf(response?.Result, response.Message);
             return response.Result;
         }
-    }
+
+		public async Task<IEnumerable<SearchCNDetailsRowDto>> GetSRAutoNetCNDetails(string invoiceNumber)
+		{
+			var response = await _baseService.SendAsync<IEnumerable<SearchCNDetailsRowDto>>(new RequestDto()
+			{
+				URL = _configService.GetOracleInvoiceApiUrl($"cn/{invoiceNumber}"),
+			});
+
+			Guards.ThrowNullReferenceIf(response?.Result, response.Message);
+			return response.Result;
+		}
+	}
 }

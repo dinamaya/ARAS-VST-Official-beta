@@ -28,10 +28,11 @@ namespace ARAS.Blazor.Models.Complex
 			CustomerNumber = details.CustomerNumber;
 		}
 
-		public virtual void SetValues(float adjustmentAmount, string remarks, string reasonCode)
+		public virtual void SetValues(float adjustmentAmount, string remarks, string reasonCode, string adjustmentActivity)
 		{
 			Remarks = remarks;
 			AdjustmentAmount = adjustmentAmount;
+			AdjustmentActivity = adjustmentActivity;
 			ReasonCode = reasonCode;
 		}
 	}

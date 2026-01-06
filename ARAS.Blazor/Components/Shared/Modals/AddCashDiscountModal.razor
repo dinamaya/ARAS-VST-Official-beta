@@ -58,6 +58,7 @@
 	[Parameter] public IList<CashDiscountRowDto> Rows { get; set; }
 	[Parameter] public RadzenDataGrid<CashDiscountRowDto> Grid { get; set; }
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
+	[Parameter] public string AdjustmentActivity { get; set; }
 
 	private IEnumerable<string> invoices = new List<string>();
 	private string discountPercentage = string.Empty;
@@ -84,6 +85,7 @@
 				GetDiscountValue(),
 				string.IsNullOrEmpty(remarks) ? $"{discountPercentage}% Discount Remarks" : remarks,
 				reasonCode,
+				AdjustmentActivity,
 				InvoiceDetails
 			);
 

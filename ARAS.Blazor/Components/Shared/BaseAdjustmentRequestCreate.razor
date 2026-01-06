@@ -47,8 +47,9 @@
 	[Parameter] public string Title { get; set; }
 	[Parameter] public string RequestRoute { get; set; }
 	[Parameter] public ICreateStatusRepository<TRow> CreateStatusRepository { get; set; }
-	[Parameter] public Func<IList<TRow>, IEnumerable<string>, Task> TestCallBack { get; set; }
-	[Parameter] public Func<IList<TRow>, IEnumerable<string>, RadzenDataGrid<TRow>, InvoiceDetailsDto, Task> OnOpenAdd { get; set; }
+	[Parameter] public IAdjustmentReaderRepository<TRow> AdjustmentReaderRepository { get; set; }
+	[Parameter] public Func<IList<TRow>, IEnumerable<string>, string, Task> TestCallBack { get; set; }
+	[Parameter] public Func<IList<TRow>, IEnumerable<string>, RadzenDataGrid<TRow>, string, InvoiceDetailsDto, Task> OnOpenAdd { get; set; }
 	[Parameter] public Func<IList<TRow>, IEnumerable<string>, TRow, RadzenDataGrid<TRow>, Task> OnOpenEdit { get; set; }
 
 	private IList<NoteRowDto> Notes { get; set; } = new List<NoteRowDto>();
@@ -61,6 +62,7 @@
 
 	private bool isOnSearch;
 	private bool isLoading;
+	private string adjustmentActivity = string.Empty;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -69,11 +71,12 @@
 		adjustments = new List<TRow>();
 		searchedInvoiceNumber = new InvoiceDetailsDto();
 		requestAudit = new RequestAuditDto();
+		adjustmentActivity = await AdjustmentReaderRepository.GetActivityByCode();
 
 		reasonCodes = await SearchOptionService.GetReasonCodes();
 		requestAudit.Requestor = await AuthService.GetLastFirstName();
 
-		await TestCallBack.Invoke(adjustments, reasonCodes);
+		await TestCallBack.Invoke(adjustments, reasonCodes, adjustmentActivity);
 		await adjustmentGrid.Reload();
 	}
 
@@ -81,7 +84,7 @@
 	{
 		try
 		{
-			await OnOpenAdd.Invoke(adjustments, reasonCodes, adjustmentGrid.DataGrid, invoiceDetails);
+			await OnOpenAdd.Invoke(adjustments, reasonCodes, adjustmentGrid.DataGrid, adjustmentActivity, invoiceDetails);
 		}
 		catch (Exception ex)
 		{

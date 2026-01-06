@@ -15,7 +15,7 @@
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 	<SearchInvoiceDetails OnAdd="OpenAdd" OnLoadingChanged="OnLoadingChanged" OnSearchChanged="OnSearchToggle" />
-	<CashDiscountDataTable @ref="dataTable" Adjustments="Adjustments" ReasonCodes="ReasonCodes" />
+	<CashDiscountDataTable @ref="dataTable" Adjustments="Adjustments" ReasonCodes="ReasonCodes" AdjustmentActivity="@AdjustmentActivity"/>
 	<AttachmentsDatatable Notes="Notes" IsDownloadable=false />
 
 	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
@@ -35,7 +35,7 @@
 	{
 		await base.OnInitializedAsync();
 
-		await TestService.GenerateAdjustmentRows(Adjustments, ReasonCodes);
+		await TestService.GenerateAdjustmentRows(Adjustments, ReasonCodes, AdjustmentActivity);
 		await dataTable.Reload();
 	}
 
@@ -46,7 +46,8 @@
 			dataTable.DataGrid,
 			Adjustments,
 			ReasonCodes,
-			invoiceDetails
+			invoiceDetails,
+			AdjustmentActivity
 		);
 	}
 

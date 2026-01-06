@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ARAS.Main.SSMS.Api", "ARAS.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ARAS.Gateway", "ARAS.Gateway\ARAS.Gateway.csproj", "{D4DA74EA-CB35-4A5E-AE64-294244E30760}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ARAS.OracleSync.Worker", "ARAS.OracleSync.Worker\ARAS.OracleSync.Worker.csproj", "{4755A2D6-1F43-49CB-A082-36CAC5773143}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{D4DA74EA-CB35-4A5E-AE64-294244E30760}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4DA74EA-CB35-4A5E-AE64-294244E30760}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D4DA74EA-CB35-4A5E-AE64-294244E30760}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4755A2D6-1F43-49CB-A082-36CAC5773143}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4755A2D6-1F43-49CB-A082-36CAC5773143}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4755A2D6-1F43-49CB-A082-36CAC5773143}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4755A2D6-1F43-49CB-A082-36CAC5773143}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

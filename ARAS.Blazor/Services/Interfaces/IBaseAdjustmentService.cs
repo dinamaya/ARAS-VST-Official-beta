@@ -5,6 +5,8 @@ namespace ARAS.Blazor.Services.Interfaces
 {
 	public interface IBaseAdjustmentService<TCreate, TRow, TValidation>
 	{
+		Task<string> GetActivityByCode(string adjustmentTypeCode);
+
 		Task Create(List<TCreate> rows, IEnumerable<NoteRowDto> notes, string route);
 		Task Update(long requestId, IEnumerable<TCreate> rows, IEnumerable<NoteRowDto> notes, string route);
 

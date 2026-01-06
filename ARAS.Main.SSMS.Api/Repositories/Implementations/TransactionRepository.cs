@@ -32,6 +32,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		public async Task<IEnumerable<TransactionHistoryDto>> GetHistoryByRequestId(long requestId)
 		{
 			return await context.VwTransactionsHistory
+				.AsNoTracking()
 				.Where(t => t.RequestId == requestId)
 				.Select(t => new TransactionHistoryDto
 				{
@@ -49,6 +50,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		public async Task<IEnumerable<EmailTimelineDetailsDto>> GetEmailHistoryByRequestId(long requestId)
 		{
 			var history = await context.VwTransactionsHistory
+				.AsNoTracking()
 				.Where(t => t.RequestId == requestId)
 				.Select(t => new EmailTimelineDetailsDto
 				{

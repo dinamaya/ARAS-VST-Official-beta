@@ -87,7 +87,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		}
 
 		public async Task<Invoice> GetById(long id) =>	
-			await _context.Invoices.Where(i => i.Id == id && i.IsActive).FirstOrDefaultAsync() ?? 
+			await _context.Invoices.AsNoTracking().Where(i => i.Id == id && i.IsActive).FirstOrDefaultAsync() ?? 
 			throw new InvalidOperationException(Exceptions.NOTFOUND_TRANSACTION);
 
 		public async Task<bool> IsInvoiceNumberAvailable(string invoiceNumber, string adjustmentTypeCode)

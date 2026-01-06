@@ -8,20 +8,20 @@ namespace ARAS.Blazor.Models.DTOs
 	{
 		public BankChargeRowDto() { }
 
-		public BankChargeRowDto(double adjustmentAmount, string remarks, string reasonCode, InvoiceDetailsDto details) : base(details)
+		public BankChargeRowDto(double adjustmentAmount, string remarks, string reasonCode, string adjustmentActivity, InvoiceDetailsDto details) : base(details)
 		{
 			Guards.ThrowInvalidOperationIf(adjustmentAmount > details.InvoiceAmount, 
 				$"The provided Adjustment Amount should not be greater than the invoice amount");
 
-			SetValues((float) adjustmentAmount, remarks, reasonCode);
+			SetValues((float) adjustmentAmount, remarks, reasonCode, adjustmentActivity);
 		}
 
-		public override void SetValues(float adjustmentAmount, string remarks, string reasonCode)
+		public override void SetValues(float adjustmentAmount, string remarks, string reasonCode, string adjustmentActivity)
 		{
 			AdjustmentAmount = adjustmentAmount;
 			Remarks = string.IsNullOrEmpty(remarks) ? "Charged " + adjustmentAmount.ToPhp() : remarks;
 
-			AdjustmentActivity = "Bank Charge";
+			AdjustmentActivity = adjustmentActivity;
 			ReasonCode = reasonCode;
 		}
 	}

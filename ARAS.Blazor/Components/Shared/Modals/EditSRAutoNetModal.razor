@@ -98,7 +98,7 @@
 			</button>
 		</RadzenStack>
 		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
-			<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-outline-dark">
+			<button @onclick="@((args) => OnEditAdjustment())" class="btn btn-outline-dark">
 				Close
 			</button>
 			<button @onclick="OnEditAdjustment" class="btn btn-primary">
@@ -117,7 +117,6 @@
 	private RadzenDataGrid<SRAutoNetRemarksDto> dataGrid;
 	private SRAutoNetRemarksDto editingRow;
 	private InvoiceDetailsDto invoiceDetails;
-	private IList<SRAutoNetRowDto> state;
 
 	private IList<SRAutoNetRemarksDto> remarks;
 	private string reasonCode = string.Empty;
@@ -218,8 +217,6 @@
 	{
 		try
 		{
-			state = Rows;
-
 			bool hasEmptyRemarks = remarks.Any(r => r.HasEmpty());
 			Guards.ThrowInvalidOperationIf(hasEmptyRemarks, $"The current adjustment contains invalid inputs. Please recheck your inputs");
 
@@ -240,7 +237,6 @@
 
 	private async Task OnDelete()
 	{
-		state = Rows;
 		Rows.Remove(Row);
 		await Grid.Reload();
 		DialogService.Close(true);

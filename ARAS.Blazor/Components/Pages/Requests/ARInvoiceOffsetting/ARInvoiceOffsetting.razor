@@ -96,54 +96,31 @@
 		Adjustments = new List<ARInvoiceOffsettingRowDto>();
 		searchedInvoiceNumber = new InvoiceDetailsDto();
 		requestAudit = new RequestAuditDto();
-		TestARInvoiceOffsettingRows(); // For testing Only
 
 		requestAudit.Requestor = await AuthService.GetLastFirstName();
 	}
 
-	private void TestARInvoiceOffsettingRows()
-	{
-		// For Demo Purposes Only - Remove this on Production
-		string[] CustomerNames = { "BODEGA SITE COMPUTER SALES, SERVICES AND RENTALS", "SOLUTIONS PROVIDING & LOGISTIC TECHNOLOGIES CORP.", "LUCKY SURVIVOR PERSONAL COMPUTER REPAIR/SERVICES", "AJ SOFTDRIVE INTERNET CAFE & COMPUTER STUDIO", "SYSTEMS & SOFTWARE CONSULTING GROUP, INC.", "TECHNOLOGY LINKS INTERNATIONAL CORPORATION", "(L-ETL) WELLCOM TELECOM SUPERMARKET INC.", "APPLE SOUTH ASIA PTE LTD", "CONCEPT COMPUTER CENTER", "E-PLUS STATIONERY" };
-		string[] Remarks = { "please see attached page 1-3", "please see attached page 4", "please see attached page 5-6", "please see attached page 7", "please see attached page 8-10", " ", " ", " ", " ", " " };
-
-		Random rand = new Random();
-		double min = 1000.00;
-		double max = 10000000.00;
-
-		for (int x = 0; x < rand.Next(1, 10); x++)
-		{
-			var invoiceDetails = new InvoiceDetailsDto();
-			string first = CustomerNames[rand.Next(CustomerNames.Length)];
-
-			invoiceDetails.InvoiceAmount = rand.NextDouble() * (max - min) + min;
-			invoiceDetails.InvoiceNumber = rand.Next(20_000, 9_000_000).ToString();
-			invoiceDetails.InvoiceDate = DateTime.Now.AddDays(-rand.Next(10, 200));
-			invoiceDetails.CustomerName = first;
-			invoiceDetails.CustomerNumber = "09123456789";
-
-			var row = new ARInvoiceOffsettingRowDto(
-				Remarks[rand.Next(Remarks.Length)],
-				invoiceDetails
-			);
-
-			Adjustments.Add(row);
-		}
-	}
-
-
 	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
 	{
-		await DialogService.OpenAsync<AddARInvoiceOffsetting>(
-			"Add AR Adjustment",
-			new Dictionary<string, object>()
-			{
-				{ "Rows", Adjustments },
-				{ "Grid", adjustmentGrid },
-				{ "InvoiceDetails", invoiceDetails }
-			},
-			new DialogOptions() { Width = "800px", Height = "auto" }
-		);
+		try
+		{
+			await DialogService.OpenAsync<AddARInvoiceOffsetting>(
+				"Add AR Adjustment",
+				new Dictionary<string, object>()
+				{
+                // temporarily pass only invoice if types mismatch
+                // { "Rows", Adjustments },
+                // { "Grid", adjustmentGrid },
+                { "InvoiceDetails", invoiceDetails }
+				},
+				new DialogOptions() { Width = "800px", Height = "auto" }
+			);
+		}
+		catch (Exception ex)
+		{
+			// show full exception so you see server stack trace quickly
+			await DialogService.Alert(ex.ToString(), "Dialog Open Error");
+		}
 	}
 
 	public async Task OpenEdit(ARInvoiceOffsettingRowDto data)

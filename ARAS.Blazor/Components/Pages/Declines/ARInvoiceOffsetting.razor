@@ -67,6 +67,24 @@
 
 	</RadzenRow>
 
+	<!-- Preview master-child expandable grid (sample data). -->
+	<RadzenDataGrid Data="@masterItems" TItem="MasterItem" ExpandMode="DataGridExpandMode.Single">
+		<Columns>
+			<RadzenDataGridColumn TItem="MasterItem" Property="Name" Title="Name" />
+		</Columns>
+
+		<Template Context="master">
+			<!-- child table inside the row -->
+			<RadzenDataGrid Data="@master.ChildItems" TItem="ChildItem">
+				<Columns>
+					<RadzenDataGridColumn TItem="ChildItem" Property="DetailValue" Title="Detail" />
+				</Columns>
+			</RadzenDataGrid>
+		</Template>
+	</RadzenDataGrid>
+
+	<AttachmentsDatatable Notes="@Notes" ShowOtherColumns=true />
+
 	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
 
 		<RadzenRow>
@@ -101,6 +119,8 @@
 	private bool isOnSearch;
 	private bool isLoading;
 
+	private List<MasterItem> masterItems = new();
+
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
@@ -113,6 +133,28 @@
 		requestAudit = new RequestAuditDto();
 
 		requestAudit.Requestor = await AuthService.GetLastFirstName();
+
+		// initialize sample master/child items so the preview grid displays something
+		masterItems = new List<MasterItem>
+		{
+			new MasterItem
+			{
+				Name = "Master A",
+				ChildItems = new List<ChildItem>
+				{
+					new ChildItem { DetailValue = "A - detail 1" },
+					new ChildItem { DetailValue = "A - detail 2" }
+				}
+			},
+			new MasterItem
+			{
+				Name = "Master B",
+				ChildItems = new List<ChildItem>
+				{
+					new ChildItem { DetailValue = "B - detail 1" }
+				}
+			}
+		};
 	}
 
 	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
@@ -121,8 +163,8 @@
 			"Add AR Adjustment",
 			new Dictionary<string, object>()
 			{
-				{ "Rows", Adjustments },
-				{ "Grid", adjustmentGrid },
+				// { "Rows", Adjustments },
+				// { "Grid", adjustmentGrid },
 				{ "InvoiceDetails", invoiceDetails }
 			},
 			new DialogOptions() { Width = "800px", Height = "auto" }
@@ -191,6 +233,24 @@
 	private void HandleLoadingChanged(bool value)
 	{
 		isLoading = value;
+	}
+
+	// Row expand handler placeholder (not used with this snippet but kept for parity)
+	private void OnRowExpand(object item)
+	{
+		// no-op
+	}
+
+	// simple preview types local to this component
+	private class MasterItem
+	{
+		public string Name { get; set; } = string.Empty;
+		public List<ChildItem> ChildItems { get; set; } = new();
+	}
+
+	private class ChildItem
+	{
+		public string DetailValue { get; set; } = string.Empty;
 	}
 
 }

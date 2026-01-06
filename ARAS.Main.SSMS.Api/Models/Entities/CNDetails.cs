@@ -8,11 +8,16 @@ namespace ARAS.Main.SSMS.Api.Models.Entities
 	{
 		public long InvoiceId{ get; set; }
 
-		public string CNRef { get; set; }
-		public double CNAMT { get; set; }
+		public string CNRef { get; set; } // Invoice Number
+		public double CNAMT { get; set; } // Invoice Amount
 		public double WT { get; set; }
 
-		public string CreatedBy { get; set; }
+        public DateTime CNDate { get; set; } // Invoice Amount
+        public string CustomerName { get; set; }
+        public string CustomerNumber { get; set; }
+        public string? Remarks { get; set; }
+
+        public string CreatedBy { get; set; }
 		public DateTime DateCreated { get; set; }
 		public string? ModifiedBy { get; set; }
 		public DateTime DateModified { get; set; }

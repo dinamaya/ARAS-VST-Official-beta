@@ -135,7 +135,91 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 						CustomerNumber = $"CUST-{1000 + i}"
 					}).Where(c => c.CNRef.Equals(invoiceNumber));
 
-			throw new Exception("Not implemented yet.");
+			await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
+
+			var sql = @"
+					SELECT   
+						rcta.trx_number cn_ref,
+						SUM (rctla.gross_extended_amount) cn_amount,
+						SUM (zl.tax_amt) wt
+					FROM
+						ra_customer_trx_all rcta,
+						ra_customer_trx_lines_all rctla,
+						zx_lines zl
+					WHERE
+						rcta.customer_trx_id = rctla.customer_trx_id
+						AND rctla.customer_trx_line_id = zl.trx_line_id(+)
+						AND rctla.line_type = 'LINE'
+						AND zl.tax_jurisdiction_code(+) = 'MSI_PH_CWTAX'
+						AND TRIM(rcta.trx_number) = UPPER(:trxno)
+					GROUP BY   rcta.trx_number
+					ORDER BY   rcta.trx_number
+				";
+			
+			var result = await conn.QueryAsync<SearchCNDetailsRowDto>(
+				sql,
+				new { trxno = $"{invoiceNumber}" },
+				commandTimeout: 120
+			) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+
+			return result.DistinctBy(r => new { r.CNRef });
+		}
+
+		public async Task<IEnumerable<InvoiceDetailsDto>> GetCnInvoiceDetails(string invoiceNo)
+		{
+			invoiceNo = invoiceNo.Trim();
+
+			if (_config.IsOntest())
+				return Enumerable.Range(1, 100)
+					.Select(i => new InvoiceDetailsDto
+					{
+						Id = $"INV-{i:000}",
+						InvoiceNumber = $"5{i:00000}",
+						InvoiceAmount = 10000 + (i * 50),
+						InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
+						CustomerName = $"Customer {i}",
+						CustomerNumber = $"CUST-{1000 + i}"
+					}).Where(c => c.InvoiceNumber.Equals(invoiceNo));
+
+			await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
+
+			var sql = @"
+					    SELECT   
+							rcta.trx_number InvoiceNumber,
+							SUM (rctla.gross_extended_amount) InvoiceAmount,
+							rcta.trx_date InvoiceDate,
+							hca.account_name CustomerName,
+							hca.account_number CustomerNumber,
+							rctt.name cust_trx_type
+						FROM
+							ra_customer_trx_all rcta,
+							ra_customer_trx_lines_all rctla,
+							hz_cust_accounts hca,
+							ra_cust_trx_types_all rctt
+						WHERE
+							rcta.customer_trx_id = rctla.customer_trx_id
+							AND rcta.bill_to_customer_id = hca.cust_account_id
+							AND rctla.line_type = 'LINE'
+							AND rcta.cust_trx_type_id = rctt.cust_trx_type_id
+							AND rcta.cust_trx_type_id = rctt.cust_trx_type_id
+							AND rctt.org_id = 101
+							AND TRIM(rcta.trx_number) = UPPER(:trxno)
+						GROUP BY
+							rcta.trx_number,
+							rcta.trx_date,
+							hca.account_name,
+							hca.account_number,
+							rctt.name
+						ORDER BY
+							rcta.trx_number
+				";
+			var result = await conn.QueryAsync<InvoiceDetailsDto>(
+				sql,
+				new { trxno = $"{invoiceNo}" },
+				commandTimeout: 120
+			) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+
+			return result;
 		}
 	}
 }

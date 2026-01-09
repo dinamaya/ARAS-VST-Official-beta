@@ -7,7 +7,7 @@
 		public double CNAmt { get; set; } = 0.00d;
 		public double WT { get; set; } = 0.00d;
 
-		public bool IsEmpty() => string.IsNullOrEmpty(CNRef) && CNAmt <= 0 && WT <=0;
-		public bool HasEmpty() => string.IsNullOrEmpty(CNRef) || CNAmt <= 0 || WT <=0;
+		public bool IsEmpty() => string.IsNullOrEmpty(CNRef) && CNAmt == 0 && WT == 0;
+		public bool HasEmpty() => string.IsNullOrEmpty(CNRef) || CNAmt == 0 || WT ==0;
 	}
 }

@@ -53,6 +53,17 @@ namespace ARAS.Blazor.Services.Implementations
 		{
 			var response = await _baseService.SendAsync<IEnumerable<SearchCNDetailsRowDto>>(new RequestDto()
 			{
+				URL = _configService.GetOracleInvoiceApiUrl($"sr/{invoiceNumber}"),
+			});
+
+			Guards.ThrowNullReferenceIf(response?.Result, response.Message);
+			return response.Result;
+		}
+
+		public async Task<IEnumerable<SearchCNDetailsRowDto>> GetInvoiceCNDetails(string invoiceNumber)
+		{
+			var response = await _baseService.SendAsync<IEnumerable<SearchCNDetailsRowDto>>(new RequestDto()
+			{
 				URL = _configService.GetOracleInvoiceApiUrl($"cn/{invoiceNumber}"),
 			});
 

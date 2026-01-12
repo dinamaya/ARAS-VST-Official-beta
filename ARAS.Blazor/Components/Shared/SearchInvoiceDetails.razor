@@ -4,28 +4,68 @@
 @using ARAS.Blazor.Services.Interfaces
 @using ARAS.Blazor.Components.Shared.Skeletons
 
+@inject IConfigService ConfigService
 @inject IInvoiceService InvoiceService
 @inject DialogService DialogService
 @inherits ComponentBase
 
 <RadzenRow>
 	<div class="px-3 pt-2 pb-0 w-100 card">
-		<RadzenRow AlignItems="AlignItems.Start"
-				   JustifyContent="JustifyContent.Start"
-				   class="w-100"
-				   Gap="1rem">
-			<RadzenColumn Size="12"
-						  SizeLG="8"
-						  SizeMD="7"
-						  SizeXL="10">
-				<RadzenFormField class="w-100 border-0" Text="Invoice Number" Variant="Variant.Outlined">
-					<RadzenTextBox @bind-Value="@searchInvoiceNo" />
-				</RadzenFormField>
+		<RadzenRow AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Left" class="w-100" Gap="1rem">
+			
+			<RadzenColumn Size="12" SizeLG="10">
+				<RadzenRow class="w-100">
+					@if (!searchRequest.Category.Equals("Select Search Category"))
+					{
+						<RadzenColumn Size="12" SizeLG="6">
+							<RadzenDropDown class="w-100 mt-2 pb-1" Data="@categories" @bind-Value="searchRequest.Category" TValue="string" />
+						</RadzenColumn>
+
+						<RadzenColumn Size="12" SizeLG="6">
+							<RadzenFormField class="w-100 border-0 mb-2" Text="@categories.FirstOrDefault(c => c == searchRequest.Category)" Variant="Variant.Outlined">
+								<RadzenTextBox @bind-Value="@searchRequest.Value" />
+							</RadzenFormField>
+						</RadzenColumn>
+					}
+					else
+					{
+						<RadzenColumn Size="12">
+							<RadzenDropDown class="w-100 mt-2 pb-1" Data="@categories" @bind-Value="searchRequest.Category" TValue="string" />
+						</RadzenColumn>
+					}
+				</RadzenRow>
+
+				@if (!searchRequest.Category.Equals("Select Search Category"))
+				{
+					<RadzenRow class="w-100 pb-3">
+						<RadzenColumn Size="12" SizeMD="6">
+							<RadzenLabel Text="From" Component="StartDate" />
+							<RadzenDatePicker
+								class="w-100"
+								TValue="DateOnly"
+								Name="StartDate"
+								Min="@StartMin"
+								Max="@StartMax"
+								Change="@((args) => OnStartDateChanged(DateOnly.FromDateTime((DateTime)args)))"
+								@bind-Value="searchRequest.StartDate" />
+						</RadzenColumn>
+
+						<RadzenColumn Size="12" SizeMD="6">
+							<RadzenLabel Text="To" Component="EndDate" />
+							<RadzenDatePicker
+								class="w-100"
+								TValue="DateOnly"
+								Name="EndDate"
+								Min="@EndMin"
+								Max="@EndMax"
+								Change="@((args) => OnEndDateChanged(DateOnly.FromDateTime((DateTime)args)))"
+								@bind-Value="searchRequest.EndDate" />
+						</RadzenColumn>
+					</RadzenRow>
+				}
 			</RadzenColumn>
-			<RadzenColumn Size="12"
-						  SizeMD="5"
-						  SizeLG="4"
-						  SizeXL="2">
+
+			<RadzenColumn Size="12" SizeLG="2">
 				<RadzenContent>
 					<SubmitButton Title="Search" ButtonClass="w-100 mt-2" Click="SearchInvoice" DisabledTitle="Searching" />
 				</RadzenContent>
@@ -90,7 +130,11 @@
 							</Template>
 						</RadzenDataGridColumn>
 						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceNumber)" Title="Invoice Number" />
-						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceDate)" Title="@InvoiceDateText" />
+						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceDate)" Title="@InvoiceDateText" >
+								<Template Context="data">
+									@data.InvoiceDate.ToString(Formats.Date.DISPLAY2)
+								</Template>
+						</RadzenDataGridColumn>
 						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.CustomerName)" Title="Customer Name" />
 						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.CustomerNumber)" Title="Customer Number" />
 					</Columns>
@@ -100,6 +144,7 @@
 		</div>
 	</RadzenRow>
 }
+
 @code {
 	[Parameter] public EventCallback<InvoiceDetailsDto> OnAdd { get; set; }
 	[Parameter] public EventCallback<bool> OnSearchChanged { get; set; }
@@ -109,12 +154,22 @@
 	private IEnumerable<InvoiceDetailsDto> invoiceDetailsList { get; set; }
 	private bool isOnSearch { get; set; }
 	private bool isLoading { get; set; }
-	private string searchInvoiceNo = "";
+
 	private RadzenDataGrid<InvoiceDetailsDto> dataGrid;
+	private IEnumerable<string> categories;
+	private SearchRequestDto searchRequest;
 
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
+		categories = ConfigService.GetSearchInvoiceCategories();
+		searchRequest = new()
+		{
+			Category = categories.FirstOrDefault(),
+			Value = string.Empty,
+			StartDate = DateOnly.FromDateTime(DateTime.Now.AddYears(-1)),
+			EndDate = DateOnly.FromDateTime(DateTime.Now),
+		};
 	}
 
 	protected override async Task OnParametersSetAsync()
@@ -127,7 +182,7 @@
 		await Task.Delay(10);
 		try
 		{
-			Guards.ThrowInvalidOperationIf(searchInvoiceNo.Length < 3, "Please provided 3 or more character in the search invoice number field");
+			Guards.ThrowInvalidOperationIf(searchRequest.Value.Length < 3, "Please provided 3 or more character in the search invoice number field");
 
 			if (isLoading)
 			{
@@ -140,7 +195,7 @@
 			invoiceDetailsList = [];
 			await dataGrid.Reload();
 
-			invoiceDetailsList = await InvoiceService.GetDetailsList(searchInvoiceNo);
+			invoiceDetailsList = await InvoiceService.GetDetailsList(searchRequest);
 
 			await dataGrid.Reload();
 		}
@@ -168,5 +223,31 @@
 	private async Task OnAddEvent(InvoiceDetailsDto invoiceDetails)
 	{
 		await OnAdd.InvokeAsync(invoiceDetails);
+	}
+
+
+	private DateTime Today => DateTime.Today;
+
+	private DateTime StartMin => searchRequest.EndDate.AddYears(-1).ToDateTime(TimeOnly.MinValue);
+
+	private DateTime StartMax => searchRequest.EndDate.ToDateTime(TimeOnly.MaxValue);
+
+	private DateTime EndMin => searchRequest.StartDate.ToDateTime(TimeOnly.MinValue);
+
+	private DateTime EndMax => Today;
+
+	private async Task OnStartDateChanged(DateOnly value)
+	{
+		if (searchRequest.EndDate > searchRequest.StartDate.AddYears(1))
+			searchRequest.EndDate = searchRequest.StartDate.AddYears(1);
+
+		if (searchRequest.EndDate > DateOnly.FromDateTime(DateTime.Today))
+			searchRequest.EndDate = DateOnly.FromDateTime(DateTime.Today);
+	}
+
+	private async Task OnEndDateChanged(DateOnly value)
+	{
+		if (searchRequest.StartDate < searchRequest.EndDate.AddYears(-1))
+			searchRequest.StartDate = searchRequest.EndDate.AddYears(-1);
 	}
 }

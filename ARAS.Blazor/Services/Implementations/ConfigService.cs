@@ -1,5 +1,7 @@
-﻿using ARAS.Blazor.Services.Interfaces;
+﻿using ARAS.Blazor.Models.DTOs;
+using ARAS.Blazor.Services.Interfaces;
 using Microsoft.AspNetCore.Routing;
+using Newtonsoft.Json.Linq;
 
 namespace ARAS.Blazor.Services.Implementations
 {
@@ -81,6 +83,11 @@ namespace ARAS.Blazor.Services.Implementations
 
 		public string GetFilesUrl(string route = null) =>
 			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Files")}{route}";
+
+		public IEnumerable<string> GetSearchInvoiceCategories(string? defaultOption = null) => _config
+			.GetSection("DropdownOptions:SearchCategories")
+			.Get<IEnumerable<string>>()
+			.Prepend(defaultOption ?? "Select Search Category") ?? [];
 
 		public bool IsOnTestRequest() => _config.GetValue<bool>("TestConfig:OnTestRequest");
 	}

@@ -1,11 +1,12 @@
-﻿using Dapper;
-using System.Data;
+﻿using ARAS.Main.Oracle.Api.App_Code.Globals.Constants;
 using ARAS.Main.Oracle.Api.Context;
-using ARAS.Main.Oracle.Api.Repositories.Interfaces;
-using ARAS.Main.Oracle.Api.Models.Dtos;
-using ARAS.Main.Oracle.Api.App_Code.Globals.Constants;
 using ARAS.Main.Oracle.Api.Factories.Interfaces;
+using ARAS.Main.Oracle.Api.Models.Dtos;
+using ARAS.Main.Oracle.Api.Repositories.Interfaces;
 using ARAS.Main.Oracle.Api.Services.Interfaces;
+using Dapper;
+using System.Data;
+using System.DirectoryServices.Protocols;
 
 namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 {
@@ -22,12 +23,14 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			_config = config;
 		}
 
-		public async Task<IEnumerable<InvoiceDetailsDto>> GetInvoiceDetails(string invoiceNumber)
+		public async Task<IEnumerable<InvoiceDetailsDto>> GetInvoiceDetails(SearchRequestDto searchRequest)
 		{
-			invoiceNumber = invoiceNumber.Trim();
+			searchRequest.Category = searchRequest.Category.Trim();
+			searchRequest.Value = searchRequest.Value.Trim();
 
 			if (_config.IsOntest())
-				return Enumerable.Range(1, 100)
+			{
+				var list = Enumerable.Range(1, 100)
 					.Select(i => new InvoiceDetailsDto
 					{
 						Id = $"INV-{i:000}",
@@ -36,8 +39,16 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 						InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
 						CustomerName = $"Customer {i}",
 						CustomerNumber = $"CUST-{1000 + i}"
-					}).Where(c => c.InvoiceNumber.Equals(invoiceNumber));
+					});
 
+				if(searchRequest.Category == "Customer Name")
+					return list.Where(l => l.CustomerName == searchRequest.Value);
+				if (searchRequest.Category == "Invoice Number")
+					return list.Where(l => l.InvoiceNumber == searchRequest.Value);
+
+				throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
+
+			}
 			await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
 
 			var sql = @"
@@ -53,45 +64,24 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 					   WHERE       rct.cust_trx_type_id = ctt.cust_trx_type_id
 							   AND rct.bill_to_customer_id = hca.cust_account_id
 							   AND rct.customer_trx_id = apsa.customer_trx_id
-							   AND TRIM(rct.trx_number) = UPPER(:trxno)
+							   AND TRIM(hca.account_name) = NVL(UPPER(:custname), hca.account_name)
+							   AND TRIM(rct.trx_number) = NVL(UPPER(:trxno), rct.trx_number)
 					ORDER BY   rct.trx_date DESC, rct.trx_number
 				";
+
+			dynamic param = new
+			{
+				trxno = searchRequest.Category == "Invoice Number" ? searchRequest.Value : null,
+				custname = searchRequest.Category == "Customer Name" ? searchRequest.Value : null
+			};
+
 			var result = await conn.QueryAsync<InvoiceDetailsDto>(
 				sql,
-				new { trxno = $"{invoiceNumber}" },
+				(object) param,
 				commandTimeout: 120
 			) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
 
 			return result.DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
-		}
-
-		public async Task<InvoiceDetailsDto> GetInvoiceNo(string invoiceNo)
-		{
-			await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
-			invoiceNo = invoiceNo.Trim();
-
-			var sql = @"
-					    SELECT   apsa.amount_due_original InvoiceAmount,
-							   rct.trx_date InvoiceDate,
-							   rct.trx_number InvoiceNumber,
-							   hca.account_name CustomerName,
-							   hca.account_number CustomerNumber
-						FROM   ra_customer_trx_all rct,
-							   ra_cust_trx_types_all ctt,
-							   hz_cust_accounts hca,
-							   ar_payment_schedules_all apsa
-					   WHERE       rct.cust_trx_type_id = ctt.cust_trx_type_id
-							   AND rct.bill_to_customer_id = hca.cust_account_id
-							   AND rct.customer_trx_id = apsa.customer_trx_id
-							   AND TRIM(rct.trx_number) = UPPER(:trxno)
-					ORDER BY   rct.trx_date DESC, rct.trx_number
-				";
-
-			return await conn.QueryFirstOrDefaultAsync<InvoiceDetailsDto>(
-				sql,
-				new { trxno = $"{invoiceNo}"},
-				commandTimeout: 120
-			) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
 		}
 
         public async Task<InvoiceAPDetailsDto> GetAPInvoiceNo(string invoiceNo)

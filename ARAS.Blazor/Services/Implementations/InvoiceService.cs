@@ -27,11 +27,12 @@ namespace ARAS.Blazor.Services.Implementations
 			return response.Result;
 		}
 
-		public async Task<IEnumerable<InvoiceDetailsDto>> GetDetailsList(string invoiceNumber)
+		public async Task<IEnumerable<InvoiceDetailsDto>> GetDetailsList(SearchRequestDto searchRequest)
 		{
-			var response = await _baseService.SendAsync<IEnumerable<InvoiceDetailsDto>>(new RequestDto()
+			var response = await _baseService.SendAsync<IEnumerable<InvoiceDetailsDto>>(new RequestDto<SearchRequestDto>()
 			{
-				URL = _configService.GetOracleInvoiceApiUrl($"details/{invoiceNumber}"),
+				URL = _configService.GetOracleInvoiceApiUrl($"details"),
+				Data = searchRequest
 			});
 
 			Guards.ThrowNullReferenceIf(response?.Result, response.Message);

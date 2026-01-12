@@ -1,4 +1,6 @@
-﻿namespace ARAS.Blazor.Services.Interfaces
+﻿using ARAS.Blazor.Models.DTOs;
+
+namespace ARAS.Blazor.Services.Interfaces
 {
 	public interface IConfigService
 	{
@@ -27,6 +29,7 @@
 
 		string GetTokenName();
 		string GetTokenDomainName();
+		IEnumerable<string> GetSearchInvoiceCategories(string? defaultOption = null);
 
 		bool IsOnTestRequest();
 	}

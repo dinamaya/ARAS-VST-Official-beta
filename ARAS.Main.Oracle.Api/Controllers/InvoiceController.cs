@@ -1,6 +1,7 @@
 ﻿using ARAS.Main.Oracle.Api.App_Code.Globals.Constants;
 using ARAS.Main.Oracle.Api.Models.Dtos;
 using ARAS.Main.Oracle.Api.Repositories.Interfaces;
+using ARAS.Main.Oracle.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,35 +15,14 @@ namespace ARAS.Main.Oracle.Api.Controllers
 	{
 		private readonly ILogger<InvoiceController> _logger;
 		private readonly IInvoiceRepository _invoiceRepo;
+		private readonly IConfigurationService _configService;
 
-		public InvoiceController(ILogger<InvoiceController> logger, IInvoiceRepository invoiceRepo)
-		{
-			_logger = logger;
-			_invoiceRepo = invoiceRepo;
-		}
-
-		[HttpGet("no/{invoiceNo}")]
-		public async Task<ResponseDto<InvoiceDetailsDto>> GetInvoiceNumbers(string invoiceNo)
-		{
-			ResponseDto<InvoiceDetailsDto> _response = new();
-			try
-			{
-				_response.Result = await _invoiceRepo.GetInvoiceNo(invoiceNo);
-
-				return _response;
-			}
-			catch (OracleException ex)
-			{
-				_logger.LogError(Exceptions.CANT_CONNECT);
-				return _response.Failed(Exceptions.CANT_CONNECT);
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex.Message);
-				return _response.Failed(ex.Message);
-			}
-		}
-
+        public InvoiceController(ILogger<InvoiceController> logger, IInvoiceRepository invoiceRepo, IConfigurationService configService)
+        {
+            _logger = logger;
+            _invoiceRepo = invoiceRepo;
+            _configService = configService;
+        }
         [HttpGet("ap/no/{invoiceNo}")]
         public async Task<ResponseDto<InvoiceAPDetailsDto>> GetAPInvoice(string invoiceNo)
         {
@@ -64,13 +44,13 @@ namespace ARAS.Main.Oracle.Api.Controllers
             }
         }
 
-		[HttpGet("details/{invoiceNo}")]
-		public async Task<ResponseDto<IEnumerable<InvoiceDetailsDto>>> GetInvoiceDetails(string invoiceNo)
+		[HttpGet("details")]
+		public async Task<ResponseDto<IEnumerable<InvoiceDetailsDto>>> GetInvoiceDetails(SearchRequestDto searchRequest)
 		{
 			ResponseDto<IEnumerable<InvoiceDetailsDto>> _response = new();
 			try
 			{
-				_response.Result = await _invoiceRepo.GetInvoiceDetails(invoiceNo);
+				_response.Result = await _invoiceRepo.GetInvoiceDetails(searchRequest);
 
 				return _response;
 			}

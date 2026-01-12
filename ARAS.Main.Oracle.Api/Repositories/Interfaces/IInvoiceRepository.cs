@@ -4,11 +4,9 @@ namespace ARAS.Main.Oracle.Api.Repositories.Interfaces
 {
 	public interface IInvoiceRepository
 	{
-		Task<InvoiceDetailsDto> GetInvoiceNo(string invoiceNumber);
-
         Task<InvoiceAPDetailsDto> GetAPInvoiceNo(string invoiceNumber);
 
-		Task<IEnumerable<InvoiceDetailsDto>> GetInvoiceDetails(string invoiceNumber);
+		Task<IEnumerable<InvoiceDetailsDto>> GetInvoiceDetails(SearchRequestDto searchRequest);
 		Task<IEnumerable<InvoiceDetailsDto>> GetCnInvoiceDetails(string invoiceNo);
 
 		Task<IEnumerable<SearchCNDetailsRowDto>> GetSRAutoNetCNDetails(string invoiceNumber);

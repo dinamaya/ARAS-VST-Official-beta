@@ -101,7 +101,7 @@
 
 			var row = Rows.FirstOrDefault(r => r.Id == InvoiceDetails.Id) ?? throw new Exception("Data is not found in the adjustment table");
 
-			row.SetValues((float)parsedAmount, remarks, reasonCode);
+			row.SetValues((float)parsedAmount, remarks, reasonCode, "");
 			
 			await Grid.Reload();
 			DialogService.Close(true);

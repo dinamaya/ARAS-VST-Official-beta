@@ -137,5 +137,43 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 			throw new Exception("Not implemented yet.");
 		}
-	}
+
+        public async Task<IEnumerable<InvoiceDetailsDto>> GetAPInvoiceDetails(string invoiceNumber)
+        {
+            invoiceNumber = invoiceNumber.Trim();
+
+            if (_config.IsOntest())
+                return Enumerable.Range(1, 100)
+                    .Select(i => new InvoiceDetailsDto
+                    {
+                        Id = $"INV-{i:000}",
+                        InvoiceNumber = $"5{i:00000}",
+                        InvoiceAmount = 10000 + (i * 50),
+                        InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
+                        CustomerName = $"Customer {i}",
+                        CustomerNumber = $"CUST-{1000 + i}"
+                    }).Where(c => c.InvoiceNumber.Equals(invoiceNumber));
+
+            await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
+
+            var sql = @"
+					SELECT   apa.invoice_num InvoiceNumber,
+							 apa.amount_paid InvoiceAmount,
+							 apa.invoice_date InvoiceDate,
+							 pv.vendor_name CustomerName,
+							 pv.vendor_id CustomerNumber
+					  FROM   ap_invoices_all apa, po_vendors pv
+					 WHERE   apa.vendor_id = pv.vendor_id 
+					 AND TRIM(invoice_num) = UPPER(:trxno)
+					 ORDER BY  apa.invoice_date DESC, invoice_num
+				";
+            var result = await conn.QueryAsync<InvoiceDetailsDto>(
+                sql,
+                new { trxno = $"{invoiceNumber}" },
+                commandTimeout: 120
+            ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+
+            return result.DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
+        }
+    }
 }

@@ -7,6 +7,7 @@ namespace ARAS.Blazor.Services.Interfaces
 		Task<InvoiceDetailsDto> GetDetails(string invoiceNumber);
 		Task<IEnumerable<SearchCNDetailsRowDto>> GetSRAutoNetCNDetails(string invoiceNumber);
 		Task<IEnumerable<InvoiceDetailsDto>> GetDetailsList(string invoiceNumber);
+		Task<IEnumerable<InvoiceDetailsDto>> GetAPDetailsList(string invoiceNumber);
         Task<InvoiceAPDetailsDto> GetAPDetails(string invoiceNumber);
     }
 }

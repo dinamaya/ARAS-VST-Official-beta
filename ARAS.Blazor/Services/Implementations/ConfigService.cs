@@ -89,6 +89,11 @@ namespace ARAS.Blazor.Services.Implementations
 			.Get<IEnumerable<string>>()
 			.Prepend(defaultOption ?? "Select Search Category") ?? [];
 
+		public IEnumerable<double> GetDiscountPercentages() => _config
+			.GetSection("DropdownOptions:DiscountPercentages")
+			.Get<IEnumerable<double>>()
+			.Prepend(0) ?? [];
+
 		public bool IsOnTestRequest() => _config.GetValue<bool>("TestConfig:OnTestRequest");
 	}
 }

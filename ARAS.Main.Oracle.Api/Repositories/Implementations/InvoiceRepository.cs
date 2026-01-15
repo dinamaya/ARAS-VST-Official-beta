@@ -28,6 +28,9 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			searchRequest.Category = searchRequest.Category.Trim();
 			searchRequest.Value = searchRequest.Value.Trim();
 
+			DateTime min = searchRequest.StartDate.ToDateTime(TimeOnly.MinValue);
+			DateTime max = searchRequest.EndDate.ToDateTime(TimeOnly.MaxValue);
+			
 			if (_config.IsOntest())
 			{
 				var list = Enumerable.Range(1, 100)
@@ -52,21 +55,22 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
 
 			var sql = @"
-					    SELECT   apsa.amount_due_original InvoiceAmount,
-							   rct.trx_date InvoiceDate,
-							   rct.trx_number InvoiceNumber,
-							   hca.account_name CustomerName,
-							   hca.account_number CustomerNumber
-						FROM   ra_customer_trx_all rct,
-							   ra_cust_trx_types_all ctt,
-							   hz_cust_accounts hca,
-							   ar_payment_schedules_all apsa
-					   WHERE       rct.cust_trx_type_id = ctt.cust_trx_type_id
-							   AND rct.bill_to_customer_id = hca.cust_account_id
-							   AND rct.customer_trx_id = apsa.customer_trx_id
-							   AND TRIM(hca.account_name) = NVL(UPPER(:custname), hca.account_name)
-							   AND TRIM(rct.trx_number) = NVL(UPPER(:trxno), rct.trx_number)
-					ORDER BY   rct.trx_date DESC, rct.trx_number
+				 SELECT   apsa.amount_due_original InvoiceAmount,
+						   apsa.amount_due_remaining InvoiceBalance,
+						   rct.trx_date InvoiceDate,
+						   rct.trx_number InvoiceNumber,
+						   hca.account_name CustomerName,
+						   hca.account_number CustomerNumber
+					FROM   ra_customer_trx_all rct,
+						   ra_cust_trx_types_all ctt,
+						   hz_cust_accounts hca,
+						   ar_payment_schedules_all apsa
+				   WHERE       rct.cust_trx_type_id = ctt.cust_trx_type_id
+						   AND rct.bill_to_customer_id = hca.cust_account_id
+						   AND rct.customer_trx_id = apsa.customer_trx_id
+						   AND TRIM(hca.account_name) = NVL(UPPER(:custname), hca.account_name)
+						   AND TRIM(rct.trx_number) = NVL(UPPER(:trxno), rct.trx_number)
+				ORDER BY   rct.trx_date DESC, rct.trx_number
 				";
 
 			dynamic param = new
@@ -81,7 +85,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 				commandTimeout: 120
 			) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
 
-			return result.DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
+			return result.Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max).DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
 		}
 
         public async Task<InvoiceAPDetailsDto> GetAPInvoiceNo(string invoiceNo)

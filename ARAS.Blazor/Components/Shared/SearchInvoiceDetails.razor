@@ -6,7 +6,9 @@
 
 @inject IConfigService ConfigService
 @inject IInvoiceService InvoiceService
+@inject IQueryService QueryService
 @inject DialogService DialogService
+@inject NavigationManager Nav
 @inherits ComponentBase
 
 <RadzenRow>
@@ -44,8 +46,6 @@
 								class="w-100"
 								TValue="DateOnly"
 								Name="StartDate"
-								Min="@StartMin"
-								Max="@StartMax"
 								Change="@((args) => OnStartDateChanged(DateOnly.FromDateTime((DateTime)args)))"
 								@bind-Value="searchRequest.StartDate" />
 						</RadzenColumn>
@@ -56,8 +56,6 @@
 								class="w-100"
 								TValue="DateOnly"
 								Name="EndDate"
-								Min="@EndMin"
-								Max="@EndMax"
 								Change="@((args) => OnEndDateChanged(DateOnly.FromDateTime((DateTime)args)))"
 								@bind-Value="searchRequest.EndDate" />
 						</RadzenColumn>
@@ -67,7 +65,7 @@
 
 			<RadzenColumn Size="12" SizeLG="2">
 				<RadzenContent>
-					<SubmitButton Title="Search" ButtonClass="w-100 mt-2" Click="SearchInvoice" DisabledTitle="Searching" />
+					<SubmitButton Title="Search" ButtonClass="w-100 mt-2" Click="Navigate" DisabledTitle="Searching" />
 				</RadzenContent>
 			</RadzenColumn>
 		</RadzenRow>
@@ -110,7 +108,7 @@
 								AllowAlternatingRows="false"
 								FilterMode="FilterMode.Advanced"
 								AllowSorting="true"
-								PageSize="20"
+								PageSize="5"
 								AllowPaging="true"
 								PagerHorizontalAlign="HorizontalAlign.Left"
 								ShowPagingSummary="true"
@@ -120,7 +118,7 @@
 					<Columns>
 						<RadzenDataGridColumn Frozen="true" Title="Option" Sortable="false" Filterable="false" Width="180px" TextAlign="TextAlign.Center">
 							<Template Context="data">
-								<RadzenButton Icon="add" Text="Add To List" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Click="@(args => OnAddEvent(data))" />
+								<RadzenButton Icon="edit_document" Text="Adjust" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Click="@(args => OnAddEvent(data))" />
 							</Template>
 						</RadzenDataGridColumn>
 						<RadzenDataGridColumn Visible=false Property="@nameof(InvoiceDetailsDto.Id)" Title="Id" />
@@ -129,11 +127,16 @@
 								@data.InvoiceAmount.ToPhp()
 							</Template>
 						</RadzenDataGridColumn>
+						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceBalance)" Title="Invoice Balance" >
+							<Template Context="data">
+								@data.InvoiceBalance.ToPhp()
+							</Template>
+						</RadzenDataGridColumn>
 						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceNumber)" Title="Invoice Number" />
 						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceDate)" Title="@InvoiceDateText" >
-								<Template Context="data">
-									@data.InvoiceDate.ToString(Formats.Date.DISPLAY2)
-								</Template>
+							<Template Context="data">
+								@data.InvoiceDate.ToString(Formats.Date.DISPLAY2)
+							</Template>
 						</RadzenDataGridColumn>
 						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.CustomerName)" Title="Customer Name" />
 						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.CustomerNumber)" Title="Customer Number" />
@@ -154,6 +157,10 @@
 	private IEnumerable<InvoiceDetailsDto> invoiceDetailsList { get; set; }
 	private bool isOnSearch { get; set; }
 	private bool isLoading { get; set; }
+	private string? _lastValue;
+	private string? _lastCategory;
+	private string? _lastStartDate;
+	private string? _lastEndDate;
 
 	private RadzenDataGrid<InvoiceDetailsDto> dataGrid;
 	private IEnumerable<string> categories;
@@ -175,6 +182,28 @@
 	protected override async Task OnParametersSetAsync()
 	{
 		await base.OnParametersSetAsync();
+		string value = QueryService.GetValue("v");
+		string category = QueryService.GetValue("c");
+		string startDate = QueryService.GetValue("sd");
+		string endDate = QueryService.GetValue("ed");
+
+		if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(category))
+			return;
+
+		if (value == _lastValue && category == _lastCategory && startDate == _lastStartDate && endDate == _lastEndDate)
+			return;
+
+		_lastValue = value;
+		_lastCategory = category;
+		_lastStartDate = startDate;
+		_lastEndDate = endDate;
+
+		searchRequest.Value = value;
+		searchRequest.Category = category;
+		searchRequest.StartDate = DateOnly.Parse(startDate);
+		searchRequest.EndDate = DateOnly.Parse(endDate);
+
+		await SearchInvoice();
 	}
 
 	public async Task SearchInvoice()
@@ -192,12 +221,8 @@
 
 			await SetIsOnSearch(true);
 			await SetIsLoading(true);
-			invoiceDetailsList = [];
-			await dataGrid.Reload();
 
-			invoiceDetailsList = await InvoiceService.GetDetailsList(searchRequest);
-
-			await dataGrid.Reload();
+			await Fetch();
 		}
 		catch (Exception ex)
 		{
@@ -207,6 +232,18 @@
 		await SetIsLoading(false);
 	}
 
+	private async Task Fetch() => invoiceDetailsList = await InvoiceService.GetDetailsList(searchRequest);
+
+	private async Task Navigate()
+	{
+		var param = new Dictionary<string, object>();
+		param.Add("c", searchRequest.Category);
+		param.Add("v", searchRequest.Value);
+		param.Add("sd", searchRequest.StartDate.ToString());
+		param.Add("ed", searchRequest.EndDate.ToString());
+
+		Nav.NavigateTo(Nav.GetUriWithQueryParameters(param));
+	}
 
 	private async Task SetIsOnSearch(bool value)
 	{
@@ -225,17 +262,6 @@
 		await OnAdd.InvokeAsync(invoiceDetails);
 	}
 
-
-	private DateTime Today => DateTime.Today;
-
-	private DateTime StartMin => searchRequest.EndDate.AddYears(-1).ToDateTime(TimeOnly.MinValue);
-
-	private DateTime StartMax => searchRequest.EndDate.ToDateTime(TimeOnly.MaxValue);
-
-	private DateTime EndMin => searchRequest.StartDate.ToDateTime(TimeOnly.MinValue);
-
-	private DateTime EndMax => Today;
-
 	private async Task OnStartDateChanged(DateOnly value)
 	{
 		if (searchRequest.EndDate > searchRequest.StartDate.AddYears(1))
@@ -249,5 +275,8 @@
 	{
 		if (searchRequest.StartDate < searchRequest.EndDate.AddYears(-1))
 			searchRequest.StartDate = searchRequest.EndDate.AddYears(-1);
+
+		if (searchRequest.EndDate < searchRequest.StartDate)
+			searchRequest.EndDate = searchRequest.StartDate;
 	}
 }

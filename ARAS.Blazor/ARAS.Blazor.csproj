@@ -35,10 +35,6 @@
 		<PackageReference Include="Radzen.Blazor" Version="7.4.2" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="Components\Pages\Requests\APAROffset\Search\" />
-	</ItemGroup>
-
 	<ProjectExtensions>
 		<VisualStudio>
 			<UserProperties appsettings_1json__JsonSchema="https://www.schemastore.org/azure-containerapp-template.json" />

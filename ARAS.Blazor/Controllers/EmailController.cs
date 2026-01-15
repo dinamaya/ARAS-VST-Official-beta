@@ -26,7 +26,8 @@ namespace ARAS.Blazor.Controllers
 			ResponseDto<IEnumerable<string>> _response = new();
 			try
 			{
-				_response.Result = await _emailRepo.GetAll();
+				//_response.Result = await _emailRepo.GetAll();
+				_response.Result = [];
 				return _response;
 			}
 			catch (Exception ex)
@@ -42,7 +43,8 @@ namespace ARAS.Blazor.Controllers
 			ResponseDto<IEnumerable<string>> _response = new();
 			try
 			{
-				_response.Result = await _emailRepo.GetApprovers();
+				//_response.Result = await _emailRepo.GetApprovers();
+				_response.Result = [];
 				return _response;
 			}
 			catch (Exception ex)
@@ -58,7 +60,8 @@ namespace ARAS.Blazor.Controllers
 			ResponseDto<IEnumerable<string>> _response = new();
 			try
 			{
-				_response.Result = await _emailRepo.GetValidators();
+				//_response.Result = await _emailRepo.GetValidators();
+				_response.Result = [];
 				return _response;
 			}
 			catch (Exception ex)
@@ -74,7 +77,8 @@ namespace ARAS.Blazor.Controllers
 			ResponseDto<IEnumerable<string>> _response = new();
 			try
 			{
-				_response.Result = await _emailRepo.GetNegateRecipients(role);
+				//_response.Result = await _emailRepo.GetNegateRecipients(role);
+				_response.Result = [];
 				return _response;
 			}
 			catch (Exception ex)
@@ -90,7 +94,8 @@ namespace ARAS.Blazor.Controllers
 			ResponseDto<IEnumerable<string>> _response = new();
 			try
 			{
-				_response.Result = await _emailRepo.GetUpdateRecipients(role);
+				//_response.Result = await _emailRepo.GetUpdateRecipients(role);
+				_response.Result = [];
 				return _response;
 			}
 			catch (Exception ex)

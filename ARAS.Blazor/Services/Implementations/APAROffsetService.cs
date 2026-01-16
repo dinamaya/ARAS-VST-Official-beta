@@ -70,9 +70,9 @@ namespace ARAS.Blazor.Services.Implementations
 				Type = "AR",
 				ReasonCode = r.AdjustmentReason,
 				InvoiceDate = DateTime.Now,
-				CustomerName = "",
-				CustomerNumber = ""
-			});
+				CustomerName = r.CustomerName,
+				CustomerNumber = r.CustomerNumber
+            });
 
 			return apRequests.Concat(arRequests).ToList();
 		}
@@ -96,8 +96,8 @@ namespace ARAS.Blazor.Services.Implementations
 				Type = "AR",
 				ReasonCode = r.AdjustmentReason,
 				InvoiceDate = DateTime.Now,
-				CustomerName = "",
-				CustomerNumber = ""
+				CustomerName = r.CustomerName,
+                CustomerNumber = r.CustomerNumber
 			});
 
 			return new APAROffsetCreateDto();

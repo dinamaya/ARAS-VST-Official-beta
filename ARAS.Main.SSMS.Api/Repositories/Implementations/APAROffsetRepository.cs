@@ -78,8 +78,11 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 						 AdjustmentReason = r.ReasonCode,
 						 RowType = !string.IsNullOrEmpty(r.ReasonCode)
 						   ? ARRowType.Adjustment
-						  : ARRowType.Invoice
-					 })
+						  : ARRowType.Invoice,
+
+                         CustomerName = r.CustomerName,
+                         CustomerNumber = r.CustomerNumber
+                     })
 					.ToListAsync()
 			};
 		}

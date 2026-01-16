@@ -9,7 +9,6 @@ namespace ARAS.Main.SSMS.Api.Models.Entities
 		public long InvoiceId{ get; set; }
 
 		public string CNRef { get; set; }
-		public double CNAMT { get; set; }
 		public double WT { get; set; }
 
 		public string CreatedBy { get; set; }

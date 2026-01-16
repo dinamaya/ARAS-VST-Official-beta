@@ -7,7 +7,6 @@ namespace ARAS.Main.SSMS.Api.App_Code.Globals.Extensions
 		public static void AddComplexConfiguration(this IServiceCollection services)
 		{
 			var configuration = services.BuildServiceProvider().GetRequiredService<IConfiguration>();
-			services.Configure<EmailServiceConfig>(configuration.GetSection("EmailServiceConfig"));
 			services.Configure<FileManagerConfig>(configuration.GetSection("FileManagerConfig:Requirements"));
 		}
 	}

@@ -2,7 +2,7 @@
 
 namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 {
-	public interface ICashDiscountRepository : IBaseAdjustmentCommandRepository<CashDiscountRowDto, CashDiscountCreateDto, CashDiscountCreateValidationDto>
+	public interface ICashDiscountRepository : IBaseReceiptAdjustmentCommandRepository<BaseAdjustmentCreateDto>
 	{
 	}
 }

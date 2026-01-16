@@ -19,21 +19,22 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		public async Task<long> CreateAsync(InvoiceCreateDto data, string createdBy)
 		{
 			var date = DateTime.Now;
-			var invoice = new Invoice();
-			
-			invoice.InvoiceNumber = data.InvoiceNumber;
-			invoice.InvoiceAmount = data.InvoiceAmount;
-			invoice.InvoiceDate = data.InvoiceDate;
-			invoice.CustomerName = data.CustomerName;
-			invoice.CustomerNumber = data.CustomerNumber;
+            var invoice = new Invoice
+            {
+                InvoiceNumber = data.InvoiceNumber,
+                InvoiceAmount = data.InvoiceAmount,
+                InvoiceDate = data.InvoiceDate,
+                CustomerName = data.CustomerName,
+                CustomerNumber = data.CustomerNumber,
 
-			invoice.DateCreated = date;
-			invoice.DateModified = date;
-			invoice.CreatedBy = createdBy;
-			invoice.ModifiedBy = createdBy;
-			invoice.IsActive = true;
+                DateCreated = date,
+                DateModified = date,
+                CreatedBy = createdBy,
+                ModifiedBy = createdBy,
+                IsActive = true
+            };
 
-			await _context.Invoices.AddAsync(invoice);
+            await _context.Invoices.AddAsync(invoice);
 			await _context.SaveChangesAsync();
 
 			return invoice.Id;
@@ -67,7 +68,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				{
 					InvoiceId = invoice.Id,
 					CNRef = remark.CNRef,
-					CNAMT = remark.CNAmt,
+					//CNAMT = remark.CNAmt,
 					WT = remark.WT,
 
 					CreatedBy = createdBy,

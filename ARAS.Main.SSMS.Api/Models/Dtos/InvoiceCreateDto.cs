@@ -21,5 +21,15 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 			CustomerNumber = customerNumber;
 			CustomerName = customerName;
 		}
+
+
+		public InvoiceCreateDto(BaseAdjustmentCreateDto model)
+		{
+			InvoiceNumber = model.InvoiceNumber;
+			InvoiceAmount = model.InvoiceAmount;
+			InvoiceDate = model.InvoiceDate;
+			CustomerNumber = model.CustomerNumber;
+			CustomerName = model.CustomerName;
+		}
 	}
 }

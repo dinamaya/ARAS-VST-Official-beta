@@ -13,17 +13,18 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			string statusId = await statusRepo.GetIdByName(data.StatusName);
 
-			var transaction = new Transaction();
+            var transaction = new Transaction
+            {
+                RequestId = data.RequestId,
+                StatusId = statusId,
 
-			transaction.RequestId = data.RequestId;
-			transaction.StatusId = statusId;
+                CreatedBy = createdBy,
+                DateCreated = DateTime.Now,
 
-			transaction.CreatedBy = createdBy;
-			transaction.DateCreated = DateTime.Now;
+                IsActive = true
+            };
 
-			transaction.IsActive = true;
-
-			await context.Transactions.AddAsync(transaction);
+            await context.Transactions.AddAsync(transaction);
 			await context.SaveChangesAsync();
 
 			return transaction.Id;

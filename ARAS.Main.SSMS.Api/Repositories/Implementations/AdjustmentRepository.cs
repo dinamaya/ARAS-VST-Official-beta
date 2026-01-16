@@ -28,7 +28,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			adjustment.RequestId = data.RequestId;
 			adjustment.AdjustmentAmount = data.AdjustmentAmount;
 			adjustment.AdjustmentTypeId = data.AdjustmentTypeId;
-			adjustment.DiscountPercentage = data.DiscountPercentage;
 			adjustment.ReasonCode = data.ReasonCode;
 			adjustment.Remarks = data.Remarks;
 

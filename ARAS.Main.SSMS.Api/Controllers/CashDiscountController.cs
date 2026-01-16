@@ -12,26 +12,24 @@ namespace ARAS.Main.SSMS.Api.Controllers
 	{
 		private readonly ILogger<CashDiscountController> _logger;
 		private readonly ICashDiscountRepository _cashDiscountRepo;
-		private readonly IRequestRepository _requestRepo;
+		
+		public CashDiscountController(ILogger<CashDiscountController> logger, ICashDiscountRepository cashDiscountRepo)
+        {
+            _logger = logger;
+            _cashDiscountRepo = cashDiscountRepo;
+        }
 
-		public CashDiscountController(ILogger<CashDiscountController> logger, ICashDiscountRepository cashDiscountRepo, IRequestRepository requestRepo)
-		{
-			_logger = logger;
-			_cashDiscountRepo = cashDiscountRepo;
-			_requestRepo = requestRepo;
-		}
+        [HttpGet("test")] public async Task<string> Test() => "Connected to Cash-Discount Endpoint Successfully";
 
 		[HttpPost, Authorize(Roles = "Requestor")]
-		public async Task<ResponseDto<long>> Create([FromBody] AdjustmentRequestCreationDto<CashDiscountCreateDto> data)
+		public async Task<ResponseDto<long>> Create([FromBody] BaseAdjustmentCreateDto data)
 		{
-			ResponseDto<long> response = new ();
+			ResponseDto<long> response = new();
 			try
 			{
-				var accountInfo = User.GetAccountBasicInfo();
+				var requestCreation = new RequestCreationDto<BaseAdjustmentCreateDto>(data, User.GetAccountBasicInfo());
 
-				var requestCreation = new RequestCreationDto<AdjustmentRequestCreationDto<CashDiscountCreateDto>>(data, accountInfo.GroupCode, accountInfo.FullName);
-
-				long requestId = await _cashDiscountRepo.CreateAsync(requestCreation, accountInfo.Id);
+				long requestId = await _cashDiscountRepo.CreateAsync(requestCreation, requestCreation.CreatorId);
 
 				response.Result = requestId;
 				response.Message = "Request Created Successfully";
@@ -43,16 +41,15 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpPost("update/{requestId:long}"), Authorize(Roles = "Requestor")]
-		public async Task<ResponseDto<string>> Update(long requestId, [FromBody] AdjustmentRequestCreationDto<CashDiscountCreateDto> data)
+		[HttpPut("{requestId:long}"), Authorize(Roles = "Requestor")]
+		public async Task<ResponseDto<string>> Update(long requestId, [FromBody] CashDiscountCreateDto data)
 		{
 			ResponseDto<string> response = new ResponseDto<string>();
 			try
 			{
-				var accountInfo = User.GetAccountBasicInfo();
-				var requestCreation = new RequestCreationDto<AdjustmentRequestCreationDto<CashDiscountCreateDto>>(data, accountInfo.GroupCode, accountInfo.FullName);
+				var requestCreation = new RequestCreationDto<CashDiscountCreateDto>(data, User.GetAccountBasicInfo());
 
-				await _cashDiscountRepo.UpdateAsync(requestId, requestCreation, accountInfo.Id);
+				//await _cashDiscountRepo.UpdateAsync(requestId, requestCreation, requestCreation.CreatorId);
 
 				response.Result = "Success";
 				response.Message = "Request Updated Successfully";

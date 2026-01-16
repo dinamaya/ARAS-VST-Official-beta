@@ -78,13 +78,14 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		/// <returns></returns>
 		public async Task<bool> IsDeclined(long requestId) => await _context.VwLatestRequestTransactions.AsNoTracking().AnyAsync(t => t.RequestId == requestId && t.Status == "Declined");
 
-		public async Task<long> CreateAsync(RequestCreateDto data, string createdBy)
+		public async Task<long> CreateAsync(string adjustmentTypeId, string createdBy)
 		{
-			var request = new Request();
-			request.RequestNumber = data.RequestNumber;
-			request.AdjustmentTypeId = data.AdjustmentTypeId;
-			request.CreatedBy = createdBy;
-			request.DateCreated = DateTime.Now;
+            var request = new Request
+            {
+                AdjustmentTypeId = adjustmentTypeId,
+                CreatedBy = createdBy,
+                DateCreated = DateTime.Now
+            };
 
 			await _context.Requests.AddAsync(request);
 			await _context.SaveChangesAsync();

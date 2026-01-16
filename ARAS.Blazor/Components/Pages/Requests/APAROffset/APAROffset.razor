@@ -109,20 +109,9 @@
 							<EditTemplate Context="data">
 								@if (data.RowType == ARRowType.Invoice)
 								{
-									<RadzenStack Orientation="Orientation.Vertical">
-										<RadzenTextBox @bind-Value="data.InvoiceNumber"
-													   Name="@($"InvoiceNumber_{data.Id}")"
-													   Style="width:100%" />
-
-										<RadzenRequiredValidator Component="@($"InvoiceNumber_{data.Id}")"
-																 Text="Invoice number is required"
-																 Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
-
-										<RadzenRegexValidator Component="@($"InvoiceNumber_{data.Id}")"
-															  Text="Please enter numbers only"
-															  Pattern="^\d+$"
-															  Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
-									</RadzenStack>
+									{
+										<div>@data.InvoiceNumber</div>
+									}
 								}
 								else
 								{

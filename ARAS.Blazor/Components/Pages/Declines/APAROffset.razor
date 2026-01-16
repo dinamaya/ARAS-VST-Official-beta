@@ -51,6 +51,13 @@
 								<b>Total Amount:</b>
 							</FooterTemplate>
 						</RadzenDataGridColumn>
+
+						<RadzenDataGridColumn Property="@nameof(APAROffsetAPRowDto.CustomerName)" Title="Customer Name">
+							<Template Context="data">
+								@((string.IsNullOrWhiteSpace(data.CustomerName) ? data.CustomerNumber : data.CustomerName))
+							</Template>
+						</RadzenDataGridColumn>
+
 						<RadzenDataGridColumn Property="@nameof(APAROffsetAPRowDto.InvoiceAmount)" Title="Amount">
 							<Template Context="data">
 								@data?.InvoiceAmount.ToPhp()
@@ -105,20 +112,14 @@
 							<EditTemplate Context="data">
 								@if (data.RowType == ARRowType.Invoice)
 								{
-									<RadzenStack Orientation="Orientation.Vertical">
-										<RadzenTextBox @bind-Value="data.InvoiceNumber" Name="@($"InvoiceNumber_{data.Id}")" Style="width:100%" />
-										<RadzenRequiredValidator Component="@($"InvoiceNumber_{data.Id}")"
-																 Text="Invoice number is required"
-																 Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
-										<RadzenRegexValidator Component="@($"InvoiceNumber_{data.Id}")"
-															  Text="Please enter numbers only"
-															  Pattern="^\d+$"
-															  Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
-									</RadzenStack>
+									{
+										<div>@data.InvoiceNumber</div>
+									}
 								}
 								else
 								{
-									<RadzenDropDown @bind-Value="data.AdjustmentReason" Style="width:100%" Data="@reasonCodes" Name="@($"AdjustmentReason_{data.Id}")" />
+									<RadzenDropDown @bind-Value="data.AdjustmentReason" Style="width:100%" Data="@reasonCodes"
+													Name="@($"AdjustmentReason_{data.Id}")" />
 									<RadzenRequiredValidator Component="@($"AdjustmentReason_{data.Id}")"
 															 Text="Adjustment reason is required"
 															 Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
@@ -126,20 +127,36 @@
 							</EditTemplate>
 						</RadzenDataGridColumn>
 
+						<RadzenDataGridColumn TItem="APAROffsetARRowDto" Title="Customer Name">
+							<Template Context="data">
+								@if (data.RowType == ARRowType.Invoice)
+								{
+									@(string.IsNullOrWhiteSpace(data.CustomerName) ? data.CustomerNumber : data.CustomerName)
+								}
+								else
+								{
+									@string.Empty
+								}
+							</Template>
+						</RadzenDataGridColumn>
+
 						<RadzenDataGridColumn TItem="APAROffsetARRowDto" Property="Amount" Title="Amount">
 							<Template Context="data">
 								@data?.Amount.ToPhp()
 							</Template>
 							<EditTemplate Context="data">
-								<RadzenNumeric @bind-Value="data.Amount" Name="@($"Amount_{data.Id}")"
-											   Style="width:100%"
-											   Step="0.01" />
+								<div style="position: relative; z-index: 1;">
+									<RadzenNumeric @bind-Value="data.Amount"
+												   Name="@($"Amount_{data.Id}")"
+												   Style="width:100%"
+												   Step="0.01" />
+								</div>
+
 								<RadzenRequiredValidator Component="@($"Amount_{data.Id}")"
 														 Text="Amount is required"
 														 Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
-								<RadzenRangeValidator Component="@($"Amount_{data.Id}")" Min="0.01"
-													   Text="Amount must be greater than 0"
-													   Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
+
+
 							</EditTemplate>
 
 							<FooterTemplate>
@@ -147,10 +164,15 @@
 							</FooterTemplate>
 						</RadzenDataGridColumn>
 
-						<RadzenDataGridColumn TItem="APAROffsetARRowDto" Context="data" TextAlign="TextAlign.Center" Width="150px">
+						<RadzenDataGridColumn TItem="APAROffsetARRowDto" Context="data" TextAlign="TextAlign.Center" Width="120px">
 							<Template Context="data">
-								<RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@((args) => arGrid.EditRow(data))" />
+								<div class="d-flex align-items-center justify-content-center" style="gap:0.5rem;">
+								@if (data.RowType == ARRowType.Adjustment)
+								{
+									<RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@((args) => arGrid.EditRow(data))" Style="padding:6px" />
+								}
 								<RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Click="@((args) => OnRemoveRow(data))" />
+								</div>
 							</Template>
 							<EditTemplate Context="data">
 								<RadzenButton Icon="save" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success" Click="@((args) => arGrid.UpdateRow(data))" />

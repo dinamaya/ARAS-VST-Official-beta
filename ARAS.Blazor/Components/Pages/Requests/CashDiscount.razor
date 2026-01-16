@@ -1,7 +1,11 @@
 ﻿@page "/requests/cash-discount"
 @attribute [Authorize(Roles = "Requestor")]
-@inherits CreateRequestBaseComponent<CashDiscountRowDto, ICashDiscountService>
+@inherits CreateReceiptRequestBaseComponent<CashDiscountRowDto>
 
+@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.Shared.Modals
+@using ARAS.Blazor.Components.Shared.Others
+@using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Models.Complex
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
@@ -10,45 +14,43 @@
 
 @inject DialogService DialogService
 @inject ITestService TestService
+@inject ICashDiscountService CashDiscountService
 
 <h2>Cash Discount</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<SearchInvoiceDetails OnAdd="OpenAdd" OnLoadingChanged="OnLoadingChanged" OnSearchChanged="OnSearchToggle" />
-	<CashDiscountDataTable @ref="dataTable" Adjustments="Adjustments" ReasonCodes="ReasonCodes" AdjustmentActivity="@AdjustmentActivity"/>
-	<AttachmentsDatatable Notes="Notes" IsDownloadable=false />
-
-	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-
+	<SearchInvoiceDetails OnAdd="OpenCreate" OnLoadingChanged="OnLoadingChanged" OnSearchChanged="OnSearchToggle" />
+	
+	@if (!string.IsNullOrEmpty(SearchedInvoice.CustomerName))
+	{
 		<RadzenRow>
-			<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
+			<RadzenColumn Size="12" SizeMD="5">
+				<InvoiceSummary InvoiceDetails="SearchedInvoice" />
+			</RadzenColumn>
+			<RadzenColumn Size="12" SizeMD="7">
+				<CreateCashDiscountAdjustment InvoiceDetails="SearchedInvoice" @ref="AdjustmentComponent" />
+			</RadzenColumn>
+		</RadzenRow>
+
+		<AttachmentsDatatable Notes="Notes" IsDownloadable=false />
+		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+			<button class="btn btn-dark mt-2" @onclick="OnSubmit">
+				Summary
+			</button>
+			<button class="btn btn-primary mt-2" @onclick="OnSubmit">
 				Submit
 			</button>
-		</RadzenRow>
-	</RadzenStack>
-</RadzenStack>
-
-@code {
-	private CashDiscountDataTable dataTable;
-
-	protected override async Task OnInitializedAsync()
-	{
-		await base.OnInitializedAsync();
-
-		await TestService.GenerateAdjustmentRows(Adjustments, ReasonCodes, AdjustmentActivity);
-		await dataTable.Reload();
+		</RadzenStack>
 	}
+</RadzenStack>
+	@code {
 
-	protected async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
+	private CreateCashDiscountAdjustment AdjustmentComponent;
+	protected async Task OpenCreate(InvoiceDetailsDto invoiceDetails)
 	{
-		await ModalTemplates.Add.CashDiscount(
-			DialogService,
-			dataTable.DataGrid,
-			Adjustments,
-			ReasonCodes,
-			invoiceDetails,
-			AdjustmentActivity
-		);
+		SearchedInvoice = invoiceDetails;
+
+		AdjustmentComponent?.Reset();
 	}
 
 	protected override async Task OnSubmit()
@@ -57,7 +59,13 @@
 		{
 			await base.OnSubmit();
 
-			await ModalTemplates.Summary.CashDiscount(DialogService, Adjustments, RequestAudit, SubmitRequest);
+			bool isConfirmed = await DialogService.Confirm("Submit Cash Discount Adjustment?", "Create Cash Discount") ?? false;
+
+			if (!isConfirmed) return;
+
+			var adjustment = AdjustmentComponent.GetAdjustment();
+
+			await CashDiscountService.Create(adjustment, Notes);
 		}
 		catch (Exception ex)
 		{

@@ -2,8 +2,8 @@
 {
 	public class CashDiscountCreateDto
 	{
-		public float DiscountValue { get; set; }
 		public double InvoiceAmount { get; set; }
+		public double AdjustmentAmount { get; set; }
 		public DateTime InvoiceDate { get; set; }
 		public string InvoiceNumber { get; set; }
 		public string CustomerName { get; set; }

@@ -3,7 +3,9 @@ using ARAS.Blazor.Repositories.Interfaces;
 
 namespace ARAS.Blazor.Services.Interfaces
 {
-	public interface ICashDiscountService : IBaseAdjustmentCommandRepository<CashDiscountRowDto, CashDiscountCreateDto, CashDiscountCreateValidationDto>
+	public interface ICashDiscountService : 
+		IBaseReceiptAdjustmentCommandService<CashDiscountCreateDto, CashDiscountRowDto>
 	{
+
 	}
 }

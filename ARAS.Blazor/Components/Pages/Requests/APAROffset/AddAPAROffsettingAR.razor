@@ -27,6 +27,8 @@
 	[Parameter] public RadzenDataGrid<APAROffsetARRowDto> Grid { get; set; }
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
 
+	[Parameter] public IList<APAROffsetAPRowDto> APRows { get; set; }
+
 	private IEnumerable<string> invoices = new List<string>();
 	private string remarks = string.Empty;
 
@@ -55,6 +57,15 @@
 				if (firstInvoice.CustomerNumber != InvoiceDetails.CustomerNumber)
 				{
 					throw new InvalidOperationException("All invoices must belong to the same customer.");
+				}
+			}
+
+			if (APRows != null && APRows.Any())
+			{
+				var firstAP = APRows.First();
+				if (firstAP.CustomerNumber != InvoiceDetails.CustomerNumber)
+				{
+					throw new InvalidOperationException("Selected AR invoice must belong to the same customer as the AP group.");
 				}
 			}
 

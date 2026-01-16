@@ -20,28 +20,6 @@ namespace ARAS.Main.Oracle.Api.Controllers
 			_adjustRepo = adjustRepo;
 		}
 
-		[HttpGet("reason-codes")]
-		public async Task<ResponseDto<IEnumerable<string>>> GetReasonCodes()
-		{
-			ResponseDto<IEnumerable<string>> _response = new();
-			try
-			{
-				_response.Result = await _adjustRepo.GetReasonCodes();
-
-				return _response;
-			}
-			catch (OracleException ex)
-			{
-				_logger.LogError(Exceptions.CANT_CONNECT);
-				return _response.Failed(Exceptions.CANT_CONNECT);
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex.Message);
-				return _response.Failed(ex.Message);
-			}
-		}
-
 		[HttpGet("receivable-activities")]
 		public async Task<ResponseDto<IEnumerable<ReceivablesActivityDto>>> GetReceivableActivities()
 		{

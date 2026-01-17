@@ -37,6 +37,7 @@
 			<button class="btn btn-dark mt-2" @onclick="OnSubmit">
 				Summary
 			</button>
+			
 			<button class="btn btn-primary mt-2" @onclick="OnSubmit">
 				Submit
 			</button>
@@ -62,8 +63,11 @@
 			bool isConfirmed = await DialogService.Confirm("Submit Cash Discount Adjustment?", "Create Cash Discount") ?? false;
 
 			if (!isConfirmed) return;
-
 			var adjustment = AdjustmentComponent.GetAdjustment();
+
+			Guards.ThrowInvalidOperationIf(adjustment.InvoiceBalance <= 0, "Cannot apply adjustment because the current invoice is non adjustable due to the invoice balance is less than or equals to 0");
+			Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(adjustment.Remarks), "Cannot apply adjustment because there is no remarks on adjustment field.");
+			Guards.ThrowInvalidOperationIf(adjustment.AdjustmentAmount <= 0, "Cannot apply adjustment because the adjustment amount is less than or equals to 0");
 
 			await CashDiscountService.Create(adjustment, Notes);
 		}

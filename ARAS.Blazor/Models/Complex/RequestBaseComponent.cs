@@ -11,12 +11,6 @@ namespace ARAS.Blazor.Models.Complex
 		[Inject] protected ISearchOptionService SearchOptionService { get; set; }
 		[Inject] protected IAuthService AuthService { get; set; }
 
-		[Parameter, SupplyParameterFromQuery(Name = "c")]
-		public string? category { get; set; }
-
-		[Parameter, SupplyParameterFromQuery(Name = "v")]
-		public string? value { get; set; }
-
 		protected IList<NoteRowDto> Notes { get; set; }
 
 		protected InvoiceDetailsDto SearchedInvoice { get; set; }

@@ -1,270 +1,34 @@
-﻿@using ARAS.Blazor.App_Code.Globals
-@using ARAS.Blazor.App_Code.Globals.Extensions
-@using ARAS.Blazor.Components.Shared.Summaries
+﻿@using ARAS.Blazor.Components.Shared
+@using ARAS.Blazor.Components.Shared.DataTables
 @using ARAS.Blazor.Models.DTOs
-@using ARAS.Blazor.Services.Interfaces
-@using ARAS.Blazor.Components.Shared.Skeletons
 
-@inject IConfigService ConfigService
 @inject IInvoiceService InvoiceService
-@inject IQueryService QueryService
-@inject DialogService DialogService
-@inject NavigationManager Nav
+@inject IConfigService ConfigService
 @inherits ComponentBase
 
-<RadzenRow>
-	<div class="px-3 pt-2 pb-0 w-100 card">
-		<RadzenRow AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Left" class="w-100" Gap="1rem">
-			
-			<RadzenColumn Size="12" SizeLG="10">
-				<RadzenRow class="w-100">
-					@if (!searchRequest.Category.Equals("Select Search Category"))
-					{
-						<RadzenColumn Size="12" SizeLG="6">
-							<RadzenDropDown class="w-100 mt-2 pb-1" Data="@categories" @bind-Value="searchRequest.Category" TValue="string" />
-						</RadzenColumn>
+<MainSearchBar OnSearch="HandleSearch" TextFields="textFields">
+	<ResultTemplate Context="isLoading">
+		<SearchInvoiceDataTable IsLoading="isLoading" InvoiceRows="results" Select="OnSelectChanged" />
+	</ResultTemplate>
+</MainSearchBar>
 
-						<RadzenColumn Size="12" SizeLG="6">
-							<RadzenFormField class="w-100 border-0 mb-2" Text="@categories.FirstOrDefault(c => c == searchRequest.Category)" Variant="Variant.Outlined">
-								<RadzenTextBox @bind-Value="@searchRequest.Value" />
-							</RadzenFormField>
-						</RadzenColumn>
-					}
-					else
-					{
-						<RadzenColumn Size="12">
-							<RadzenDropDown class="w-100 mt-2 pb-1" Data="@categories" @bind-Value="searchRequest.Category" TValue="string" />
-						</RadzenColumn>
-					}
-				</RadzenRow>
-
-				@if (!searchRequest.Category.Equals("Select Search Category"))
-				{
-					<RadzenRow class="w-100 pb-3">
-						<RadzenColumn Size="12" SizeMD="6">
-							<RadzenLabel Text="From" Component="StartDate" />
-							<RadzenDatePicker
-								class="w-100"
-								TValue="DateOnly"
-								Name="StartDate"
-								Change="@((args) => OnStartDateChanged(DateOnly.FromDateTime((DateTime)args)))"
-								@bind-Value="searchRequest.StartDate" />
-						</RadzenColumn>
-
-						<RadzenColumn Size="12" SizeMD="6">
-							<RadzenLabel Text="To" Component="EndDate" />
-							<RadzenDatePicker
-								class="w-100"
-								TValue="DateOnly"
-								Name="EndDate"
-								Change="@((args) => OnEndDateChanged(DateOnly.FromDateTime((DateTime)args)))"
-								@bind-Value="searchRequest.EndDate" />
-						</RadzenColumn>
-					</RadzenRow>
-				}
-			</RadzenColumn>
-
-			<RadzenColumn Size="12" SizeLG="2">
-				<RadzenContent>
-					<SubmitButton Title="Search" ButtonClass="w-100 mt-2" Click="Navigate" DisabledTitle="Searching" />
-				</RadzenContent>
-			</RadzenColumn>
-		</RadzenRow>
-	</div>
-</RadzenRow>
-
-@if (isOnSearch)
-{
-	<RadzenRow>
-		<div class="card blur shadow-blur w-100">
-			<div class="card-body overflow-auto overflow-x-hidden">
-				<RadzenRow>
-					<h3 class="mb-4">Search Result</h3>
-				</RadzenRow>
-				@if (isLoading)
-				{
-					<DatatableSkeleton RowCount="4" ColumnCount="5"/>
-				}
-				else {
-				<RadzenDataGrid @ref=dataGrid
-								class="border-1"
-								AllowFiltering="true"
-								AllowColumnResize="true"
-								AllowAlternatingRows="false"
-								FilterMode="FilterMode.Advanced"
-								AllowSorting="true"
-								PageSize="5"
-								AllowPaging="true"
-								PagerHorizontalAlign="HorizontalAlign.Left"
-								ShowPagingSummary="true"
-								Data="@invoiceDetailsList"
-								LogicalFilterOperator="LogicalFilterOperator.Or"
-								SelectionMode="DataGridSelectionMode.Single">
-					<Columns>
-						<RadzenDataGridColumn Frozen="true" Title="Option" Sortable="false" Filterable="false" Width="160px" TextAlign="TextAlign.Center">
-							<Template Context="data">
-								<RadzenButton Icon="edit_document" Text="Adjust" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Click="@(args => OnAddEvent(data))" />
-							</Template>
-						</RadzenDataGridColumn>
-						<RadzenDataGridColumn Visible=false Property="@nameof(InvoiceDetailsDto.Id)" Title="Id" />
-						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.CustomerName)" Title="Customer Name" />
-						<RadzenDataGridColumn Visible="false" Property="@nameof(InvoiceDetailsDto.CustomerNumber)" Title="Customer Number" />
-							<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceNumber)" Title="Invoice Number" />
-							<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceDate)" Title="@InvoiceDateText">
-								<Template Context="data">
-									@data.InvoiceDate.ToString(Formats.Date.DISPLAY2)
-								</Template>
-							</RadzenDataGridColumn>
-						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceAmount)" Title="Invoice Amount" >
-							<Template Context="data">
-								@data.InvoiceAmount.ToPhp()
-							</Template>
-						</RadzenDataGridColumn>
-						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceBalance)" Title="Invoice Balance" >
-							<Template Context="data">
-								@data.InvoiceBalance.ToPhp()
-							</Template>
-						</RadzenDataGridColumn>
-
-					</Columns>
-				</RadzenDataGrid>
-				}
-			</div>
-		</div>
-	</RadzenRow>
-}
-
-@code {
-	[Parameter] public EventCallback<InvoiceDetailsDto> OnAdd { get; set; }
-	[Parameter] public EventCallback<bool> OnSearchChanged { get; set; }
-	[Parameter] public EventCallback<bool> OnLoadingChanged { get; set; }
-	[Parameter] public string InvoiceDateText { get; set; } = "Invoice Date";
-
-	private IEnumerable<InvoiceDetailsDto> invoiceDetailsList { get; set; }
-	private bool isOnSearch { get; set; }
-	private bool isLoading { get; set; }
-	private string? _lastValue;
-	private string? _lastCategory;
-	private string? _lastStartDate;
-	private string? _lastEndDate;
-
-	private RadzenDataGrid<InvoiceDetailsDto> dataGrid;
-	private IEnumerable<string> categories;
-	private SearchRequestDto searchRequest;
-	private InvoiceDetailsDto searchedInvoice;
+@code{
+    [Parameter] public EventCallback<InvoiceDetailsDto> OnSelectInvoice { get; set; }
+	private IEnumerable<InvoiceDetailsDto> results { get; set; }
+	private IEnumerable<string> textFields { get; set; }
 
 	protected override async Task OnInitializedAsync()
 	{
-		await base.OnInitializedAsync();
-		categories = ConfigService.GetSearchInvoiceCategories();
-		searchRequest = new()
-		{
-			Category = categories.FirstOrDefault(),
-			Value = string.Empty,
-			StartDate = DateOnly.FromDateTime(DateTime.Now.AddYears(-1)),
-			EndDate = DateOnly.FromDateTime(DateTime.Now),
-		};
+		textFields = ConfigService.GetRequstorSearchInvoiceCategories();
 	}
 
-	protected override async Task OnParametersSetAsync()
+	private async Task HandleSearch(SearchRequestDto request)
 	{
-		await base.OnParametersSetAsync();
-		string value = QueryService.GetValue("v");
-		string category = QueryService.GetValue("c");
-		string startDate = QueryService.GetValue("sd");
-		string endDate = QueryService.GetValue("ed");
-
-		if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(category))
-			return;
-
-		if (value == _lastValue && category == _lastCategory && startDate == _lastStartDate && endDate == _lastEndDate)
-			return;
-
-		_lastValue = value;
-		_lastCategory = category;
-		_lastStartDate = startDate;
-		_lastEndDate = endDate;
-
-		searchRequest.Value = value;
-		searchRequest.Category = category;
-		searchRequest.StartDate = DateOnly.Parse(startDate);
-		searchRequest.EndDate = DateOnly.Parse(endDate);
-
-		await SearchInvoice();
+		results = await InvoiceService.GetDetailsList(request);
 	}
 
-	public async Task SearchInvoice()
+	protected async Task OnSelectChanged(InvoiceDetailsDto invoiceDetails)
 	{
-		await Task.Delay(10);
-		try
-		{
-			Guards.ThrowInvalidOperationIf(searchRequest.Value.Length < 3, "Please provided 3 or more character in the search invoice number field");
-
-			if (isLoading)
-			{
-				await DialogService.Alert("Please wait until the current search operation is complete");
-				return;
-			}
-
-			await SetIsOnSearch(true);
-			await SetIsLoading(true);
-
-			await Fetch();
-		}
-		catch (Exception ex)
-		{
-			await SetIsOnSearch(false);
-			await DialogService.Alert(ex.Message, "Search Invoice Number Details failed");
-		}
-		await SetIsLoading(false);
-	}
-
-	private async Task Fetch() => invoiceDetailsList = await InvoiceService.GetDetailsList(searchRequest);
-
-	private async Task Navigate()
-	{
-		var param = new Dictionary<string, object>();
-		param.Add("c", searchRequest.Category);
-		param.Add("v", searchRequest.Value);
-		param.Add("sd", searchRequest.StartDate.ToString());
-		param.Add("ed", searchRequest.EndDate.ToString());
-
-		Nav.NavigateTo(Nav.GetUriWithQueryParameters(param));
-	}
-
-	private async Task SetIsOnSearch(bool value)
-	{
-		isOnSearch = value;
-		await OnSearchChanged.InvokeAsync(value);
-	}
-
-	private async Task SetIsLoading(bool value)
-	{
-		isLoading = value;
-		await OnLoadingChanged.InvokeAsync(value);
-	}
-
-	private async Task OnAddEvent(InvoiceDetailsDto invoiceDetails)
-	{
-		searchedInvoice = invoiceDetails;
-		await OnAdd.InvokeAsync(invoiceDetails);
-	}
-
-	private async Task OnStartDateChanged(DateOnly value)
-	{
-		if (searchRequest.EndDate > searchRequest.StartDate.AddYears(1))
-			searchRequest.EndDate = searchRequest.StartDate.AddYears(1);
-
-		if (searchRequest.EndDate > DateOnly.FromDateTime(DateTime.Today))
-			searchRequest.EndDate = DateOnly.FromDateTime(DateTime.Today);
-	}
-
-	private async Task OnEndDateChanged(DateOnly value)
-	{
-		if (searchRequest.StartDate < searchRequest.EndDate.AddYears(-1))
-			searchRequest.StartDate = searchRequest.EndDate.AddYears(-1);
-
-		if (searchRequest.EndDate < searchRequest.StartDate)
-			searchRequest.StartDate = searchRequest.EndDate;
+		await OnSelectInvoice.InvokeAsync(invoiceDetails);
 	}
 }

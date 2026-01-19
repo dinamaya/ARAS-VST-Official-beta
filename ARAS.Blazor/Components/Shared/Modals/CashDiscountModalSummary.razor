@@ -7,19 +7,16 @@
 <RadzenStack>
 	<CashDiscountSummary Rows="Rows" RequestAudit="RequestAudit" />
 
-	<RadzenStack class="w-100 mt-3" Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem">
-		<button @onclick="@Submit" class="btn btn-dark">
-			Export
-		</button>
-
+	<RadzenRow JustifyContent="JustifyContent.End" Gap="0.5rem">
 		<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
 			<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-outline-dark">
 				Close
 			</button>
-			<SubmitButton Title="Submit" Click="Submit" DisabledTitle="Submitting" />
+			<button @onclick="@Submit" class="btn btn-dark">
+				Export
+			</button>
 		</RadzenStack>
-
-	</RadzenStack>
+	</RadzenRow>
 </RadzenStack>
 @code {
 	[Parameter] public IEnumerable<CashDiscountRowDto> Rows { get; set; }
@@ -31,7 +28,6 @@
 	{
 		try
 		{
-			await OnSubmit.Invoke();
 			NavigationManager.NavigateTo(SucccessSubmissionRoute, true);
 		}
 		catch (Exception ex)

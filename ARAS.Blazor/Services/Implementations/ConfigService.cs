@@ -84,8 +84,13 @@ namespace ARAS.Blazor.Services.Implementations
 		public string GetFilesUrl(string route = null) =>
 			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Files")}{route}";
 
-		public IEnumerable<string> GetSearchInvoiceCategories(string? defaultOption = null) => _config
-			.GetSection("DropdownOptions:SearchCategories")
+		public IEnumerable<string> GetRequstorSearchInvoiceCategories(string? defaultOption = null) => _config
+			.GetSection("DropdownOptions:SearchCategories:Requestor")
+			.Get<IEnumerable<string>>()
+			.Prepend(defaultOption ?? "Select Search Category") ?? [];
+
+		public IEnumerable<string> GetApproverSearchInvoiceCategories(string? defaultOption = null) => _config
+			.GetSection("DropdownOptions:SearchCategories:Approver:Text")
 			.Get<IEnumerable<string>>()
 			.Prepend(defaultOption ?? "Select Search Category") ?? [];
 

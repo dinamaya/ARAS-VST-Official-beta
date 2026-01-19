@@ -46,5 +46,40 @@ namespace ARAS.Blazor.Services.Implementations
 
 			return response.IsSuccess && response.Result;
 		}
-	}
+
+        public async Task<IEnumerable<ReceiptAdjustmentRowDto>> GetReceiptAdjustmentRequests(SearchRequestDto data)
+        {
+			var response = await _baseService.SendAsync<IEnumerable<ReceiptAdjustmentRowDto>>(new RequestDto<SearchRequestDto>()
+				{
+					URL = _configService.GetRequestsUrl("approvals/receipt"),
+					Data = data
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch the request");
+					});
+				});
+
+			return response.Result;
+		}
+
+        public async Task ApproveReceiptAdjustmentRequests(IEnumerable<long> data)
+        {
+			var response = await _baseService.SendAsync<string>(new RequestDto<IEnumerable<long>>()
+				{
+					URL = _configService.GetApprovalsUrl(),
+					ApiType = ApiType.POST,
+					Data = data
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch the request");
+					});
+				});
+		}
+    }
 }

@@ -15,6 +15,7 @@ namespace ARAS.Blazor.Models.Complex
 		public string CustomerNumber { get; set; } = string.Empty;
 		public string ReasonCode { get; set; } = string.Empty;
 		public string Remarks { get; set; } = string.Empty;
+		public double InvoiceBalance { get; set; } = 0d;
 
 		public AdjustmentRow() { }
 
@@ -26,6 +27,7 @@ namespace ARAS.Blazor.Models.Complex
 			InvoiceDate = details.InvoiceDate.ToString();
 			CustomerName = details.CustomerName;
 			CustomerNumber = details.CustomerNumber;
+			InvoiceBalance = details.InvoiceBalance;
 		}
 
 		public virtual void SetValues(float adjustmentAmount, string remarks, string reasonCode, string adjustmentActivity)

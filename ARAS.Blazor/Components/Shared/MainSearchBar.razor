@@ -32,7 +32,7 @@
 						@if (option != null)
 						{
 							<RadzenColumn Size="12" SizeLG="6">
-								<RadzenDropDown class="w-100 mt-2 pb-1" Data="@option" @bind-Value="searchRequest.Value" TValue="string" />
+								<RadzenDropDown ClearSearchAfterSelection="true" class="w-100 mt-2 pb-1" Data="@option" @bind-Value="searchRequest.Value" TValue="string" />
 							</RadzenColumn>
 						}
 						else
@@ -47,7 +47,7 @@
 					else
 					{
 						<RadzenColumn Size="12">
-							<RadzenDropDown class="w-100 mt-2 pb-1" Data="@categories" @bind-Value="searchRequest.Category" TValue="string" />
+							<RadzenDropDown TValue="string" Change="(key) => OnCategoryChanged((string)key)" class="w-100 mt-2 pb-1" Data="@categories" @bind-Value="searchRequest.Category"/>
 						</RadzenColumn>
 					}
 				</RadzenRow>
@@ -78,7 +78,14 @@
 
 			<RadzenColumn Size="12" SizeLG="2">
 				<RadzenContent>
-					<SubmitButton Title="Search" ButtonClass="w-100 mt-2" Click="Navigate" DisabledTitle="Searching" />
+					@if (!isLoading)
+					{
+						<RadzenButton Text="Search" class="w-100 mt-2 mb-3" Click="Navigate" />
+					}
+					else
+					{
+						<RadzenButton Text="Searching" class="w-100 mt-2 mb-3" Disabled="true" />
+					}
 				</RadzenContent>
 			</RadzenColumn>
 		</RadzenRow>

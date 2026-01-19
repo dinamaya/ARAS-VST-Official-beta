@@ -35,7 +35,10 @@
 		}
 		else if (accountDetails.IsInRole("Approver"))
 		{
-			<NavPanelMenu MenuText="Approvals" MenuIcon="assignment_turned_in" RootDirectory="approvals"/>
+				<RadzenPanelMenuItem Text="Approvals" Icon="assignment_turned_in" Style="border: none">
+					<MenuItem Text="Receipt" Route="/approvals/receipt" />
+					<MenuItem Text="Invoice" Route="/approvals/invoice" />
+				</RadzenPanelMenuItem>
 		}
 		else if (accountDetails.IsInRole("Validator"))
 		{

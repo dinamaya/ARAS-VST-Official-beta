@@ -13,14 +13,14 @@
 @using Microsoft.AspNetCore.Authorization
 
 @inject DialogService DialogService
+@inject NavigationManager NavManager
 @inject ITestService TestService
 @inject ICashDiscountService CashDiscountService
 
 <h2>Cash Discount</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<SearchInvoiceDetails OnAdd="OpenCreate" OnLoadingChanged="OnLoadingChanged" OnSearchChanged="OnSearchToggle" />
-	
+	<SearchInvoiceDetails OnSelectInvoice="OnInvoiceSelected" />
 	@if (!string.IsNullOrEmpty(SearchedInvoice.CustomerName))
 	{
 		<RadzenRow>
@@ -47,10 +47,10 @@
 	@code {
 
 	private CreateCashDiscountAdjustment AdjustmentComponent;
-	protected async Task OpenCreate(InvoiceDetailsDto invoiceDetails)
+
+	protected async Task OnInvoiceSelected(InvoiceDetailsDto invoiceDetails)
 	{
 		SearchedInvoice = invoiceDetails;
-
 		AdjustmentComponent?.Reset();
 	}
 
@@ -70,6 +70,8 @@
 			Guards.ThrowInvalidOperationIf(adjustment.AdjustmentAmount <= 0, "Cannot apply adjustment because the adjustment amount is less than or equals to 0");
 
 			await CashDiscountService.Create(adjustment, Notes);
+
+			NavManager.NavigateTo(NavManager.Uri, true);
 		}
 		catch (Exception ex)
 		{

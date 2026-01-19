@@ -1,0 +1,51 @@
+﻿@page "/approvals/receipt"
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Components.Shared.DataTables
+
+@inject DialogService DialogService
+@inject IAdjustmentService AdjustmentService
+@inject IRequestService RequestService
+@inject IConfigService ConfigService
+
+<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+
+	@if (isReady)
+	{
+		<MainSearchBar OnSearch="HandleSearch" TextFields="textFields" DropdownFields="dropdowns">
+			<ResultTemplate Context="isLoading">
+				<SearchReceiptAdjustmentsDataTable IsLoading="isLoading" Rows="rows" />
+			</ResultTemplate>
+		</MainSearchBar>
+	}
+
+</RadzenStack>
+
+@code {
+	private Dictionary<string, IEnumerable<string>> dropdowns { get; set; }
+	private IEnumerable<string> textFields { get; set; }
+	private IEnumerable<ReceiptAdjustmentRowDto> rows { get; set; }
+
+	protected bool IsOnSearch { get; private set; }
+	protected bool IsLoading { get; private set; }
+	private bool isReady = false;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		textFields = ConfigService.GetApproverSearchInvoiceCategories();
+		var adjustmentsTypes = await AdjustmentService.GetAdjustmentTypes();
+		dropdowns = new Dictionary<string, IEnumerable<string>>
+		{
+			{ "Adjustment Type",  adjustmentsTypes},
+		};
+		isReady = true;
+	}
+
+	protected void OnSearchToggle(bool value) => IsOnSearch = value;
+	protected void OnLoadingChanged(bool value) => IsLoading = value;
+
+	private async Task HandleSearch(SearchRequestDto searchRequest)
+	{
+		rows = await RequestService.GetReceiptAdjustmentRequests(searchRequest);
+	}
+}

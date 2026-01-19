@@ -41,7 +41,8 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 						InvoiceAmount = 10000 + (i * 50),
 						InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
 						CustomerName = $"Customer {i}",
-						CustomerNumber = $"CUST-{1000 + i}"
+						CustomerNumber = $"CUST-{1000 + i}",
+						InvoiceBalance = i % 5 == 0 ? 0 : i *100
 					});
 
 				if(searchRequest.Category == "Customer Name")

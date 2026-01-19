@@ -65,11 +65,15 @@ namespace ARAS.Blazor.Services.Implementations
 			return response.Result;
 		}
 
-        public async Task ApproveReceiptAdjustmentRequests(IEnumerable<long> data)
-        {
+        public async Task ApproveReceiptAdjustmentRequests(IEnumerable<long> data) => await UpdateAdjustmentStatus(data, _configService.GetApprovalsUrl());
+		public async Task RejectReceiptAdjustmentRequests(IEnumerable<long> data) => await UpdateAdjustmentStatus(data, _configService.GetRejectionsUrl());
+		public async Task DeclineReceiptAdjustmentRequests(IEnumerable<long> data) => await UpdateAdjustmentStatus(data, _configService.GetDeclinesUrl());
+
+		private async Task UpdateAdjustmentStatus(IEnumerable<long> data, string route)
+		{
 			var response = await _baseService.SendAsync<string>(new RequestDto<IEnumerable<long>>()
 				{
-					URL = _configService.GetApprovalsUrl(),
+					URL = route,
 					ApiType = ApiType.POST,
 					Data = data
 				},
@@ -77,7 +81,7 @@ namespace ARAS.Blazor.Services.Implementations
 				{
 					await Task.Run(() =>
 					{
-						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch the request");
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to update the request");
 					});
 				});
 		}

@@ -31,7 +31,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 				await _adjustmentService.Approve(requestIds, accountId);
 
 				response.Result = "Success";
-				response.Message = "Request Approved";
+				response.Message = "Request has been successfully APPROVED";
 				return response;
 			}
 			catch (Exception ex)

@@ -23,17 +23,17 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			_adjustmentService = adjustmentService;
 		}
 
-		[HttpPost("{adjustmentTypeCode}")]
-		public async Task<ResponseDto<string>> Post(string adjustmentTypeCode, [FromBody] NegateRequestDto createDecline)
+		[HttpPost]
+		public async Task<ResponseDto<string>> Post([FromBody] IEnumerable<long> requestIds)
 		{
 			var response = new ResponseDto<string>();
 			try
 			{
 				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
-				await _adjustmentService.Decline(createDecline, accountId, adjustmentTypeCode);
+				await _adjustmentService.Decline(requestIds, accountId);
 
 				response.Result = "Success";
-				response.Message = "Request Declined";
+				response.Message = "Request has been successfully DECLINED";
 				return response;
 			}
 			catch (Exception ex)

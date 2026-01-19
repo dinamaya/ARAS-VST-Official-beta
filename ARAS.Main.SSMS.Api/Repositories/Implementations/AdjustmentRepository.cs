@@ -28,7 +28,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			adjustment.RequestId = data.RequestId;
 			adjustment.AdjustmentAmount = data.AdjustmentAmount;
 			adjustment.AdjustmentTypeId = data.AdjustmentTypeId;
-			adjustment.ReasonCode = data.ReasonCode;
 			adjustment.Remarks = data.Remarks;
 
 			adjustment.DateCreated = date;
@@ -183,5 +182,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			adjustmentTypeCode = adjustmentTypeCode.ToUpper();
 			return await _context.AdjustmentTypes.AsNoTracking().Where(a => a.Code == adjustmentTypeCode).Select(a => a.Activity).FirstAsync();
 		}
+
+        public async Task<IEnumerable<string>> GetTypes() => await _context.AdjustmentTypes.AsNoTracking().Select(a => a.Name).ToListAsync();
 	}
 }

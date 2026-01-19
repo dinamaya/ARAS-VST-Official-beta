@@ -9,7 +9,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 		IGetTransactionRequestsRepository
 	{
 		Task<bool> IsApprovable(long requestId);
-		Task<bool> IsValidatable (long requestId);
 		Task<bool> IsDeclinable (long requestId);
 		Task<bool> IsRejectable (long requestId);
 		Task<bool> IsDeclined (long requestId);

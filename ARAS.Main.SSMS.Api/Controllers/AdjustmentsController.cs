@@ -11,26 +11,31 @@ namespace ARAS.Main.SSMS.Api.Controllers
 	{
 		private readonly ILogger<AdjustmentsController> _logger;
 		private readonly ICashDiscountRepository _cashDiscountRepo;
-		private readonly IBankChargeRepository _bankChargeRepo;
-		private readonly IAPAROffsetRepository _aparOffsetRepo;
-		private readonly ISmallAmountRepository _smallAmountRepo;
-		private readonly ISRAutoNetRepository _srAutoNetRepo;
-        private readonly IARInvoiceOffsettingRepository _arInvoiceOffsettingRepo;
-        private readonly IAdjustmentRepository _adjustmentRepo;
+		//private readonly IBankChargeRepository _bankChargeRepo;
+		//private readonly IAPAROffsetRepository _aparOffsetRepo;
+		//private readonly ISmallAmountRepository _smallAmountRepo;
+		//private readonly ISRAutoNetRepository _srAutoNetRepo;
+		//      private readonly IARInvoiceOffsettingRepository _arInvoiceOffsettingRepo;
+		private readonly IAdjustmentRepository _adjustmentRepo;
 
-		public AdjustmentsController(ILogger<AdjustmentsController> logger, ICashDiscountRepository cashDiscountRepo, IAPAROffsetRepository aparOffsetRepo, IBankChargeRepository bankChargeRepo, IARInvoiceOffsettingRepository arInvoiceOffsettingRepo, ISmallAmountRepository smallAmountRepo, ISRAutoNetRepository srAutoNetRepo, IAdjustmentRepository adjustmentRepo)
-		{
-			_logger = logger;
-			_cashDiscountRepo = cashDiscountRepo;
-			_aparOffsetRepo = aparOffsetRepo;
-			_bankChargeRepo = bankChargeRepo;
-			_arInvoiceOffsettingRepo = arInvoiceOffsettingRepo;
-			_smallAmountRepo = smallAmountRepo;
-			_srAutoNetRepo = srAutoNetRepo;
-			_adjustmentRepo = adjustmentRepo;
-		}
+        public AdjustmentsController(IAdjustmentRepository adjustmentRepo)
+        {
+            _adjustmentRepo = adjustmentRepo;
+        }
 
-		[HttpGet("activity/{adjustmentTypeCode}")]
+        //public AdjustmentsController(ILogger<AdjustmentsController> logger, ICashDiscountRepository cashDiscountRepo, IAPAROffsetRepository aparOffsetRepo, IBankChargeRepository bankChargeRepo, IARInvoiceOffsettingRepository arInvoiceOffsettingRepo, ISmallAmountRepository smallAmountRepo, ISRAutoNetRepository srAutoNetRepo, IAdjustmentRepository adjustmentRepo)
+        //{
+        //	_logger = logger;
+        //	_cashDiscountRepo = cashDiscountRepo;
+        //	_aparOffsetRepo = aparOffsetRepo;
+        //	_bankChargeRepo = bankChargeRepo;
+        //	_arInvoiceOffsettingRepo = arInvoiceOffsettingRepo;
+        //	_smallAmountRepo = smallAmountRepo;
+        //	_srAutoNetRepo = srAutoNetRepo;
+        //	_adjustmentRepo = adjustmentRepo;
+        //}
+
+        [HttpGet("activity/{adjustmentTypeCode}")]
 		public async Task<ResponseDto<string>> GetAdjustmentActivity(string adjustmentTypeCode)
 		{
 			var response = new ResponseDto<string>();
@@ -46,21 +51,37 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("ofr/{requestId:long}"), Authorize]
-        public async Task<ResponseDto<IEnumerable<ARInvoiceOffsettingRowDto>>> GetARInvoiceOffsettingAdjustments(long requestId)
-        {
-            var response = new ResponseDto<IEnumerable<ARInvoiceOffsettingRowDto>>();
-            try
-            {
-                response.Result = await _arInvoiceOffsettingRepo.GetAdjustmentsByRequestId(requestId);
-                return response;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return response.Failed(ex.Message);
-            }
-        }
+		[HttpGet("types")]
+		public async Task<ResponseDto<IEnumerable<string>>> GetAdjustmentTypes()
+		{
+			var response = new ResponseDto<IEnumerable<string>>();
+			try
+			{
+				response.Result = await _adjustmentRepo.GetTypes();
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
+		//[HttpGet("ofr/{requestId:long}"), Authorize]
+		//      public async Task<ResponseDto<IEnumerable<ARInvoiceOffsettingRowDto>>> GetARInvoiceOffsettingAdjustments(long requestId)
+		//      {
+		//          var response = new ResponseDto<IEnumerable<ARInvoiceOffsettingRowDto>>();
+		//          try
+		//          {
+		//              response.Result = await _arInvoiceOffsettingRepo.GetAdjustmentsByRequestId(requestId);
+		//              return response;
+		//          }
+		//          catch (Exception ex)
+		//          {
+		//              _logger.LogError(ex.Message);
+		//              return response.Failed(ex.Message);
+		//          }
+		//}
 
 		[HttpGet("cdr/{requestId:long}"), Authorize]
 		public async Task<ResponseDto<IEnumerable<CashDiscountRowDto>>> GetCashDiscountAdjustments(long requestId)
@@ -68,7 +89,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			var response = new ResponseDto<IEnumerable<CashDiscountRowDto>>();
 			try
 			{
-				response.Result = await _cashDiscountRepo.GetAdjustmentsByRequestId(requestId);
+				//response.Result = await _cashDiscountRepo.GetAdjustmentsByRequestId(requestId);
 				return response;
 			}
 			catch (Exception ex)
@@ -78,68 +99,68 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("bca/{requestId:long}"), Authorize]
-		public async Task<ResponseDto<IEnumerable<BankChargeRowDto>>> GetBankChargeAdjustments(long requestId)
-		{
-			var response = new ResponseDto<IEnumerable<BankChargeRowDto>>();
-			try
-			{
-				response.Result = await _bankChargeRepo.GetAdjustmentsByRequestId(requestId);
-				return response;
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex.Message);
-				return response.Failed(ex.Message);
-			}
-		}
+		//[HttpGet("bca/{requestId:long}"), Authorize]
+		//public async Task<ResponseDto<IEnumerable<BankChargeRowDto>>> GetBankChargeAdjustments(long requestId)
+		//{
+		//	var response = new ResponseDto<IEnumerable<BankChargeRowDto>>();
+		//	try
+		//	{
+		//		response.Result = await _bankChargeRepo.GetAdjustmentsByRequestId(requestId);
+		//		return response;
+		//	}
+		//	catch (Exception ex)
+		//	{
+		//		_logger.LogError(ex.Message);
+		//		return response.Failed(ex.Message);
+		//	}
+		//}
 
-		[HttpGet("aar/{requestId:long}")]
-        public async Task<ResponseDto<APAROffsetRowDto>> GetAPAdjustments(long requestId)
-        {
-            var response = new ResponseDto<APAROffsetRowDto>();
-            try
-            {
-                response.Result = await _aparOffsetRepo.GetAPAdjustmentsByRequestId(requestId);
-                return response;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return response.Failed(ex.Message);
-            }
-		}
+		//[HttpGet("aar/{requestId:long}")]
+  //      public async Task<ResponseDto<APAROffsetRowDto>> GetAPAdjustments(long requestId)
+  //      {
+  //          var response = new ResponseDto<APAROffsetRowDto>();
+  //          try
+  //          {
+  //              response.Result = await _aparOffsetRepo.GetAPAdjustmentsByRequestId(requestId);
+  //              return response;
+  //          }
+  //          catch (Exception ex)
+  //          {
+  //              _logger.LogError(ex.Message);
+  //              return response.Failed(ex.Message);
+  //          }
+		//}
 
-		[HttpGet("sar/{requestId:long}"), Authorize]
-		public async Task<ResponseDto<IEnumerable<SmallAmountRowDto>>> GeSmallAmountAdjustments(long requestId)
-		{
-			var response = new ResponseDto<IEnumerable<SmallAmountRowDto>>();
-			try
-			{
-				response.Result = await _smallAmountRepo.GetAdjustmentsByRequestId(requestId);
-				return response;
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex.Message);
-				return response.Failed(ex.Message);
-			}
-		}
+		//[HttpGet("sar/{requestId:long}"), Authorize]
+		//public async Task<ResponseDto<IEnumerable<SmallAmountRowDto>>> GeSmallAmountAdjustments(long requestId)
+		//{
+		//	var response = new ResponseDto<IEnumerable<SmallAmountRowDto>>();
+		//	try
+		//	{
+		//		response.Result = await _smallAmountRepo.GetAdjustmentsByRequestId(requestId);
+		//		return response;
+		//	}
+		//	catch (Exception ex)
+		//	{
+		//		_logger.LogError(ex.Message);
+		//		return response.Failed(ex.Message);
+		//	}
+		//}
 
-		[HttpGet("srr/{requestId:long}"), Authorize]
-		public async Task<ResponseDto<IEnumerable<SRAutoNetRowDto>>> GetSRAutoNetAdjustments(long requestId)
-		{
-			var response = new ResponseDto<IEnumerable<SRAutoNetRowDto>>();
-			try
-			{
-				response.Result = await _srAutoNetRepo.GetAdjustmentsByRequestId(requestId);
-				return response;
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex.Message);
-				return response.Failed(ex.Message);
-			}
-		}
+		//[HttpGet("srr/{requestId:long}"), Authorize]
+		//public async Task<ResponseDto<IEnumerable<SRAutoNetRowDto>>> GetSRAutoNetAdjustments(long requestId)
+		//{
+		//	var response = new ResponseDto<IEnumerable<SRAutoNetRowDto>>();
+		//	try
+		//	{
+		//		response.Result = await _srAutoNetRepo.GetAdjustmentsByRequestId(requestId);
+		//		return response;
+		//	}
+		//	catch (Exception ex)
+		//	{
+		//		_logger.LogError(ex.Message);
+		//		return response.Failed(ex.Message);
+		//	}
+		//}
 	}
 }

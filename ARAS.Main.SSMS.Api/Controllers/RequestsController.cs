@@ -55,22 +55,6 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("is-validatable/{requestId:long}"), Authorize(Roles = "Validator")]
-		public async Task<ResponseDto<bool>> IsValidatable(long requestId)
-		{
-			var response = new ResponseDto<bool>();
-			try
-			{
-				response.Result = await _requestRepo.IsValidatable(requestId);
-				return response;
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex.Message);
-				return response.Failed(ex.Message);
-			}
-		}
-
 		[HttpGet("is-declinable/{requestId:long}"), Authorize]
 		public async Task<ResponseDto<bool>> IsDeclinable(long requestId)
 		{
@@ -119,14 +103,13 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("submissions/{adjustmentTypeCode}"), Authorize]
-		public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetAllSubmissions(string adjustmentTypeCode)
+		[HttpGet("approvals/receipt"), Authorize(Roles = "Approver")]
+		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>> GetForApprovals(SearchRequestDto searchRequest)
 		{
-			var response = new ResponseDto<IEnumerable<TransactionRequestRowDto>>();
+			var response = new ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>();
 			try
 			{
-				response.Message = "";
-				response.Result = await _requestRepo.GetAllSubmissionsByType(adjustmentTypeCode);
+				response.Result = await _requestRepo.GetAllForApprovalsByType(searchRequest);
 				return response;
 			}
 			catch (Exception ex)
@@ -135,34 +118,5 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("approvals/{adjustmentTypeCode}"), Authorize(Roles = "Approver")]
-		public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetForApprovals(string adjustmentTypeCode)
-		{
-			var response = new ResponseDto<IEnumerable<TransactionRequestRowDto>>();
-			try
-			{
-				response.Result = await _requestRepo.GetAllForApprovalsByType(adjustmentTypeCode);
-				return response;
-			}
-			catch (Exception ex)
-			{
-				return response.Failed(ex.Message);
-			}
-		}
-
-		[HttpGet("validations/{adjustmentTypeCode}"), Authorize(Roles = "Validator")]
-		public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetForValidations(string adjustmentTypeCode)
-		{
-			var response = new ResponseDto<IEnumerable<TransactionRequestRowDto>>();
-			try
-			{
-				response.Result = await _requestRepo.GetAllForValidationsByType(adjustmentTypeCode);
-				return response;
-			}
-			catch (Exception ex)
-			{
-				return response.Failed(ex.Message);
-			}
-		}
 	}
 }

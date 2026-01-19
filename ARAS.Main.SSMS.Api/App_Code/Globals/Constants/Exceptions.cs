@@ -22,6 +22,7 @@
 		public const string NULL_REQUIRED_ATTACHMENTTYPE = "No allowed file types configured.";
 		public const string INVALID_FILENAME_SEQUENCE = "Invalid Filename Sequence. Please contact the administrator for assistance.";
 		public const string INVALID_PREVIOUSCREATOR = "Invalid Previous Creator Role. Please contact the administrator for assistance.";
+		public const string INVALID_SEARCHCATEGORY = "Invalid Search Category. Please check the provided link or selected category in the search bar or contact the administrator for assistance.";
 		public static string GetMessage(Exception ex) => ex.Message + (ex.InnerException != null ? "" + ex.InnerException.Message : "");
 	}
 }

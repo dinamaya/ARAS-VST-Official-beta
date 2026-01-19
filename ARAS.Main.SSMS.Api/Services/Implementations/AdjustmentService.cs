@@ -1,65 +1,50 @@
-﻿using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
+﻿using ARAS.Main.SSMS.Api.App_Code.Globals;
+using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
+using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
+using ARAS.Main.SSMS.Api.Models.Entities;
 using ARAS.Main.SSMS.Api.Repositories.Implementations;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using ARAS.Main.SSMS.Api.Services.Interfaces;
 
 namespace ARAS.Main.SSMS.Api.Services.Implementations
 {
-	public class AdjustmentService(
-		ICashDiscountRepository cashDiscountRepo, 
-		IBankChargeRepository bankChargeRepo, 
-		IAPAROffsetRepository aparOffsetRepo,
-		IARInvoiceOffsettingRepository arInvoiceOffsettingRepo,
-		ISmallAmountRepository smallAmountRepo,
-		ISRAutoNetRepository srAutoNetRepo) : IAdjustmentService
+	public class AdjustmentService : IAdjustmentService
 	{
+		private readonly MainDbContext _context;
+		private readonly IRequestRepository _requestRepo;
+		private readonly ITransactionRepository _transactionRepo;
 
-		/// <summary>
-		/// <para>Add the repositories here</para> 
-		/// <para>Throws Invalid Operation Exception when the adjustment type code incorrect or does not exist</para> 
-		/// </summary>
-		/// <param name="adjustmentTypeCode">
-		/// </param>
-		/// <returns></returns>
-		/// <exception cref="InvalidOperationException"></exception>
-		private ICreateStatusRepository AdjustmentTypeCheck(string adjustmentTypeCode)
+        public AdjustmentService(MainDbContext context, IRequestRepository requestRepo, ITransactionRepository transactionRepo)
+        {
+            _context = context;
+            _requestRepo = requestRepo;
+            _transactionRepo = transactionRepo;
+        }
+
+        public async Task Approve(IEnumerable<long> requestIds, string createdBy)
 		{
-			adjustmentTypeCode = adjustmentTypeCode.ToLower();
-			return adjustmentTypeCode switch
+			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
+
+			try
 			{
-				"cdr" => cashDiscountRepo,
-				"bca" => bankChargeRepo,
-				"arr" => aparOffsetRepo,
-				"sar" => smallAmountRepo,
-				"srr" => srAutoNetRepo,
-				"ofr" => arInvoiceOffsettingRepo,
-				_ => throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENTTYPE)
-			};
-		}
+				IList<TransactionCreateDto> transactions = [];
 
-		public async Task Approve(RequestUpdateDto data, string createdBy, string adjustmentTypeCode)
-		{
-			ICreateStatusRepository adjustmentService = AdjustmentTypeCheck(adjustmentTypeCode);
-			await adjustmentService.ApproveAsync(data, createdBy);
-		}
+				foreach (var requestId in requestIds)
+				{
+					bool isApprovable = await _requestRepo.IsApprovable(requestId);
+					Guards.ThrowInvalidOperationIf(!isApprovable, Exceptions.ALREADY_APPROVED);
+					transactions.Add(new TransactionCreateDto(requestId, "Approved"));
+				}
 
-		public async Task Decline(NegateRequestDto createDecline, string createdBy, string adjustmentTypeCode)
-		{
-			ICreateStatusRepository adjustmentService = AdjustmentTypeCheck(adjustmentTypeCode);
-			await adjustmentService.DeclineAsync(createDecline, createdBy);
-		}
-
-		public async Task Reject(NegateRequestDto createDecline, string createdBy, string adjustmentTypeCode)
-		{
-			ICreateStatusRepository adjustmentService = AdjustmentTypeCheck(adjustmentTypeCode);
-			await adjustmentService.RejectAsync(createDecline, createdBy);
-		}
-
-		public async Task Validate(RequestUpdateDto data, string createdBy, string adjustmentTypeCode)
-		{
-			ICreateStatusRepository adjustmentService = AdjustmentTypeCheck(adjustmentTypeCode);
-			await adjustmentService.ValidateAsync(data, createdBy);
+				await _transactionRepo.CreateAsync(transactions, createdBy);
+				await dbTransaction.CommitAsync();
+			}
+			catch
+			{
+				await dbTransaction.RollbackAsync();
+				throw;
+			}
 		}
 	}
 }

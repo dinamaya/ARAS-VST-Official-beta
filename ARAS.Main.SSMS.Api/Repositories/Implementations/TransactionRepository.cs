@@ -3,6 +3,7 @@ using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Models.Entities;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace ARAS.Main.SSMS.Api.Repositories.Implementations
@@ -28,6 +29,30 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			await context.SaveChangesAsync();
 
 			return transaction.Id;
+		}
+
+		public async Task CreateAsync(IEnumerable<TransactionCreateDto> data, string createdBy)
+		{
+			IList<Transaction> transactions = [];
+			string statusId = await statusRepo.GetIdByName(data.First().StatusName);
+
+			foreach (var t in data)
+			{
+				var _data = new Transaction()
+				{
+					RequestId = t.RequestId,
+					StatusId = statusId,
+
+					CreatedBy = createdBy,
+					DateCreated = DateTime.Now,
+
+					IsActive = true
+				};
+				transactions.Add(_data);
+			}
+
+			await context.Transactions.AddRangeAsync(transactions);
+			await context.SaveChangesAsync();
 		}
 
 		public async Task<IEnumerable<TransactionHistoryDto>> GetHistoryByRequestId(long requestId)
@@ -69,5 +94,5 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				DateCreated = t.DateCreated,
 			}).ToList();
 		}
-	}
+    }
 }

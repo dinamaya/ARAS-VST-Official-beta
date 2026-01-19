@@ -12,7 +12,6 @@ namespace ARAS.Main.SSMS.Api.Models.Entities
 		public long RequestId { get; set; }
 		[DataType(DataType.Currency)] public double AdjustmentAmount{ get; set; }
 		public string AdjustmentTypeId { get; set; }
-		public string ReasonCode { get; set; }
 		public string Remarks { get; set; }
 
 

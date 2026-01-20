@@ -1,7 +1,0 @@
-﻿@page "/submissions/small-amount"
-@attribute [Authorize]
-
-@using Microsoft.AspNetCore.Authorization
-@inject ISmallAmountService ReaderService
-
-<BaseAdjustmentSubmission RouteName="small-amount" Title="Small Amount" RequestSubmissionReader="ReaderService" />

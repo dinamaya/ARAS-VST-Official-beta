@@ -1,8 +1,0 @@
-﻿@page "/approvals/bank-charge"
-@attribute [Authorize(Roles = "Approver")]
-
-@using ARAS.Blazor.App_Code.Globals.Enums
-@using Microsoft.AspNetCore.Authorization
-@inject IBankChargeService Service
-
-<BaseAdjustmentRequestUpdate RouteName="bank-charge" Title="Bank Charge" RequestSubmissionReader="Service" AdjustmentStage="@AdjustmentStageType.APPROVAL" />

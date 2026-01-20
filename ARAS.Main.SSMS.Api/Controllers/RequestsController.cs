@@ -118,5 +118,20 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
+		[HttpGet("submissions/receipt"), Authorize]
+		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>> GetSubmissions(SearchRequestDto searchRequest)
+		{
+			var response = new ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>();
+			try
+			{
+				var accountInfo = User.GetAccountBasicInfo();
+				response.Result = await _requestRepo.GetSubmissions(searchRequest, accountInfo.Role, accountInfo.FullName);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
 	}
 }

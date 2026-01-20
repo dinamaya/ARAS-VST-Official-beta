@@ -35,17 +35,15 @@
 		}
 		else if (accountDetails.IsInRole("Approver"))
 		{
-				<RadzenPanelMenuItem Text="Approvals" Icon="assignment_turned_in" Style="border: none">
-					<MenuItem Text="Receipt" Route="/approvals/receipt" />
-					<MenuItem Text="Invoice" Route="/approvals/invoice" />
-				</RadzenPanelMenuItem>
+			<RadzenPanelMenuItem Text="Approvals" Icon="assignment_turned_in" Style="border: none">
+				<MenuItem Text="Receipt" Route="/approvals/receipt" />
+				<MenuItem Text="Invoice" Route="/approvals/invoice" />
+			</RadzenPanelMenuItem>
 		}
-		else if (accountDetails.IsInRole("Validator"))
-		{
-			<NavPanelMenu MenuText="Validations" MenuIcon="fact_check" RootDirectory="validations"/>
-		}
-
-		<NavPanelMenu MenuText="Submissions" MenuIcon="article_shortcut" RootDirectory="submissions"/>
+		<RadzenPanelMenuItem Text="Submissions" Icon="fact_check" Style="border: none">
+			<MenuItem Text="Receipt" Route="/submissions/receipt" />
+			<MenuItem Text="Invoice" Route="/submissions/invoice" />
+		</RadzenPanelMenuItem>
 	</RadzenPanelMenu>
 	</div>
 </RadzenSidebar>

@@ -1,0 +1,61 @@
+﻿@page "/submissions/receipt"
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Components.Shared.DataTables
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize]
+
+@inject DialogService DialogService
+@inject IAdjustmentService AdjustmentService
+@inject IRequestService RequestService
+@inject IConfigService ConfigService
+@inject IAuthService AuthService
+
+<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+
+	@if (isReady)
+	{
+		<MainSearchBar OnSearch="HandleSearch" TextFields="textFields" DropdownFields="dropdowns">
+			<ResultTemplate Context="isLoading">
+				<SearchSubmissionAdjustmentsDataTable IsLoading="isLoading" Rows="rows" Role="@role" />
+			</ResultTemplate>
+		</MainSearchBar>
+	}
+
+</RadzenStack>
+
+@code {
+	private Dictionary<string, IEnumerable<string>> dropdowns { get; set; }
+	private IList<string> textFields { get; set; }
+	private IEnumerable<ReceiptAdjustmentRowDto> rows { get; set; }
+
+	protected bool IsOnSearch { get; private set; }
+	protected bool IsLoading { get; private set; }
+	private bool isReady = false;
+	private string role = string.Empty;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		role = (await AuthService.GetRole()).ToLower();
+		textFields = (ConfigService.GetApproverSearchInvoiceCategories()).ToList();
+		
+		if (!role.Equals("requestor"))
+			textFields.Remove("Requestor Name");
+
+		var adjustmentsTypes = await AdjustmentService.GetAdjustmentTypes();
+		dropdowns = new Dictionary<string, IEnumerable<string>>
+		{
+			{ "Adjustment Type",  adjustmentsTypes},
+		};
+		isReady = true;
+	}
+
+	protected void OnSearchToggle(bool value) => IsOnSearch = value;
+	protected void OnLoadingChanged(bool value) => IsLoading = value;
+
+	private async Task HandleSearch(SearchRequestDto searchRequest)
+	{
+		rows = await RequestService.GetReceiptAdjustmentSubmissions(searchRequest);
+	}
+}

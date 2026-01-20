@@ -40,7 +40,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			var latest = await _context.VwLatestReceiptAdjustmentDetails.AsNoTracking().Where(t =>
 				t.RequestId == requestId &&
-				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "Validated")
+				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "Approved" || t.Status == "Posted")
 			).ToListAsync();
 
 			return latest.Count() > 0;
@@ -122,6 +122,25 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			return await ToRequestAdjustmentRow(query);
 		}
 
+		public async Task<IEnumerable<ReceiptAdjustmentRowDto>> GetSubmissions(SearchRequestDto data, string role, string fullname)
+		{
+			data.Value = data.Value.ToUpper();
+
+			IQueryable<LatestReceiptAdjustmentDetailsV> query = GetSubmissions();
+			query = data.Category.ToUpper() switch
+			{
+				"INVOICE NUMBER" => GetByInvoiceNumber(query, data.Value),
+				"CUSTOMER NAME" => GetByCustomerName(query, data.Value),
+				"ADJUSTMENT TYPE" => GetByAdjustmentType(query, data.Value),
+				"REQUESTOR NAME" => GetByRequestor(query, data.Value),
+				_ => throw new InvalidOperationException(Exceptions.INVALID_SEARCHCATEGORY),
+			};
+
+			query = FilterByDateRange(query, data.StartDate.ToDateTime(TimeOnly.MinValue), data.EndDate.ToDateTime(TimeOnly.MaxValue));
+			query = FilterByRole(query, role, fullname);
+			return await ToRequestAdjustmentRow(query);
+		}
+
 		public async Task<TransactionRequestRowDto> GetTransactionRequestByRequestId(long requestId)
 		{
 			return await _context.VwLatestReceiptAdjustmentDetails
@@ -147,7 +166,10 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 		private IQueryable<LatestReceiptAdjustmentDetailsV> GetForApprovals() =>
 			_context.VwLatestReceiptAdjustmentDetails.AsNoTracking()
-				.Where(t => t.Status == "Pending" && t.ApproverId == null);
+				.Where(t => (t.Status == "Pending") || (t.Status == "Resubmitted") && t.ApproverId == null);
+
+		private IQueryable<LatestReceiptAdjustmentDetailsV> GetSubmissions() =>
+			_context.VwLatestReceiptAdjustmentDetails.AsNoTracking();
 
 		private IQueryable<LatestReceiptAdjustmentDetailsV> GetByInvoiceNumber(IQueryable<LatestReceiptAdjustmentDetailsV> query, string invoiceNumber) =>
 			query.Where(t => t.InvoiceNumber == invoiceNumber);
@@ -163,6 +185,22 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 		private IQueryable<LatestReceiptAdjustmentDetailsV> FilterByDateRange(IQueryable<LatestReceiptAdjustmentDetailsV> query, DateTime start, DateTime end) => 
 			query.Where(t => t.DateCreated >= start && t.DateCreated <= end);
+
+		private IQueryable<LatestReceiptAdjustmentDetailsV> FilterByRole(IQueryable<LatestReceiptAdjustmentDetailsV> query, string role, string name)
+		{
+			name = name.ToUpper();
+			switch (role.ToUpper())
+			{
+				case "REQUESTOR":
+					return query.Where(t => (t.RequestorFirstName + " " + t.RequestorLastName).ToUpper() == name);
+				case "APPROVER":
+					return query.Where(t => (t.ApproverFirstName + " " + t.ApproverLastName).ToUpper() == name);
+				case "VALIDATOR":
+					return query;
+				default:
+					throw new Exception(Exceptions.INVALID_ROLE);
+			}
+		}
 
 		private async Task<IEnumerable<ReceiptAdjustmentRowDto>> ToRequestAdjustmentRow(IQueryable<LatestReceiptAdjustmentDetailsV> query) =>
 			await query.Select(q => new ReceiptAdjustmentRowDto()
@@ -180,5 +218,5 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				AdjustmentType = q.AdjustmentType
 			})
 			.ToListAsync();
-	}
+    }
 }

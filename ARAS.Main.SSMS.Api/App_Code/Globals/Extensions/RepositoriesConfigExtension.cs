@@ -11,20 +11,13 @@ namespace ARAS.Main.SSMS.Api.App_Code.Globals.Extensions
 		public static void AddRepositoriesConfig(this IServiceCollection services)
 		{
 			services.AddScoped(typeof(IBaseAdjustmentRepository<>), typeof(BaseAdjustmentRepository<>));
-			//services.AddScoped(typeof(IBaseReceiptAdjustmentRepository<>), typeof(BaseReceiptAdjustmentRepository<>));
 
 			services.AddScoped<IBaseReceiptAdjustmentRepository, BaseReceiptAdjustmentRepository>();
-			//services.AddScoped<IAPAROffsetRepository, APAROffsetRepository>();
-			//services.AddScoped<IARInvoiceOffsettingRepository, ARInvoiceOffsettingRepository>();
 			services.AddScoped<IAdjustmentRepository, AdjustmentRepository>();
-			//services.AddScoped<IBankChargeRepository, BankChargeRepository>();
-			//services.AddScoped<ICashDiscountRepository, CashDiscountRepository>();
 			services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 			services.AddScoped<IRequestRepository, RequestRepository>();
 			services.AddScoped<IRemarksRepository, RemarksRepository>();
 			services.AddScoped<IStatusRepository, StatusRepository>();
-			//services.AddScoped<ISmallAmountRepository, SmallAmountRepository>();
-			//services.AddScoped<ISRAutoNetRepository, SRAutoNetRepository>();
 			services.AddScoped<ITransactionRepository, TransactionRepository>();
 
 			services.AddScoped<IFileManager, FileManager>();

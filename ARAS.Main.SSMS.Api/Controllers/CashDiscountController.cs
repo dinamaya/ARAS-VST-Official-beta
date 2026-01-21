@@ -40,25 +40,5 @@ namespace ARAS.Main.SSMS.Api.Controllers
 				return response.Failed(ex.Message);
 			}
 		}
-
-		[HttpPut("{requestId:long}"), Authorize(Roles = "Requestor")]
-		public async Task<ResponseDto<string>> Update(long requestId, [FromBody] CashDiscountCreateDto data)
-		{
-			ResponseDto<string> response = new ResponseDto<string>();
-			try
-			{
-				var requestCreation = new RequestCreationDto<CashDiscountCreateDto>(data, User.GetAccountBasicInfo());
-
-				//await _cashDiscountRepo.UpdateAsync(requestId, requestCreation, requestCreation.CreatorId);
-
-				response.Result = "Success";
-				response.Message = "Request Updated Successfully";
-				return response;
-			}
-			catch (Exception ex)
-			{
-				return response.Failed(ex.Message);
-			}
-		}
 	}
 }

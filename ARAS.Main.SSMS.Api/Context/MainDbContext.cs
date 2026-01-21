@@ -66,11 +66,6 @@ namespace ARAS.Main.SSMS.Api.Context
 			  .HasOne(a => a.Request)
 				.WithMany()
 				.HasForeignKey(a => a.RequestId);
-
-				entity
-			  .HasOne(a => a.AdjustmentType)
-				.WithMany()
-				.HasForeignKey(a => a.AdjustmentTypeId);
 			});
 
 			modelBuilder.Entity<Note>()

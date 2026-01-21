@@ -27,7 +27,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			adjustment.InvoiceId = data.InvoiceId;
 			adjustment.RequestId = data.RequestId;
 			adjustment.AdjustmentAmount = data.AdjustmentAmount;
-			adjustment.AdjustmentTypeId = data.AdjustmentTypeId;
 			adjustment.Remarks = data.Remarks;
 
 			adjustment.DateCreated = date;
@@ -40,6 +39,35 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			await _context.SaveChangesAsync();
 
 			return adjustment.Id;
+		}
+
+		public async Task<IEnumerable<long>> CreateAsync(IEnumerable<AdjustmentCreateDto> data, string createdBy)
+		{
+			var date = DateTime.Now;
+
+			IList<Adjustment> results = [];
+
+			foreach (var _data in data)
+			{
+				var adjustment = new Adjustment();
+				adjustment.InvoiceId = _data.InvoiceId;
+				adjustment.RequestId = _data.RequestId;
+				adjustment.AdjustmentAmount = _data.AdjustmentAmount;
+				adjustment.Remarks = _data.Remarks;
+
+				adjustment.DateCreated = date;
+				adjustment.DateModified = date;
+				adjustment.CreatedBy = createdBy;
+				adjustment.ModifiedBy = createdBy;
+				adjustment.IsActive = true;
+
+				results.Add(adjustment);
+			}
+
+			await _context.Adjustments.AddRangeAsync(results);
+			await _context.SaveChangesAsync();
+
+			return results.Select(r => r.Id);
 		}
 
 		public async Task<IEnumerable<Adjustment>> GetByRequestId(long requestId) => 
@@ -184,5 +212,15 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		}
 
         public async Task<IEnumerable<string>> GetTypes() => await _context.AdjustmentTypes.AsNoTracking().Select(a => a.Name).ToListAsync();
+        public async Task<IEnumerable<string>> GetReceiptTypes() => await _context.AdjustmentTypes.AsNoTracking()
+			.Where(a => a.Category == "Receipt")
+			.Select(a => a.Name)
+			.ToListAsync();
+
+        public async Task<AdjustmentBasicInfoDto> GetAdjustmentInfoByName(string adjustmentName) =>
+			await _context.AdjustmentTypes.AsNoTracking()
+				.Where(x => x.Name.Equals(adjustmentName))
+				.Select(x => new AdjustmentBasicInfoDto(x.Id, x.Code)).FirstOrDefaultAsync() ??
+				throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENTTYPE);
 	}
 }

@@ -1,7 +1,7 @@
 ﻿namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 {
-    public interface ICreateMultipleRepository<TModel> where TModel : class
+    public interface ICreateMultipleRepository<TModel, TReturn>
 	{
-		Task CreateAsync(IEnumerable<TModel> data, string createdBy);
+		Task<IEnumerable<TReturn>> CreateAsync(IEnumerable<TModel> data, string createdBy);
 	}
 }

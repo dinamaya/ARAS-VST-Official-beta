@@ -23,6 +23,7 @@ namespace ARAS.Main.SSMS.Api.Context.Seeders
 					Name = "AP-AR: Off Set",
 					Code = "ARR",
 					ReasonCode = string.Empty,
+					Category = "Invoice",
 					IsActive = true,
 				},
 				new AdjustmentType()
@@ -31,6 +32,7 @@ namespace ARAS.Main.SSMS.Api.Context.Seeders
 					Name = "AR Invoice Offsetting",
 					Code = "OFR",
 					ReasonCode = string.Empty,
+					Category = "Invoice",
 					IsActive = true,
 				},
 				new AdjustmentType()
@@ -39,6 +41,7 @@ namespace ARAS.Main.SSMS.Api.Context.Seeders
 					Name = "Bank Charges",
 					Code = "BCA",
 					ReasonCode = "CHARGES",
+					Category = "Receipt",
 					IsActive = true,
 				},
 				new AdjustmentType()
@@ -47,6 +50,7 @@ namespace ARAS.Main.SSMS.Api.Context.Seeders
 					Name = "Write-Off: Sales Return Auto Net",
 					Code = "SRR",
 					ReasonCode = "OFFSET",
+					Category = "Invoice",
 					IsActive = true,
 				},
 				new AdjustmentType()
@@ -55,6 +59,7 @@ namespace ARAS.Main.SSMS.Api.Context.Seeders
 					Name = "Cash Discount",
 					Code = "CDR",
 					ReasonCode = "DISCOUNT",
+					Category = "Receipt",
 					IsActive = true,
 				},
 				new AdjustmentType()
@@ -63,6 +68,7 @@ namespace ARAS.Main.SSMS.Api.Context.Seeders
 					Name = "Write-Off: Small Amount",
 					Code = "SAR",
 					ReasonCode = "WRITE OFF",
+					Category = "Receipt",
 					IsActive = true,
 				}
 			);

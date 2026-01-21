@@ -67,6 +67,22 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
+		[HttpGet("types/receipt")]
+		public async Task<ResponseDto<IEnumerable<string>>> GetReceiptAdjustmentTypes()
+		{
+			var response = new ResponseDto<IEnumerable<string>>();
+			try
+			{
+				response.Result = await _adjustmentRepo.GetReceiptTypes();
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
 		//[HttpGet("ofr/{requestId:long}"), Authorize]
 		//      public async Task<ResponseDto<IEnumerable<ARInvoiceOffsettingRowDto>>> GetARInvoiceOffsettingAdjustments(long requestId)
 		//      {

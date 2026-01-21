@@ -31,11 +31,12 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			return transaction.Id;
 		}
 
-		public async Task CreateAsync(IEnumerable<TransactionCreateDto> data, string createdBy)
+		public async Task<IEnumerable<long>> CreateAsync(IEnumerable<TransactionCreateDto> data, string createdBy)
 		{
-			IList<Transaction> transactions = [];
+			IList<Transaction> results = [];
 			string statusId = await statusRepo.GetIdByName(data.First().StatusName);
 
+			var date = DateTime.Now;
 			foreach (var t in data)
 			{
 				var _data = new Transaction()
@@ -44,15 +45,17 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					StatusId = statusId,
 
 					CreatedBy = createdBy,
-					DateCreated = DateTime.Now,
+					DateCreated = date,
 
 					IsActive = true
 				};
-				transactions.Add(_data);
+				results.Add(_data);
 			}
 
-			await context.Transactions.AddRangeAsync(transactions);
+			await context.Transactions.AddRangeAsync(results);
 			await context.SaveChangesAsync();
+
+			return results.Select(t => t.Id);
 		}
 
 		public async Task<IEnumerable<TransactionHistoryDto>> GetHistoryByRequestId(long requestId)

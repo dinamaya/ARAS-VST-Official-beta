@@ -81,6 +81,26 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			return request.Id;
 		}
 
+		public async Task<IEnumerable<long>> CreateAsync(IEnumerable<string> adjustmentTypeIds, string createdBy)
+		{
+			IList<Request> results = [];
+			var date = DateTime.Now;
+			foreach (string id in adjustmentTypeIds)
+			{
+				results.Add(new Request
+				{
+					AdjustmentTypeId = id,
+					CreatedBy = createdBy,
+					DateCreated = date
+				});
+			}
+
+			await _context.Requests.AddRangeAsync(results);
+			await _context.SaveChangesAsync();
+
+			return results.Select(r => r.Id);
+		}
+
 		public async Task<string> GetRequestNumberById(long requestId)
 		{
 			return await _context.Requests

@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 {
-    public interface IBaseReceiptAdjustmentRepository<TCreate> where TCreate : BaseAdjustmentCreateDto
+    public interface IBaseReceiptAdjustmentRepository
 	{
-		Task<long> Create(RequestCreationDto<TCreate> data, string createdBy, string adjustmentTypeCode);
-		Task<long> Update(long requestId, RequestCreationDto<TCreate> data, string modifiedBy, string adjustmentTypeCode);
+		Task<string> Create(RequestCreationDto<IEnumerable<BaseReceiptAdjustmentCreateDto>> data, string createdBy);
+		Task<long> Update(long requestId, RequestCreationDto<IEnumerable<BaseReceiptAdjustmentCreateDto>> data, string modifiedBy);
 	}
 }

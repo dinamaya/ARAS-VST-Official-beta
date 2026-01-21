@@ -5,15 +5,12 @@ using ARAS.Main.SSMS.Api.Services.Interfaces;
 
 namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 {
-    public class BaseReceiptAdjustmentRepository<TCreate> : IBaseReceiptAdjustmentRepository<TCreate>
-		where TCreate : BaseAdjustmentCreateDto
+    public class BaseReceiptAdjustmentRepository : IBaseReceiptAdjustmentRepository
 	{
 		private readonly MainDbContext _context;
-		private readonly IBackgroundJobService _bgJobService;
 		private readonly IAdjustmentRepository _adjustmentRepo;
 		private readonly IRequestRepository _requestRepo;
 		private readonly ITransactionRepository _transactionRepo;
-		private readonly IRemarksRepository _remarksRepo;
 		private readonly IInvoiceRepository _invoiceRepo;
 
         public BaseReceiptAdjustmentRepository(
@@ -26,35 +23,72 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
             IInvoiceRepository invoiceRepo)
         {
             _context = context;
-            _bgJobService = bgJobService;
             _adjustmentRepo = adjustmentRepo;
             _requestRepo = requestRepo;
             _transactionRepo = transactionRepo;
-            _remarksRepo = remarksRepo;
             _invoiceRepo = invoiceRepo;
         }
 
-		public async Task<long> Create(RequestCreationDto<TCreate> data, string createdBy, string adjustmentTypeCode)
+		public async Task<string> Create(RequestCreationDto<IEnumerable<BaseReceiptAdjustmentCreateDto>> data, string createdBy)
 		{
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
 			try
 			{
-				var adjustmentType = await _adjustmentRepo.GetAdjustmentInfoByCode(adjustmentTypeCode);
-				var requestId = await _requestRepo.CreateAsync(adjustmentType.Id, createdBy);
+				IList<string> adjustmentTypeIds = [];
+				IEnumerable<long> requestIds = [];
 
-				var transaction = new TransactionCreateDto(requestId, "Pending");
-				var transactId = await _transactionRepo.CreateAsync(transaction, createdBy);
+				IList<TransactionCreateDto> transactions = [];
+				IEnumerable<long> transactionIds = [];
 
-				var invoice = new InvoiceCreateDto(data.Model);
-				var invoiceId = await _invoiceRepo.CreateAsync(invoice, createdBy);
+				IList<InvoiceCreateDto> invoices = [];
+				IEnumerable<long> invoiceIds = [];
 
-				var adjustment = new AdjustmentCreateDto(invoiceId, requestId, data.Model, adjustmentType.Id);
-				await _adjustmentRepo.CreateAsync(adjustment, createdBy);
+				IList<AdjustmentCreateDto> adjustments = [];
 
+				foreach (string adjustmentName in data.Model.Select(d => d.AdjustmentType))
+				{
+					string adjustmentType = (await _adjustmentRepo.GetAdjustmentInfoByName(adjustmentName)).Id;
+					adjustmentTypeIds.Add(adjustmentType);
+				}
+				requestIds = await _requestRepo.CreateAsync(adjustmentTypeIds, createdBy);
+
+				foreach (var requestId in requestIds)
+					transactions.Add(new TransactionCreateDto(requestId, "Pending"));
+				transactionIds = await _transactionRepo.CreateAsync(transactions, createdBy);
+
+				foreach (var invoice in data.Model)
+					invoices.Add(new InvoiceCreateDto(invoice));
+				invoiceIds = await _invoiceRepo.CreateAsync(invoices, createdBy);
+
+				// Combine the model, invoiceIds and requestIds
+				var zipped = invoiceIds
+					.Zip(data.Model, (inv, mod) => new
+					{
+						invoice = inv,
+						model = mod
+					})
+					.Zip(requestIds, (mod, req) => new
+						{
+							ids = new 
+							{
+								invoice = mod.invoice,
+								requests = req
+							},
+							model = mod.model
+						});
+
+				foreach (var result in zipped)
+					adjustments.Add(new AdjustmentCreateDto(
+						result.ids.invoice, 
+						result.ids.requests,
+						result.model)
+					);
+
+				await _adjustmentRepo.CreateAsync(adjustments, createdBy);
 				await dbTransaction.CommitAsync();
 
-				return requestId;
+				return "Success";
 			}
 			catch
 			{
@@ -63,14 +97,14 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			}
 		}
 
-		public async Task<long> Update(long requestId, RequestCreationDto<TCreate> data, string modifiedBy, string adjustmentTypeCode)
+		public async Task<long> Update(long requestId, RequestCreationDto<IEnumerable<BaseReceiptAdjustmentCreateDto>> data, string modifiedBy)
 		{
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
 			try
 			{
 				var requestRefNo = await _requestRepo.GetRequestNumberById(requestId);
-				var adjustmentType = await _adjustmentRepo.GetAdjustmentInfoByCode(adjustmentTypeCode);
+				//var adjustmentType = await _adjustmentRepo.GetAdjustmentInfoByCode(adjustmentTypeCode);
 
 				// Implement Update here no need to deactivate because it is only a single data
 				await dbTransaction.CommitAsync();

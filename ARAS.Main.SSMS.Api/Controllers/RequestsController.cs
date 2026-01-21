@@ -13,17 +13,17 @@ namespace ARAS.Main.SSMS.Api.Controllers
 	public class RequestsController : ControllerBase
 	{
 		private readonly ILogger<RequestsController> _logger;
-		private readonly ICashDiscountRepository _cashDiscountRepo;
 		private readonly IRequestRepository _requestRepo;
+		private readonly IBaseReceiptAdjustmentRepository _receiptAdjustmentRepo;
 
-		public RequestsController(ILogger<RequestsController> logger, ICashDiscountRepository cashDiscountRepo, IRequestRepository requestRepo)
-		{
-			_logger = logger;
-			_cashDiscountRepo = cashDiscountRepo;
-			_requestRepo = requestRepo;
-		}
+        public RequestsController(ILogger<RequestsController> logger, IRequestRepository requestRepo, IBaseReceiptAdjustmentRepository receiptAdjustmentRepo)
+        {
+            _logger = logger;
+            _requestRepo = requestRepo;
+            _receiptAdjustmentRepo = receiptAdjustmentRepo;
+        }
 
-		[HttpGet("details/{requestId:long}"), Authorize]
+        [HttpGet("details/{requestId:long}"), Authorize]
 		public async Task<ResponseDto<TransactionRequestRowDto>> GetTransactionRequestByRequestId(long requestId)
 		{
 			var response = new ResponseDto<TransactionRequestRowDto>();
@@ -99,6 +99,24 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			catch (Exception ex)
 			{
 				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
+
+
+		[HttpPost("receipt"), Authorize(Roles = "Requestor")]
+		public async Task<ResponseDto<string>> CreateReceiptAdjusmentRequest([FromBody] IEnumerable<BaseReceiptAdjustmentCreateDto> data)
+		{
+			var response = new ResponseDto<string>();
+			try
+			{
+				var requestCreation = new RequestCreationDto<IEnumerable<BaseReceiptAdjustmentCreateDto>>(data, User.GetAccountBasicInfo());
+				response.Result = await _receiptAdjustmentRepo.Create(requestCreation, requestCreation.CreatorId);
+				return response;
+			}
+			catch (Exception ex)
+			{
 				return response.Failed(ex.Message);
 			}
 		}

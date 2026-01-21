@@ -6,6 +6,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 	public interface IRequestRepository : 
 		IReadSingleRepository<Request, long>, 
 		ICreateRepository<string, long>,
+		ICreateMultipleRepository<string, long>,
 		IGetTransactionRequestsRepository
 	{
 		Task<bool> IsApprovable(long requestId);

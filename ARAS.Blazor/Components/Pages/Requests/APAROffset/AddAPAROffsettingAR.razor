@@ -29,6 +29,8 @@
 
 	[Parameter] public IList<APAROffsetAPRowDto> APRows { get; set; }
 
+	[Parameter] public EventCallback OnARRowAdded { get; set; }
+
 	private IEnumerable<string> invoices = new List<string>();
 	private string remarks = string.Empty;
 
@@ -51,10 +53,10 @@
 
 			Guards.ThrowInvalidOperationIf(isInvoiceDiscounted, $"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the AR Offsetting adjustment table");
 
-			if (Rows.Any())
+			var firstInvoiceRow = Rows.FirstOrDefault(r => r.RowType == ARRowType.Invoice && !string.IsNullOrWhiteSpace(r.CustomerNumber));
+			if (firstInvoiceRow is not null)
 			{
-				var firstInvoice = Rows.First();
-				if (firstInvoice.CustomerNumber != InvoiceDetails.CustomerNumber)
+				if (firstInvoiceRow.CustomerNumber != InvoiceDetails.CustomerNumber)
 				{
 					throw new InvalidOperationException("All invoices must belong to the same customer.");
 				}
@@ -74,6 +76,7 @@
 			Rows.Add(row);
 
 			await Grid.Reload();
+			await OnARRowAdded.InvokeAsync();
 			DialogService.Close(true);
 		}
 		catch (Exception ex)

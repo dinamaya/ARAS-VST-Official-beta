@@ -44,6 +44,12 @@
                             </FooterTemplate>
                         </RadzenDataGridColumn>
 
+                        <RadzenDataGridColumn Property="@nameof(APAROffsetAPRowDto.CustomerName)" Title="Customer Name">
+                            <Template Context="data">
+                                @((string.IsNullOrWhiteSpace(data.CustomerName) ? data.CustomerNumber : data.CustomerName))
+                            </Template>
+                        </RadzenDataGridColumn>
+
                         <RadzenDataGridColumn Property="@nameof(APAROffsetAPRowDto.InvoiceAmount)" Title="Invoice Amount">
                             <Template Context="data">
                                 @if (string.IsNullOrWhiteSpace(data?.InvoiceNumber))
@@ -91,6 +97,19 @@
                             <FooterTemplate>
                                 <b>TOTAL</b>
                             </FooterTemplate>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="APAROffsetARRowDto" Title="Customer Name">
+                            <Template Context="data">
+                                @if (data.RowType == ARRowType.Invoice)
+                                {
+                                    @(string.IsNullOrWhiteSpace(data.CustomerName) ? data.CustomerNumber : data.CustomerName)
+                                }
+                                else
+                                {
+                                    @string.Empty
+                                }
+                            </Template>
                         </RadzenDataGridColumn>
 
                         <RadzenDataGridColumn Property="Amount" Title="Amount">

@@ -2,7 +2,7 @@
 {
     public class ARInvoiceOffsettingCNDetailsDto
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
+        public string Id { get; set; } = Guid.NewGuid().ToString();
         public string CNRef { get; set; } = string.Empty;
         public double CNAmt { get; set; } = 0.00d;
         public double WT { get; set; } = 0.00d;

@@ -5,7 +5,7 @@ namespace ARAS.Blazor.Models.DTOs
 {
     public class ARInvoiceOffsettingRowDto
     {
-        public string Id { get; private set; }
+        public string Id { get; set; }
         public string AdjustmentActivity { get; set; } = string.Empty;
         public double InvoiceAmount { get; set; } = 1_000.00d;
         public string InvoiceDate { get; set; } = string.Empty;

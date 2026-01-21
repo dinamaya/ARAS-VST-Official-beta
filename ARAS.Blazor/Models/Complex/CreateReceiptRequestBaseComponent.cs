@@ -1,6 +1,6 @@
 ﻿namespace ARAS.Blazor.Models.Complex
 {
-    public class CreateReceiptRequestBaseComponent<TRow> : ReceiptRequestBaseComponent<TRow> where TRow : AdjustmentRow
+    public class CreateReceiptRequestBaseComponent : ReceiptRequestBaseComponent
 	{
 		protected override async Task OnInitializedAsync()
 		{

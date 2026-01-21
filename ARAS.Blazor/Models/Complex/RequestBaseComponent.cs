@@ -6,9 +6,8 @@ using Microsoft.AspNetCore.Components;
 
 namespace ARAS.Blazor.Models.Complex
 {
-	public class RequestBaseComponent<TRow> : ComponentBase where TRow : AdjustmentRow
+	public class RequestBaseComponent : ComponentBase
 	{
-		[Inject] protected ISearchOptionService SearchOptionService { get; set; }
 		[Inject] protected IAuthService AuthService { get; set; }
 
 		protected IList<NoteRowDto> Notes { get; set; }
@@ -20,12 +19,8 @@ namespace ARAS.Blazor.Models.Complex
 		protected bool IsLoading { get; private set; }
 		protected string AdjustmentActivity { get; set; }
 
-		protected virtual async Task OnSubmit()
-		{
-			Guards.ThrowInvalidOperationIf(IsLoading, "Can't submit request while search operation is ongoing");
-		}
+		protected virtual async Task OnSubmit() => Guards.ThrowInvalidOperationIf(IsLoading, "Can't submit request while search operation is ongoing");
 
-		protected virtual async Task SubmitRequest() => await Task.Delay(0);
 		protected void OnSearchToggle(bool value) => IsOnSearch = value;
 		protected void OnLoadingChanged(bool value) => IsLoading = value;
 	}

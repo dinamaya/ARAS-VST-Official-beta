@@ -1,10 +1,12 @@
 ﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Components.UI
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Components.Shared.DataTables
+
 @inherits ComponentBase
 @inject DialogService DialogService
-@* @inject ICashDiscountService CashDiscountService *@
 
 <RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
 	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
@@ -23,6 +25,10 @@
 		<ComponentValidator ValidationName="@nameof(ARInvoiceOffsettingCreateValidationDto.Remarks)" />
 	</RadzenStack>
 
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<SearchInvoiceCNDetails OnCnInvoicesChanged="HandleCnInvoicesChanged" OnSearchChanged="(isOnSearch) => null" OnLoadingChanged="(isLoading) => null" />
+	</RadzenStack>
+
 	<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
 		<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
 			Close
@@ -39,7 +45,8 @@
 	[Parameter] public RadzenDataGrid<ARInvoiceOffsettingRowDto> Grid { get; set; }
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
 
-	private IEnumerable<string> invoices = new List<string>();
+	private RadzenDataGrid<InvoiceDetailsDto> dataGrid;
+	private IList<InvoiceDetailsDto> cnInvoices = new List<InvoiceDetailsDto>();
 	private string remarks = string.Empty;
 
 	protected override async Task OnInitializedAsync()
@@ -65,7 +72,8 @@
 				remarks ?? string.Empty,
 				InvoiceDetails
 			);
-			
+			row.CNInvoices = cnInvoices; // Pass the CN Invoices of Search CNInvoice Details Razor here
+
 			Rows.Add(row);
 
 			await Grid.Reload();
@@ -75,5 +83,11 @@
 		{
 			await DialogService.Alert(Exceptions.GetMessage(ex), "Add Adjustment Failed");
 		}
+	}
+
+	private Task HandleCnInvoicesChanged(IList<InvoiceDetailsDto> invoices)
+	{
+		cnInvoices = invoices;
+		return Task.CompletedTask;
 	}
 }

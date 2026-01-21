@@ -5,18 +5,14 @@ using Radzen;
 
 namespace ARAS.Blazor.Services.Implementations
 {
-    public class APAROffsetService :
-		BaseAdjustmentCommandService<APAROffsetCreateDto, APAROffsetRowDto, object>,
-        IAPAROffsetService
+    public class APAROffsetService
 	{
 		private readonly IBaseService _baseService;
 		private readonly string adjustmentUrl = string.Empty;
 
 		public APAROffsetService(
 			IConfigService configService,
-			IBaseAdjustmentService<APAROffsetCreateDto, APAROffsetRowDto, object> baseAdjustment,
-			IBaseService baseService) :
-			base(baseAdjustment, configService.GetAPAROffsetsUrl(), "arr", Map)
+			IBaseService baseService)
 		{
 			_baseService = baseService;
 			adjustmentUrl = configService.GetAdjustmentsUrl();
@@ -25,13 +21,11 @@ namespace ARAS.Blazor.Services.Implementations
 		public async Task Create(IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes)
 		{
 			var requestsDto = ToCreateDto(apRows, arRows);
-			await _baseAdjustment.Create(requestsDto, notes, baseUrl);
 		}
 
 		public async Task Update(long requestId, IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes)
         {
 			var requestsDto = ToCreateDto(apRows, arRows);
-			await _baseAdjustment.Update(requestId, requestsDto, notes, baseUrl);
 		}
 
 		public async Task<APAROffsetRowDto> GetAdjustments(long requestId)
@@ -76,31 +70,5 @@ namespace ARAS.Blazor.Services.Implementations
 
 			return apRequests.Concat(arRequests).ToList();
 		}
-
-		private static readonly Func<APAROffsetRowDto, APAROffsetCreateDto> Map = (row) =>
-		{
-			var aps = row.APGroup.Select(r => new APAROffsetCreateDto()
-			{
-				InvoiceId = r.InvoiceNumber,
-				Amount = r.InvoiceAmount,
-				Type = "AP",
-				InvoiceDate = r.InvoiceDate,
-				CustomerName = r.CustomerName,
-				CustomerNumber = r.CustomerNumber
-			});
-
-			var ars = row.ARGroup.Select(r => new APAROffsetCreateDto()
-			{
-				InvoiceId = r.InvoiceNumber,
-				Amount = r.Amount,
-				Type = "AR",
-				ReasonCode = r.AdjustmentReason,
-				InvoiceDate = DateTime.Now,
-				CustomerName = "",
-				CustomerNumber = ""
-			});
-
-			return new APAROffsetCreateDto();
-		};
 	}
 }

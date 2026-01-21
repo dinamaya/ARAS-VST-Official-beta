@@ -14,6 +14,7 @@ namespace ARAS.Blazor.Models.DTOs
         public string CustomerNumber { get; set; } = string.Empty;
         public string ReasonCode { get; set; } = string.Empty;
         public string Remarks { get; set; } = string.Empty;
+        public IList<InvoiceDetailsDto> CNInvoices { get; set; }
 
         public ARInvoiceOffsettingRowDto() { }
         public ARInvoiceOffsettingRowDto(string remarks, InvoiceDetailsDto details)
@@ -26,6 +27,7 @@ namespace ARAS.Blazor.Models.DTOs
             CustomerNumber = details.CustomerNumber;
             SetValues( remarks);
         }
+
 
         public void SetValues(string remarks)
         {

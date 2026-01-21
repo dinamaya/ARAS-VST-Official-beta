@@ -14,13 +14,9 @@ namespace ARAS.Blazor.App_Code.Globals.Extensions
 			services.AddScoped<IEmailRepository, EmailRepository>();
 		
             services.AddScoped<IAdjustmentService, AdjustmentService>();
-            services.AddScoped<IAPAROffsetService, APAROffsetService>();
 			services.AddScoped<IAttachmentService, AttachmentService>();
 			services.AddScoped<IAuthService, AuthService>();
 			services.AddScoped<IBaseService, BaseService>();
-			//services.AddScoped<IBankChargeService, BankChargeService>();
-			//services.AddScoped<ICashDiscountService, CashDiscountService>();
-			services.AddScoped<IEmailService, EmailService>();
 			services.AddScoped<IInvoiceService, InvoiceService>();
 			services.AddScoped<INoteService, NoteService>();
 			services.AddScoped<IOpsService, OpsService>();
@@ -28,20 +24,11 @@ namespace ARAS.Blazor.App_Code.Globals.Extensions
 			services.AddScoped<IRequestService, RequestService>();
 			services.AddScoped<ISearchOptionService, SearchOptionService>();
 			services.AddScoped<ITokenService, TokenService>();
-			services.AddScoped<ITestService, TestService>();
 			services.AddScoped<ITransactionService, TransactionService>();
-			services.AddScoped<ISRAutoNetService, SRAutoNetService>();
-			//services.AddScoped<ISmallAmountService, SmallAmountService>();
-			services.AddScoped<ISRAutoNetService, SRAutoNetService>();
 			services.AddScoped<IOracleStagingService, OracleStagingService>();
 
 			services.AddScoped<IValidationService, ValidationService>();
-            services.AddScoped<IARInvoiceOffsettingService, ARInvoiceOffsettingService>();
 
-			services.AddScoped(typeof(IBaseAdjustmentService<,,>), typeof(BaseAdjustmentService<,,>));
-
-			services.AddScoped(typeof(IBaseReceiptAdjustmentService<>), typeof(BaseReceiptAdjustmentService<>));
-            
 			services.AddSingleton<IConfigService, ConfigService>();
 		}
 	}

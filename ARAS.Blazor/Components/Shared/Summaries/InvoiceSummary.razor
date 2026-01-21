@@ -1,25 +1,8 @@
 ﻿@using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Models.DTOs
 
-<div class="card blur shadow-blur w-100">
-	<div class="card-header shadow-lg">
-		<RadzenRow>
-			<RadzenColumn Size="12" SizeMD="6" SizeLG="8">
-				<div class="d-flex align-items-center">
-					<div class="icon-shape bg-gradient-dark shadow text-center border-radius-md">
-						<div>
-							<RadzenIcon Icon="receipt_long" />
-						</div>
-					</div>
-					<div class="ms-3">
-						<h3 class="mb-0 d-block">Invoice Details</h3>
-					</div>
-				</div>
-			</RadzenColumn>
-		</RadzenRow>
-	</div>
-
-	<div class="card-body overflow-auto overflow-x-hidden">
+<CardStandard HeaderText="Invoice Details" ContainerStyle="position: sticky; top: 0;" HeaderIcon="receipt_long">
+	<BodyTtemplate>
 		<RadzenRow class="p-3" Gap="1em">
 			<RadzenColumn Size="12">
 				<h4 class="mb-3">Invoice Number</h4>
@@ -38,14 +21,15 @@
 			<RadzenColumn Size="12" class="mt-3 mt-lg-0">
 				<h4 class="mb-3">Other Information</h4>
 				<RadzenRow Gap="1em" class="border-0 p-3 border-radius-md bg-gray-100">
-					<RadzenColumn Size="12" SizeXS="6">
+					<RadzenColumn Size="12" SizeXL="12" SizeXS="6">
 						<div class="mb-2 text-sm">Customer Name: <div class="text-dark font-weight-bold ms-2">@InvoiceDetails.CustomerName</div></div>
 						<div class="mb-2 text-sm">Customer Number: <div class="text-dark ms-2 font-weight-bold letter-spacing-1">@InvoiceDetails.CustomerNumber</div></div>
-						<div class="mb-2 text-sm">Status:
+						<div class="mb-2 text-sm">
+							Status:
 							<span class="ps-3">
-								@if(InvoiceDetails.InvoiceBalance <= 0)
+								@if (InvoiceDetails.InvoiceBalance <= 0)
 								{
-									<RadzenBadge Text="Non Adjustable" class="px-3 py-2 fw-bold" BadgeStyle="BadgeStyle.Secondary"/>
+									<RadzenBadge Text="Non Adjustable" class="px-3 py-2 fw-bold" BadgeStyle="BadgeStyle.Secondary" />
 								}
 								else
 								{
@@ -54,7 +38,7 @@
 							</span>
 						</div>
 					</RadzenColumn>
-					<RadzenColumn Size="12" SizeXS="6">
+					<RadzenColumn Size="12" SizeXL="12" SizeXS="6">
 						<div class="mb-2 text-sm">@InvoiceDateText: <div class="text-dark font-weight-bold ms-2">@InvoiceDetails.InvoiceDate</div></div>
 						<div class="mb-2 text-sm">Invoice Amount: <div class="text-dark font-weight-bold ms-2">@InvoiceDetails.InvoiceAmount.ToPhp()</div></div>
 						<div class="mb-2 text-sm">Invoice Balance: <div class="text-dark font-weight-bold ms-2">@InvoiceDetails.InvoiceBalance.ToPhp()</div></div>
@@ -62,8 +46,8 @@
 				</RadzenRow>
 			</RadzenColumn>
 		</RadzenRow>
-	</div>
-</div>
+	</BodyTtemplate>
+</CardStandard>
 @code{
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
 	[Parameter] public string InvoiceDateText { get; set; } = "Invoice Date";

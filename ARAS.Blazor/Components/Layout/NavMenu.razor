@@ -31,7 +31,10 @@
 		}
 		else if (accountDetails.IsInRole("Requestor"))
 		{
-			<NavPanelMenu MenuText="Requests" MenuIcon="assignment_add" RootDirectory="requests"/>
+			<RadzenPanelMenuItem Text="Requests" Icon="assignment_add" Style="border: none">
+				<MenuItem Text="Receipt" Route="/requests/receipt" />
+				<MenuItem Text="Invoice" Route="/requests/invoice" />
+			</RadzenPanelMenuItem>
 		}
 		else if (accountDetails.IsInRole("Approver"))
 		{
@@ -68,7 +71,11 @@
 			</Template>
 			<ChildContent>
 				<RadzenProfileMenuItem Text="Account Profile" Icon="person" />
-				<RadzenProfileMenuItem Text="Dark Mode" Icon="ev_shadow" />
+				<RadzenProfileMenuItem >
+					<RadzenContent>
+						<RadzenAppearanceToggle />
+					</RadzenContent>
+				</RadzenProfileMenuItem>
 				<div @onclick="Logout">
 					<RadzenProfileMenuItem Text="Logout" Icon="logout" />
 				</div>

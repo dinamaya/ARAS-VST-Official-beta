@@ -9,14 +9,16 @@ namespace ARAS.Blazor.Services.Implementations
 	{
 		private readonly IBaseService _baseService;
 		private readonly IConfigService _configService;
+		private readonly INoteService _noteService;
 
-		public RequestService(IBaseService baseService, IConfigService configService)
-		{
-			_baseService = baseService;
-			_configService = configService;
-		}
+        public RequestService(IBaseService baseService, IConfigService configService, INoteService noteService)
+        {
+            _baseService = baseService;
+            _configService = configService;
+            _noteService = noteService;
+        }
 
-		public async Task<bool> IsApprovable(long requestId) => await IsOnStatus(requestId, "is-approvable");
+        public async Task<bool> IsApprovable(long requestId) => await IsOnStatus(requestId, "is-approvable");
 		public async Task<bool> IsValidatable(long requestId) => await IsOnStatus(requestId, "is-validatable");
 		public async Task<bool> IsDeclined(long requestId) => await IsOnStatus(requestId, "is-declined");
 
@@ -65,7 +67,48 @@ namespace ARAS.Blazor.Services.Implementations
 			return response.Result;
 		}
 
-        public async Task ApproveReceiptAdjustmentRequests(IEnumerable<long> data) => await UpdateAdjustmentStatus(data, _configService.GetApprovalsUrl());
+        public async Task<IEnumerable<ReceiptAdjustmentRowDto>> GetReceiptAdjustmentSubmissions(SearchRequestDto data)
+        {
+			var response = await _baseService.SendAsync<IEnumerable<ReceiptAdjustmentRowDto>>(new RequestDto<SearchRequestDto>()
+				{
+					URL = _configService.GetRequestsUrl("submissions/receipt"),
+					Data = data
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch the request");
+					});
+				});
+
+			return response.Result;
+		}
+
+		public async Task Create(IEnumerable<BaseReceiptAdjustmentCreateDto> row, IEnumerable<NoteRowDto> notes)
+		{
+			var createResult = await _baseService.SendAsync<string>(new RequestDto<IEnumerable<BaseReceiptAdjustmentCreateDto>>()
+			{
+				ApiType = ApiType.POST,
+				URL = _configService.GetRequestsUrl("receipt"),
+				Data = row
+			},
+				onSuccessSendCallBack: (resp) =>
+				{
+					Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to create request" + resp.Message);
+					return Task.CompletedTask;
+				}
+			);
+
+			//await _noteService.Create(createResult.Result, notes);
+		}
+
+		public Task Update(long requestId, IEnumerable<BaseReceiptAdjustmentCreateDto> row, IEnumerable<NoteRowDto> notes)
+		{
+			throw new NotImplementedException();
+		}
+
+		public async Task ApproveReceiptAdjustmentRequests(IEnumerable<long> data) => await UpdateAdjustmentStatus(data, _configService.GetApprovalsUrl());
 		public async Task RejectReceiptAdjustmentRequests(IEnumerable<long> data) => await UpdateAdjustmentStatus(data, _configService.GetRejectionsUrl());
 		public async Task DeclineReceiptAdjustmentRequests(IEnumerable<long> data) => await UpdateAdjustmentStatus(data, _configService.GetDeclinesUrl());
 

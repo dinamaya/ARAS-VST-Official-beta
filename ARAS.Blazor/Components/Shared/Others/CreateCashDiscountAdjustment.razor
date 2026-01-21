@@ -2,114 +2,97 @@
 @using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Components.UI
+@using ARAS.Blazor.Models.Complex
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
 @inherits ComponentBase
 @inject DialogService DialogService
-@inject ICashDiscountService CashDiscountService
 @inject IConfigService ConfigService
 
-<div class="p-0 w-100 card">
-	<div class="card-header shadow-lg">
-		<RadzenRow>
-			<RadzenColumn Size="12" SizeMD="6" SizeLG="8">
-				<div class="d-flex align-items-center">
-					<div class="icon-shape bg-gradient-dark shadow text-center border-radius-md">
-						<div>
-							<RadzenIcon Icon="create" />
-						</div>
-					</div>
-					<div class="ms-3">
-						<h3 class="mb-0 d-block">Create Adjustment </h3>
-					</div>
-				</div>
+<RadzenFieldset>
+    <HeaderTemplate>
+		<RadzenStack class="h-100" Gap="1.7em" Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start">
+			<RadzenLabel Text="Cash Discount" class="fs-5" />
+			<RadzenSelectBar @bind-Value="discountType" TValue="int" Change="OnDiscountTypeChanged" Disabled="!isAdjustable">
+				<Items>
+					<RadzenSelectBarItem Text="Fixed" Value="1" />
+					<RadzenSelectBarItem Text="Custom" Value="2" />
+				</Items>
+			</RadzenSelectBar>
+		</RadzenStack>
+    </HeaderTemplate>
+    <ChildContent>
+		<RadzenRow Gap="1em" JustifyContent="JustifyContent.Start">
+			<RadzenColumn Size="12">
+				<RadzenRow class="w-100" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Stretch">
+					<RadzenColumn Size="12" SizeMD="5">
+						@if (discountType == 1)
+						{
+							<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+								<RadzenRow>
+									<RadzenLabel Style="width: 100%;" Text="Select Discount Percentage" Component="dDPercentage" />
+								</RadzenRow>
+								<RadzenRow>
+									<RadzenDropDown TValue="double"
+													Change="@(val => OnPercentageChanged((double)val))"
+													Data=@percentages
+													class="w-100 mb-2"
+													Name="dDPercentage"
+													Disabled="!isAdjustable" />
+								</RadzenRow>
+							</RadzenStack>
+						}
+						else
+						{
+							<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+								<RadzenFormField class="w-100" Text="@("Discount Percentage")" Variant="Variant.Outlined">
+									<RadzenNumeric class="w-100" TValue="double"
+												   Value="@DiscountPercentage"
+												   Change="@(val => OnPercentageChanged(val))"
+												   Max="100"
+												   Disabled="!isAdjustable" />
+
+								</RadzenFormField>
+							</RadzenStack>
+						}
+					</RadzenColumn>
+
+					<RadzenColumn Size="12" SizeMD="1">
+						<RadzenStack class="h-100 pb-2" Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center">
+							or
+						</RadzenStack>
+					</RadzenColumn>
+
+					<RadzenColumn Size="12" SizeMD="6">
+						<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+							<RadzenFormField Text="@("Discount Value")" Variant="Variant.Outlined">
+								<RadzenNumeric TValue="double" @bind-Value="@discountDecimal"
+											   Max="(decimal)InvoiceDetails.InvoiceAmount"
+											   Change="(val) => OnDecimalChanged(val)"
+											   Disabled="(!isAdjustable) || discountType == 1" />
+							</RadzenFormField>
+						</RadzenStack>
+					</RadzenColumn>
+				</RadzenRow>
 			</RadzenColumn>
 		</RadzenRow>
-	</div>
-	<div class="card-body overflow-auto overflow-x-hidden">
-		<RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="2em">
-			<RadzenRow Gap="0.6em" JustifyContent="JustifyContent.Start">
-				<RadzenColumn Size="12">
-					<RadzenStack class="h-100 pb-2" Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center">
-						<RadzenSelectBar @bind-Value="discountType" TValue="int" Change="OnDiscountTypeChanged" Disabled="!isAdjustable">
-							<Items>
-								<RadzenSelectBarItem Text="Fixed" Value="1" />
-								<RadzenSelectBarItem Text="Custom" Value="2" />
-							</Items>
-						</RadzenSelectBar>
-					</RadzenStack>
-				</RadzenColumn>
 
-				<RadzenColumn Size="12">
-					<RadzenRow class="w-100" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Stretch">
-						<RadzenColumn Size="12" SizeMD="5">
-							@if (discountType == 1)
-							{
-								<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
-									<RadzenRow>
-										<RadzenLabel Style="width: 100%;" Text="Select Discount Percentage" Component="dDPercentage" />
-									</RadzenRow>
-									<RadzenRow>
-										<RadzenDropDown TValue="double"
-											Change="@(val => OnPercentageChanged((double)val))"
-											Data=@percentages
-											class="w-100 mb-2"
-											Name="dDPercentage"
-											Disabled="!isAdjustable" />
-									</RadzenRow>
-									<ComponentValidator ValidationName="Reason Code" />
-								</RadzenStack>
-							}
-							else
-							{
-								<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
-									<RadzenFormField class="w-100" Text="@("Discount Percentage")" Variant="Variant.Outlined">
-										<RadzenNumeric class="w-100" TValue="double"
-														Value="@DiscountPercentage"
-														Change="@(val => OnPercentageChanged(val))"
-														Max="100" 
-														Disabled="!isAdjustable" />
-
-									</RadzenFormField>
-									<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.Remarks)" />
-								</RadzenStack>
-							}
-						</RadzenColumn>
-
-						<RadzenColumn Size="12" SizeMD="1">
-							<RadzenStack class="h-100 pb-2" Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center">
-								or
-							</RadzenStack>
-						</RadzenColumn>
-
-						<RadzenColumn Size="12" SizeMD="6">
-							<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
-								<RadzenFormField Text="@("Discount Value")" Variant="Variant.Outlined">
-									<RadzenNumeric 
-										TValue="double" @bind-Value="@discountDecimal" 
-										Max="(decimal)InvoiceDetails.InvoiceAmount" 
-										Change="(val) => OnDecimalChanged(val)" 
-										Disabled="(!isAdjustable) || discountType == 1"/>
-								</RadzenFormField>
-								<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.Remarks)" />
-							</RadzenStack>
-						</RadzenColumn>
-					</RadzenRow>
-				</RadzenColumn>
-			</RadzenRow>
-
-			<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
-				<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
-					<RadzenTextArea @bind-Value="remarks" Rows="8" Disabled="!isAdjustable" />
-				</RadzenFormField>
-				<ComponentValidator ValidationName="@nameof(CashDiscountCreateValidationDto.Remarks)" />
-			</RadzenStack>
+		<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+			<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
+				<RadzenTextArea 
+					@bind-Value="remarks" 
+					Rows="3" 
+					Change="OnRemarksChanged"
+					Disabled="!isAdjustable" />
+			</RadzenFormField>
 		</RadzenStack>
-	</div>
-</div>
+	</ChildContent>
+</RadzenFieldset>
+
 @code {
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
 	[Parameter] public string AdjustmentActivity { get; set; }
+	[Parameter] public EventCallback<AdjustmentEntry> AdjustmentAmountChanged { get; set; }
 
 	private IEnumerable<double> percentages;
 	private IEnumerable<string> invoices = new List<string>();
@@ -128,7 +111,8 @@
 		Reset();
 	}
 
-	protected override async Task OnParametersSetAsync(){
+	protected override async Task OnParametersSetAsync()
+	{
 		await base.OnParametersSetAsync();
 		isAdjustable = InvoiceDetails.InvoiceBalance > 0;
 	}
@@ -142,14 +126,37 @@
 	}
 
 	public CashDiscountRowDto GetAdjustment() => new(discountDecimal, remarks, AdjustmentActivity, InvoiceDetails);
-
+	public double GetAdjustmentAmount() => discountDecimal;
 
 	private async Task OnDiscountTypeChanged(int typeId)
 	{
 		discountType = typeId;
 		discountDecimal = 0;
+		await InvokeAdjustmentChanged();
 	}
 
-	private async Task OnPercentageChanged(double val) => discountDecimal = Math.Round((val / 100) * InvoiceDetails.InvoiceAmount, 2);
-	private async Task OnDecimalChanged(double val) => discountDecimal = val;
+	private async Task OnPercentageChanged(double val)
+	{
+		discountDecimal = Math.Round((val / 100) * InvoiceDetails.InvoiceAmount, 2);
+		await InvokeAdjustmentChanged();
+	}
+
+	private async Task OnDecimalChanged(double val)
+	{
+		discountDecimal = val;
+		await InvokeAdjustmentChanged();
+	}
+
+	private async Task OnRemarksChanged(string val) => await InvokeAdjustmentChanged();
+
+
+	private async Task InvokeAdjustmentChanged()
+	{
+		await AdjustmentAmountChanged.InvokeAsync(new()
+		{
+			Name = "Cash Discount",
+			Amount = discountDecimal,
+			Remarks = remarks
+		});
+	}
 }

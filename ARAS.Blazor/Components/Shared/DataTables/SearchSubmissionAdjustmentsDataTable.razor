@@ -93,7 +93,7 @@
 	private IEnumerable<string> filterSelection;
 
 	private ReceiptAdjustmentRowDto selectedRow;
-	private string currentFilterStat = string.Empty;
+	private string currentFilterStat = "All";
 
 	protected override async Task OnParametersSetAsync()
 	{
@@ -107,7 +107,7 @@
 		filterSelection = ["All", "Approved", "Posted"];
 
 		if (!Role.Equals("approver"))
-			filterSelection = filterSelection.Union(["Resubmitted", "Declined", "Rejected"]);
+			filterSelection = filterSelection.Union(["Pending", "Resubmitted", "Declined", "Rejected"]);
 	}
 
 	private async Task OnSelect(ReceiptAdjustmentRowDto selectedRow)

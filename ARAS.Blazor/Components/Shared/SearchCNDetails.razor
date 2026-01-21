@@ -31,51 +31,51 @@
 </RadzenRow>
 
 <RadzenRow>
-	<div>
-		<h3 class="mb-0 d-block">Searched CN Details</h3>
-	</div>
-	<div class="mt-2">
-		@if (isLoading)
-		{
-			<DatatableSkeleton RowCount="4" ColumnCount="5" />
-		}
-		else
-		{
-			<RadzenDataGrid @ref=dataGrid
-							AllowColumnResize="true"
-							AllowAlternatingRows="false"
-							AllowSorting="true"
-							PageSize="20"
-							AllowPaging="true"
-							PagerHorizontalAlign="HorizontalAlign.Left"
-							ShowPagingSummary="true"
-							Data="@list"
-							SelectionMode="DataGridSelectionMode.Single">
-				<Columns>
-					<RadzenDataGridColumn Frozen="true" Title="Option" Sortable="false" Filterable="false" Width="160px" TextAlign="TextAlign.Center">
-						<Template Context="data">
-							<RadzenButton Icon="add" Text="Add" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Click="(args) => OnAddEvent(data)" />
-						</Template>
-					</RadzenDataGridColumn>
-					<RadzenDataGridColumn Visible=false Property="@nameof(SearchCNDetailsRowDto.Id)" Title="Id" />
-					<RadzenDataGridColumn Visible=false Property="@nameof(SearchCNDetailsRowDto.CNRef)" Title="CN Ref" />
-					<RadzenDataGridColumn Property="@nameof(SearchCNDetailsRowDto.CNAmt)" Title="CN Amount">
-						<Template Context="data">
-							@data.CNAmt.ToPhp()
-						</Template>
-					</RadzenDataGridColumn>
-					<RadzenDataGridColumn Property="@nameof(SearchCNDetailsRowDto.WT)" Title="CN WT">
-						<Template Context="data">
-							@data.WT.ToPhp()
-						</Template>
-					</RadzenDataGridColumn>
-					<RadzenDataGridColumn Property="@nameof(SearchCNDetailsRowDto.InvoiceDate)" Title="Invoice Date" />
-					<RadzenDataGridColumn Property="@nameof(SearchCNDetailsRowDto.CustomerName)" Title="Customer Name" />
-					<RadzenDataGridColumn Property="@nameof(SearchCNDetailsRowDto.CustomerNumber)" Title="Customer Number" />
-				</Columns>
-			</RadzenDataGrid>
-		}
-	</div>
+	<h3>Searched CN Details</h3>
+</RadzenRow>
+<RadzenRow class="mt-2">
+	@if (isLoading)
+	{
+		<div class="w-100">
+			<DatatableSkeleton RowCount="2" ColumnCount="6" />
+		</div>
+	}
+	else
+	{
+		<RadzenDataGrid @ref=dataGrid
+						AllowColumnResize="true"
+						AllowAlternatingRows="false"
+						AllowSorting="true"
+						PageSize="20"
+						AllowPaging="true"
+						PagerHorizontalAlign="HorizontalAlign.Left"
+						ShowPagingSummary="true"
+						Data="@list"
+						SelectionMode="DataGridSelectionMode.Single">
+			<Columns>
+				<RadzenDataGridColumn Frozen="true" Title="Option" Sortable="false" Filterable="false" Width="160px" TextAlign="TextAlign.Center">
+					<Template Context="data">
+						<RadzenButton Icon="add" Text="Add" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Click="(args) => OnAddEvent(data)" />
+					</Template>
+				</RadzenDataGridColumn>
+				<RadzenDataGridColumn Visible=false Property="@nameof(SearchCNDetailsRowDto.Id)" Title="Id" />
+				<RadzenDataGridColumn Visible=false Property="@nameof(SearchCNDetailsRowDto.CNRef)" Title="CN Ref" />
+				<RadzenDataGridColumn Property="@nameof(SearchCNDetailsRowDto.CNAmt)" Title="CN Amount">
+					<Template Context="data">
+						@data.CNAmt.ToPhp()
+					</Template>
+				</RadzenDataGridColumn>
+				<RadzenDataGridColumn Property="@nameof(SearchCNDetailsRowDto.WT)" Title="CN WT">
+					<Template Context="data">
+						@data.WT.ToPhp()
+					</Template>
+				</RadzenDataGridColumn>
+				<RadzenDataGridColumn Property="@nameof(SearchCNDetailsRowDto.InvoiceDate)" Title="Invoice Date" />
+				<RadzenDataGridColumn Property="@nameof(SearchCNDetailsRowDto.CustomerName)" Title="Customer Name" />
+				<RadzenDataGridColumn Property="@nameof(SearchCNDetailsRowDto.CustomerNumber)" Title="Customer Number" />
+			</Columns>
+		</RadzenDataGrid>
+	}
 </RadzenRow>
 @code {
 	[Parameter] public EventCallback<SearchCNDetailsRowDto> OnAdd { get; set; }
@@ -116,7 +116,7 @@
 			list = [];
 			await dataGrid.Reload();
 
-			list = await InvoiceService.GetSRAutoNetCNDetails(searchInvoiceNo);
+			// list = await InvoiceService.GetSRAutoNetCNDetails(searchInvoiceNo);
 
 			await dataGrid.Reload();
 		}

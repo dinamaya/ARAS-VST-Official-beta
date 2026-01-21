@@ -1,0 +1,168 @@
+﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Components.Shared.Skeletons
+
+@inject IInvoiceService InvoiceService
+@inject DialogService DialogService
+@inherits ComponentBase
+
+<RadzenRow>
+	<RadzenRow AlignItems="AlignItems.Start"
+				JustifyContent="JustifyContent.Start"
+				class="w-100"
+				Gap="1rem">
+		<RadzenColumn Size="12"
+						SizeLG="8"
+						SizeMD="7"
+						SizeXL="10">
+			<RadzenFormField class="w-100 border-0" Text="Invoice Number" Variant="Variant.Outlined">
+				<RadzenTextBox @bind-Value="@searchInvoiceNo" />
+			</RadzenFormField>
+		</RadzenColumn>
+		<RadzenColumn Size="12"
+						SizeMD="5"
+						SizeLG="4"
+						SizeXL="2">
+			<RadzenContent>
+				<SubmitButton Title="Search" ButtonClass="w-100 mt-2" Click="SearchInvoice" DisabledTitle="Searching" />
+			</RadzenContent>
+		</RadzenColumn>
+	</RadzenRow>
+</RadzenRow>
+
+@if (isOnSearch)
+{
+	<div>
+		<h3 class="pb-0 mb-0">Search Result</h3>
+	</div>
+	<RadzenRow>
+		@if (isLoading)
+		{
+			<DatatableSkeleton RowCount="4" ColumnCount="5" />
+		}
+		else
+		{
+		<RadzenDataGrid TItem="InvoiceDetailsDto"
+						@ref="dataGrid"
+						Data="@cnInvoices"
+						AllowFiltering="false"
+						AllowPaging="false"
+						AllowSorting="false"
+						ShowPagingSummary="false">
+
+			<Columns>
+				<RadzenDataGridColumn Frozen="true" Title="Option" Sortable="false" Filterable="false" Width="180px" TextAlign="TextAlign.Center">
+					<Template Context="data">
+						<RadzenButton Icon="add" Text="Add" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Click="@(args => OnAddEvent(data))" />
+					</Template>
+				</RadzenDataGridColumn>
+				<RadzenDataGridColumn Visible=false Property="@nameof(InvoiceDetailsDto.Id)" Title="Id" />
+				<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceAmount)" Title="Invoice Amount">
+					<Template Context="data">
+						@data.InvoiceAmount.ToPhp()
+					</Template>
+				</RadzenDataGridColumn>
+				<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceNumber)" Title="Invoice Number" />
+				<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceDate)" Title="@InvoiceDateText" />
+				<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.CustomerName)" Title="Customer Name" />
+				<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.CustomerNumber)" Title="Customer Number" />
+			</Columns>
+		</RadzenDataGrid>
+		}
+	</RadzenRow>
+}
+@code {
+	[Parameter] public EventCallback<bool> OnSearchChanged { get; set; }
+	[Parameter] public EventCallback<bool> OnLoadingChanged { get; set; }
+	[Parameter] public EventCallback<IList<InvoiceDetailsDto>> OnCnInvoicesChanged { get; set; }
+	[Parameter] public string InvoiceDateText { get; set; } = "Invoice Date";
+
+	private IList<InvoiceDetailsDto> cnInvoices = [];
+	private bool isOnSearch { get; set; }
+	private bool isLoading { get; set; }
+	private string searchInvoiceNo = "";
+	private RadzenDataGrid<InvoiceDetailsDto> dataGrid;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+	}
+
+	public async Task SearchInvoice()
+	{
+		await Task.Delay(10);
+		try
+		{
+			Guards.ThrowInvalidOperationIf(searchInvoiceNo.Length < 3, "Please provided 3 or more character in the search invoice number field");
+
+			if (isLoading)
+			{
+				await DialogService.Alert("Please wait until the current search operation is complete");
+				return;
+			}
+
+			await SetIsOnSearch(true);
+			await SetIsLoading(true);
+			cnInvoices = [];
+			await dataGrid.Reload();
+
+			// cnInvoices = (await InvoiceService.GetDetailsList(searchInvoiceNo)).ToList();
+
+			await dataGrid.Reload();
+		}
+		catch (Exception ex)
+		{
+			await SetIsOnSearch(false);
+			await DialogService.Alert(ex.Message, "Search Invoice Number Details failed");
+		}
+		await SetIsLoading(false);
+	}
+
+
+	private async Task SetIsOnSearch(bool value)
+	{
+		isOnSearch = value;
+		await OnSearchChanged.InvokeAsync(value);
+	}
+
+	private async Task SetIsLoading(bool value)
+	{
+		isLoading = value;
+		await OnLoadingChanged.InvokeAsync(value);
+	}
+
+	private async Task OnAddEvent(InvoiceDetailsDto invoiceDetails)
+	{
+		try
+		{
+			Validate(invoiceDetails);
+			cnInvoices.Add(invoiceDetails);
+
+			await OnCnInvoicesChanged.InvokeAsync(cnInvoices);
+			await dataGrid.Reload();
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(Exceptions.GetMessage(ex), "Add Adjustment Failed");
+		}
+	}
+
+	private void Validate(InvoiceDetailsDto data)
+	{
+		// Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(data.CNRef), $"CN Ref is Empty. CN Ref is required");
+
+		// bool isExisted = remarks.Any(r => r.CNRef == data.CNRef);
+		// Guards.ThrowInvalidOperationIf(isExisted, $"CN Ref is already existed");
+
+		// bool isExceeded = remarks.Sum(r => r.WT) > InvoiceDetails.InvoiceAmount;
+		// Guards.ThrowInvalidOperationIf(isExceeded, $"WT should be less than or equals to {InvoiceDetails.InvoiceAmount.ToPhp()}");
+	}
+
+}

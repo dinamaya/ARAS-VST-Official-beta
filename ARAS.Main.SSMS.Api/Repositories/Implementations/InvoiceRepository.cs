@@ -86,7 +86,58 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			return invoice.Id;
 		}
 
-		public async Task<Invoice> GetById(long id) =>	
+        public async Task<long> CreateAsync(ARInvoiceOffsettingCreateDto data, string createdBy)
+        {
+            var date = DateTime.Now;
+            var invoice = new Invoice();
+
+            invoice.InvoiceNumber = data.InvoiceNumber;
+            invoice.InvoiceAmount = data.InvoiceAmount;
+            invoice.InvoiceDate = data.InvoiceDate;
+            invoice.CustomerName = data.CustomerName;
+            invoice.CustomerNumber = data.CustomerNumber;
+
+            invoice.DateCreated = date;
+            invoice.DateModified = date;
+            invoice.CreatedBy = createdBy;
+            invoice.ModifiedBy = createdBy;
+            invoice.IsActive = true;
+
+            await _context.Invoices.AddAsync(invoice);
+            await _context.SaveChangesAsync();
+
+            var cnDetails = new List<CNDetails>();
+
+            foreach (var remark in data.Remarks)
+            {
+                var _cn = new CNDetails()
+                {
+                    InvoiceId = invoice.Id,
+                    CNRef = remark.InvoiceNumber,
+                    CNAMT = remark.InvoiceAmount,
+                    CNDate = remark.InvoiceDate,              // if remark provides CNDate; otherwise DateTime.Now
+                    CustomerName = data.CustomerName,
+                    CustomerNumber = data.CustomerNumber,
+                    CreatedBy = createdBy,
+                    DateCreated = date,
+                    ModifiedBy = createdBy,
+                    DateModified = date,
+                    IsActive = true
+                };
+
+                cnDetails.Add(_cn);
+            }
+
+            if (cnDetails.Any())
+            {
+                await _context.CNDetails.AddRangeAsync(cnDetails);
+                await _context.SaveChangesAsync();
+            }
+
+            return invoice.Id;
+        }
+
+        public async Task<Invoice> GetById(long id) =>	
 			await _context.Invoices.AsNoTracking().Where(i => i.Id == id && i.IsActive).FirstOrDefaultAsync() ?? 
 			throw new InvalidOperationException(Exceptions.NOTFOUND_TRANSACTION);
 

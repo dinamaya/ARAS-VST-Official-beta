@@ -35,6 +35,9 @@
 
     [Parameter] public RadzenDataGrid<APAROffsetAPRowDto> APGrid { get; set; }
     [Parameter] public RadzenDataGrid<APAROffsetARRowDto> ARGrid { get; set; }
+    [Parameter] public EventCallback OnAPRowAdded { get; set; }
+    [Parameter] public EventCallback OnARRowAdded { get; set; }
+
 
     private bool isOnSearch;
     private bool isLoading;
@@ -47,7 +50,9 @@
             {
                 { "Rows", ARAdjustments },
                 { "Grid", ARGrid },
-                { "InvoiceDetails", invoiceDetails }
+                { "InvoiceDetails", invoiceDetails },
+                { "OnARRowAdded", OnARRowAdded }
+
             },
             new DialogOptions() { Width = "800px", Height = "auto" }
         );
@@ -61,7 +66,8 @@
             {
                 { "Rows", APAdjustments },
                 { "Grid", APGrid },
-                { "InvoiceDetails", invoiceDetails }
+                { "InvoiceDetails", invoiceDetails },
+                { "OnAPRowAdded", OnAPRowAdded }
             },
             new DialogOptions() { Width = "800px", Height = "auto" }
         );

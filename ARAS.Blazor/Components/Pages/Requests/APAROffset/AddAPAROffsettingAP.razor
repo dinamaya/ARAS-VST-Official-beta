@@ -26,6 +26,8 @@
 	[Parameter] public IList<APAROffsetAPRowDto> Rows { get; set; }
 	[Parameter] public RadzenDataGrid<APAROffsetAPRowDto> Grid { get; set; }
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
+	[Parameter] public EventCallback OnAPRowAdded { get; set; }
+
 
 	private IEnumerable<string> invoices = new List<string>();
 	private string remarks = string.Empty;
@@ -63,6 +65,7 @@
 			Rows.Add(row);
 
 			await Grid.Reload();
+			await OnAPRowAdded.InvokeAsync();
 			DialogService.Close(true);
 		}
 		catch (Exception ex)

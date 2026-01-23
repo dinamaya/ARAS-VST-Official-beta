@@ -3,6 +3,7 @@ using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Models.Entities;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace ARAS.Main.SSMS.Api.Repositories.Implementations
@@ -13,20 +14,48 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			string statusId = await statusRepo.GetIdByName(data.StatusName);
 
-			var transaction = new Transaction();
+            var transaction = new Transaction
+            {
+                RequestId = data.RequestId,
+                StatusId = statusId,
 
-			transaction.RequestId = data.RequestId;
-			transaction.StatusId = statusId;
+                CreatedBy = createdBy,
+                DateCreated = DateTime.Now,
 
-			transaction.CreatedBy = createdBy;
-			transaction.DateCreated = DateTime.Now;
+                IsActive = true
+            };
 
-			transaction.IsActive = true;
-
-			await context.Transactions.AddAsync(transaction);
+            await context.Transactions.AddAsync(transaction);
 			await context.SaveChangesAsync();
 
 			return transaction.Id;
+		}
+
+		public async Task<IEnumerable<long>> CreateAsync(IEnumerable<TransactionCreateDto> data, string createdBy)
+		{
+			IList<Transaction> results = [];
+			string statusId = await statusRepo.GetIdByName(data.First().StatusName);
+
+			var date = DateTime.Now;
+			foreach (var t in data)
+			{
+				var _data = new Transaction()
+				{
+					RequestId = t.RequestId,
+					StatusId = statusId,
+
+					CreatedBy = createdBy,
+					DateCreated = date,
+
+					IsActive = true
+				};
+				results.Add(_data);
+			}
+
+			await context.Transactions.AddRangeAsync(results);
+			await context.SaveChangesAsync();
+
+			return results.Select(t => t.Id);
 		}
 
 		public async Task<IEnumerable<TransactionHistoryDto>> GetHistoryByRequestId(long requestId)
@@ -68,5 +97,5 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				DateCreated = t.DateCreated,
 			}).ToList();
 		}
-	}
+    }
 }

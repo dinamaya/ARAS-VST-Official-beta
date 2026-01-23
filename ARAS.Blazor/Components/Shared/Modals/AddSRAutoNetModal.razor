@@ -32,7 +32,6 @@
 						AllowFiltering="false"
 						AllowPaging="false"
 						AllowSorting="false"
-						EditMode="DataGridEditMode.Single"
 						ShowPagingSummary="false">
 
 			<Columns>
@@ -45,19 +44,12 @@
 						<b>Total Amount: (@remarks.Count)</b>
 					</FooterTemplate>
 
-					<EditTemplate Context="data">
-						<RadzenTextBox @bind-Value="data.CNRef" />
-					</EditTemplate>
 				</RadzenDataGridColumn>
 
 				<RadzenDataGridColumn TItem="SRAutoNetRemarksDto" Title="CN Amt">
 					<Template Context="data">
 						@data.CNAmt.ToPhp()
 					</Template>
-
-					<EditTemplate Context="data">
-						<RadzenNumeric @bind-Value="data.CNAmt" Step="0.01" />
-					</EditTemplate>
 
 					<FooterTemplate>
 						<b>@remarks.Sum(a => a.CNAmt).ToPhp()</b>
@@ -69,10 +61,6 @@
 						@data.WT.ToPhp()
 					</Template>
 
-					<EditTemplate Context="data">
-						<RadzenNumeric @bind-Value="data.WT" Step="0.01" />
-					</EditTemplate>
-
 					<FooterTemplate>
 						<b>@remarks.Sum(a => a.WT).ToPhp()</b>
 					</FooterTemplate>
@@ -80,30 +68,20 @@
 
 				<RadzenDataGridColumn TItem="SRAutoNetRemarksDto" Context="data" Title="Option" TextAlign="TextAlign.Center" Width="150px">
 					<Template Context="data">
-						<RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@((args) => OnEditRow(data))" />
 						<RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Click="@((args) => OnRemoveRow(data))" />
 					</Template>
-					<EditTemplate Context="data">
-						<RadzenButton Icon="save" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success" Click="@((args) => OnUpdateRow(data))" />
-						<RadzenButton Icon="cancel" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="@((args) => OnCancelEdit(data))" />
-					</EditTemplate>
 				</RadzenDataGridColumn>
 			</Columns>
 		</RadzenDataGrid>
 	</RadzenStack>
 
-	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem">
-		<button @onclick="@((args) => OnAddRemarks())" class="btn btn-outline-primary">
-			Add Remarks
+	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+		<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-outline-dark">
+			Close
 		</button>
-		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
-			<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-outline-dark">
-				Close
-			</button>
-			<button @onclick="OnAddAdjustment" class="btn btn-primary">
-				Add
-			</button>
-		</RadzenStack>
+		<button @onclick="OnAddAdjustment" class="btn btn-primary">
+			Add
+		</button>
 	</RadzenStack>
 </RadzenStack>
 
@@ -114,7 +92,6 @@
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
 
 	private RadzenDataGrid<SRAutoNetRemarksDto> dataGrid;
-	private SRAutoNetRemarksDto editingRow;
 
 	private IList<SRAutoNetRemarksDto> remarks = [];
 	private string reasonCode = string.Empty;
@@ -134,77 +111,6 @@
 	{
 		remarks.Remove(item);
 		await dataGrid.Reload();
-		editingRow = null;
-	}
-
-	private async Task OnEditRow(SRAutoNetRemarksDto item)
-	{
-		try
-		{
-			if (editingRow != null)
-				Validate(editingRow);
-
-			await dataGrid.EditRow(item);
-			editingRow = null;
-		}
-		catch (Exception ex)
-		{
-			await DialogService.Alert(Exceptions.GetMessage(ex), "Edit Remarks");
-		}
-	}
-
-	private async Task OnUpdateRow(SRAutoNetRemarksDto item)
-	{
-		try
-		{
-			Validate(item);
-			await dataGrid.UpdateRow(item);
-			editingRow = null;
-		}
-		catch (Exception ex)
-		{
-			await DialogService.Alert(Exceptions.GetMessage(ex), "Update Remarks");
-		}
-	}
-
-	private async Task OnCancelEdit(SRAutoNetRemarksDto item)
-	{
-		try
-		{
-			if (item.IsEmpty())
-			{
-				await OnRemoveRow(item);
-				editingRow = null;
-				return;
-			}
-
-			dataGrid.CancelEditRow(item);
-			editingRow = null;
-		}
-		catch (Exception ex)
-		{
-			await DialogService.Alert(Exceptions.GetMessage(ex), "Add Adjustment Failed");
-		}
-	}
-
-	private async Task OnAddRemarks()
-	{
-		try
-		{
-			var newRow = new SRAutoNetRemarksDto();
-
-			if (editingRow != null)
-				Validate(editingRow);
-
-			remarks.Add(newRow);
-			editingRow = newRow;
-			await dataGrid.Reload();
-			await dataGrid.EditRow(newRow);
-		}
-		catch (Exception ex)
-		{
-			await DialogService.Alert(Exceptions.GetMessage(ex), "Add Adjustment Failed");
-		}
 	}
 
 	private async Task OnAddRemarks(SearchCNDetailsRowDto data)
@@ -216,19 +122,10 @@
 			newRow.CNAmt = data.CNAmt;
 			newRow.WT = data.WT;
 
-			if (editingRow != null)
-			{
-				bool isAdjusted = remarks.Any(r => r.CNRef == data.CNRef);
-				Guards.ThrowInvalidOperationIf(isAdjusted, $"CN is already adjusted. Please input another CN Reference");
-				Validate(editingRow);
-			}
-			else
-				Validate(newRow);
+			Validate(newRow);
 
 			remarks.Add(newRow);
-			editingRow = newRow;
 			await dataGrid.Reload();
-			await dataGrid.EditRow(newRow);
 		}
 		catch (Exception ex)
 		{
@@ -255,6 +152,9 @@
 	private void Validate(SRAutoNetRemarksDto data)
 	{
 		Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(data.CNRef), $"CN Ref is Empty. CN Ref is required");
+		
+		bool isExisted = remarks.Any(r => r.CNRef == data.CNRef);
+		Guards.ThrowInvalidOperationIf(isExisted, $"CN Ref is already existed");
 
 		bool isExceeded = remarks.Sum(r => r.WT) > InvoiceDetails.InvoiceAmount;
 		Guards.ThrowInvalidOperationIf(isExceeded, $"WT should be less than or equals to {InvoiceDetails.InvoiceAmount.ToPhp()}");

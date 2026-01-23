@@ -2,7 +2,6 @@
 {
 	public interface IConfigurationService
 	{
-		string GetFrontendBaseUrl(string? route = "");
 		string GetAttachmentsDirectory(string? route = "");
 	}
 }

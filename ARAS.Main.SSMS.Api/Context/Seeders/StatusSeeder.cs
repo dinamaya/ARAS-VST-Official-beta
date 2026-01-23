@@ -25,7 +25,7 @@ namespace ARAS.Main.SSMS.Api.Context.Seeders
 				},
 				new Status()
 				{
-					Name = "Validated",
+					Name = "Resubmitted",
 				},
 				new Status()
 				{

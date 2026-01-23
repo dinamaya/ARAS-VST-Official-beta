@@ -32,4 +32,8 @@
 	<ItemGroup>
 		<None Include="App_Code\Scriban\**\*.*" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="App_Code\Globals\Validations\" />
+	</ItemGroup>
 </Project>

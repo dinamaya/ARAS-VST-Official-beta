@@ -27,11 +27,24 @@ namespace ARAS.Blazor.Services.Implementations
 			return response.Result;
 		}
 
-		public async Task<IEnumerable<InvoiceDetailsDto>> GetDetailsList(string invoiceNumber)
+		public async Task<IEnumerable<InvoiceDetailsDto>> GetDetailsList(SearchRequestDto searchRequest)
 		{
-			var response = await _baseService.SendAsync<IEnumerable<InvoiceDetailsDto>>(new RequestDto()
+			var response = await _baseService.SendAsync<IEnumerable<InvoiceDetailsDto>>(new RequestDto<SearchRequestDto>()
 			{
-				URL = _configService.GetOracleInvoiceApiUrl($"details/{invoiceNumber}"),
+				URL = _configService.GetOracleInvoiceApiUrl(),
+				Data = searchRequest
+			});
+
+			Guards.ThrowNullReferenceIf(response?.Result, response.Message);
+			return response.Result;
+		}
+
+		public async Task<IEnumerable<InvoiceDetailsDto>> GetAPDetailsList(SearchRequestDto searchRequest)
+		{
+			var response = await _baseService.SendAsync<IEnumerable<InvoiceDetailsDto>>(new RequestDto<SearchRequestDto>()
+			{
+				URL = _configService.GetOracleInvoiceApiUrl("ap"),
+				Data = searchRequest
 			});
 
 			Guards.ThrowNullReferenceIf(response?.Result, response.Message);
@@ -53,23 +66,22 @@ namespace ARAS.Blazor.Services.Implementations
 		{
 			var response = await _baseService.SendAsync<IEnumerable<SearchCNDetailsRowDto>>(new RequestDto()
 			{
-				URL = _configService.GetOracleInvoiceApiUrl($"cn/{invoiceNumber}"),
+				URL = _configService.GetOracleInvoiceApiUrl($"sr/{invoiceNumber}"),
 			});
 
 			Guards.ThrowNullReferenceIf(response?.Result, response.Message);
 			return response.Result;
 		}
 
-        public async Task<IEnumerable<InvoiceDetailsDto>> GetAPDetailsList(string invoiceNumber)
-        {
-            var response = await _baseService.SendAsync<IEnumerable<InvoiceDetailsDto>>(new RequestDto()
-            {
-                URL = _configService.GetOracleInvoiceApiUrl($"ap/details/{invoiceNumber}"),
-            });
+		public async Task<IEnumerable<SearchCNDetailsRowDto>> GetInvoiceCNDetails(string invoiceNumber)
+		{
+			var response = await _baseService.SendAsync<IEnumerable<SearchCNDetailsRowDto>>(new RequestDto()
+			{
+				URL = _configService.GetOracleInvoiceApiUrl($"cn/{invoiceNumber}"),
+			});
 
-            Guards.ThrowNullReferenceIf(response?.Result, response.Message);
-            return response.Result;
-        }
-
-    }
+			Guards.ThrowNullReferenceIf(response?.Result, response.Message);
+			return response.Result;
+		}
+	}
 }

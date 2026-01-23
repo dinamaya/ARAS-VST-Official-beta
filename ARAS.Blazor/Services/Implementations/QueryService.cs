@@ -19,7 +19,11 @@ namespace ARAS.Blazor.Services.Implementations
 			_logger = logger;
 		}
 
-		public string GetCurrentUrl() => Uri.EscapeDataString(CurrentUri.GetLeftPart(UriPartial.Path));
+		public string GetCurrentUrl(bool isEncoded)
+		{
+			string uri = CurrentUri.GetLeftPart(UriPartial.Path);
+			return isEncoded ? Uri.EscapeDataString(uri) : uri;
+		}
 
 		public string GetValue(string key)
 		{

@@ -1,15 +1,15 @@
 ﻿<RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
 	<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:30px;" />
 	<RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" class="w-100">
-		@for (int i = 0; i < ColumnCount; i++)
+		@for (int i = 1; i < ColumnCount; i++)
 		{
 			<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:30px;" />
 		}
 	</RadzenStack>
-	@for (int i = 0; i < RowCount; i++)
+	@for (int i = 1; i < RowCount; i++)
 	{
 		<RadzenStack Orientation="Orientation.Horizontal" Gap="1rem">
-			@for (int j = 0; j < ColumnCount; j++)
+			@for (int j = 1; j < ColumnCount; j++)
 			{
 				<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:25px;" />
 			}

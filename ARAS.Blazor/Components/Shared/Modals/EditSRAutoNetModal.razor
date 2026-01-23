@@ -22,13 +22,16 @@
 	</RadzenStack>
 
 	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<SearchCNDetails OnAdd="(data) => OnAddRemarks(data)" OnSearchChanged="(isOnSearch) => null" OnLoadingChanged="(isLoading) => null" />
+	</RadzenStack>
+
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
 		<RadzenDataGrid TItem="SRAutoNetRemarksDto"
 						@ref="dataGrid"
 						Data="@remarks"
 						AllowFiltering="false"
 						AllowPaging="false"
 						AllowSorting="false"
-						EditMode="DataGridEditMode.Single"
 						ShowPagingSummary="false">
 
 			<Columns>
@@ -51,10 +54,6 @@
 						@data.CNAmt.ToPhp()
 					</Template>
 
-					<EditTemplate Context="data">
-						<RadzenNumeric @bind-Value="data.CNAmt" Step="0.01" />
-					</EditTemplate>
-
 					<FooterTemplate>
 						<b>@remarks.Sum(a => a.CNAmt).ToPhp()</b>
 					</FooterTemplate>
@@ -65,10 +64,6 @@
 						@data.WT.ToPhp()
 					</Template>
 
-					<EditTemplate Context="data">
-						<RadzenNumeric @bind-Value="data.WT" Step="0.01" />
-					</EditTemplate>
-
 					<FooterTemplate>
 						<b>@remarks.Sum(a => a.WT).ToPhp()</b>
 					</FooterTemplate>
@@ -76,13 +71,8 @@
 
 				<RadzenDataGridColumn TItem="SRAutoNetRemarksDto" Context="data" Title="Option" TextAlign="TextAlign.Center" Width="150px">
 					<Template Context="data">
-						<RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@((args) => OnEditRow(data))" />
 						<RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Click="@((args) => OnRemoveRow(data))" />
 					</Template>
-					<EditTemplate Context="data">
-						<RadzenButton Icon="save" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success" Click="@((args) => OnUpdateRow(data))" />
-						<RadzenButton Icon="cancel" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="@((args) => OnCancelEdit(data))" />
-					</EditTemplate>
 				</RadzenDataGridColumn>
 			</Columns>
 		</RadzenDataGrid>
@@ -92,9 +82,6 @@
 		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
 			<button @onclick="@OnDelete" class="btn btn-danger">
 				Delete
-			</button>
-			<button @onclick="@((args) => OnAddRemarks())" class="btn btn-outline-primary">
-				Add Remarks
 			</button>
 		</RadzenStack>
 		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
@@ -143,69 +130,20 @@
 		editingRow = null;
 	}
 
-	private async Task OnEditRow(SRAutoNetRemarksDto item)
-	{
-		try
-		{
-			if (editingRow != null)
-				Validate(editingRow);
 
-			await dataGrid.EditRow(item);
-			editingRow = null;
-		}
-		catch (Exception ex)
-		{
-			await DialogService.Alert(Exceptions.GetMessage(ex), "Edit Remarks");
-		}
-	}
-
-	private async Task OnUpdateRow(SRAutoNetRemarksDto item)
-	{
-		try
-		{
-			Validate(item);
-			await dataGrid.UpdateRow(item);
-			editingRow = null;
-		}
-		catch (Exception ex)
-		{
-			await DialogService.Alert(Exceptions.GetMessage(ex), "Update Remarks");
-		}
-	}
-
-	private async Task OnCancelEdit(SRAutoNetRemarksDto item)
-	{
-		try
-		{
-			if (item.IsEmpty())
-			{
-				await OnRemoveRow(item);
-				editingRow = null;
-				return;
-			}
-
-			dataGrid.CancelEditRow(item);
-			editingRow = null;
-		}
-		catch (Exception ex)
-		{
-			await DialogService.Alert(Exceptions.GetMessage(ex), "Add Adjustment Failed");
-		}
-	}
-
-	private async Task OnAddRemarks()
+	private async Task OnAddRemarks(SearchCNDetailsRowDto data)
 	{
 		try
 		{
 			var newRow = new SRAutoNetRemarksDto();
+			newRow.CNRef = data.CNRef;
+			newRow.CNAmt = data.CNAmt;
+			newRow.WT = data.WT;
 
-			if (editingRow != null)
-				Validate(editingRow);
+			Validate(newRow);
 
 			remarks.Add(newRow);
-			editingRow = newRow;
 			await dataGrid.Reload();
-			await dataGrid.EditRow(newRow);
 		}
 		catch (Exception ex)
 		{
@@ -245,8 +183,9 @@
 	private void Validate(SRAutoNetRemarksDto data)
 	{
 		Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(data.CNRef), $"CN Ref is Empty. CN Ref is required");
-		Guards.ThrowInvalidOperationIf(data.CNAmt <= 0, $"CN Amount should be greater than 0");
-		Guards.ThrowInvalidOperationIf(data.WT <= 0, $"WT should be greater than 0 and less or equals than {invoiceDetails.InvoiceAmount}");
+
+		bool isExisted = remarks.Any(r => r.CNRef == data.CNRef);
+		Guards.ThrowInvalidOperationIf(isExisted, $"CN Ref is already existed");
 
 		bool isExceeded = remarks.Sum(r => r.WT) > invoiceDetails.InvoiceAmount;
 		Guards.ThrowInvalidOperationIf(isExceeded, $"WT should be less or equals than {invoiceDetails.InvoiceAmount}");

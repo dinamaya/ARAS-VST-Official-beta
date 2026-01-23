@@ -2,7 +2,6 @@
 
 @using ARAS.Blazor.App_Code.Globals
 @using ARAS.Blazor.App_Code.Globals.Extensions
-@using ARAS.Blazor.Components.Pages.Requests.APAROffset.Search
 @using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting
 @using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting.Modal
 @using ARAS.Blazor.Components.Shared.Modals
@@ -18,12 +17,12 @@
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
-@inject IARInvoiceOffsettingService ARInvoiceOffsettingService
+@* @inject IARInvoiceOffsettingService ARInvoiceOffsettingService *@
 
 <h2>AR Invoice Offsetting</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<SearchInvoiceDetails OnAdd="OpenAdd" OnLoadingChanged="HandleLoadingChanged" OnSearchChanged="HandleSearchChanged" />
+	<SearchInvoiceDetails />
 	<RadzenRow Gap="1.5rem">
 		<RadzenColumn Size="6">
 			<div class="text-center pb-3">
@@ -276,7 +275,7 @@
 
 	public async Task SubmitRequest()
 	{
-		await ARInvoiceOffsettingService.Create(ARInvoice, Notes);
+		// await ARInvoiceOffsettingService.Create(ARInvoice, Notes);
 	}
 
 	private void HandleSearchChanged(bool value)

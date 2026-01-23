@@ -10,7 +10,6 @@ namespace ARAS.Main.SSMS.Api.Models.Entities
         public long InvoiceId { get; set; }
         public double Amount { get; set; }
         public string Type { get; set; }
-        public string AdjustmentTypeId { get; set; }
         public string ReasonCode { get; set; }
 
         public string CreatedBy { get; set; }
@@ -20,7 +19,5 @@ namespace ARAS.Main.SSMS.Api.Models.Entities
         public bool IsActive { get; set; }
 
         [ForeignKey(nameof(RequestId))] public virtual Request Request { get; set; }
-        [ForeignKey(nameof(InvoiceId))] public virtual Invoice Invoice { get; set; }
-        [ForeignKey(nameof(AdjustmentTypeId))] public virtual AdjustmentType AdjustmentType { get; set; }
     }
 }

@@ -31,18 +31,25 @@
 		}
 		else if (accountDetails.IsInRole("Requestor"))
 		{
-			<NavPanelMenu MenuText="Requests" MenuIcon="assignment_add" RootDirectory="requests"/>
+			<RadzenPanelMenuItem Text="Requests" Icon="assignment_add" Style="border: none">
+				<MenuItem Text="Receipt" Route="/requests/receipt" />
+				<RadzenPanelMenuItem Text="Invoice" Style="border: none">
+					<MenuItem Text="AP-AR" Route="/requests/invoice/apar-offset" />
+					<MenuItem Text="AR Invoice" Route="/requests/ar-invoice-offsetting" />
+				</RadzenPanelMenuItem>
+			</RadzenPanelMenuItem>
 		}
 		else if (accountDetails.IsInRole("Approver"))
 		{
-			<NavPanelMenu MenuText="Approvals" MenuIcon="assignment_turned_in" RootDirectory="approvals"/>
+			<RadzenPanelMenuItem Text="Approvals" Icon="assignment_turned_in" Style="border: none">
+				<MenuItem Text="Receipt" Route="/approvals/receipt" />
+				<MenuItem Text="Invoice" Route="/approvals/invoice" />
+			</RadzenPanelMenuItem>
 		}
-		else if (accountDetails.IsInRole("Validator"))
-		{
-			<NavPanelMenu MenuText="Validations" MenuIcon="fact_check" RootDirectory="validations"/>
-		}
-
-		<NavPanelMenu MenuText="Submissions" MenuIcon="article_shortcut" RootDirectory="submissions"/>
+		<RadzenPanelMenuItem Text="Submissions" Icon="fact_check" Style="border: none">
+			<MenuItem Text="Receipt" Route="/submissions/receipt" />
+			<MenuItem Text="Invoice" Route="/submissions/invoice" />
+		</RadzenPanelMenuItem>
 	</RadzenPanelMenu>
 	</div>
 </RadzenSidebar>
@@ -67,7 +74,11 @@
 			</Template>
 			<ChildContent>
 				<RadzenProfileMenuItem Text="Account Profile" Icon="person" />
-				<RadzenProfileMenuItem Text="Dark Mode" Icon="ev_shadow" />
+				<RadzenProfileMenuItem >
+					<RadzenContent>
+						<RadzenAppearanceToggle />
+					</RadzenContent>
+				</RadzenProfileMenuItem>
 				<div @onclick="Logout">
 					<RadzenProfileMenuItem Text="Logout" Icon="logout" />
 				</div>

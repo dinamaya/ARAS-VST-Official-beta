@@ -1,15 +1,15 @@
 ﻿<RadzenPanelMenuItem Text="@MenuText" Icon="@MenuIcon" Style="border: none">
-	<MenuItem Text="Cash Discount" Route="@GetPath("cash-discount")" />
-	<MenuItem Text="Bank Charge" Route="@GetPath("bank-charge")" />
 
-	<RadzenPanelMenuItem Text="Offset" Style="border: none">
-		<MenuItem Text="AP-AR" Route="@GetPath("apar-offset")" />
-		<MenuItem Text="AR Invoice" Route="@GetPath("ar-invoice-offsetting")" />
+	<RadzenPanelMenuItem Text="Receipt" Style="border: none">
+		<MenuItem Text="Cash Discount" Route="@GetPath("cash-discount")" />
+		<MenuItem Text="Bank Charge" Route="@GetPath("bank-charge")" />
+		<MenuItem Text="Small Amount" Route="@GetPath("small-amount")" />
 	</RadzenPanelMenuItem>
 
-	<RadzenPanelMenuItem Text="Write Off" Style="border: none">
+	<RadzenPanelMenuItem Text="Invoice" Style="border: none">
+		<MenuItem Text="AP-AR" Route="@GetPath("apar-offset")" />
+		<MenuItem Text="AR Invoice" Route="@GetPath("ar-invoice-offsetting")" />
 		<MenuItem Text="SR Auto Net" Route="@GetPath("sr-auto-net")" />
-		<MenuItem Text="Small Amount" Route="@GetPath("small-amount")" />
 	</RadzenPanelMenuItem>
 </RadzenPanelMenuItem>
 

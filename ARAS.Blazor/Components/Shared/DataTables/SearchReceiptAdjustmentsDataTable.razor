@@ -1,0 +1,202 @@
+﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Components.Shared.Skeletons
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Components.UI.Badges
+
+@inject IRequestService RequestService
+@inject DialogService DialogService
+@inject NavigationManager NavManager
+
+<RadzenRow class="w-100">
+	<div class="card blur shadow-blur w-100">
+		<div class="card-body overflow-auto overflow-x-hidden">
+			<RadzenRow class="pb-3">
+				<RadzenColumn Size="12" >
+					<h3 class="mb-4">Search Result</h3>
+
+					<RadzenRow class="w-100">
+						<RadzenColumn Size="12" SizeMD="6">
+							<RadzenSelectBar 
+								@ref="selectBarFilter"
+								TValue="string"
+								Data="@filterSelection"
+								@bind-Value="currentFilterStat"
+								Change="@OnFilter" />
+						</RadzenColumn>
+
+						@if (selectedRequests.Any())
+						{
+							<RadzenColumn Size="12" SizeMD="6">
+								<RadzenStack class="w-100" JustifyContent="JustifyContent.End" Orientation="Orientation.Horizontal">
+									<RadzenButton ButtonStyle="ButtonStyle.Danger" Text="Reject" class="btn-danger" Icon="cancel" Click="OnReject" />
+									<RadzenButton ButtonStyle="ButtonStyle.Warning" Text="Decline" class="btn-dark" Icon="thumb_down" Click="OnDecline" />
+									<RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Approve" class="btn-primary" Icon="thumb_up" Click="OnApprove" />
+								</RadzenStack>
+							</RadzenColumn>
+						}
+					</RadzenRow>
+				</RadzenColumn>
+			</RadzenRow>
+			@if (IsLoading)
+			{
+				<div>
+					<DatatableSkeleton RowCount="4" ColumnCount="5" />
+				</div>
+			}
+			else
+			{
+				<RadzenDataGrid 
+					@ref=dataGrid
+					@bind-Value=@selectedRequests
+					class="border-1 width:100%; overflow-x:auto;"
+					AllowFiltering="true"
+					AllowColumnResize="true"
+					AllowAlternatingRows="false"
+					AllowRowSelectOnRowClick="false"
+					FilterMode="FilterMode.Advanced"
+					AllowSorting="true"
+					PageSize="10"
+					ShowExpandColumn="true"
+					AllowPaging="true"
+					PagerHorizontalAlign="HorizontalAlign.Left"
+					ShowPagingSummary="true"
+					Data="@filteredRows"
+					LogicalFilterOperator="LogicalFilterOperator.Or"
+					SelectionMode="DataGridSelectionMode.Multiple">
+					<Columns>
+						<RadzenDataGridColumn Frozen="true" Width="50px" Sortable="false" Filterable="false">
+							<HeaderTemplate>
+								<RadzenCheckBox TValue="bool?"
+												Value="@SelectAllState"
+												Change="@((val) => ToggleSelectAll(val))" />
+							</HeaderTemplate>
+							<Template Context="row">
+								<RadzenCheckBox 
+									TValue="bool"
+									Value="@selectedRequests.Contains(row)"
+									Change="@(checkedValue => ToggleRow(row))" />
+							</Template>
+						</RadzenDataGridColumn>
+						<RadzenDataGridColumn Title="Option" Sortable="false" Filterable="false" Width="160px" TextAlign="TextAlign.Center">
+							<Template Context="data">
+								<RadzenButton Icon="search" Text="View" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Click="@(args => OnSelect(data))" />
+							</Template>
+						</RadzenDataGridColumn>
+						<RadzenDataGridColumn Width="300px" Property="@nameof(ReceiptAdjustmentRowDto.CustomerName)" Title="Customer Name" />
+						<RadzenDataGridColumn Width="140px" Property="@nameof(ReceiptAdjustmentRowDto.RequestId)" Title="Ref. No." />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(ReceiptAdjustmentRowDto.InvoiceNumber)" Title="Invoice Number" />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(ReceiptAdjustmentRowDto.AdjustmentType)" Title="Adjustment Type" />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(ReceiptAdjustmentRowDto.Requestor)" Title="Requestor" />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(ReceiptAdjustmentRowDto.DateRequested)" Title="Date Requested" />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(ReceiptAdjustmentRowDto.Approver)" Title="Approver" />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(ReceiptAdjustmentRowDto.DateApproved)" Title="Date Approved" />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(ReceiptAdjustmentRowDto.Creator)" Title="Updated By" />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(ReceiptAdjustmentRowDto.DateCreated)" Title="Date Updated" />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(ReceiptAdjustmentRowDto.Status)" Title="Status">
+							<Template Context="data">
+								<StatusBadge Status="@data.Status" Style="font-size: 12px;"/>
+							</Template>
+						</RadzenDataGridColumn>
+					</Columns>
+				</RadzenDataGrid>
+			}
+		</div>
+	</div>
+</RadzenRow>
+
+@code {
+	[Parameter] public EventCallback<ReceiptAdjustmentRowDto> Select { get; set; }
+	[Parameter] public IEnumerable<ReceiptAdjustmentRowDto> Rows { get; set; }
+	[Parameter] public bool IsLoading { get; set; }
+
+	private IEnumerable<ReceiptAdjustmentRowDto> filteredRows;
+
+	private int FilteredCount => filteredRows.Count();
+
+	private bool? SelectAllState =>
+		selectedRequests.Count == 0 ? false :
+		selectedRequests.Count == FilteredCount ? true : null;
+
+	private IEnumerable<long> SelectedIds => selectedRequests.Select(r => r.RequestId);
+
+	private RadzenDataGrid<ReceiptAdjustmentRowDto> dataGrid;
+	private RadzenSelectBar<string> selectBarFilter;
+
+	private IList<ReceiptAdjustmentRowDto> selectedRequests = new List<ReceiptAdjustmentRowDto>();
+	private IEnumerable<string> filterSelection;
+
+	private ReceiptAdjustmentRowDto selectedRow;
+	private string currentFilterStat = string.Empty;
+
+	protected override async Task OnParametersSetAsync() {
+		filteredRows = Rows ?? [];
+		await OnFilter(string.Empty);
+	}
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		filterSelection = ["All", "Pending", "Resubmitted"];
+	}
+
+	private async Task OnSelect(ReceiptAdjustmentRowDto selectedRow)
+	{
+		if (Select.HasDelegate)
+			await Select.InvokeAsync(selectedRow);
+	}
+
+	private void ToggleRow(ReceiptAdjustmentRowDto row) => dataGrid.SelectRow(row);
+
+	private void ToggleSelectAll(bool? value)
+	{
+		if (value == true)
+		{
+			foreach (var row in filteredRows)
+			{
+				if (!selectedRequests.Contains(row))
+					dataGrid.SelectRow(row);
+			}
+		}
+		else
+		{
+			foreach (var row in selectedRequests.ToList())
+				dataGrid.SelectRow(row); 
+		}
+	}
+
+	private Task OnFilter(string status)
+	{
+		currentFilterStat = status;
+
+		filteredRows = status switch
+		{
+			"Pending" => Rows.Where(r => r.Status == "Pending"),
+			"Resubmitted" => Rows.Where(r => r.Status == "Resubmitted"),
+			_ => Rows
+		};
+
+		selectedRequests.Clear();
+		return Task.CompletedTask;
+	}
+
+	private async Task OnApprove(MouseEventArgs args) => await OnStatusUpdate("APPROVE", "Approval", RequestService.ApproveReceiptAdjustmentRequests);
+
+	private async Task OnReject(MouseEventArgs args) => await OnStatusUpdate("REJECT", "Rejection", RequestService.RejectReceiptAdjustmentRequests);
+	
+	private async Task OnDecline(MouseEventArgs args) => await OnStatusUpdate("DECLINE", "Decline", RequestService.DeclineReceiptAdjustmentRequests);
+
+	private async Task OnStatusUpdate(string status, string stage, Func<IEnumerable<long>, Task> updateCallBack)
+	{
+		bool isConfirmed = await DialogService.Confirm(
+			$"Would you like to \"{status}\" {SelectedIds.Count()} request(s) at the same time?",
+			"Request " + stage
+		) ?? false;
+
+
+		if (!isConfirmed) return;
+
+        await updateCallBack.Invoke(SelectedIds);
+
+		NavManager.NavigateTo(NavManager.Uri, true);
+	}
+}

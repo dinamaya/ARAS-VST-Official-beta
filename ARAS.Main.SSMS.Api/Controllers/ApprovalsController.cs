@@ -21,17 +21,17 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			_adjustmentService = adjustmentService;
 		}
 
-		[HttpPost("{adjustmentTypeCode}")]
-		public async Task<ResponseDto<string>> Post(string adjustmentTypeCode, [FromBody] RequestUpdateDto data)
+		[HttpPost]
+		public async Task<ResponseDto<string>> Post([FromBody] IEnumerable<long> requestIds)
 		{
 			var response = new ResponseDto<string>();
 			try
 			{
 				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
-				await _adjustmentService.Approve(data, accountId, adjustmentTypeCode);
+				await _adjustmentService.Approve(requestIds, accountId);
 
 				response.Result = "Success";
-				response.Message = "Request Approved";
+				response.Message = "Request has been successfully APPROVED";
 				return response;
 			}
 			catch (Exception ex)

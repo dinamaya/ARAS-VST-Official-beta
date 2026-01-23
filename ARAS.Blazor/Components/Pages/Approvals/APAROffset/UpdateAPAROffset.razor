@@ -1,4 +1,4 @@
-﻿@page "/approvals/apar-offset/{RequestId:long}"
+﻿@* @page "/approvals/apar-offset/{RequestId:long}"
 @using ARAS.Blazor.Components.Pages.Requests.APAROffset.Summaries
 @using ARAS.Blazor.Components.Shared.DataTables
 @using ARAS.Blazor.Components.Shared.Modals
@@ -58,7 +58,7 @@
 		await base.OnInitializedAsync();
 		isApprovable = await RequestService.IsApprovable(RequestId);
 		var request = await RequestService.GetRequestDetails(RequestId);
-		rows = await APAROffsetService.GetAdjustments(RequestId);
+		// rows = await APAROffsetService.GetAdjustments(RequestId);
 		notes = await NoteService.GetRows(RequestId);
 		requestAudit = new RequestAuditDto(request);
 		StateHasChanged();
@@ -69,7 +69,6 @@
 		bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"APPROVE\" this request?", "Approve Request") ?? false;
 		if (!isConfirmed) return;
 
-		await APAROffsetService.Approve(RequestId, notes);
 		NavigationManager.NavigateTo("/approvals/apar-offset", true);
 	}
 
@@ -95,7 +94,6 @@
 			RequestId = RequestId
 		};
 
-		await APAROffsetService.Decline(createDto, notes);
 		NavigationManager.NavigateTo("/approvals/apar-offset", true);
 	}
 
@@ -122,7 +120,7 @@
 			RequestId = RequestId
 		};
 
-		await APAROffsetService.Reject(createReject, notes);
 		NavigationManager.NavigateTo("/approvals/apar-offset", true);
 	}
 }
+ *@

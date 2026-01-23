@@ -32,7 +32,7 @@
                 <h3 class="mb-0">AP GROUP</h3>
             </div>
             <div class="py-4 w-100">
-                <RadzenDataGrid Data="@apDisplay" TItem="APAROffsetAPRowDto"
+                <RadzenDataGrid Data="@APAdjustments" TItem="APAROffsetAPRowDto"
                                 AllowFiltering="false"
                                 AllowPaging="false"
                                 AllowSorting="false"
@@ -44,24 +44,9 @@
                             </FooterTemplate>
                         </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn Property="@nameof(APAROffsetAPRowDto.CustomerName)" Title="Customer Name">
-                            <Template Context="data">
-                                @((string.IsNullOrWhiteSpace(data.CustomerName) ? data.CustomerNumber : data.CustomerName))
-                            </Template>
-                        </RadzenDataGridColumn>
-
                         <RadzenDataGridColumn Property="@nameof(APAROffsetAPRowDto.InvoiceAmount)" Title="Invoice Amount">
                             <Template Context="data">
-                                @if (string.IsNullOrWhiteSpace(data?.InvoiceNumber))
-                                {
-                                    <span style="visibility:hidden">
-                                        @data.InvoiceAmount.ToPhp()
-                                    </span>
-                                }
-                                else
-                                {
-                                    @data.InvoiceAmount.ToPhp()
-                                }
+                                @data?.InvoiceAmount.ToPhp()
                             </Template>
                             <FooterTemplate>
                                 <b>@APAdjustments?.Sum(a => a.InvoiceAmount).ToPhp()</b>
@@ -77,7 +62,7 @@
                 <h3 class="mb-0">AR GROUP</h3>
             </div>
             <div class="py-4 w-100">
-                <RadzenDataGrid Data="@arDisplay" TItem="APAROffsetARRowDto"
+                <RadzenDataGrid Data="@ARAdjustments" TItem="APAROffsetARRowDto"
                                 AllowFiltering="false"
                                 AllowPaging="false"
                                 AllowSorting="false"
@@ -99,33 +84,10 @@
                             </FooterTemplate>
                         </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="APAROffsetARRowDto" Title="Customer Name">
-                            <Template Context="data">
-                                @if (data.RowType == ARRowType.Invoice)
-                                {
-                                    @(string.IsNullOrWhiteSpace(data.CustomerName) ? data.CustomerNumber : data.CustomerName)
-                                }
-                                else
-                                {
-                                    @string.Empty
-                                }
-                            </Template>
-                        </RadzenDataGridColumn>
-
                         <RadzenDataGridColumn Property="Amount" Title="Amount">
                             <Template Context="data">
-                                @if (string.IsNullOrWhiteSpace(data?.InvoiceNumber) && string.IsNullOrWhiteSpace(data?.AdjustmentReason))
-                                {
-                                    <span style="visibility:hidden">
-                                        @data.Amount.ToPhp()
-                                    </span>
-                                }
-                                else
-                                {
-                                    @data.Amount.ToPhp()
-                                }
+                                @data.Amount.ToPhp()
                             </Template>
-
                             <FooterTemplate>
                                 <b>@ARAdjustments?.Sum(a => a.Amount).ToPhp()</b>
                             </FooterTemplate>
@@ -171,49 +133,4 @@
     [Parameter] public IEnumerable<APAROffsetARRowDto> ARAdjustments { get; set; }
     [Parameter] public RequestAuditDto RequestAudit { get; set; }
     [Parameter] public string ReferenceNumber { get; set; }
-
-    // Display lists padded so both grids always have the same number of rows
-    private List<APAROffsetAPRowDto> apDisplay = new();
-    private List<APAROffsetARRowDto> arDisplay = new();
-
-    protected override Task OnParametersSetAsync()
-    {
-        PadAndPrepareDisplays();
-        return base.OnParametersSetAsync();
-    }
-
-    private void PadAndPrepareDisplays()
-    {
-        var ap = APAdjustments?.ToList() ?? new List<APAROffsetAPRowDto>();
-        var ar = ARAdjustments?.ToList() ?? new List<APAROffsetARRowDto>();
-
-        var max = Math.Max(ap.Count, ar.Count);
-
-        // Ensure padding rows have zero amounts (APAROffsetAPRowDto has a non-zero default in its class,
-        // so explicitly set InvoiceAmount = 0)
-        while (ap.Count < max)
-        {
-            ap.Add(new APAROffsetAPRowDto
-            {
-                InvoiceNumber = string.Empty,
-                InvoiceAmount = 0.0,
-                CustomerName = string.Empty,
-                CustomerNumber = string.Empty
-            });
-        }
-
-        while (ar.Count < max)
-        {
-            ar.Add(new APAROffsetARRowDto
-            {
-                InvoiceNumber = string.Empty,
-                AdjustmentReason = string.Empty,
-                Amount = 0.0,
-                RowType = ARRowType.Invoice
-            });
-        }
-
-        apDisplay = ap;
-        arDisplay = ar;
-    }
 }

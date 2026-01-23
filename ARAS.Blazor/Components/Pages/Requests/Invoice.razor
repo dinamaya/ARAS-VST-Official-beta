@@ -1,0 +1,205 @@
+﻿@page "/requests/invoice"
+@attribute [Authorize(Roles = "Requestor")]
+@inherits CreateReceiptRequestBaseComponent
+
+@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Components.Pages.Requests.APAROffset
+@using ARAS.Blazor.Components.Shared.Modals
+@using ARAS.Blazor.Components.Shared.Others
+@using ARAS.Blazor.Components.Shared.Summaries
+@using ARAS.Blazor.Models.Complex
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Components.Shared.DataTables
+@using Microsoft.AspNetCore.Authorization
+
+@inject DialogService DialogService
+@inject NavigationManager NavManager
+@inject IAdjustmentService AdjustmentService
+@inject IRequestService RequestService
+@inject IQueryService QueryService
+
+<h2>Invoice Adjustment</h2>
+
+<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+	<SearchInvoiceAPARDetails OnSelectInvoice="OnInvoiceSelected" />
+
+	@if (isReady && !string.IsNullOrEmpty(SearchedInvoice.CustomerName))
+	{
+		<RadzenRow Gap="2.5em">
+			<RadzenColumn Size="12">
+				<div class="rz-text-align-center pb-3">
+					<RadzenLabel class="fs-5" Text="Select Adjustment Types to Submit" />
+				</div>
+				<div class="pb-3 rz-text-align-center">
+					<RadzenSelectBar 
+						Multiple="true"
+						Data="@ReceiptAdjustmentTypes"
+						@bind-Value=@selectedAdjustmentTypes
+						TValue="IEnumerable<string>"
+						Change="OnAdjustmentTypeSelectionChanged"
+						TextProperty="@nameof(AdjustmentTypeSelectBarOption.Name)"
+						ValueProperty="@nameof(AdjustmentTypeSelectBarOption.Name)" />
+				</div>
+			</RadzenColumn>
+			<RadzenColumn Size="12" SizeMD="@(selectedAdjustmentTypes.Any() ? 5 : 12)">
+				<RadzenRow>
+					<RadzenColumn Size="@(selectedAdjustmentTypes.Any() ? 12 : 6)">
+						<InvoiceSummary InvoiceDetails="SearchedInvoice" />
+					</RadzenColumn>
+					<RadzenColumn Size="@(selectedAdjustmentTypes.Any() ? 12 : 6)">
+						<CardStandard HeaderText="Calculations">
+							<BodyTtemplate>
+								<RadzenStack Orientation="Orientation.Vertical" Gap="1.3em">
+									<div>
+										<div class="mb-2">
+											<RadzenLabel Text="Total Adjustment Amount:" />
+										</div>
+										<div class="input-group ps-3">
+											<input class="form-control form-control-sm fs-6 px-3 py-2" type="text" disabled value="@TotalAdjustmentAmount.ToPhp()">
+										</div>
+									</div>
+									<div>
+										<div class="mb-2">
+											<RadzenLabel Text="Remaining Balance:"/>
+										</div>
+										<div class="input-group ps-3">
+											<input class="form-control form-control-sm fs-6 px-3 py-2" type="text" disabled value="@RemainingBalance.ToPhp()">
+										</div>
+									</div>
+									<div>
+										<p class="text-xs mb-1">
+											Calculated by the summation of <b>Adjustment Amounts</b> subtracted to the <b>Invoice Amount</b>
+										</p>
+									</div>
+								</RadzenStack>
+							</BodyTtemplate>
+						</CardStandard>
+					</RadzenColumn>
+				</RadzenRow>
+			</RadzenColumn>
+
+			@if (selectedAdjustmentTypes.Any())
+			{
+				<RadzenColumn Size="12" SizeMD="7">
+					<CreateReceiptAdjustment InvoiceDetails="SearchedInvoice" SelectedAdjustmentTypes="selectedAdjustmentTypes" AdjustmentAmountChanged="HandleAdjustmentChange" />
+				</RadzenColumn>
+			}
+
+		</RadzenRow>
+
+		<AttachmentsDatatable Notes="Notes" IsDownloadable=false />
+		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+			<button class="btn btn-dark mt-2" @onclick="OnSubmit">
+				Summary
+			</button>
+
+			<button class="btn btn-primary mt-2" @onclick="OnSubmit">
+				Submit
+			</button>
+		</RadzenStack>
+	}
+</RadzenStack>
+
+	@code {
+
+	private IEnumerable<AdjustmentTypeSelectBarOption> ReceiptAdjustmentTypes;
+	private IEnumerable<string> selectedAdjustmentTypes = ["Cash Discount"];
+	private readonly Dictionary<string, ReceiptAdjustmentEntry> _adjustments = new();
+
+	private double RemainingBalance = 0d;
+	private double TotalAdjustmentAmount = 0d;
+	private bool isReady = false;
+
+	protected override async Task OnInitializedAsync()
+	{
+		ReceiptAdjustmentTypes = (await AdjustmentService.GetReceiptTypes()).Select((t, i) => new AdjustmentTypeSelectBarOption(i, t));
+		await base.OnInitializedAsync();
+		isReady = true;
+	}
+
+	protected async Task OnInvoiceSelected(InvoiceDetailsDto invoiceDetails)
+	{
+		await DialogService.OpenAsync<AddAPAROffsetting>(
+			"Confirm Invoice Number",
+			new Dictionary<string, object>()
+			{
+				{ "InvoiceDetails", invoiceDetails }
+			},
+			ModalTemplates.Variant.SMALL
+		);
+	}
+
+	private void HandleAdjustmentChange(AdjustmentEntry data)
+	{
+		_adjustments[data.Name] = new ReceiptAdjustmentEntry(){
+			Amount = data.Amount,
+            Remarks = data.Remarks
+		};
+
+		Calculate();
+	}
+
+	private void OnAdjustmentTypeSelectionChanged()
+	{
+		var allTypes = ReceiptAdjustmentTypes.Select(t => t.Name);
+		var notExisting = allTypes
+			.Where(k => !selectedAdjustmentTypes.Contains(k))
+			.ToList();
+
+		foreach (var key in notExisting)
+			_adjustments.Remove(key);
+
+		Calculate();
+	}
+
+
+	private void Calculate()
+	{
+		TotalAdjustmentAmount = _adjustments.Values.Sum(a => a.Amount);
+		RemainingBalance = SearchedInvoice.InvoiceAmount - TotalAdjustmentAmount;
+		StateHasChanged();
+	}
+
+	private void Reset()
+	{
+		_adjustments.Clear();
+		selectedAdjustmentTypes = [];
+		TotalAdjustmentAmount = 0;
+		Calculate();
+	}
+
+	protected override async Task OnSubmit()
+	{
+		try
+		{
+			await base.OnSubmit();
+			var x = selectedAdjustmentTypes;
+
+			bool isConfirmed = await DialogService.Confirm("Would you like to submit the following \"Receipt Adjustment(s)\"?", "Create Submit Receipt Adjustment(s)") ?? false;
+
+			if (!isConfirmed) return;
+			IList<BaseReceiptAdjustmentCreateDto> requests = new List<BaseReceiptAdjustmentCreateDto>();
+
+			Guards.ThrowInvalidOperationIf(SearchedInvoice.InvoiceBalance <= 0, "Cannot apply adjustment(s) because the current invoice is non adjustable due to the invoice balance is less than or equals to 0");
+			Guards.ThrowInvalidOperationIf(RemainingBalance <= 0, "Cannot apply adjustment(s) because the Remaining Balance is less than or equals to 0");
+
+			foreach(var adj in _adjustments)
+			{
+				Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(adj.Value.Remarks), $"Cannot apply adjustment(s) because there is no remarks on {adj.Key} adjustment field.");
+				Guards.ThrowInvalidOperationIf(adj.Value.Amount <= 0, "Cannot apply adjustment(s) because the adjustment amount is less than or equals to 0");
+				requests.Add(new BaseReceiptAdjustmentCreateDto(adj.Key, SearchedInvoice, adj.Value));
+			}
+
+			await RequestService.Create(requests, Notes);
+
+			var uri = QueryService.GetCurrentUrl(false);
+			NavManager.NavigateTo(uri, true);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Submission Failed");
+		}
+	}
+}

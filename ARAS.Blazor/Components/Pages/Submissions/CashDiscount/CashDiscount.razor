@@ -1,7 +1,0 @@
-﻿@page "/submissions/cash-discount"
-@attribute [Authorize]
-
-@using Microsoft.AspNetCore.Authorization
-@inject ICashDiscountService ReaderService
-
-<BaseAdjustmentSubmission RouteName="cash-discount" Title="Cash Discount" RequestSubmissionReader="ReaderService" />

@@ -1,0 +1,65 @@
+﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Components.Shared.Summaries
+@using ARAS.Blazor.Components.UI
+@using ARAS.Blazor.Models.Complex
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@inherits ComponentBase
+@inject DialogService DialogService
+@inject IConfigService ConfigService
+
+<CardStandard HeaderText="Create Adjustment" HeaderIcon="create">
+	<BodyTtemplate>
+		<RadzenRow Gap="3em" >
+			@if (SelectedAdjustmentTypes.Contains("Cash Discount"))
+			{
+				<RadzenColumn Size="12">
+					<CreateCashDiscountAdjustment InvoiceDetails="InvoiceDetails" AdjustmentAmountChanged="OnAdjustmentAmountChanged" />
+				</RadzenColumn>
+			}
+			@if (SelectedAdjustmentTypes.Contains("Bank Charges"))
+			{
+				<RadzenColumn Size="12">
+					<BaseReceiptAdjustment AdjustmentName="Bank Charges" IsAdjustable="isAdjustable" AdjustmentAmountChanged="OnAdjustmentAmountChanged" />
+				</RadzenColumn>
+			}
+			@if (SelectedAdjustmentTypes.Contains("Write-Off: Small Amount"))
+			{
+				<RadzenColumn Size="12">
+					<BaseReceiptAdjustment AdjustmentName="Write-Off: Small Amount" IsAdjustable="isAdjustable" AdjustmentAmountChanged="OnAdjustmentAmountChanged" />
+				</RadzenColumn>
+			}
+		</RadzenRow>
+	</BodyTtemplate>
+</CardStandard>
+
+@code {
+	[Parameter] public EventCallback<AdjustmentEntry> AdjustmentAmountChanged { get; set; }
+	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
+	[Parameter] public IEnumerable<string> SelectedAdjustmentTypes { get; set; }
+
+	private IEnumerable<string> invoices = new List<string>();
+
+	private string remarks = string.Empty;
+	private bool isAdjustable = false;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		Reset();
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+		isAdjustable = InvoiceDetails.InvoiceBalance > 0;
+	}
+
+	protected async Task OnAdjustmentAmountChanged(AdjustmentEntry data)
+	{
+		await AdjustmentAmountChanged.InvokeAsync(data);
+	}
+
+	public void Reset() => remarks = string.Empty;
+}

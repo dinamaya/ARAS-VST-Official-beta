@@ -1,8 +1,0 @@
-﻿@page "/approvals/small-amount"
-@attribute [Authorize(Roles = "Approver")]
-
-@using ARAS.Blazor.App_Code.Globals.Enums
-@using Microsoft.AspNetCore.Authorization
-@inject ISmallAmountService Service
-
-<BaseAdjustmentRequestUpdate RouteName="small-amount" Title="Small Amount" RequestSubmissionReader="Service" AdjustmentStage="@AdjustmentStageType.APPROVAL" />

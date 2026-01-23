@@ -1,9 +1,8 @@
-﻿@page "/declines/apar-offset/{RequestId:long}"
+﻿@* @page "/declines/apar-offset/{RequestId:long}"
 
 @using ARAS.Blazor.App_Code.Globals
 @using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Components.Pages.Requests.APAROffset
-@using ARAS.Blazor.Components.Pages.Requests.APAROffset.Search
 @using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting
 @using ARAS.Blazor.Components.Pages.Requests.APAROffset.Modal
 @using ARAS.Blazor.Components.Shared.Modals
@@ -26,7 +25,8 @@
 <h2>AP AR : Offset</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<SearchInvoiceAPARDetails APAdjustments="APAdjustments" ARAdjustments="ARAdjustments" APGrid="apGrid" ARGrid="arGrid" />
+	<SearchInvoiceDetails OnAdd="OpenAdd" OnLoadingChanged="HandleLoadingChanged" OnSearchChanged="HandleSearchChanged" />
+
 	<RadzenRow Gap="1.5rem">
 		<RadzenColumn Size="6">
 			<div class="text-center">
@@ -51,13 +51,6 @@
 								<b>Total Amount:</b>
 							</FooterTemplate>
 						</RadzenDataGridColumn>
-
-						<RadzenDataGridColumn Property="@nameof(APAROffsetAPRowDto.CustomerName)" Title="Customer Name">
-							<Template Context="data">
-								@((string.IsNullOrWhiteSpace(data.CustomerName) ? data.CustomerNumber : data.CustomerName))
-							</Template>
-						</RadzenDataGridColumn>
-
 						<RadzenDataGridColumn Property="@nameof(APAROffsetAPRowDto.InvoiceAmount)" Title="Amount">
 							<Template Context="data">
 								@data?.InvoiceAmount.ToPhp()
@@ -112,14 +105,20 @@
 							<EditTemplate Context="data">
 								@if (data.RowType == ARRowType.Invoice)
 								{
-									{
-										<div>@data.InvoiceNumber</div>
-									}
+									<RadzenStack Orientation="Orientation.Vertical">
+										<RadzenTextBox @bind-Value="data.InvoiceNumber" Name="@($"InvoiceNumber_{data.Id}")" Style="width:100%" />
+										<RadzenRequiredValidator Component="@($"InvoiceNumber_{data.Id}")"
+																 Text="Invoice number is required"
+																 Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
+										<RadzenRegexValidator Component="@($"InvoiceNumber_{data.Id}")"
+															  Text="Please enter numbers only"
+															  Pattern="^\d+$"
+															  Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
+									</RadzenStack>
 								}
 								else
 								{
-									<RadzenDropDown @bind-Value="data.AdjustmentReason" Style="width:100%" Data="@reasonCodes"
-													Name="@($"AdjustmentReason_{data.Id}")" />
+									<RadzenDropDown @bind-Value="data.AdjustmentReason" Style="width:100%" Data="@reasonCodes" Name="@($"AdjustmentReason_{data.Id}")" />
 									<RadzenRequiredValidator Component="@($"AdjustmentReason_{data.Id}")"
 															 Text="Adjustment reason is required"
 															 Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
@@ -127,36 +126,20 @@
 							</EditTemplate>
 						</RadzenDataGridColumn>
 
-						<RadzenDataGridColumn TItem="APAROffsetARRowDto" Title="Customer Name">
-							<Template Context="data">
-								@if (data.RowType == ARRowType.Invoice)
-								{
-									@(string.IsNullOrWhiteSpace(data.CustomerName) ? data.CustomerNumber : data.CustomerName)
-								}
-								else
-								{
-									@string.Empty
-								}
-							</Template>
-						</RadzenDataGridColumn>
-
 						<RadzenDataGridColumn TItem="APAROffsetARRowDto" Property="Amount" Title="Amount">
 							<Template Context="data">
 								@data?.Amount.ToPhp()
 							</Template>
 							<EditTemplate Context="data">
-								<div style="position: relative; z-index: 1;">
-									<RadzenNumeric @bind-Value="data.Amount"
-												   Name="@($"Amount_{data.Id}")"
-												   Style="width:100%"
-												   Step="0.01" />
-								</div>
-
+								<RadzenNumeric @bind-Value="data.Amount" Name="@($"Amount_{data.Id}")"
+											   Style="width:100%"
+											   Step="0.01" />
 								<RadzenRequiredValidator Component="@($"Amount_{data.Id}")"
 														 Text="Amount is required"
 														 Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
-
-
+								<RadzenRangeValidator Component="@($"Amount_{data.Id}")" Min="0.01"
+													   Text="Amount must be greater than 0"
+													   Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
 							</EditTemplate>
 
 							<FooterTemplate>
@@ -164,15 +147,10 @@
 							</FooterTemplate>
 						</RadzenDataGridColumn>
 
-						<RadzenDataGridColumn TItem="APAROffsetARRowDto" Context="data" TextAlign="TextAlign.Center" Width="120px">
+						<RadzenDataGridColumn TItem="APAROffsetARRowDto" Context="data" TextAlign="TextAlign.Center" Width="150px">
 							<Template Context="data">
-								<div class="d-flex align-items-center justify-content-center" style="gap:0.5rem;">
-								@if (data.RowType == ARRowType.Adjustment)
-								{
-									<RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@((args) => arGrid.EditRow(data))" Style="padding:6px" />
-								}
+								<RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@((args) => arGrid.EditRow(data))" />
 								<RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Click="@((args) => OnRemoveRow(data))" />
-								</div>
 							</Template>
 							<EditTemplate Context="data">
 								<RadzenButton Icon="save" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success" Click="@((args) => arGrid.UpdateRow(data))" />
@@ -234,9 +212,9 @@
 	{
 		await base.OnInitializedAsync();
 
-		var adjustments = await APAROffsetService.GetAdjustments(RequestId);
-		APAdjustments = adjustments.APGroup.ToList();
-		ARAdjustments = adjustments.ARGroup.ToList();
+		// var adjustments = await APAROffsetService.GetAdjustments(RequestId);
+		// APAdjustments = adjustments.APGroup.ToList();
+		// ARAdjustments = adjustments.ARGroup.ToList();
 
 		// ensure every AR row has an Id for per-row validators and cancel logic
 		foreach (var ar in ARAdjustments)
@@ -256,7 +234,7 @@
 
 	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
 	{
-		await DialogService.OpenAsync<AddAPAROffsettingAR>(
+		await DialogService.OpenAsync<AddAPAROffsetting>(
 			"Confirm Invoice Number",
 			new Dictionary<string, object>()
 			{
@@ -480,4 +458,4 @@
 
 		return true;
 	}
-}
+} *@

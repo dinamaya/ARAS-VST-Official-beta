@@ -1,5 +1,6 @@
 ﻿using ARAS.Main.SSMS.Api.Models.Entities;
 using ARAS.Main.SSMS.Api.Models.SQLVIews;
+using ARAS.Main.SSMS.Api.Models.Views;
 using Microsoft.EntityFrameworkCore;
 
 namespace ARAS.Main.SSMS.Api.Context
@@ -18,14 +19,15 @@ namespace ARAS.Main.SSMS.Api.Context
 		public virtual DbSet<TransactionRemarks> TransactionRemarks { get; set; }
 
         // SQL VIEWS
-        public virtual DbSet<ActiveTransactionsV> VwActiveTransactions { get; set; }
         public virtual DbSet<AparoffsetRowV> VwAparoffsetRows { get; set; }
 		public virtual DbSet<InvoiceNumbersV> VwInvoiceNumbers { get; set; }
-		public virtual DbSet<LatestRequestTransactionV> VwLatestRequestTransactions { get; set; }
 		public virtual DbSet<NotesV> VwNotes { get; set; }
 		public virtual DbSet<TransactionsHistoryV> VwTransactionsHistory { get; set; }
 		public virtual DbSet<RequestAdjustmentsV> VwRequestAdjustments { get; set; }
 		public virtual DbSet<RequestsNumberSourceV> VwRequestsNumberSources { get; set; }
+
+		// NEW SQL VIEWS
+		public virtual DbSet<LatestReceiptAdjustmentDetailsV> VwLatestReceiptAdjustmentDetails { get; set; }
 
 		public MainDbContext(DbContextOptions<MainDbContext> options) : base(options) { }
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -64,11 +66,6 @@ namespace ARAS.Main.SSMS.Api.Context
 			  .HasOne(a => a.Request)
 				.WithMany()
 				.HasForeignKey(a => a.RequestId);
-
-				entity
-			  .HasOne(a => a.AdjustmentType)
-				.WithMany()
-				.HasForeignKey(a => a.AdjustmentTypeId);
 			});
 
 			modelBuilder.Entity<Note>()
@@ -78,24 +75,25 @@ namespace ARAS.Main.SSMS.Api.Context
 
 
 			// SQL VIEWS
-
-			modelBuilder.Entity<ActiveTransactionsV>(entity =>
+			modelBuilder.Entity<LatestReceiptAdjustmentDetailsV>(entity =>
 			{
 				entity
 					.HasNoKey()
-					.ToView("ActiveTransactions_v");
+					.ToView("LatestReceiptAdjustmentDetails_v");
 
-				entity.Property(e => e.AccountType).HasMaxLength(256);
-				entity.Property(e => e.CreatorId).HasMaxLength(250);
-				entity.Property(e => e.StatusId).HasMaxLength(450);
+				entity.Property(e => e.ApproverId).HasMaxLength(250);
+				entity.Property(e => e.UpdaterId).HasMaxLength(250);
 			});
 
-            modelBuilder.Entity<AparoffsetRowV>(entity =>
-            {
-                entity
-                    .HasNoKey()
-                    .ToView("APAROffsetRow_v");
-            });
+
+
+			// OLD SQL VIEWS Can Be Remove
+			modelBuilder.Entity<AparoffsetRowV>(entity =>
+			{
+				entity
+					.HasNoKey()
+					.ToView("APAROffsetRow_v");
+			});
 
 			modelBuilder.Entity<InvoiceNumbersV>(entity =>
 			{
@@ -113,7 +111,7 @@ namespace ARAS.Main.SSMS.Api.Context
 				entity.Property(e => e.ApproverId).HasMaxLength(250);
 				entity.Property(e => e.ValidatorId).HasMaxLength(250);
 			});
-			
+
 			modelBuilder.Entity<NotesV>(entity =>
 			{
 				entity
@@ -150,7 +148,6 @@ namespace ARAS.Main.SSMS.Api.Context
 				entity.Property(e => e.StatusId).HasMaxLength(450);
 				entity.Property(e => e.TransactionRemarksId).HasMaxLength(450);
 			});
-
 		}
 	}
 }

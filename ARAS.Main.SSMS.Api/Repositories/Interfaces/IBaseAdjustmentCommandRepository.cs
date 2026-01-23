@@ -6,8 +6,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 {
 	public interface IBaseAdjustmentCommandRepository<TRow, TCreate, TValidation> : 
 		ICreateStatusRepository, 
-		ICreateRepository<RequestCreationDto<AdjustmentRequestCreationDto<TCreate>>, long>,
-		IUpdateRepository<RequestCreationDto<AdjustmentRequestCreationDto<TCreate>>, long>,
+		ICreateRepository<RequestCreationDto<TCreate>, long>,
+		IUpdateRepository<RequestCreationDto<TCreate>, long>,
 		IAdjustmentReaderRepository<TRow>,
 		IInputValidatorRepository<TValidation>
 	{

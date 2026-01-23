@@ -8,5 +8,7 @@
 		public DateTime InvoiceDate { get; set; }
 		public string CustomerName { get; set; }
 		public string CustomerNumber { get; set; }
+		public double InvoiceBalance { get; set; }
+		public string DataSource { get; set; }
 	}
 }

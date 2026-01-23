@@ -3,10 +3,9 @@ using ARAS.Blazor.Repositories.Interfaces;
 
 namespace ARAS.Blazor.Services.Interfaces
 {
-	public interface IAPAROffsetService : IBaseAdjustmentCommandRepository<APAROffsetRowDto, APAROffsetCreateDto, object>
+	public interface IAPAROffsetService 
 	{
 		Task Create(IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes);
 		Task Update(long requestId, IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes);
-		Task<APAROffsetRowDto> GetAdjustments(long requestId);
 	}
 }

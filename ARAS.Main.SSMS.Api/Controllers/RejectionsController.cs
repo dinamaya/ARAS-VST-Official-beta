@@ -21,17 +21,17 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			_adjustmentService = adjustmentService;
 		}
 
-		[HttpPost("{adjustmentTypeCode}")]
-		public async Task<ResponseDto<string>> Post(string adjustmentTypeCode, [FromBody] NegateRequestDto createReject)
+		[HttpPost]
+		public async Task<ResponseDto<string>> Post([FromBody] IEnumerable<long> requestIds)
 		{
 			var response = new ResponseDto<string>();
 			try
 			{
 				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
-				await _adjustmentService.Reject(createReject, accountId, adjustmentTypeCode);
+				await _adjustmentService.Reject(requestIds, accountId);
 
 				response.Result = "Success";
-				response.Message = "Request Rejected";
+				response.Message = "Request has been successfully REJECTED";
 				return response;
 			}
 			catch (Exception ex)

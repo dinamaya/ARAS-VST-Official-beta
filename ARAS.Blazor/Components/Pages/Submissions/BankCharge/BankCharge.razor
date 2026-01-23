@@ -1,7 +1,0 @@
-﻿@page "/submissions/bank-charge"
-@attribute [Authorize]
-
-@using Microsoft.AspNetCore.Authorization
-@inject IBankChargeService ReaderService
-
-<BaseAdjustmentSubmission RouteName="bank-charge" Title="Bank Charge" RequestSubmissionReader="ReaderService" />

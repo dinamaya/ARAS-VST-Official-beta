@@ -13,9 +13,10 @@ namespace ARAS.Blazor.App_Code.Globals.Extensions
 
 		public static AccountBasicInfo GetAccountBasicInfo(this ClaimsPrincipal user) => 
 			new(
-				GetClaim(user, ClaimTypes.PrimarySid) ?? "",
-				GetClaim(user, ClaimTypes.GroupSid) ?? "",
-				GetClaim(user, ClaimTypes.GivenName) + " "+ GetClaim(user, ClaimTypes.Surname)
+				GetClaim(user, ClaimTypes.PrimarySid) ?? string.Empty,
+				GetClaim(user, ClaimTypes.GroupSid) ?? string.Empty,
+				GetClaim(user, ClaimTypes.GivenName) + " " + GetClaim(user, ClaimTypes.Surname),
+				GetClaim(user, ClaimTypes.Role) ?? string.Empty
 			);
 	}
 }

@@ -5,11 +5,11 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 {
 	public interface IRequestRepository : 
 		IReadSingleRepository<Request, long>, 
-		ICreateRepository<RequestCreateDto, long>,
+		ICreateRepository<string, long>,
+		ICreateMultipleRepository<string, long>,
 		IGetTransactionRequestsRepository
 	{
 		Task<bool> IsApprovable(long requestId);
-		Task<bool> IsValidatable (long requestId);
 		Task<bool> IsDeclinable (long requestId);
 		Task<bool> IsRejectable (long requestId);
 		Task<bool> IsDeclined (long requestId);
@@ -18,6 +18,5 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 
 		Task<TransactionRequestRowDto> GetTransactionRequestByRequestId(long requestId);
 		Task<RequestUpdateEmailDetailsDto> GetForEmailDetailsById (long requestId);
-        //Task<TransactionRequestRowDto> GetTransactionRequestForReport(long requestId);       
-    }
+	}
 }

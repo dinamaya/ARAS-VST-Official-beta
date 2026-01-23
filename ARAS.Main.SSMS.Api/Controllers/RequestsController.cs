@@ -13,17 +13,19 @@ namespace ARAS.Main.SSMS.Api.Controllers
 	public class RequestsController : ControllerBase
 	{
 		private readonly ILogger<RequestsController> _logger;
-		private readonly ICashDiscountRepository _cashDiscountRepo;
 		private readonly IRequestRepository _requestRepo;
+		private readonly IBaseReceiptAdjustmentRepository _receiptAdjustmentRepo;
+		private readonly IAPAROffsetRepository _aparRepo;
 
-		public RequestsController(ILogger<RequestsController> logger, ICashDiscountRepository cashDiscountRepo, IRequestRepository requestRepo)
-		{
-			_logger = logger;
-			_cashDiscountRepo = cashDiscountRepo;
-			_requestRepo = requestRepo;
-		}
+        public RequestsController(ILogger<RequestsController> logger, IRequestRepository requestRepo, IBaseReceiptAdjustmentRepository receiptAdjustmentRepo, IAPAROffsetRepository aparRepo)
+        {
+            _logger = logger;
+            _requestRepo = requestRepo;
+            _receiptAdjustmentRepo = receiptAdjustmentRepo;
+            _aparRepo = aparRepo;
+        }
 
-		[HttpGet("details/{requestId:long}"), Authorize]
+        [HttpGet("details/{requestId:long}"), Authorize]
 		public async Task<ResponseDto<TransactionRequestRowDto>> GetTransactionRequestByRequestId(long requestId)
 		{
 			var response = new ResponseDto<TransactionRequestRowDto>();
@@ -46,22 +48,6 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			try
 			{
 				response.Result = await _requestRepo.IsApprovable(requestId);
-				return response;
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex.Message);
-				return response.Failed(ex.Message);
-			}
-		}
-
-		[HttpGet("is-validatable/{requestId:long}"), Authorize(Roles = "Validator")]
-		public async Task<ResponseDto<bool>> IsValidatable(long requestId)
-		{
-			var response = new ResponseDto<bool>();
-			try
-			{
-				response.Result = await _requestRepo.IsValidatable(requestId);
 				return response;
 			}
 			catch (Exception ex)
@@ -119,14 +105,14 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("submissions/{adjustmentTypeCode}"), Authorize]
-		public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetAllSubmissions(string adjustmentTypeCode)
+		[HttpPost("receipt"), Authorize(Roles = "Requestor")]
+		public async Task<ResponseDto<string>> CreateReceiptAdjusmentRequest([FromBody] IEnumerable<BaseReceiptAdjustmentCreateDto> data)
 		{
-			var response = new ResponseDto<IEnumerable<TransactionRequestRowDto>>();
+			var response = new ResponseDto<string>();
 			try
 			{
-				response.Message = "";
-				response.Result = await _requestRepo.GetAllSubmissionsByType(adjustmentTypeCode);
+				var requestCreation = new RequestCreationDto<IEnumerable<BaseReceiptAdjustmentCreateDto>>(data, User.GetAccountBasicInfo());
+				response.Result = await _receiptAdjustmentRepo.Create(requestCreation, requestCreation.CreatorId);
 				return response;
 			}
 			catch (Exception ex)
@@ -135,13 +121,20 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("approvals/{adjustmentTypeCode}"), Authorize(Roles = "Approver")]
-		public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetForApprovals(string adjustmentTypeCode)
+		[HttpPost("invoice/arr"), Authorize(Roles = "Requestor")]
+		public async Task<ResponseDto<long>> CreateInvoiceAdjusmentRequest([FromBody] IEnumerable<APAROffsetCreateDto> data)
 		{
-			var response = new ResponseDto<IEnumerable<TransactionRequestRowDto>>();
+			var response = new ResponseDto<long>();
 			try
 			{
-				response.Result = await _requestRepo.GetAllForApprovalsByType(adjustmentTypeCode);
+				var accountInfo = User.GetAccountBasicInfo();
+
+				var requestCreation = new RequestCreationDto<IEnumerable<APAROffsetCreateDto>>(data, User.GetAccountBasicInfo());
+
+				long requestId = await _aparRepo.Create(requestCreation, accountInfo.Id);
+
+				response.Result = requestId;
+				response.Message = "Request Created Successfully";
 				return response;
 			}
 			catch (Exception ex)
@@ -150,13 +143,29 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("validations/{adjustmentTypeCode}"), Authorize(Roles = "Validator")]
-		public async Task<ResponseDto<IEnumerable<TransactionRequestRowDto>>> GetForValidations(string adjustmentTypeCode)
+		[HttpGet("approvals/receipt"), Authorize(Roles = "Approver")]
+		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>> GetForApprovals(SearchRequestDto searchRequest)
 		{
-			var response = new ResponseDto<IEnumerable<TransactionRequestRowDto>>();
+			var response = new ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>();
 			try
 			{
-				response.Result = await _requestRepo.GetAllForValidationsByType(adjustmentTypeCode);
+				response.Result = await _requestRepo.GetAllForApprovalsByType(searchRequest);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("submissions/receipt"), Authorize]
+		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>> GetSubmissions(SearchRequestDto searchRequest)
+		{
+			var response = new ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>();
+			try
+			{
+				var accountInfo = User.GetAccountBasicInfo();
+				response.Result = await _requestRepo.GetSubmissions(searchRequest, accountInfo.Role, accountInfo.FullName);
 				return response;
 			}
 			catch (Exception ex)

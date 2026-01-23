@@ -70,6 +70,70 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			return results.Select(r => r.Id);
 		}
 
+		public async Task<IEnumerable<long>> CreateAsync(IEnumerable<APAROffsetCreateDto> data, string createdBy)
+		{
+			var date = DateTime.Now;
+
+			IList<APAROffset> results = [];
+
+			foreach (var _data in data)
+			{
+				var adjustment = new APAROffset
+				{
+					RequestId = _data.RequestId,
+					InvoiceId = long.Parse(string.IsNullOrEmpty(_data.InvoiceNumber) ? "0" : _data.InvoiceNumber), // use as InvoiceId
+					Amount = _data.Amount,
+					Type = _data.Type,
+					ReasonCode = _data.ReasonCode ?? string.Empty,
+
+					CreatedBy = createdBy,
+					DateCreated = DateTime.Now,
+					ModifiedBy = createdBy,
+					DateModified = DateTime.Now,
+					IsActive = true
+				};
+
+				results.Add(adjustment);
+			}
+
+			await _context.APAROffsets.AddRangeAsync(results);
+			await _context.SaveChangesAsync();
+
+			return results.Select(r => r.Id);
+		}
+
+		public async Task<IEnumerable<long>> CreateAsync(IEnumerable<ReasonAdjustmentCreateDto> data, string createdBy)
+		{
+			var date = DateTime.Now;
+
+			IList<APAROffset> results = [];
+
+			foreach (var _data in data)
+			{
+				var adjustment = new APAROffset
+				{
+					RequestId = _data.RequestId,
+					InvoiceId = 0, // use as InvoiceId
+					Amount = _data.Amount,
+					Type = "AR",
+					ReasonCode = _data.ReasonCode,
+
+					CreatedBy = createdBy,
+					DateCreated = DateTime.Now,
+					ModifiedBy = createdBy,
+					DateModified = DateTime.Now,
+					IsActive = true
+				};
+
+				results.Add(adjustment);
+			}
+
+			await _context.APAROffsets.AddRangeAsync(results);
+			await _context.SaveChangesAsync();
+
+			return results.Select(r => r.Id);
+		}
+
 		public async Task<IEnumerable<Adjustment>> GetByRequestId(long requestId) => 
 			await _context.Adjustments.Where(a => a.RequestId == requestId && a.IsActive).ToListAsync();
 
@@ -180,31 +244,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.ToListAsync();
 		}
 
-		public async Task<long> CreateAPAROffsetAdjustmentAsync(APAROffsetCreateDto data, long invoiceId, string createdBy, long requestId, string adjustmentTypeId)
-		{
-
-			var aparOffset = new APAROffset
-			{
-				RequestId = requestId,
-				InvoiceId = invoiceId,
-				Amount = data.Amount,
-				Type = data.Type,
-				ReasonCode = data.ReasonCode ?? string.Empty,
-				AdjustmentTypeId = adjustmentTypeId,
-
-				CreatedBy = createdBy,
-				DateCreated = DateTime.Now,
-				ModifiedBy = createdBy,
-				DateModified = DateTime.Now,
-				IsActive = true
-			};
-
-			await _context.APAROffsets.AddAsync(aparOffset);
-			await _context.SaveChangesAsync();
-
-			return aparOffset.Id;
-		}
-
 		public async Task<string> GetActivityNameByCode(string adjustmentTypeCode)
 		{
 			adjustmentTypeCode = adjustmentTypeCode.ToUpper();
@@ -222,5 +261,5 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.Where(x => x.Name.Equals(adjustmentName))
 				.Select(x => new AdjustmentBasicInfoDto(x.Id, x.Code)).FirstOrDefaultAsync() ??
 				throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENTTYPE);
-	}
+    }
 }

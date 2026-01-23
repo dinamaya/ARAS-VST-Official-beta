@@ -2,9 +2,9 @@
 
 namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 {
-    public interface ICreateReceiptStatusRepository<TCreate> where TCreate : BaseAdjustmentCreateDto
+    public interface ICreateReceiptStatusRepository<TCreate, TReturn> where TCreate : class
 	{
-		Task<long> CreateAsync(RequestCreationDto<TCreate> data, string createdBy);
-		Task<long> UpdateAsync(long requestId, RequestCreationDto<TCreate> data, string modifiedBy);
+		Task<TReturn> Create(RequestCreationDto<IEnumerable<TCreate>> data, string createdBy);
+		Task<long> Update(long requestId, RequestCreationDto<IEnumerable<TCreate>> data, string modifiedBy);
 	}
 }

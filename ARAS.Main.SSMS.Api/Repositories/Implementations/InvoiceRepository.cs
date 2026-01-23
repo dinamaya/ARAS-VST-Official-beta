@@ -70,6 +70,35 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			return results.Select(r => r.Id);
 		}
 
+		public async Task<IEnumerable<long>> CreateAsync(IEnumerable<ReasonAdjustmentCreateDto> data, string createdBy)
+		{
+			var date = DateTime.Now;
+			IList<Invoice> results = [];
+
+			foreach (var _data in data)
+			{
+				results.Add(new Invoice
+				{
+					InvoiceNumber = "",
+					InvoiceAmount = 0d,
+					InvoiceDate = DateTime.MinValue,
+					CustomerName = _data.CustomerName,
+					CustomerNumber = _data.CustomerNumber,
+
+					DateCreated = date,
+					DateModified = date,
+					CreatedBy = createdBy,
+					ModifiedBy = createdBy,
+					IsActive = true
+				});
+			}
+
+			await _context.Invoices.AddRangeAsync(results);
+			await _context.SaveChangesAsync();
+
+			return results.Select(r => r.Id);
+		}
+
 		public async Task<long> CreateAsync(SRAutoNetInvoiceCreateDto data, string createdBy)
 		{
 			var date = DateTime.Now;

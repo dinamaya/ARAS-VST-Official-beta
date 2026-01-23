@@ -15,12 +15,14 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		private readonly ILogger<RequestsController> _logger;
 		private readonly IRequestRepository _requestRepo;
 		private readonly IBaseReceiptAdjustmentRepository _receiptAdjustmentRepo;
+		private readonly IAPAROffsetRepository _aparRepo;
 
-        public RequestsController(ILogger<RequestsController> logger, IRequestRepository requestRepo, IBaseReceiptAdjustmentRepository receiptAdjustmentRepo)
+        public RequestsController(ILogger<RequestsController> logger, IRequestRepository requestRepo, IBaseReceiptAdjustmentRepository receiptAdjustmentRepo, IAPAROffsetRepository aparRepo)
         {
             _logger = logger;
             _requestRepo = requestRepo;
             _receiptAdjustmentRepo = receiptAdjustmentRepo;
+            _aparRepo = aparRepo;
         }
 
         [HttpGet("details/{requestId:long}"), Authorize]
@@ -103,8 +105,6 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-
-
 		[HttpPost("receipt"), Authorize(Roles = "Requestor")]
 		public async Task<ResponseDto<string>> CreateReceiptAdjusmentRequest([FromBody] IEnumerable<BaseReceiptAdjustmentCreateDto> data)
 		{
@@ -113,6 +113,28 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			{
 				var requestCreation = new RequestCreationDto<IEnumerable<BaseReceiptAdjustmentCreateDto>>(data, User.GetAccountBasicInfo());
 				response.Result = await _receiptAdjustmentRepo.Create(requestCreation, requestCreation.CreatorId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpPost("invoice/arr"), Authorize(Roles = "Requestor")]
+		public async Task<ResponseDto<long>> CreateInvoiceAdjusmentRequest([FromBody] IEnumerable<APAROffsetCreateDto> data)
+		{
+			var response = new ResponseDto<long>();
+			try
+			{
+				var accountInfo = User.GetAccountBasicInfo();
+
+				var requestCreation = new RequestCreationDto<IEnumerable<APAROffsetCreateDto>>(data, User.GetAccountBasicInfo());
+
+				long requestId = await _aparRepo.Create(requestCreation, accountInfo.Id);
+
+				response.Result = requestId;
+				response.Message = "Request Created Successfully";
 				return response;
 			}
 			catch (Exception ex)

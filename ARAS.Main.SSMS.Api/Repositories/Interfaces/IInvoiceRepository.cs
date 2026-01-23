@@ -7,6 +7,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 		IReadSingleRepository<Invoice, long>, 
 		ICreateRepository<InvoiceCreateDto, long>, 
 		ICreateMultipleRepository<InvoiceCreateDto, long>, 
+		ICreateMultipleRepository<ReasonAdjustmentCreateDto, long>, 
 		ICreateRepository<SRAutoNetInvoiceCreateDto, long>
 	{
 		Task<bool> IsInvoiceNumberAvailable(string invoiceNumber, string adjustmentTypeCode);

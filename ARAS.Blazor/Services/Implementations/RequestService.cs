@@ -67,11 +67,49 @@ namespace ARAS.Blazor.Services.Implementations
 			return response.Result;
 		}
 
-        public async Task<IEnumerable<ReceiptAdjustmentRowDto>> GetReceiptAdjustmentSubmissions(SearchRequestDto data)
+
+		public async Task<IEnumerable<InvoiceAdjustmentRowDto>> GetInvoiceAdjustmentRequests(SearchRequestDto data)
+		{
+			var response = await _baseService.SendAsync<IEnumerable<InvoiceAdjustmentRowDto>>(new RequestDto<SearchRequestDto>()
+			{
+				URL = _configService.GetRequestsUrl("approvals/invoice"),
+				Data = data
+			},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch the request");
+					});
+				});
+
+			return response.Result;
+		}
+
+
+		public async Task<IEnumerable<ReceiptAdjustmentRowDto>> GetReceiptAdjustmentSubmissions(SearchRequestDto data)
         {
 			var response = await _baseService.SendAsync<IEnumerable<ReceiptAdjustmentRowDto>>(new RequestDto<SearchRequestDto>()
 				{
 					URL = _configService.GetRequestsUrl("submissions/receipt"),
+					Data = data
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch the request");
+					});
+				});
+
+			return response.Result;
+		}
+
+		public async Task<IEnumerable<InvoiceAdjustmentRowDto>> GetInvoiceAdjustmentSubmissions(SearchRequestDto data)
+		{
+			var response = await _baseService.SendAsync<IEnumerable<InvoiceAdjustmentRowDto>>(new RequestDto<SearchRequestDto>()
+				{
+					URL = _configService.GetRequestsUrl("submissions/invoice"),
 					Data = data
 				},
 				onSuccessSendCallBack: async (resp) =>

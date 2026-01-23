@@ -1,11 +1,15 @@
-﻿@page "/approvals/receipt"
+﻿@page "/submissions/invoice"
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Components.Shared.DataTables
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize]
 
 @inject DialogService DialogService
 @inject IAdjustmentService AdjustmentService
 @inject IRequestService RequestService
 @inject IConfigService ConfigService
+@inject IAuthService AuthService
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 
@@ -13,7 +17,7 @@
 	{
 		<MainSearchBar OnSearch="HandleSearch" TextFields="textFields" DropdownFields="dropdowns">
 			<ResultTemplate Context="isLoading">
-				<SearchReceiptAdjustmentsDataTable IsLoading="isLoading" Rows="rows" />
+				<SearchSubmissionInvoiceAdjustmentDataTable IsLoading="isLoading" Rows="rows" Role="@role" />
 			</ResultTemplate>
 		</MainSearchBar>
 	}
@@ -22,18 +26,24 @@
 
 @code {
 	private Dictionary<string, IEnumerable<string>> dropdowns { get; set; }
-	private IEnumerable<string> textFields { get; set; }
-	private IEnumerable<ReceiptAdjustmentRowDto> rows { get; set; }
+	private IList<string> textFields { get; set; }
+	private IEnumerable<InvoiceAdjustmentRowDto> rows { get; set; }
 
 	protected bool IsOnSearch { get; private set; }
 	protected bool IsLoading { get; private set; }
 	private bool isReady = false;
+	private string role = string.Empty;
 
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
-		textFields = ConfigService.GetApproverSearchInvoiceCategories();
-		var adjustmentsTypes = await AdjustmentService.GetReceiptTypes();
+		role = (await AuthService.GetRole()).ToLower();
+		textFields = (ConfigService.GetApproverSearchInvoiceCategories()).ToList();
+
+		if (role.Equals("requestor"))
+			textFields.Remove("Requestor Name");
+
+		var adjustmentsTypes = await AdjustmentService.GetInvoiceTypes();
 		dropdowns = new Dictionary<string, IEnumerable<string>>
 		{
 			{ "Adjustment Type",  adjustmentsTypes},
@@ -46,6 +56,6 @@
 
 	private async Task HandleSearch(SearchRequestDto searchRequest)
 	{
-		rows = await RequestService.GetReceiptAdjustmentRequests(searchRequest);
+		rows = await RequestService.GetInvoiceAdjustmentSubmissions(searchRequest);
 	}
 }

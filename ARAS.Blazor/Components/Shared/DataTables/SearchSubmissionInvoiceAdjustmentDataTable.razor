@@ -1,0 +1,136 @@
+﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Components.Shared.Skeletons
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Components.UI.Badges
+
+@inject IRequestService RequestService
+@inject DialogService DialogService
+@inject NavigationManager NavManager
+
+<RadzenRow class="w-100">
+	<div class="card blur shadow-blur w-100">
+		<div class="card-body overflow-auto overflow-x-hidden">
+			<RadzenRow class="pb-3">
+				<RadzenColumn Size="12">
+					<h3 class="mb-4">Search Result</h3>
+
+					<RadzenRow class="w-100">
+						<RadzenColumn Size="12" SizeMD="6">
+							<RadzenSelectBar @ref="selectBarFilter"
+											 TValue="string"
+											 Data="@filterSelection"
+											 @bind-Value="currentFilterStat"
+											 Change="@OnFilter" />
+						</RadzenColumn>
+					</RadzenRow>
+				</RadzenColumn>
+			</RadzenRow>
+			@if (IsLoading)
+			{
+				<div>
+					<DatatableSkeleton RowCount="4" ColumnCount="5" />
+				</div>
+			}
+			else
+			{
+				<RadzenDataGrid @ref=dataGrid
+								class="border-1 width:100%; overflow-x:auto;"
+								AllowFiltering="true"
+								AllowColumnResize="true"
+								AllowAlternatingRows="false"
+								AllowRowSelectOnRowClick="false"
+								FilterMode="FilterMode.Advanced"
+								AllowSorting="true"
+								PageSize="10"
+								ShowExpandColumn="true"
+								AllowPaging="true"
+								PagerHorizontalAlign="HorizontalAlign.Left"
+								ShowPagingSummary="true"
+								Data="@filteredRows"
+								LogicalFilterOperator="LogicalFilterOperator.Or"
+								SelectionMode="DataGridSelectionMode.Multiple">
+					<Columns>
+						<RadzenDataGridColumn Title="Option" Sortable="false" Filterable="false" Width="160px" TextAlign="TextAlign.Center">
+							<Template Context="data">
+								<RadzenButton Icon="search" Text="View" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Click="@(args => OnSelect(data))" />
+							</Template>
+						</RadzenDataGridColumn>
+						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.CustomerName)" Title="Customer Name" />
+						<RadzenDataGridColumn Width="140px" Property="@nameof(InvoiceAdjustmentRowDto.RequestId)" Title="Ref. No." />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.InvoiceNumber)" Title="Invoice Number" />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.AdjustmentType)" Title="Adjustment Type" />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.Requestor)" Title="Requestor" />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.DateRequested)" Title="Date Requested" />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.Approver)" Title="Approver" />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.DateApproved)" Title="Date Approved" />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.Creator)" Title="Updated By" />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.DateCreated)" Title="Date Updated" />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.Status)" Title="Status">
+							<Template Context="data">
+								<StatusBadge Status="@data.Status" Style="font-size: 12px;" />
+							</Template>
+						</RadzenDataGridColumn>
+					</Columns>
+				</RadzenDataGrid>
+			}
+		</div>
+	</div>
+</RadzenRow>
+
+@code {
+	[Parameter] public EventCallback<InvoiceAdjustmentRowDto> Select { get; set; }
+	[Parameter] public IEnumerable<InvoiceAdjustmentRowDto> Rows { get; set; }
+	[Parameter] public string Role { get; set; }
+	[Parameter] public bool IsLoading { get; set; }
+
+	private IEnumerable<InvoiceAdjustmentRowDto> filteredRows;
+
+	private int FilteredCount => filteredRows.Count();
+
+	private RadzenDataGrid<InvoiceAdjustmentRowDto> dataGrid;
+	private RadzenSelectBar<string> selectBarFilter;
+
+	private IEnumerable<string> filterSelection;
+
+	private InvoiceAdjustmentRowDto selectedRow;
+	private string currentFilterStat = "All";
+
+	protected override async Task OnParametersSetAsync()
+	{
+		filteredRows = Rows ?? [];
+		await OnFilter(string.Empty);
+	}
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		filterSelection = ["All", "Approved", "Posted"];
+
+		if (!Role.Equals("approver"))
+			filterSelection = filterSelection.Union(["Pending", "Resubmitted", "Declined", "Rejected"]);
+	}
+
+	private async Task OnSelect(InvoiceAdjustmentRowDto selectedRow)
+	{
+		if (Select.HasDelegate)
+			await Select.InvokeAsync(selectedRow);
+	}
+
+	private Task OnFilter(string status)
+	{
+		currentFilterStat = status;
+
+		filteredRows = status switch
+		{
+			"Pending" => Rows.Where(r => r.Status == "Pending"),
+			"Approved" => Rows.Where(r => r.Status == "Approved"),
+			"Declined" => Rows.Where(r => r.Status == "Declined"),
+			"Resubmitted" => Rows.Where(r => r.Status == "Resubmitted"),
+			"Rejected" => Rows.Where(r => r.Status == "Rejected"),
+			"Posted" => Rows.Where(r => r.Status == "Posted"),
+			_ => Rows
+		};
+
+		return Task.CompletedTask;
+	}
+}

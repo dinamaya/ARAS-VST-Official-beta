@@ -1,4 +1,4 @@
-﻿@page "/approvals/receipt"
+﻿@page "/approvals/invoice"
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Components.Shared.DataTables
 
@@ -13,7 +13,7 @@
 	{
 		<MainSearchBar OnSearch="HandleSearch" TextFields="textFields" DropdownFields="dropdowns">
 			<ResultTemplate Context="isLoading">
-				<SearchReceiptAdjustmentsDataTable IsLoading="isLoading" Rows="rows" />
+				<SearchInvoiceAdjustmentsDataTable IsLoading="isLoading" Rows="rows" />
 			</ResultTemplate>
 		</MainSearchBar>
 	}
@@ -23,7 +23,7 @@
 @code {
 	private Dictionary<string, IEnumerable<string>> dropdowns { get; set; }
 	private IEnumerable<string> textFields { get; set; }
-	private IEnumerable<ReceiptAdjustmentRowDto> rows { get; set; }
+	private IEnumerable<InvoiceAdjustmentRowDto> rows { get; set; }
 
 	protected bool IsOnSearch { get; private set; }
 	protected bool IsLoading { get; private set; }
@@ -33,7 +33,7 @@
 	{
 		await base.OnInitializedAsync();
 		textFields = ConfigService.GetApproverSearchInvoiceCategories();
-		var adjustmentsTypes = await AdjustmentService.GetReceiptTypes();
+		var adjustmentsTypes = await AdjustmentService.GetInvoiceTypes();
 		dropdowns = new Dictionary<string, IEnumerable<string>>
 		{
 			{ "Adjustment Type",  adjustmentsTypes},
@@ -46,6 +46,6 @@
 
 	private async Task HandleSearch(SearchRequestDto searchRequest)
 	{
-		rows = await RequestService.GetReceiptAdjustmentRequests(searchRequest);
+		rows = await RequestService.GetInvoiceAdjustmentRequests(searchRequest);
 	}
 }

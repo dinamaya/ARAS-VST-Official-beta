@@ -27,7 +27,9 @@ namespace ARAS.Main.SSMS.Api.Context
 		public virtual DbSet<RequestsNumberSourceV> VwRequestsNumberSources { get; set; }
 
 		// NEW SQL VIEWS
+		public virtual DbSet<AllAdjustmentRequestLatestStatusV> VwAllAdjustmentRequestLatestStatus { get; set; }
 		public virtual DbSet<LatestReceiptAdjustmentDetailsV> VwLatestReceiptAdjustmentDetails { get; set; }
+		public virtual DbSet<LatestInvoiceAdjustmentsV> VwLatestInvoiceAdjustments { get; set; }
 
 		public MainDbContext(DbContextOptions<MainDbContext> options) : base(options) { }
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -75,6 +77,17 @@ namespace ARAS.Main.SSMS.Api.Context
 
 
 			// SQL VIEWS
+			modelBuilder.Entity<AllAdjustmentRequestLatestStatusV>(entity =>
+			{
+				entity
+					.HasNoKey()
+					.ToView("AllAdjustmentRequestLatestStatus_v");
+
+				entity.Property(e => e.AdjustmentCategory)
+					.HasMaxLength(7)
+					.IsUnicode(false);
+			}); 
+			
 			modelBuilder.Entity<LatestReceiptAdjustmentDetailsV>(entity =>
 			{
 				entity
@@ -85,6 +98,15 @@ namespace ARAS.Main.SSMS.Api.Context
 				entity.Property(e => e.UpdaterId).HasMaxLength(250);
 			});
 
+			modelBuilder.Entity<LatestInvoiceAdjustmentsV>(entity =>
+			{
+				entity
+					.HasNoKey()
+					.ToView("LatestInvoiceAdjustments_v");
+
+				entity.Property(e => e.ApproverId).HasMaxLength(250);
+				entity.Property(e => e.UpdaterId).HasMaxLength(250);
+			});
 
 
 			// OLD SQL VIEWS Can Be Remove

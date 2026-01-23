@@ -251,12 +251,18 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		}
 
         public async Task<IEnumerable<string>> GetTypes() => await _context.AdjustmentTypes.AsNoTracking().Select(a => a.Name).ToListAsync();
-        public async Task<IEnumerable<string>> GetReceiptTypes() => await _context.AdjustmentTypes.AsNoTracking()
+        
+		public async Task<IEnumerable<string>> GetReceiptTypes() => await _context.AdjustmentTypes.AsNoTracking()
 			.Where(a => a.Category == "Receipt")
 			.Select(a => a.Name)
 			.ToListAsync();
 
-        public async Task<AdjustmentBasicInfoDto> GetAdjustmentInfoByName(string adjustmentName) =>
+		public async Task<IEnumerable<string>> GetInvoiceTypes() => await _context.AdjustmentTypes.AsNoTracking()
+			.Where(a => a.Category == "Invoice")
+			.Select(a => a.Name)
+			.ToListAsync();
+
+		public async Task<AdjustmentBasicInfoDto> GetAdjustmentInfoByName(string adjustmentName) =>
 			await _context.AdjustmentTypes.AsNoTracking()
 				.Where(x => x.Name.Equals(adjustmentName))
 				.Select(x => new AdjustmentBasicInfoDto(x.Id, x.Code)).FirstOrDefaultAsync() ??

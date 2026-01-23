@@ -12,6 +12,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 	{
 		Task<IEnumerable<string>> GetTypes();
 		Task<IEnumerable<string>> GetReceiptTypes();
+		Task<IEnumerable<string>> GetInvoiceTypes();
 		Task<string> GetActivityNameByCode(string adjustmentTypeCode);
 		Task<IEnumerable<Adjustment>> GetByRequestId(long requestId);
 		Task DeactivateDetails(long id);

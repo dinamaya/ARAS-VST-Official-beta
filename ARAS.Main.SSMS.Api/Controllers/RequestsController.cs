@@ -144,12 +144,27 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		}
 
 		[HttpGet("approvals/receipt"), Authorize(Roles = "Approver")]
-		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>> GetForApprovals(SearchRequestDto searchRequest)
+		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>> GetReceiptForApprovals(SearchRequestDto searchRequest)
 		{
 			var response = new ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>();
 			try
 			{
-				response.Result = await _requestRepo.GetAllForApprovalsByType(searchRequest);
+				response.Result = await _requestRepo.GetReceiptAdjustmentApprovals(searchRequest);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("approvals/invoice"), Authorize(Roles = "Approver")]
+		public async Task<ResponseDto<IEnumerable<InvoiceAdjustmentRowDto>>> GetInvoiceForApprovals(SearchRequestDto searchRequest)
+		{
+			var response = new ResponseDto<IEnumerable<InvoiceAdjustmentRowDto>>();
+			try
+			{
+				response.Result = await _requestRepo.GetInvoicedjustmentApprovals(searchRequest);
 				return response;
 			}
 			catch (Exception ex)
@@ -159,13 +174,29 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		}
 
 		[HttpGet("submissions/receipt"), Authorize]
-		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>> GetSubmissions(SearchRequestDto searchRequest)
+		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>> GetReceiptSubmissions(SearchRequestDto searchRequest)
 		{
 			var response = new ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>();
 			try
 			{
 				var accountInfo = User.GetAccountBasicInfo();
-				response.Result = await _requestRepo.GetSubmissions(searchRequest, accountInfo.Role, accountInfo.FullName);
+				response.Result = await _requestRepo.GetReceiptAdjustmentSubmissions(searchRequest, accountInfo.Role, accountInfo.FullName);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("submissions/invoice"), Authorize]
+		public async Task<ResponseDto<IEnumerable<InvoiceAdjustmentRowDto>>> GetInvoiceSubmissions(SearchRequestDto searchRequest)
+		{
+			var response = new ResponseDto<IEnumerable<InvoiceAdjustmentRowDto>>();
+			try
+			{
+				var accountInfo = User.GetAccountBasicInfo();
+				response.Result = await _requestRepo.GetInvoiceAdjustmentSubmissions(searchRequest, accountInfo.Role, accountInfo.FullName);
 				return response;
 			}
 			catch (Exception ex)

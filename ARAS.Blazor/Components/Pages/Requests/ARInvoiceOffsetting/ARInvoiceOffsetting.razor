@@ -23,8 +23,8 @@
 <h2>AR Invoice Offsetting</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-@* 	<SearchInvoiceAPARDetails APAdjustments="APAdjustments" ARAdjustments="ARAdjustments" APGrid="apGrid" ARGrid="arGrid" />
- *@	<RadzenRow Gap="1.5rem">
+	<SearchInvoiceDetails OnAdd="OpenAdd" OnLoadingChanged="HandleLoadingChanged" OnSearchChanged="HandleSearchChanged" />
+	<RadzenRow Gap="1.5rem">
 		<RadzenColumn Size="6">
 			<div class="text-center pb-3">
 				<h3 class="pb-0 mb-0">AR GROUP</h3>
@@ -166,6 +166,8 @@
 	[Parameter] public IList<ARInvoiceOffsettingCNDetailsDto> CNInvoice { get; set; }
 	private IList<NoteRowDto> Notes { get; set; } = new List<NoteRowDto>();
 
+	[Parameter] public EventCallback OnARRowAdded { get; set; }
+
 	private InvoiceDetailsDto searchedInvoiceNumber;
 	private RadzenDataGrid<ARInvoiceOffsettingCNDetailsDto> cnGrid;
 	private RadzenDataGrid<ARInvoiceOffsettingRowDto> arGrid;
@@ -193,6 +195,22 @@
 		{
 			await cnGrid.Reload();
 		}
+	}
+
+	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
+	{
+		await DialogService.OpenAsync<AddARInvoiceOffsetting>(
+			"Confirm AR Invoice Number",
+			new Dictionary<string, object>()
+			{
+				{ "Rows", ARInvoice },
+				{ "Grid", arGrid },
+				{ "InvoiceDetails", invoiceDetails },
+				{ "OnARRowAdded", OnARRowAdded }
+
+			},
+			new DialogOptions() { Width = "800px", Height = "auto" }
+		);
 	}
 
 	public async Task OpenEdit(APAROffsetAPRowDto data)

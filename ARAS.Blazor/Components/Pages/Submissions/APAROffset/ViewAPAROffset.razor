@@ -1,4 +1,4 @@
-﻿@using ARAS.Blazor.Components.Shared
+﻿@* @using ARAS.Blazor.Components.Shared
 @using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
@@ -46,9 +46,10 @@
 	{
 		await base.OnInitializedAsync();
 		var request = await RequestService.GetRequestDetails(RequestId);
-		rows = await APAROffsetService.GetAdjustments(RequestId);
+		// rows = await APAROffsetService.GetAdjustments(RequestId);
 		notes = await NoteService.GetRows(RequestId);
 		requestAudit = new RequestAuditDto(request);
 		StateHasChanged();
 	}
 }
+ *@

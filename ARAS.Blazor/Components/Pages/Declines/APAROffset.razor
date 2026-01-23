@@ -1,4 +1,4 @@
-﻿@page "/declines/apar-offset/{RequestId:long}"
+﻿@* @page "/declines/apar-offset/{RequestId:long}"
 
 @using ARAS.Blazor.App_Code.Globals
 @using ARAS.Blazor.App_Code.Globals.Extensions
@@ -212,9 +212,9 @@
 	{
 		await base.OnInitializedAsync();
 
-		var adjustments = await APAROffsetService.GetAdjustments(RequestId);
-		APAdjustments = adjustments.APGroup.ToList();
-		ARAdjustments = adjustments.ARGroup.ToList();
+		// var adjustments = await APAROffsetService.GetAdjustments(RequestId);
+		// APAdjustments = adjustments.APGroup.ToList();
+		// ARAdjustments = adjustments.ARGroup.ToList();
 
 		// ensure every AR row has an Id for per-row validators and cancel logic
 		foreach (var ar in ARAdjustments)
@@ -458,4 +458,4 @@
 
 		return true;
 	}
-}
+} *@

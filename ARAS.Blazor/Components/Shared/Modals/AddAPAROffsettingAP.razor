@@ -10,6 +10,7 @@
 	<RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
 		<InvoiceDetailsSummary InvoiceDetails="InvoiceDetails" />
 	</RadzenStack>
+
 	<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
 		<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
 			Close
@@ -62,6 +63,7 @@
 			Rows.Add(row);
 
 			await Grid.Reload();
+			StateHasChanged();
 			DialogService.Close(true);
 		}
 		catch (Exception ex)

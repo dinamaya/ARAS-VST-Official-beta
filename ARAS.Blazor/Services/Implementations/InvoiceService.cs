@@ -31,7 +31,19 @@ namespace ARAS.Blazor.Services.Implementations
 		{
 			var response = await _baseService.SendAsync<IEnumerable<InvoiceDetailsDto>>(new RequestDto<SearchRequestDto>()
 			{
-				URL = _configService.GetOracleInvoiceApiUrl($"details"),
+				URL = _configService.GetOracleInvoiceApiUrl(),
+				Data = searchRequest
+			});
+
+			Guards.ThrowNullReferenceIf(response?.Result, response.Message);
+			return response.Result;
+		}
+
+		public async Task<IEnumerable<InvoiceDetailsDto>> GetAPDetailsList(SearchRequestDto searchRequest)
+		{
+			var response = await _baseService.SendAsync<IEnumerable<InvoiceDetailsDto>>(new RequestDto<SearchRequestDto>()
+			{
+				URL = _configService.GetOracleInvoiceApiUrl("ap"),
 				Data = searchRequest
 			});
 

@@ -18,6 +18,12 @@
 	<div class="px-3 pt-2 pb-0 w-100 card">
 
 		<RadzenRow AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Left" class="w-100" Gap="1rem">
+			@if (OptionsTemplate is not null)
+			{
+				<RadzenColumn Size="12">
+					@OptionsTemplate
+				</RadzenColumn>
+			}
 
 			<RadzenColumn Size="12" SizeLG="10">
 				<RadzenRow class="w-100">
@@ -97,6 +103,12 @@
 	<RadzenRow class="w-100">
 		@ResultTemplate(isLoading)
 	</RadzenRow>
+
+	@if(ChildContent is not null)
+	{	<RadzenRow class="w-100">
+			@ChildContent
+		</RadzenRow>
+	}
 }
 
 @code {
@@ -105,6 +117,8 @@
 	[Parameter] public EventCallback<bool> OnLoadingChanged { get; set; }
 	[Parameter] public Dictionary<string, IEnumerable<string>>? DropdownFields { get; set; }
 	[Parameter] public IEnumerable<string> TextFields { get; set; }
+	[Parameter] public RenderFragment? ChildContent { get; set; }
+	[Parameter] public RenderFragment? OptionsTemplate { get; set; }
 	[Parameter] public RenderFragment<bool> ResultTemplate { get; set; }
 
 	[Parameter, SupplyParameterFromQuery(Name = "c")] public string? Category { get; set; }

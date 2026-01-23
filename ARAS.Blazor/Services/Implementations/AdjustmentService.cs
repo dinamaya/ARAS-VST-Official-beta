@@ -39,5 +39,17 @@ namespace ARAS.Blazor.Services.Implementations
 
 			return response.Result;
 		}
+
+        public async Task<IEnumerable<string>> GetInvoiceTypes()
+        {
+			var response = await _baseService.SendAsync<IEnumerable<string>>(new RequestDto()
+			{
+				URL = _configService.GetAdjustmentsUrl("types/invoice"),
+			});
+
+			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to connect. Please Check internet connection or contact the administrator");
+
+			return response.Result;
+		}
     }
 }

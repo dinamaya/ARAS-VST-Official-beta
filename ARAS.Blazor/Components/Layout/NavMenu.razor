@@ -33,7 +33,9 @@
 		{
 			<RadzenPanelMenuItem Text="Requests" Icon="assignment_add" Style="border: none">
 				<MenuItem Text="Receipt" Route="/requests/receipt" />
-				<MenuItem Text="Invoice" Route="/requests/invoice" />
+				<RadzenPanelMenuItem Text="Invoice" Style="border: none">
+					<MenuItem Text="AP-AR" Route="/requests/invoice/apar-offset" />
+				</RadzenPanelMenuItem>
 			</RadzenPanelMenuItem>
 		}
 		else if (accountDetails.IsInRole("Approver"))

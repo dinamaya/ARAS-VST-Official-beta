@@ -7,5 +7,6 @@ namespace ARAS.Blazor.Services.Interfaces
     {
         Task<IEnumerable<string>> GetAdjustmentTypes();
         Task<IEnumerable<string>> GetReceiptTypes();
+        Task<IEnumerable<string>> GetInvoiceTypes();
 	}
 }

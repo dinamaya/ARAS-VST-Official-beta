@@ -2,7 +2,8 @@
 {
     public class APAROffsetCreateDto
     {
-        public string InvoiceId { get; set; }
+        public long RequestId { get; set; }
+		public string InvoiceNumber { get; set; }
         public double Amount { get; set; }
         public string Type { get; set; }
         public string? ReasonCode { get; set; }

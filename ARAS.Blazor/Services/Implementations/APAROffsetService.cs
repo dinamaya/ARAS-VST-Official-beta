@@ -1,26 +1,45 @@
 ﻿using ARAS.Blazor.App_Code.Globals;
+using ARAS.Blazor.App_Code.Globals.Enums;
 using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Services.Interfaces;
 using Radzen;
 
 namespace ARAS.Blazor.Services.Implementations
 {
-    public class APAROffsetService
+    public class APAROffsetService : IAPAROffsetService
 	{
 		private readonly IBaseService _baseService;
-		private readonly string adjustmentUrl = string.Empty;
+		private readonly IConfigService _configService;
+		private readonly INoteService _noteService;
 
-		public APAROffsetService(
-			IConfigService configService,
-			IBaseService baseService)
-		{
-			_baseService = baseService;
-			adjustmentUrl = configService.GetAdjustmentsUrl();
-		}
+        public APAROffsetService(
+            IConfigService configService,
+            IBaseService baseService,
+            INoteService noteService)
+        {
+            _baseService = baseService;
+            _configService = configService;
+            _noteService = noteService;
+        }
 
-		public async Task Create(IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes)
+        public async Task Create(IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes)
 		{
 			var requestsDto = ToCreateDto(apRows, arRows);
+
+			var createResult = await _baseService.SendAsync<long>(new RequestDto<IEnumerable<APAROffsetCreateDto>>()
+			{
+				ApiType = ApiType.POST,
+				URL = _configService.GetRequestsUrl("invoice/arr"),
+				Data = requestsDto
+			},
+				onSuccessSendCallBack: (resp) =>
+				{
+					Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to create request" + resp.Message);
+					return Task.CompletedTask;
+				}
+			);
+
+			//await _noteService.Create(createResult.Result, notes);
 		}
 
 		public async Task Update(long requestId, IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes)
@@ -30,26 +49,27 @@ namespace ARAS.Blazor.Services.Implementations
 
 		public async Task<APAROffsetRowDto> GetAdjustments(long requestId)
 		{
-			var arResponse = await _baseService.SendAsync<APAROffsetRowDto>(new RequestDto()
-				{
-					URL = $"{adjustmentUrl}aar/{requestId}",
-				},
-				onSuccessSendCallBack: async (resp) =>
-				{
-					await Task.Run(() =>
-					{
-						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch the AR adjustments");
-					});
-				});
+			//var arResponse = await _baseService.SendAsync<APAROffsetRowDto>(new RequestDto()
+			//	{
+			//		URL = $"{adjustmentUrl}aar/{requestId}",
+			//	},
+			//	onSuccessSendCallBack: async (resp) =>
+			//	{
+			//		await Task.Run(() =>
+			//		{
+			//			Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch the AR adjustments");
+			//		});
+			//	});
 
-			return arResponse.Result;
+			//return arResponse.Result;
+			return null;
 		}
 
 		private static List<APAROffsetCreateDto> ToCreateDto(IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows)
 		{
 			var apRequests = apRows.Select(r => new APAROffsetCreateDto()
 			{
-				InvoiceId = r.InvoiceNumber,
+				InvoiceNumber = r.InvoiceNumber,
 				Amount = r.InvoiceAmount,
 				Type = "AP",
 				InvoiceDate = r.InvoiceDate,
@@ -59,13 +79,13 @@ namespace ARAS.Blazor.Services.Implementations
 
 			var arRequests = arRows.Select(r => new APAROffsetCreateDto()
 			{
-				InvoiceId = r.InvoiceNumber,
+				InvoiceNumber = r.InvoiceNumber,
 				Amount = r.Amount,
 				Type = "AR",
 				ReasonCode = r.AdjustmentReason,
 				InvoiceDate = DateTime.Now,
-				CustomerName = "",
-				CustomerNumber = ""
+				CustomerName = r.CustomerName,
+				CustomerNumber = r.CustomerNumber
 			});
 
 			return apRequests.Concat(arRequests).ToList();

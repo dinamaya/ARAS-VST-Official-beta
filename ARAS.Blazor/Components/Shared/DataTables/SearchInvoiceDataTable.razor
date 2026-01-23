@@ -13,49 +13,54 @@
 					<DatatableSkeleton RowCount="4" ColumnCount="5"/>
 				</div>
 			}
-			else {
-			<RadzenDataGrid @ref=dataGrid
-				class="border-1"
-				AllowFiltering="true"
-				AllowColumnResize="true"
-				AllowAlternatingRows="false"
-				FilterMode="FilterMode.Advanced"
-				AllowSorting="true"
-				PageSize="5"
-				AllowPaging="true"
-				PagerHorizontalAlign="HorizontalAlign.Left"
-				ShowPagingSummary="true"
-				Data="@InvoiceRows"
-				LogicalFilterOperator="LogicalFilterOperator.Or"
-				SelectionMode="DataGridSelectionMode.Single">
-				<Columns>
-					<RadzenDataGridColumn Frozen="true" Title="Option" Sortable="false" Filterable="false" Width="160px" TextAlign="TextAlign.Center">
-						<Template Context="data">
-							<RadzenButton Icon="edit_document" Text="Select" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Click="@(args => OnSelect(data))" />
-						</Template>
-					</RadzenDataGridColumn>
-					<RadzenDataGridColumn Visible="false" Property="@nameof(InvoiceDetailsDto.Id)" Title="Id" />
-					<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.CustomerName)" Title="Customer Name" />
-					<RadzenDataGridColumn Visible="false" Property="@nameof(InvoiceDetailsDto.CustomerNumber)" Title="Customer Number" />
-						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceNumber)" Title="Invoice Number" />
-						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceDate)" Title="Invoice Date">
+			else 
+			{
+				<RadzenDataGrid @ref=dataGrid
+					class="border-1"
+					AllowFiltering="true"
+					AllowColumnResize="true"
+					AllowAlternatingRows="false"
+					FilterMode="FilterMode.Advanced"
+					AllowSorting="true"
+					PageSize="5"
+					AllowPaging="true"
+					PagerHorizontalAlign="HorizontalAlign.Left"
+					ShowPagingSummary="true"
+					Data="@InvoiceRows"
+					LogicalFilterOperator="LogicalFilterOperator.Or"
+					SelectionMode="DataGridSelectionMode.Single">
+					<Columns>
+						<RadzenDataGridColumn Frozen="true" Title="Option" Sortable="false" Filterable="false" Width="auto" TextAlign="TextAlign.Center">
 							<Template Context="data">
-								@data.InvoiceDate.ToString(Formats.Date.DISPLAY2)
+								<RadzenButton Icon="@ButtonSelectIcon" Text="@ButtonSelectText" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Click="@(args => OnSelect(data))" />
 							</Template>
 						</RadzenDataGridColumn>
-					<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceAmount)" Title="Invoice Amount" >
-						<Template Context="data">
-							@data.InvoiceAmount.ToPhp()
-						</Template>
-					</RadzenDataGridColumn>
-					<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceBalance)" Title="Invoice Balance" >
-						<Template Context="data">
-							@data.InvoiceBalance.ToPhp()
-						</Template>
-					</RadzenDataGridColumn>
-
-				</Columns>
-			</RadzenDataGrid>
+						<RadzenDataGridColumn Visible="false" Property="@nameof(InvoiceDetailsDto.Id)" Title="Id" />
+						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.CustomerName)" Title="Customer Name" />
+						<RadzenDataGridColumn Visible="false" Property="@nameof(InvoiceDetailsDto.CustomerNumber)" Title="Customer Number" />
+							<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceNumber)" Title="Invoice Number" />
+							<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceDate)" Title="Invoice Date">
+								<Template Context="data">
+									@data.InvoiceDate.ToString(Formats.Date.DISPLAY2)
+								</Template>
+							</RadzenDataGridColumn>
+						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceAmount)" Title="Invoice Amount" >
+							<Template Context="data">
+								@data.InvoiceAmount.ToPhp()
+							</Template>
+						</RadzenDataGridColumn>
+						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceBalance)" Title="Invoice Balance" >
+							<Template Context="data">
+								@data.InvoiceBalance.ToPhp()
+							</Template>
+						</RadzenDataGridColumn>
+						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.DataSource)" Title="Source">
+							<Template Context="data">
+								@data.DataSource
+							</Template>
+						</RadzenDataGridColumn>
+					</Columns>
+				</RadzenDataGrid>
 			}
 		</div>
 	</div>
@@ -65,8 +70,16 @@
 	[Parameter] public EventCallback<InvoiceDetailsDto> Select { get; set; }
 	[Parameter] public IEnumerable<InvoiceDetailsDto> InvoiceRows { get; set; }
 	[Parameter] public bool IsLoading { get; set; }
+	[Parameter] public string? ButtonSelectText { get; set; } = "Select";
+	[Parameter] public string? ButtonSelectIcon { get; set; } = "edit_document";
 	private RadzenDataGrid<InvoiceDetailsDto> dataGrid;
 	private InvoiceDetailsDto searchedInvoice;
+	
+	public async Task Reset()
+	{
+		dataGrid.Reset();
+		dataGrid.ResetLoadData();
+	}
 
 	private async Task OnSelect(InvoiceDetailsDto invoice)
 	{

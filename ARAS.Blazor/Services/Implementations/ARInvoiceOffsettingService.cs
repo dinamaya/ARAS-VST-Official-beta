@@ -1,6 +1,9 @@
-﻿using ARAS.Blazor.Services.Interfaces;
+﻿using ARAS.Blazor.App_Code.Globals;
+using ARAS.Blazor.App_Code.Globals.Enums;
 using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Repositories.Interfaces;
+using ARAS.Blazor.Services.Interfaces;
+using System.Linq;
 
 namespace ARAS.Blazor.Services.Implementations
 {
@@ -19,19 +22,48 @@ namespace ARAS.Blazor.Services.Implementations
             _noteService = noteService;
         }
 
-        private static readonly Func<ARInvoiceOffsettingRowDto, ARInvoiceOffsettingCreateDto> Map = (row) => new()
+        private static List<ARInvoiceOffsettingRowDto> ToCreateDto(IEnumerable<ARInvoiceOffsettingRowDto> arRows, IEnumerable<ARInvoiceOffsettingCNDetailsDto> cnRows)
         {
-            InvoiceAmount = row.InvoiceAmount,
-            InvoiceDate = DateTime.Parse(row.InvoiceDate),
-            InvoiceNumber = row.InvoiceNumber,
-            CustomerName = row.CustomerName,
-            CustomerNumber = row.CustomerNumber,
-            Remarks = row.Remarks,
-        };
+            var arRequests = arRows.Select(r => new ARInvoiceOffsettingRowDto()
+            {
+                InvoiceAmount = r.InvoiceAmount,
+                InvoiceDate = r.InvoiceDate,
+                InvoiceNumber = r.InvoiceNumber,
+                CustomerName = r.CustomerName,
+                CustomerNumber = r.CustomerNumber,
+                Type = "AR",
+            });
 
-        Task IARInvoiceOffsettingService.Create(IEnumerable<ARInvoiceOffsettingRowDto> arRows, IEnumerable<ARInvoiceOffsettingRowDto> cnRows, IEnumerable<NoteRowDto> notes)
+            var cnRequests = cnRows.Select(r => new ARInvoiceOffsettingRowDto()
+            {
+                InvoiceAmount = r.InvoiceAmount,
+                InvoiceDate = r.InvoiceDate,
+                InvoiceNumber = r.InvoiceNumber,
+                CustomerName = r.CustomerName,
+                CustomerNumber = r.CustomerNumber,
+                Type = "CN",
+            });
+
+            return cnRequests.Concat(arRequests).ToList();
+        }
+
+        public async Task Create(IEnumerable<ARInvoiceOffsettingRowDto> arRows, IEnumerable<ARInvoiceOffsettingCNDetailsDto> cnRows)
         {
-            throw new NotImplementedException();
+            var requestsDto = ToCreateDto(arRows, cnRows);
+
+            var createResult = await _baseService.SendAsync<long>(new RequestDto<IEnumerable<ARInvoiceOffsettingRowDto>>()
+            {
+                ApiType = ApiType.POST,
+                URL = _configService.GetRequestsUrl("invoice/ari"),
+                Data = requestsDto
+            },
+                onSuccessSendCallBack: (resp) =>
+                {
+                    Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to create request" + resp.Message);
+                    return Task.CompletedTask;
+                }
+            );
+
         }
 
         Task IARInvoiceOffsettingService.Update(long requestId, IEnumerable<ARInvoiceOffsettingRowDto> rows, IEnumerable<NoteRowDto> notes)

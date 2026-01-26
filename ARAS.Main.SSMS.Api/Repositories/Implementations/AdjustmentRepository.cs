@@ -134,7 +134,39 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			return results.Select(r => r.Id);
 		}
 
-		public async Task<IEnumerable<Adjustment>> GetByRequestId(long requestId) => 
+        public async Task<IEnumerable<long>> CreateAsync(IEnumerable<ARIAdjustmentCreateDto> data, string createdBy)
+        {
+            var date = DateTime.Now;
+
+            IList<ARInvoiceOffsetting> results = [];
+
+            foreach (var _data in data)
+            {
+                var adjustment = new ARInvoiceOffsetting
+                {
+                    RequestId = _data.RequestId,
+                    InvoiceId = _data.InvoiceNumber, // use as InvoiceId
+                    Amount = _data.AdjustmentAmount,
+                    Type = _data.Type,
+					ReasonCode = "",
+
+                    CreatedBy = createdBy,
+                    DateCreated = DateTime.Now,
+                    ModifiedBy = createdBy,
+                    DateModified = DateTime.Now,
+                    IsActive = true
+                };
+
+                results.Add(adjustment);
+            }
+
+            await _context.AROffsets.AddRangeAsync(results);
+            await _context.SaveChangesAsync();
+
+            return results.Select(r => r.Id);
+        }
+
+        public async Task<IEnumerable<Adjustment>> GetByRequestId(long requestId) => 
 			await _context.Adjustments.Where(a => a.RequestId == requestId && a.IsActive).ToListAsync();
 
 		public async Task<Adjustment> GetById(long id) => 

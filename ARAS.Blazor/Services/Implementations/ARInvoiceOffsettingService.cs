@@ -22,22 +22,22 @@ namespace ARAS.Blazor.Services.Implementations
             _noteService = noteService;
         }
 
-        private static List<ARInvoiceOffsettingRowDto> ToCreateDto(IEnumerable<ARInvoiceOffsettingRowDto> arRows, IEnumerable<ARInvoiceOffsettingCNDetailsDto> cnRows)
+        private static List<ARInvoiceOffsettingCreateDto> ToCreateDto(IEnumerable<ARInvoiceOffsettingRowDto> arRows, IEnumerable<ARInvoiceOffsettingCNDetailsDto> cnRows)
         {
-            var arRequests = arRows.Select(r => new ARInvoiceOffsettingRowDto()
+            var arRequests = arRows.Select(r => new ARInvoiceOffsettingCreateDto()
             {
                 InvoiceAmount = r.InvoiceAmount,
-                InvoiceDate = r.InvoiceDate,
+                InvoiceDate = DateTime.Parse(r.InvoiceDate),
                 InvoiceNumber = r.InvoiceNumber,
                 CustomerName = r.CustomerName,
                 CustomerNumber = r.CustomerNumber,
                 Type = "AR",
             });
 
-            var cnRequests = cnRows.Select(r => new ARInvoiceOffsettingRowDto()
+            var cnRequests = cnRows.Select(r => new ARInvoiceOffsettingCreateDto()
             {
                 InvoiceAmount = r.InvoiceAmount,
-                InvoiceDate = r.InvoiceDate,
+                InvoiceDate = DateTime.Parse(r.InvoiceDate),
                 InvoiceNumber = r.InvoiceNumber,
                 CustomerName = r.CustomerName,
                 CustomerNumber = r.CustomerNumber,
@@ -51,7 +51,7 @@ namespace ARAS.Blazor.Services.Implementations
         {
             var requestsDto = ToCreateDto(arRows, cnRows);
 
-            var createResult = await _baseService.SendAsync<long>(new RequestDto<IEnumerable<ARInvoiceOffsettingRowDto>>()
+            var createResult = await _baseService.SendAsync<long>(new RequestDto<IEnumerable<ARInvoiceOffsettingCreateDto>>()
             {
                 ApiType = ApiType.POST,
                 URL = _configService.GetRequestsUrl("invoice/ari"),

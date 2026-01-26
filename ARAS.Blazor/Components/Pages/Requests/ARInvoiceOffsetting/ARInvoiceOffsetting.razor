@@ -249,7 +249,7 @@
 		await ARInvoiceOffsettingService.Create(ARInvoice, CNInvoice);
 
 		var uri = QueryService.GetCurrentUrl(false);
-		NavigationManager.NavigateTo(uri, true);
+	    NavigationManager.NavigateTo(uri, true);
 	}
 
 	private void HandleSearchChanged(bool value)

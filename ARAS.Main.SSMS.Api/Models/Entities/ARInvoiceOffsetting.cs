@@ -10,7 +10,7 @@ namespace ARAS.Main.SSMS.Api.Models.Entities
         public long InvoiceId { get; set; }
         public double Amount { get; set; }
         public string Type { get; set; }
-        public string ReasonCode { get; set; }
+        public string ReasonCode { get; set; } // Remove
 
         public string CreatedBy { get; set; }
         public DateTime DateCreated { get; set; }

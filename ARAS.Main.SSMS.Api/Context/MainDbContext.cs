@@ -10,6 +10,7 @@ namespace ARAS.Main.SSMS.Api.Context
 		public virtual DbSet<Adjustment> Adjustments { get; set; }
 		public virtual DbSet<AdjustmentType> AdjustmentTypes { get; set; }
         public virtual DbSet<APAROffset> APAROffsets { get; set; }
+        public virtual DbSet<ARInvoiceOffsetting> AROffsets { get; set; }
         public virtual DbSet<CNDetails> CNDetails { get; set; }
 		public virtual DbSet<Invoice> Invoices { get; set; }
 		public virtual DbSet<Note> Notes { get; set; }

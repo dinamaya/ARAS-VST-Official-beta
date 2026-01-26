@@ -8,6 +8,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 		ICreateRepository<AdjustmentCreateDto, long>,
 		ICreateMultipleRepository<AdjustmentCreateDto, long>,
 		ICreateMultipleRepository<APAROffsetCreateDto, long>,
+		ICreateMultipleRepository<ARIAdjustmentCreateDto, long>,
 		ICreateMultipleRepository<ReasonAdjustmentCreateDto, long>
 	{
 		Task<IEnumerable<string>> GetTypes();

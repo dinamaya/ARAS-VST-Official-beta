@@ -105,6 +105,23 @@ namespace ARAS.Blazor.Services.Implementations
 			return response.Result;
 		}
 
+		public async Task<ReceiptAdjustmentUpdateResponseDto> GetReceiptDetails(long requestId)
+		{
+			var response = await _baseService.SendAsync<ReceiptAdjustmentUpdateResponseDto>(new RequestDto()
+				{
+					URL = _configService.GetRequestsUrl($"receipt/{requestId}"),
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch the request details");
+					});
+				});
+
+			return response.Result;
+		}
+
 		public async Task<IEnumerable<InvoiceAdjustmentRowDto>> GetInvoiceAdjustmentSubmissions(SearchRequestDto data)
 		{
 			var response = await _baseService.SendAsync<IEnumerable<InvoiceAdjustmentRowDto>>(new RequestDto<SearchRequestDto>()
@@ -153,11 +170,11 @@ namespace ARAS.Blazor.Services.Implementations
 		private async Task UpdateAdjustmentStatus(IEnumerable<long> data, string route)
 		{
 			var response = await _baseService.SendAsync<string>(new RequestDto<IEnumerable<long>>()
-				{
-					URL = route,
-					ApiType = ApiType.POST,
-					Data = data
-				},
+			{
+				URL = route,
+				ApiType = ApiType.POST,
+				Data = data
+			},
 				onSuccessSendCallBack: async (resp) =>
 				{
 					await Task.Run(() =>
@@ -166,5 +183,6 @@ namespace ARAS.Blazor.Services.Implementations
 					});
 				});
 		}
-    }
+
+	}
 }

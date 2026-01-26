@@ -11,5 +11,6 @@ namespace ARAS.Blazor.Models.DTOs
 		public long? AttachmentSize { get; set; }
 		public string? DateUploaded { get; set; }
 		public string? Uploader { get; set; }
+		public string? AdjustmentType { get; set; }
 	}
 }

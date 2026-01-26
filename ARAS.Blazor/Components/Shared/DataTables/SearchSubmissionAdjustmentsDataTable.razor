@@ -112,8 +112,7 @@
 
 	private async Task OnSelect(ReceiptAdjustmentRowDto selectedRow)
 	{
-		if (Select.HasDelegate)
-			await Select.InvokeAsync(selectedRow);
+		NavManager.NavigateTo($"/updates/{selectedRow.AdjustmentTypeCode}/{selectedRow.RequestId}");
 	}
 
 	private Task OnFilter(string status)

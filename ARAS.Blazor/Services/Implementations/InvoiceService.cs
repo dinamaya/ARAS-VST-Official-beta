@@ -16,11 +16,12 @@ namespace ARAS.Blazor.Services.Implementations
 			_configService = configService;
 		}
 
-		public async Task<InvoiceDetailsDto> GetDetails(string invoiceNumber)
+		public async Task<InvoiceDetailsDto> GetDetails(InvoiceDetailsRequestDto request)
 		{
-			var response = await _baseService.SendAsync<InvoiceDetailsDto>(new RequestDto()
+			var response = await _baseService.SendAsync<InvoiceDetailsDto>(new RequestDto<InvoiceDetailsRequestDto>()
 			{
-				URL = _configService.GetOracleInvoiceApiUrl($"no/{invoiceNumber}"),
+				URL = _configService.GetOracleInvoiceApiUrl("one"),
+				Data = request
 			});
 
 			Guards.ThrowNullReferenceIf(response?.Result, response.Message);
@@ -83,5 +84,5 @@ namespace ARAS.Blazor.Services.Implementations
 			Guards.ThrowNullReferenceIf(response?.Result, response.Message);
 			return response.Result;
 		}
-	}
+    }
 }

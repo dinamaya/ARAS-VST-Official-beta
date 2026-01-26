@@ -1,0 +1,98 @@
+﻿@page "/updates/cdr/{RequestId:long}"
+@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.Shared.DataTables
+@using ARAS.Blazor.Models.Complex
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Repositories.Interfaces
+@using ARAS.Blazor.Components.Shared.Others
+@using ARAS.Blazor.Components.Shared.Summaries
+
+@inherits ComponentBase
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inject IRequestService RequestService
+@inject IInvoiceService InvoiceService
+
+<h2>Cash Discount</h2>
+
+<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+	@if (isReady)
+	{
+		<RadzenRow>
+			<RadzenColumn Size="12" SizeLG="4">
+				<InvoiceSummary InvoiceDetails="invoice"/>
+			</RadzenColumn>
+			<RadzenColumn Size="12" SizeLG="8">
+				<CardStandard HeaderIcon="update" HeaderText="Update Adjustment">
+					<BodyTtemplate>
+						<CreateCashDiscountAdjustment 
+							InitialRemarks="@details.Remarks"
+							InitialDiscount="@details.AdjustmentAmount"
+							InitialDiscountType="2"
+							InvoiceAmount="@invoice.InvoiceAmount"
+							InvoiceBalance="@invoice.InvoiceBalance" 
+							RemarksRowCount="11" />
+					</BodyTtemplate>
+				</CardStandard>
+			</RadzenColumn>
+		</RadzenRow>
+		
+		<RadzenRow>
+			<RadzenColumn Size="12" SizeMD="4">
+				<Timeline Transactions="details.TransactionHistories" />
+			</RadzenColumn>
+			<RadzenColumn Size="12" SizeMD="8">
+				<AttachmentsDatatable Notes="@details.Notes" ShowOtherColumns=true />
+			</RadzenColumn>
+		</RadzenRow>
+
+		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+			<RadzenRow>
+				<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
+					Submit
+				</button>
+			</RadzenRow>
+		</RadzenStack>
+	}
+</RadzenStack>
+
+	@code {
+	[Parameter] public long RequestId { get; set; }
+
+	private RequestAuditDto requestAudit;
+	private ReceiptAdjustmentUpdateResponseDto details;
+	private InvoiceDetailsDto invoice;
+	private CreateCashDiscountAdjustment cashDiscount;
+
+	private bool isOnSearch;
+	private bool isLoading;
+	private bool isReady;
+	private bool isCashDiscountInitialized;
+
+	protected override async Task OnInitializedAsync()
+	{
+		isReady = false;
+		await base.OnInitializedAsync();
+		details = await RequestService.GetReceiptDetails(RequestId);
+
+		invoice = await InvoiceService.GetDetails(details.Invoice);
+		isReady = true;
+	}
+
+	public async Task OnSubmit()
+	{
+		try
+		{
+			// Guards.ThrowInvalidOperationIf(!adjustments.Any(), "Can't submit request because there are no adjustment in the current request");
+			Guards.ThrowInvalidOperationIf(isLoading, "Can't submit request while search operation is ongoing");
+
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Submission Failed");
+		}
+	}
+
+	private void HandleSearchChanged(bool value) => isOnSearch = value;
+	private void HandleLoadingChanged(bool value) => isLoading = value;
+}

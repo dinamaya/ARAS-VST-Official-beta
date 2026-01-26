@@ -16,8 +16,9 @@
 @inherits ComponentBase
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
+@inject IQueryService QueryService
 @inject IAuthService AuthService
-@* @inject IARInvoiceOffsettingService ARInvoiceOffsettingService *@
+@inject IARInvoiceOffsettingService ARInvoiceOffsettingService
 
 <h2>AR Invoice Offsetting</h2>
 
@@ -96,7 +97,7 @@
 					<Columns>
 						<RadzenDataGridColumn TItem="ARInvoiceOffsettingCNDetailsDto" Title="Invoice No.">
 							<Template Context="data">
-									<div>@data.CNRef</div>
+									<div>@data.InvoiceNumber</div>
 							</Template>
 
 							<FooterTemplate>
@@ -104,7 +105,7 @@
 							</FooterTemplate>
 
 							<EditTemplate Context="data">
-										<div>@data.CNRef</div>
+										<div>@data.InvoiceNumber</div>
 							</EditTemplate>
 						</RadzenDataGridColumn>
 
@@ -116,11 +117,11 @@
 
 						<RadzenDataGridColumn TItem="ARInvoiceOffsettingCNDetailsDto" Property="Amount" Title="Amount">
 							<Template Context="data">
-								@data.CNAmt.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+								@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
 							</Template>
 							<EditTemplate Context="data">
 								<div style="position: relative; z-index: 1;">
-									<RadzenNumeric @bind-Value="data.CNAmt"
+									<RadzenNumeric @bind-Value="data.InvoiceAmount"
 												   Name="@($"Amount_{data.Id}")"
 												   Style="width:100%"
 												   Step="0.01" />
@@ -134,7 +135,7 @@
 							</EditTemplate>
 
 							<FooterTemplate>
-								<b>@CNInvoice.Sum(a => a.CNAmt).ToString("C2", new System.Globalization.CultureInfo("en-PH"))</b>
+								<b>@CNInvoice.Sum(a => a.InvoiceAmount).ToString("C2", new System.Globalization.CultureInfo("en-PH"))</b>
 							</FooterTemplate>
 						</RadzenDataGridColumn>
 
@@ -230,25 +231,12 @@
 				return;
 			}
 
-			var apTotal = ARInvoice.Sum(a => a.InvoiceAmount);
-			var arTotal = Math.Round(ARInvoice.Sum(a => a.InvoiceAmount), 2);
+			var arTotal = ARInvoice.Sum(a => a.InvoiceAmount);
+			var cnTotal = Math.Round(CNInvoice.Sum(a => a.InvoiceAmount), 2);
 
-			Guards.ThrowInvalidOperationIf((apTotal != arTotal), "AP and AR amounts must balance.");
+			Guards.ThrowInvalidOperationIf((arTotal != cnTotal), "AR and CN/Sales Invoice amounts must balance.");
 
-			await DialogService.OpenAsync<ARInvoiceOffsettingModalSummary>(
-				"Submit AP AR Offsetting",
-				new Dictionary<string, object>()
-				{
-					{ "APAdjustments", CNInvoice },
-					{ "ARAdjustments", ARInvoice },
-					{ "Notes", Notes },
-					{ "RequestAudit", requestAudit },
-					// { "ReferenceNumber", "07.01.2025-001" },
-					{ "OnSubmit", SubmitRequest },
-					{ "SuccessSubmissionRoute", "/requests/apar-offset" },
-				},
-				new DialogOptions() { Width = "1500px", Height = "auto" }
-			);
+			await SubmitRequest();
 		}
 		catch (Exception ex)
 		{
@@ -258,7 +246,10 @@
 
 	public async Task SubmitRequest()
 	{
-		 //await ARInvoiceOffsettingService.Create(ARInvoice, Notes);
+		await ARInvoiceOffsettingService.Create(ARInvoice, CNInvoice);
+
+		var uri = QueryService.GetCurrentUrl(false);
+		NavigationManager.NavigateTo(uri, true);
 	}
 
 	private void HandleSearchChanged(bool value)
@@ -327,7 +318,7 @@
 		}
 		else
 		{
-			return (row.CNAmt == 0.0);
+			return (row.InvoiceAmount == 0.0);
 		}
 	}
 

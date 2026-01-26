@@ -66,7 +66,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.Select(t => new TransactionHistoryDto
 				{
 					TransactionId = t.TransactionId,
-					RequestNumber = t.RequestNumber,
 					Creator = t.LastName + ", " + t.FirstName,
 					DateCreated = t.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
 					Description = t.Description,

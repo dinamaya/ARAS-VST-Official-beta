@@ -2,6 +2,7 @@
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using ARAS.Main.SSMS.Api.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 {
@@ -12,24 +13,27 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		private readonly IRequestRepository _requestRepo;
 		private readonly ITransactionRepository _transactionRepo;
 		private readonly IInvoiceRepository _invoiceRepo;
+		private readonly INoteService _notesService;
 
         public BaseReceiptAdjustmentRepository(
-            MainDbContext context, 
-            IBackgroundJobService bgJobService, 
-            IAdjustmentRepository adjustmentRepo, 
-            IRequestRepository requestRepo, 
-            ITransactionRepository transactionRepo, 
-            IRemarksRepository remarksRepo, 
-            IInvoiceRepository invoiceRepo)
+            MainDbContext context,
+            IBackgroundJobService bgJobService,
+            IAdjustmentRepository adjustmentRepo,
+            IRequestRepository requestRepo,
+            ITransactionRepository transactionRepo,
+            IRemarksRepository remarksRepo,
+            IInvoiceRepository invoiceRepo,
+            INoteService notesService)
         {
             _context = context;
             _adjustmentRepo = adjustmentRepo;
             _requestRepo = requestRepo;
             _transactionRepo = transactionRepo;
             _invoiceRepo = invoiceRepo;
+            _notesService = notesService;
         }
 
-		public async Task<string> Create(RequestCreationDto<IEnumerable<BaseReceiptAdjustmentCreateDto>> data, string createdBy)
+        public async Task<string> Create(RequestCreationDto<IEnumerable<BaseReceiptAdjustmentCreateDto>> data, string createdBy)
 		{
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
@@ -97,7 +101,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			}
 		}
 
-		public async Task<long> Update(long requestId, RequestCreationDto<IEnumerable<BaseReceiptAdjustmentCreateDto>> data, string modifiedBy)
+        public async Task<long> Update(long requestId, RequestCreationDto<IEnumerable<BaseReceiptAdjustmentCreateDto>> data, string modifiedBy)
 		{
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
@@ -115,6 +119,38 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				await dbTransaction.RollbackAsync();
 				throw;
 			}
+		}
+
+		public async Task<ReceiptAdjustmentUpdateResponseDto> GetDetailsById(long requestId)
+		{
+			var adjustment = await _context.Adjustments
+				.Select(a => new
+				{
+					a.RequestId,
+					a.AdjustmentAmount,
+					a.Remarks,
+				}).FirstOrDefaultAsync(a => a.RequestId == requestId);
+			var invoice = await _context.VwReceiptAdjustments.Where(a => a.RequestId == requestId)
+				.Select(a => new InvoiceDetailsRequestDto
+				{
+					InvoiceNumber = a.InvoiceNumber,
+					InvoiceAmount = a.InvoiceAmount,
+					InvoiceDate = DateOnly.FromDateTime(a.InvoiceDate),
+					CustomerName = a.CustomerName,
+					CustomerNumber = a.CustomerNumber
+				}).FirstOrDefaultAsync();
+
+			var transactionHistories = await _transactionRepo.GetHistoryByRequestId(requestId);
+			var notes = await _notesService.GetByRequestId(requestId);
+			
+			return new ReceiptAdjustmentUpdateResponseDto
+			{
+				AdjustmentAmount = adjustment.AdjustmentAmount,
+				Remarks = adjustment.Remarks,
+				Invoice = invoice,
+				TransactionHistories = transactionHistories,
+				Notes = notes
+			};
 		}
 	}
 }

@@ -330,7 +330,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				Status = q.Status,
 				CustomerName = q.CustomerName,
 				InvoiceNumber = q.InvoiceNumber,
-				AdjustmentType = q.AdjustmentType
+				AdjustmentType = q.AdjustmentType,
+				AdjustmentTypeCode = q.AdjustmentTypeCode.ToLower()
 			})
 			.ToListAsync();
     }

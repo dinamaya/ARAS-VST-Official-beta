@@ -204,5 +204,20 @@ namespace ARAS.Main.SSMS.Api.Controllers
 				return response.Failed(ex.Message);
 			}
 		}
+
+		[HttpGet("receipt/{requestId:long}"), Authorize]
+		public async Task<ResponseDto<ReceiptAdjustmentUpdateResponseDto>> GetReceiptAdjustmentById(long requestId)
+		{
+			var response = new ResponseDto<ReceiptAdjustmentUpdateResponseDto>();
+			try
+			{
+				response.Result = await _receiptAdjustmentRepo.GetDetailsById(requestId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
 	}
 }

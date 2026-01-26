@@ -21,15 +21,17 @@ namespace ARAS.Main.SSMS.Api.Context
         // SQL VIEWS
         public virtual DbSet<AparoffsetRowV> VwAparoffsetRows { get; set; }
 		public virtual DbSet<InvoiceNumbersV> VwInvoiceNumbers { get; set; }
-		public virtual DbSet<NotesV> VwNotes { get; set; }
-		public virtual DbSet<TransactionsHistoryV> VwTransactionsHistory { get; set; }
+
 		public virtual DbSet<RequestAdjustmentsV> VwRequestAdjustments { get; set; }
 		public virtual DbSet<RequestsNumberSourceV> VwRequestsNumberSources { get; set; }
 
 		// NEW SQL VIEWS
+		public virtual DbSet<AdjustmentsV> VwReceiptAdjustments { get; set; }
 		public virtual DbSet<AllAdjustmentRequestLatestStatusV> VwAllAdjustmentRequestLatestStatus { get; set; }
 		public virtual DbSet<LatestReceiptAdjustmentDetailsV> VwLatestReceiptAdjustmentDetails { get; set; }
 		public virtual DbSet<LatestInvoiceAdjustmentsV> VwLatestInvoiceAdjustments { get; set; }
+		public virtual DbSet<NotesV> VwNotes { get; set; }
+		public virtual DbSet<TransactionsHistoryV> VwTransactionsHistory { get; set; }
 
 		public MainDbContext(DbContextOptions<MainDbContext> options) : base(options) { }
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -77,6 +79,15 @@ namespace ARAS.Main.SSMS.Api.Context
 
 
 			// SQL VIEWS
+			modelBuilder.Entity<AdjustmentsV>(entity =>
+			{
+				entity
+					.HasNoKey()
+					.ToView("Adjustments_v");
+
+				entity.Property(e => e.AdjustmentTypeId).HasMaxLength(450);
+			});
+
 			modelBuilder.Entity<AllAdjustmentRequestLatestStatusV>(entity =>
 			{
 				entity

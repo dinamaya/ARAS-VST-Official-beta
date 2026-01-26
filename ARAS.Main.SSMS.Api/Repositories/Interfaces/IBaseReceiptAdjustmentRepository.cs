@@ -5,5 +5,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 {
     public interface IBaseReceiptAdjustmentRepository : ICreateReceiptStatusRepository<BaseReceiptAdjustmentCreateDto, string>
 	{
+		Task<ReceiptAdjustmentUpdateResponseDto> GetDetailsById(long requestId);
 	}
 }

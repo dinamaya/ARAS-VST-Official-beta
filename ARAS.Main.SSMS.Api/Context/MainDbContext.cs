@@ -68,7 +68,20 @@ namespace ARAS.Main.SSMS.Api.Context
 				.HasForeignKey(a => a.RequestId);
 			});
 
-			modelBuilder.Entity<Note>()
+            modelBuilder.Entity<ARInvoiceOffsetting>(entity =>
+            {
+                entity
+                  .HasOne(a => a.Invoice)
+                  .WithMany()
+                  .HasForeignKey(a => a.InvoiceId);
+
+                entity
+                  .HasOne(a => a.Request)
+                  .WithMany()
+                  .HasForeignKey(a => a.RequestId);
+            });
+
+            modelBuilder.Entity<Note>()
 			  .HasOne(a => a.Request)
 			  .WithMany()
 			  .HasForeignKey(a => a.RequestId);

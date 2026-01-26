@@ -14,6 +14,7 @@ namespace ARAS.Blazor.App_Code.Globals.Extensions
 			services.AddScoped<IEmailRepository, EmailRepository>();
 		
             services.AddScoped<IAPAROffsetService, APAROffsetService>();
+            services.AddScoped<IARInvoiceOffsettingService, ARInvoiceOffsettingService>();
             services.AddScoped<IAdjustmentService, AdjustmentService>();
 			services.AddScoped<IAttachmentService, AttachmentService>();
 			services.AddScoped<IAuthService, AuthService>();

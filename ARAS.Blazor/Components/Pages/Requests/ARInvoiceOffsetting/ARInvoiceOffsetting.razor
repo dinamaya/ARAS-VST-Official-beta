@@ -22,7 +22,8 @@
 <h2>AR Invoice Offsetting</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<SearchInvoiceDetails />
+	<SearchInvoiceDetails OnSelectInvoice="OpenAdd" />
+
 	<RadzenRow Gap="1.5rem">
 		<RadzenColumn Size="6">
 			<div class="text-center pb-3">
@@ -86,7 +87,11 @@
 								AllowPaging="false"
 								AllowSorting="false"
 								EditMode="DataGridEditMode.Single"
-								ShowPagingSummary="false">
+								ShowPagingSummary="false"
+								LogicalFilterOperator="LogicalFilterOperator.Or"
+								SelectionMode="DataGridSelectionMode.Single">
+								
+
 
 					<Columns>
 						<RadzenDataGridColumn TItem="ARInvoiceOffsettingCNDetailsDto" Title="Invoice No.">
@@ -129,7 +134,7 @@
 							</EditTemplate>
 
 							<FooterTemplate>
-								<b>@ARInvoice.Sum(a => a.InvoiceAmount).ToString("C2", new System.Globalization.CultureInfo("en-PH"))</b>
+								<b>@CNInvoice.Sum(a => a.CNAmt).ToString("C2", new System.Globalization.CultureInfo("en-PH"))</b>
 							</FooterTemplate>
 						</RadzenDataGridColumn>
 
@@ -164,8 +169,6 @@
 	[Parameter] public IList<ARInvoiceOffsettingRowDto> ARInvoice { get; set; }
 	[Parameter] public IList<ARInvoiceOffsettingCNDetailsDto> CNInvoice { get; set; }
 	private IList<NoteRowDto> Notes { get; set; } = new List<NoteRowDto>();
-
-	[Parameter] public EventCallback OnARRowAdded { get; set; }
 
 	private InvoiceDetailsDto searchedInvoiceNumber;
 	private RadzenDataGrid<ARInvoiceOffsettingCNDetailsDto> cnGrid;
@@ -202,35 +205,15 @@
 			"Confirm AR Invoice Number",
 			new Dictionary<string, object>()
 			{
-				{ "Rows", ARInvoice },
-				{ "Grid", arGrid },
+				{ "ARRows", ARInvoice },
+				{ "ARGrid", arGrid },
+				{ "CNRows", CNInvoice },
+				{ "CNGrid", cnGrid },
 				{ "InvoiceDetails", invoiceDetails },
-				{ "OnARRowAdded", OnARRowAdded }
 
 			},
 			new DialogOptions() { Width = "800px", Height = "auto" }
 		);
-	}
-
-	public async Task OpenEdit(APAROffsetAPRowDto data)
-	{
-		try
-		{
-			await DialogService.OpenAsync<EditARInvoiceOffsetting>(
-				"Edit Cash Discount Adjustment",
-				new Dictionary<string, object>()
-				{
-				{ "Rows", CNInvoice },
-				{ "Grid", cnGrid },
-				{ "Data", data }
-				},
-				new DialogOptions() { Width = "800px", Height = "auto" }
-			);
-		}
-		catch (Exception ex)
-		{
-			await DialogService.Alert(ex.Message, "Edit Adjustment Failed");
-		}
 	}
 
 	public async Task OnSubmit()
@@ -275,7 +258,7 @@
 
 	public async Task SubmitRequest()
 	{
-		// await ARInvoiceOffsettingService.Create(ARInvoice, Notes);
+		 //await ARInvoiceOffsettingService.Create(ARInvoice, Notes);
 	}
 
 	private void HandleSearchChanged(bool value)

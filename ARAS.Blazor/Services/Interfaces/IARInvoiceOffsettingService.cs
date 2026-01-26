@@ -5,7 +5,7 @@ namespace ARAS.Blazor.Services.Interfaces
 {
     public interface IARInvoiceOffsettingService : IBaseAdjustmentCommandRepository<ARInvoiceOffsettingRowDto, ARInvoiceOffsettingCreateDto, object>
     {
-        Task Create(IEnumerable<ARInvoiceOffsettingRowDto> rows, IEnumerable<NoteRowDto> notes);
+        Task Create(IEnumerable<ARInvoiceOffsettingRowDto> arRows, IEnumerable<ARInvoiceOffsettingRowDto> cnRows, IEnumerable<NoteRowDto> notes);
         Task Update(long requestId, IEnumerable<ARInvoiceOffsettingRowDto> rows, IEnumerable<NoteRowDto> notes);
         Task Approve(long requestId, IEnumerable<NoteRowDto> notes);
         Task Validate(long requestId, IEnumerable<NoteRowDto> notes);

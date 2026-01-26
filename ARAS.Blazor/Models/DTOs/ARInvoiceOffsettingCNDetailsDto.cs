@@ -1,4 +1,6 @@
-﻿namespace ARAS.Blazor.Models.DTOs
+﻿using ARAS.Blazor.App_Code.Globals;
+
+namespace ARAS.Blazor.Models.DTOs
 {
     public class ARInvoiceOffsettingCNDetailsDto
     {
@@ -7,12 +9,23 @@
         public double CNAmt { get; set; } = 0.00d;
         public double WT { get; set; } = 0.00d;
 
-        public DateTime CNDate { get; set; } // Invoice Amount
+        public string CNDate { get; set; } // Invoice Amount
         public string CustomerName { get; set; }
         public string CustomerNumber { get; set; }
         public string? Remarks { get; set; } = string.Empty;
 
         public bool IsEmpty() => string.IsNullOrEmpty(CNRef) && CNAmt <= 0 && WT <= 0;
         public bool HasEmpty() => string.IsNullOrEmpty(CNRef) || CNAmt <= 0 || WT <= 0;
+
+        public ARInvoiceOffsettingCNDetailsDto() { }
+        public ARInvoiceOffsettingCNDetailsDto(InvoiceDetailsDto details)
+        {
+            Id = Utils.Security.GenerateExtendedGuid("ARIO", 1);
+            CNAmt = details.InvoiceAmount;
+            CNRef = details.InvoiceNumber;
+            CNDate = details.InvoiceDate.ToString("dd MMM yyyy");
+            CustomerName = details.CustomerName;
+            CustomerNumber = details.CustomerNumber;
+        }
     }
 }

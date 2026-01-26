@@ -13,6 +13,7 @@ namespace ARAS.Blazor.Models.DTOs
         public string CustomerName { get; set; } = string.Empty;
         public string CustomerNumber { get; set; } = string.Empty;
         public string ReasonCode { get; set; } = string.Empty;
+        public string Type { get; set; }
         public string Remarks { get; set; } = string.Empty;
         public IList<InvoiceDetailsDto> CNInvoices { get; set; }
 
@@ -32,7 +33,7 @@ namespace ARAS.Blazor.Models.DTOs
         public void SetValues(string remarks)
         {
             Remarks = remarks;
-            AdjustmentActivity = "AR Offsetting";
+            AdjustmentActivity = "AR Invoice Offsetting";
             ReasonCode = "Offsetting";
         }
     }

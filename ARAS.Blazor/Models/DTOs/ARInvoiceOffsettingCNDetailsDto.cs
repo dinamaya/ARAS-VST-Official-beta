@@ -4,26 +4,24 @@ namespace ARAS.Blazor.Models.DTOs
 {
     public class ARInvoiceOffsettingCNDetailsDto
     {
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-        public string CNRef { get; set; } = string.Empty;
-        public double CNAmt { get; set; } = 0.00d;
-        public double WT { get; set; } = 0.00d;
-
-        public string CNDate { get; set; } // Invoice Amount
-        public string CustomerName { get; set; }
-        public string CustomerNumber { get; set; }
-        public string? Remarks { get; set; } = string.Empty;
-
-        public bool IsEmpty() => string.IsNullOrEmpty(CNRef) && CNAmt <= 0 && WT <= 0;
-        public bool HasEmpty() => string.IsNullOrEmpty(CNRef) || CNAmt <= 0 || WT <= 0;
+        public string Id { get; set; }
+        public string AdjustmentActivity { get; set; } = string.Empty;
+        public double InvoiceAmount { get; set; } = 1_000.00d;
+        public string InvoiceDate { get; set; } = string.Empty;
+        public string InvoiceNumber { get; set; } = string.Empty;
+        public string CustomerName { get; set; } = string.Empty;
+        public string CustomerNumber { get; set; } = string.Empty;
+        public string ReasonCode { get; set; } = string.Empty;
+        public string Type { get; set; }
+        public string Remarks { get; set; } = string.Empty;
 
         public ARInvoiceOffsettingCNDetailsDto() { }
         public ARInvoiceOffsettingCNDetailsDto(InvoiceDetailsDto details)
         {
             Id = Utils.Security.GenerateExtendedGuid("ARIO", 1);
-            CNAmt = details.InvoiceAmount;
-            CNRef = details.InvoiceNumber;
-            CNDate = details.InvoiceDate.ToString("dd MMM yyyy");
+            InvoiceAmount = details.InvoiceAmount;
+            InvoiceNumber = details.InvoiceNumber;
+            InvoiceDate = details.InvoiceDate.ToString("dd MMM yyyy");
             CustomerName = details.CustomerName;
             CustomerNumber = details.CustomerNumber;
         }

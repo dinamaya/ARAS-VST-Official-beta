@@ -19,3 +19,14 @@ GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/test/dt
 GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/adjustment/reason-codes
 
 ###
+GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/invoice/one
+Content-Type: application/json
+{
+  "invoiceNumber" : "800022677",
+  "invoiceAmount" : 338839.26,
+  "invoiceDate" : "2021-05-20",
+  "customerName" : "THINKING TOOLS CEBU",
+  "customerNumber" : "8044"
+}
+
+###

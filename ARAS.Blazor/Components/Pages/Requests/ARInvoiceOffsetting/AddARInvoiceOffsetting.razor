@@ -83,7 +83,7 @@
 	{
 		try
 		{
-			bool isInvoiceAdded = CNRows.Any(i => i.CNRef == InvoiceDetails.InvoiceNumber);
+			bool isInvoiceAdded = CNRows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
 
 			Guards.ThrowInvalidOperationIf(isInvoiceAdded, $"Invoice Number {InvoiceDetails.InvoiceNumber} has already been added");
 

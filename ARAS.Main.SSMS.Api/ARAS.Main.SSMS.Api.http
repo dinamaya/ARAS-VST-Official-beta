@@ -1,0 +1,119 @@
+@ARAS.Main.SSMS.Api_HostAddress = https://localhost:3003
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/test/email
+
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/cash-discount/approvals
+
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/cash-discount/approvals
+
+###
+
+
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/requests/cash-discount/{requestId:long}?requestId={{requestId}}
+
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/requests/cash-discount/{{requestId}}
+
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/requests/cash-discount/{requestId:long}?requestId={{requestId}}
+
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/adjustments/cash-discount/{{requestId}}
+
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/requests/cash-discount/{requestId:long}?requestId={{requestId}}
+
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/requests/cash-discount/{{requestId}}
+
+###
+@requestId=4
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/requests/cdr/is-declinable/1
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/requests/cdr/is-declinable/2
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/requests/cdr/is-declinable/3
+
+###
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/requests/cdr/is-declinable/4
+
+###
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/requests/cdr/is-declinable/5
+
+###
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/requests/cdr/is-declinable/6
+
+###
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/requests/cdr/is-declinable/7
+
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/transactions/history/{{requestId}}
+
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/transactions/history/8
+
+###
+
+@groupCode=CC1
+@adjustmentTypeCode=CDR
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/test/ref-number/{{groupCode}}/{{adjustmentTypeCode}}
+
+###
+
+POST {{ARAS.Main.SSMS.Api_HostAddress}}/api/adjustments/cdr/validate
+Content-Type: application/json
+
+###
+
+POST {{ARAS.Main.SSMS.Api_HostAddress}}/api/adjustments/cdr/validate
+Content-Type: application/json
+
+{
+  "invoiceNumber" : "142955",
+  "discount" : 10.0,
+  "remarks" : "12%"
+}
+
+
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/requests/cdr/is-rejectable/7
+
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/test/email
+
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/files/notes/54
+
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/requests/submissions/bca
+
+###
+
+GET {{ARAS.Main.SSMS.Api_HostAddress}}/api/adjustments/activity/SAR
+
+###

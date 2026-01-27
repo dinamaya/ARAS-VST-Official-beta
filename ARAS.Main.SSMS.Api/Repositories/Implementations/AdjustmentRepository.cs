@@ -148,7 +148,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                     InvoiceId = _data.InvoiceNumber, // use as InvoiceId
                     Amount = _data.AdjustmentAmount,
                     Type = _data.Type,
-					ReasonCode = "",
 
                     CreatedBy = createdBy,
                     DateCreated = DateTime.Now,

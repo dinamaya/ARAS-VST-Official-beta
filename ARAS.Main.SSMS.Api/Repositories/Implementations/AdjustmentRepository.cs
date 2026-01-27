@@ -136,6 +136,10 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 		public async Task<IEnumerable<Adjustment>> GetByRequestId(long requestId) => 
 			await _context.Adjustments.Where(a => a.RequestId == requestId && a.IsActive).ToListAsync();
+		
+		public async Task<Adjustment> GetOneByRequestId(long requestId) => await _context.Adjustments
+			.FirstOrDefaultAsync(a => a.RequestId == requestId && a.IsActive) ??
+			throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENT);
 
 		public async Task<Adjustment> GetById(long id) => 
 			await _context.Adjustments.Where(a => a.Id == id && a.IsActive).FirstOrDefaultAsync() ?? 
@@ -267,5 +271,18 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.Where(x => x.Name.Equals(adjustmentName))
 				.Select(x => new AdjustmentBasicInfoDto(x.Id, x.Code)).FirstOrDefaultAsync() ??
 				throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENTTYPE);
+
+        public async Task<long> UpdateAsync(long requestId, ReceiptAdjustmentUpdateRequestDto data, string modifiedBy)
+        {
+			var adjustment = await GetOneByRequestId(requestId);
+			adjustment.AdjustmentAmount = data.AdjustmentAmount;
+			adjustment.Remarks = data.Remarks;
+			adjustment.DateModified = DateTime.Now;
+			adjustment.ModifiedBy = modifiedBy;
+
+			await _context.SaveChangesAsync();
+
+			return adjustment.Id;
+		}
     }
 }

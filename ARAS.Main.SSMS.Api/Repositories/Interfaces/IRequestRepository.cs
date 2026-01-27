@@ -9,6 +9,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 		ICreateMultipleRepository<string, long>,
 		IGetTransactionRequestsRepository
 	{
+		Task<bool> IsUpdatable(long requestId);
 		Task<bool> IsApprovable(long requestId);
 		Task<bool> IsDeclinable (long requestId);
 		Task<bool> IsRejectable (long requestId);

@@ -33,7 +33,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
             _notesService = notesService;
         }
 
-        public async Task<string> Create(RequestCreationDto<IEnumerable<BaseReceiptAdjustmentCreateDto>> data, string createdBy)
+        public async Task<IEnumerable<ReceiptAdjustmentCreateResponseDto>> Create(RequestCreationDto<IEnumerable<BaseReceiptAdjustmentCreateDto>> data, string createdBy)
 		{
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
@@ -92,7 +92,15 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				await _adjustmentRepo.CreateAsync(adjustments, createdBy);
 				await dbTransaction.CommitAsync();
 
-				return "Success";
+				var zipResults = requestIds.Zip(data.Model, 
+					(req, mod)	=> new ReceiptAdjustmentCreateResponseDto
+					{
+						RequestId = req,
+						AdjustmentTypeCode = mod.AdjustmentType
+					}
+				);
+
+				return zipResults;
 			}
 			catch
 			{
@@ -101,16 +109,26 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			}
 		}
 
-        public async Task<long> Update(long requestId, RequestCreationDto<IEnumerable<BaseReceiptAdjustmentCreateDto>> data, string modifiedBy)
+		public async Task<long> UpdateAsync(long requestId, ReceiptAdjustmentUpdateRequestDto data, string modifiedBy)
 		{
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
 			try
 			{
-				var requestRefNo = await _requestRepo.GetRequestNumberById(requestId);
-				//var adjustmentType = await _adjustmentRepo.GetAdjustmentInfoByCode(adjustmentTypeCode);
+				var prevTimeline = await _transactionRepo.GetHistoryByRequestId(requestId);
+				var prevCreatorRole = prevTimeline.LastOrDefault().AccountRole;
 
-				// Implement Update here no need to deactivate because it is only a single data
+				var transaction = new TransactionCreateDto(requestId, "Resubmitted");
+				var transactId = await _transactionRepo.CreateAsync(transaction, modifiedBy);
+
+				var adjustmentUpdate = new ReceiptAdjustmentUpdateRequestDto()
+				{
+					AdjustmentAmount = data.AdjustmentAmount,
+					Remarks = data.Remarks
+				};
+
+				var adjustment = await _adjustmentRepo.UpdateAsync(requestId, adjustmentUpdate, modifiedBy);
+
 				await dbTransaction.CommitAsync();
 				return requestId;
 			}
@@ -152,5 +170,5 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				Notes = notes
 			};
 		}
-	}
+    }
 }

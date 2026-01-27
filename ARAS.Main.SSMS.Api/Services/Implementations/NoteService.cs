@@ -9,6 +9,7 @@ using Humanizer;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System.Xml.Linq;
 
 namespace ARAS.Main.SSMS.Api.Services.Implementations
 {
@@ -53,6 +54,39 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 				await _context.SaveChangesAsync();
 			}
 
+			return string.Empty;
+		}
+
+		public async Task<string> CreateAsync(IEnumerable<NoteRowDto> data, string createdBy)
+		{
+			var notes = new List<Note>();
+			foreach (var note in data)
+			{
+				var date = DateTime.Now;
+				string formattedName = $"{DateTime.Today.ToString("MMddyyyy")}_{Utils.Security.GenerateExtendedGuid(string.Empty, 2)}";
+				var _note = new Note();
+				_note.AttachmentName = string.Empty;
+
+				if (note.AttachmentData != null)
+				{
+					_note.AttachmentName = _fileManager.GetUniqueFileName(note.AttachmentName, formattedName, date);
+					await _fileManager.UploadAttachmentAsync(note.AttachmentData, _note.AttachmentName, date);
+				}
+
+				_note.RequestId = long.Parse(note.Id);
+				_note.Remarks = note.Remarks ?? "";
+
+				_note.CreatedBy = createdBy;
+				_note.DateCreated = date;
+				_note.ModifiedBy = createdBy;
+				_note.DateModified = date;
+				_note.IsActive = true;
+
+				notes.Add(_note);
+			}
+
+			await _context.Notes.AddRangeAsync(notes);
+			await _context.SaveChangesAsync();
 			return string.Empty;
 		}
 

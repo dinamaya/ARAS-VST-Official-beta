@@ -41,6 +41,22 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
+		[HttpGet("is-updatable/{requestId:long}")]
+		public async Task<ResponseDto<bool>> IsUpdatable(long requestId)
+		{
+			var response = new ResponseDto<bool>();
+			try
+			{
+				response.Result = await _requestRepo.IsUpdatable(requestId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
 		[HttpGet("is-approvable/{requestId:long}"), Authorize(Roles = "Approver")]
 		public async Task<ResponseDto<bool>> IsApprovable(long requestId)
 		{
@@ -106,13 +122,30 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		}
 
 		[HttpPost("receipt"), Authorize(Roles = "Requestor")]
-		public async Task<ResponseDto<string>> CreateReceiptAdjusmentRequest([FromBody] IEnumerable<BaseReceiptAdjustmentCreateDto> data)
+		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentCreateResponseDto>>> CreateReceiptAdjusmentRequest([FromBody] IEnumerable<BaseReceiptAdjustmentCreateDto> data)
 		{
-			var response = new ResponseDto<string>();
+			var response = new ResponseDto<IEnumerable<ReceiptAdjustmentCreateResponseDto>>();
 			try
 			{
 				var requestCreation = new RequestCreationDto<IEnumerable<BaseReceiptAdjustmentCreateDto>>(data, User.GetAccountBasicInfo());
 				response.Result = await _receiptAdjustmentRepo.Create(requestCreation, requestCreation.CreatorId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
+
+
+		[HttpPut("receipt/{requestId:long}"), Authorize(Roles = "Requestor")]
+		public async Task<ResponseDto<long>> UpdateReceiptAdjusmentRequest(long requestId, [FromBody] ReceiptAdjustmentUpdateRequestDto data)
+		{
+			var response = new ResponseDto<long>();
+			try
+			{
+				var account = User.GetAccountBasicInfo();
+				response.Result = await _receiptAdjustmentRepo.UpdateAsync(requestId, data, account.Id);
 				return response;
 			}
 			catch (Exception ex)

@@ -16,7 +16,20 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		public RequestRepository(MainDbContext context) => _context = context;
 
 		public async Task<Request> GetById(long id) => await _context.Requests.FindAsync(id) ?? throw new InvalidOperationException(Exceptions.NOTFOUND_REQUEST);
-		
+
+		/// <summary>
+		/// Checks if the request is updatable
+		/// </summary>
+		/// <param name="requestId"></param>
+		/// <returns></returns>
+		public async Task<bool> IsUpdatable(long requestId)
+		{
+			return await _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking().AnyAsync(t =>
+				t.RequestId == requestId &&
+				(t.Status == "Pending" || t.Status == "Resubmitted")
+			);
+		}
+
 		/// <summary>
 		/// Checks if the request is approvable and not yet validated
 		/// </summary>
@@ -26,7 +39,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			return await _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
-				t.Status == "Pending"
+				(t.Status == "Pending" || t.Status == "Resubmitted")
 			);
 		}
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ARAS.Main.SSMS.Api.Models.SQLVIews;
+namespace ARAS.Main.SSMS.Api.Models.Views;
 
 public partial class AdjustmentsV
 {
@@ -11,11 +11,7 @@ public partial class AdjustmentsV
 
     public long InvoiceId { get; set; }
 
-    public string AdjustmentTypeId { get; set; } = null!;
-
     public double AdjustmentAmount { get; set; }
-
-    public float DiscountPercentage { get; set; }
 
     public string Remarks { get; set; } = null!;
 
@@ -29,14 +25,6 @@ public partial class AdjustmentsV
 
     public string CustomerName { get; set; } = null!;
 
-    public string? Gldate { get; set; }
-
-    public string? Cnref { get; set; }
-
-    public string? Cnamt { get; set; }
-
-    public string? Wt { get; set; }
-
     public string AdjustmentCreatorId { get; set; } = null!;
 
     public DateTime AdjustmentDateCreated { get; set; }
@@ -44,4 +32,12 @@ public partial class AdjustmentsV
     public string InvoiceCreatorId { get; set; } = null!;
 
     public DateTime InvoiceDateCreated { get; set; }
+
+    public string AdjustmentType { get; set; } = null!;
+
+    public string Activity { get; set; } = null!;
+
+    public string ReasonCode { get; set; } = null!;
+
+    public string? AdjustmentTypeId { get; set; }
 }

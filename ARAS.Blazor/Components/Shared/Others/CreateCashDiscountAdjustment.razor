@@ -67,7 +67,7 @@
 						<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
 							<RadzenFormField Text="@("Discount Value")" Variant="Variant.Outlined">
 								<RadzenNumeric TValue="double" @bind-Value="@discountDecimal"
-											   Max="(decimal)InvoiceDetails.InvoiceAmount"
+											   Max="(decimal)InvoiceAmount"
 											   Change="(val) => OnDecimalChanged(val)"
 											   Disabled="(!isAdjustable) || discountType == 1" />
 							</RadzenFormField>
@@ -81,7 +81,7 @@
 			<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
 				<RadzenTextArea 
 					@bind-Value="remarks" 
-					Rows="3" 
+					Rows="@RemarksRowCount" 
 					Change="OnRemarksChanged"
 					Disabled="!isAdjustable" />
 			</RadzenFormField>
@@ -90,16 +90,21 @@
 </RadzenFieldset>
 
 @code {
-	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
+	[Parameter] public double InvoiceAmount { get; set; }
+	[Parameter] public double InvoiceBalance { get; set; }
 	[Parameter] public string AdjustmentActivity { get; set; }
+	[Parameter] public int RemarksRowCount { get; set; } = 3;
 	[Parameter] public EventCallback<AdjustmentEntry> AdjustmentAmountChanged { get; set; }
+	[Parameter] public string? InitialRemarks { get; set; }
+	[Parameter] public double InitialDiscount { get; set; } = 0d;
+	[Parameter] public int InitialDiscountType { get; set; } = 1;
 
 	private IEnumerable<double> percentages;
 	private IEnumerable<string> invoices = new List<string>();
 
 	private string remarks = string.Empty;
 	private double discountDecimal = 0;
-	private double DiscountPercentage => InvoiceDetails.InvoiceAmount == 0 ? 0 : Math.Round((discountDecimal / InvoiceDetails.InvoiceAmount) * 100, 2);
+	private double DiscountPercentage => InvoiceAmount == 0 ? 0 : Math.Round((discountDecimal / InvoiceAmount) * 100, 2);
 	private int discountType = 1;
 	private bool isAdjustable = false;
 
@@ -108,36 +113,33 @@
 	{
 		await base.OnInitializedAsync();
 		percentages = ConfigService.GetDiscountPercentages();
+
 		Reset();
 	}
 
 	protected override async Task OnParametersSetAsync()
 	{
 		await base.OnParametersSetAsync();
-		isAdjustable = InvoiceDetails.InvoiceBalance > 0;
+		isAdjustable = InvoiceBalance > 0;
 	}
 
 	public void Reset()
 	{
-		discountType = 1;
-		remarks = string.Empty;
-		discountDecimal = 0;
-		discountType = 1;
+		discountType = InitialDiscountType;
+		remarks = InitialRemarks;
+		discountDecimal = InitialDiscount;
 	}
-
-	public CashDiscountRowDto GetAdjustment() => new(discountDecimal, remarks, AdjustmentActivity, InvoiceDetails);
-	public double GetAdjustmentAmount() => discountDecimal;
 
 	private async Task OnDiscountTypeChanged(int typeId)
 	{
 		discountType = typeId;
-		discountDecimal = 0;
+		discountDecimal = discountType == 1 ? 0 : InitialDiscount;
 		await InvokeAdjustmentChanged();
 	}
 
 	private async Task OnPercentageChanged(double val)
 	{
-		discountDecimal = Math.Round((val / 100) * InvoiceDetails.InvoiceAmount, 2);
+		discountDecimal = Math.Round((val / 100) * InvoiceAmount, 2);
 		await InvokeAdjustmentChanged();
 	}
 

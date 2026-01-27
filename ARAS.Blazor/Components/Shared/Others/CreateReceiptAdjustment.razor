@@ -15,7 +15,7 @@
 			@if (SelectedAdjustmentTypes.Contains("Cash Discount"))
 			{
 				<RadzenColumn Size="12">
-					<CreateCashDiscountAdjustment InvoiceDetails="InvoiceDetails" AdjustmentAmountChanged="OnAdjustmentAmountChanged" />
+					<CreateCashDiscountAdjustment InvoiceAmount="InvoiceDetails.InvoiceAmount" InvoiceBalance="InvoiceDetails.InvoiceBalance" AdjustmentAmountChanged="OnAdjustmentAmountChanged" />
 				</RadzenColumn>
 			}
 			@if (SelectedAdjustmentTypes.Contains("Bank Charges"))

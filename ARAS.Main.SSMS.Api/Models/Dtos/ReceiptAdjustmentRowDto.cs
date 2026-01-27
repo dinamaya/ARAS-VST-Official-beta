@@ -7,6 +7,8 @@
 		public string DateRequested { get; set; }
 		public string Approver { get; set; }
 		public string DateApproved { get; set; }
+		public string AdjustmentTypeCode { get; set; }
+
 		// No Validator and DateValidated
 		public string Creator { get; set; }
 		public string DateCreated { get; set; }

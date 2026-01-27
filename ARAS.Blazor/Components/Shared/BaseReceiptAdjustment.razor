@@ -30,9 +30,17 @@
 	[Parameter] public string? TextBoxLabel { get; set; } = "Adjustment Amount";
 	[Parameter] public string AdjustmentName { get; set; }
 	[Parameter] public bool IsAdjustable { get; set; }
+	[Parameter] public string? InitialRemarks { get; set; }
+	[Parameter] public double InitialAdjustment { get; set; } = 0d;
 
 	private string remarks { get; set; }
 	private double adjustmentAmount = 0d;
+
+	protected async override Task OnInitializedAsync()
+	{
+        adjustmentAmount = InitialAdjustment;
+        remarks = InitialRemarks;
+    }
 
 	private async Task OnAdjustmentChanged()
 	{

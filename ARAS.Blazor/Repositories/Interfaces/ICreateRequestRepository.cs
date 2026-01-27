@@ -10,6 +10,5 @@ namespace ARAS.Blazor.Repositories.Interfaces
 	public interface ICreateRequestRepository<TCreate>
     {
 		Task Create(IEnumerable<TCreate> row, IEnumerable<NoteRowDto> notes);
-		Task Update(long requestId, IEnumerable<TCreate> row, IEnumerable<NoteRowDto> notes);
 	}
 }

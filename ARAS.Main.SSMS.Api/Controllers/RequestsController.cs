@@ -43,6 +43,22 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
+		[HttpGet("is-updatable/{requestId:long}")]
+		public async Task<ResponseDto<bool>> IsUpdatable(long requestId)
+		{
+			var response = new ResponseDto<bool>();
+			try
+			{
+				response.Result = await _requestRepo.IsUpdatable(requestId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
 		[HttpGet("is-approvable/{requestId:long}"), Authorize(Roles = "Approver")]
 		public async Task<ResponseDto<bool>> IsApprovable(long requestId)
 		{
@@ -108,13 +124,30 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		}
 
 		[HttpPost("receipt"), Authorize(Roles = "Requestor")]
-		public async Task<ResponseDto<string>> CreateReceiptAdjusmentRequest([FromBody] IEnumerable<BaseReceiptAdjustmentCreateDto> data)
+		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentCreateResponseDto>>> CreateReceiptAdjusmentRequest([FromBody] IEnumerable<BaseReceiptAdjustmentCreateDto> data)
 		{
-			var response = new ResponseDto<string>();
+			var response = new ResponseDto<IEnumerable<ReceiptAdjustmentCreateResponseDto>>();
 			try
 			{
 				var requestCreation = new RequestCreationDto<IEnumerable<BaseReceiptAdjustmentCreateDto>>(data, User.GetAccountBasicInfo());
 				response.Result = await _receiptAdjustmentRepo.Create(requestCreation, requestCreation.CreatorId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
+
+
+		[HttpPut("receipt/{requestId:long}"), Authorize(Roles = "Requestor")]
+		public async Task<ResponseDto<long>> UpdateReceiptAdjusmentRequest(long requestId, [FromBody] ReceiptAdjustmentUpdateRequestDto data)
+		{
+			var response = new ResponseDto<long>();
+			try
+			{
+				var account = User.GetAccountBasicInfo();
+				response.Result = await _receiptAdjustmentRepo.UpdateAsync(requestId, data, account.Id);
 				return response;
 			}
 			catch (Exception ex)
@@ -145,13 +178,14 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-        [HttpPost("invoice/ari"), Authorize(Roles = "Requestor")]
-        public async Task<ResponseDto<long>> CreateARIInvoiceAdjustmentRequest([FromBody] IEnumerable<ARInvoiceOffsettingCreateDto> data)
-        {
-            var response = new ResponseDto<long>();
-            try
-            {
-                var accountInfo = User.GetAccountBasicInfo();
+
+		[HttpPost("invoice/ari"), Authorize(Roles = "Requestor")]
+		public async Task<ResponseDto<long>> CreateARIInvoiceAdjustmentRequest([FromBody] IEnumerable<ARInvoiceOffsettingCreateDto> data)
+		{
+			var response = new ResponseDto<long>();
+			try
+			{
+				var accountInfo = User.GetAccountBasicInfo();
 
 				var requestCreation = new RequestCreationDto<IEnumerable<ARInvoiceOffsettingCreateDto>>(data, User.GetAccountBasicInfo());
 
@@ -159,21 +193,36 @@ namespace ARAS.Main.SSMS.Api.Controllers
 
 				response.Result = requestId;
 				response.Message = "Request Created Successfully";
-                return response;
-            }
-            catch (Exception ex)
-            {
-                return response.Failed(ex.Message);
-            }
-        }
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
 
-        [HttpGet("approvals/receipt"), Authorize(Roles = "Approver")]
-		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>> GetForApprovals(SearchRequestDto searchRequest)
+		[HttpGet("approvals/receipt"), Authorize(Roles = "Approver")]
+		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>> GetReceiptForApprovals(SearchRequestDto searchRequest)
 		{
 			var response = new ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>();
 			try
 			{
-				response.Result = await _requestRepo.GetAllForApprovalsByType(searchRequest);
+				response.Result = await _requestRepo.GetReceiptAdjustmentApprovals(searchRequest);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("approvals/invoice"), Authorize(Roles = "Approver")]
+		public async Task<ResponseDto<IEnumerable<InvoiceAdjustmentRowDto>>> GetInvoiceForApprovals(SearchRequestDto searchRequest)
+		{
+			var response = new ResponseDto<IEnumerable<InvoiceAdjustmentRowDto>>();
+			try
+			{
+				response.Result = await _requestRepo.GetInvoicedjustmentApprovals(searchRequest);
 				return response;
 			}
 			catch (Exception ex)
@@ -183,13 +232,44 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		}
 
 		[HttpGet("submissions/receipt"), Authorize]
-		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>> GetSubmissions(SearchRequestDto searchRequest)
+		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>> GetReceiptSubmissions(SearchRequestDto searchRequest)
 		{
 			var response = new ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>();
 			try
 			{
 				var accountInfo = User.GetAccountBasicInfo();
-				response.Result = await _requestRepo.GetSubmissions(searchRequest, accountInfo.Role, accountInfo.FullName);
+				response.Result = await _requestRepo.GetReceiptAdjustmentSubmissions(searchRequest, accountInfo.Role, accountInfo.FullName);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("submissions/invoice"), Authorize]
+		public async Task<ResponseDto<IEnumerable<InvoiceAdjustmentRowDto>>> GetInvoiceSubmissions(SearchRequestDto searchRequest)
+		{
+			var response = new ResponseDto<IEnumerable<InvoiceAdjustmentRowDto>>();
+			try
+			{
+				var accountInfo = User.GetAccountBasicInfo();
+				response.Result = await _requestRepo.GetInvoiceAdjustmentSubmissions(searchRequest, accountInfo.Role, accountInfo.FullName);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("receipt/{requestId:long}"), Authorize]
+		public async Task<ResponseDto<ReceiptAdjustmentUpdateResponseDto>> GetReceiptAdjustmentById(long requestId)
+		{
+			var response = new ResponseDto<ReceiptAdjustmentUpdateResponseDto>();
+			try
+			{
+				response.Result = await _receiptAdjustmentRepo.GetDetailsById(requestId);
 				return response;
 			}
 			catch (Exception ex)

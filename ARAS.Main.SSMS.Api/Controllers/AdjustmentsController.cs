@@ -64,5 +64,21 @@ namespace ARAS.Main.SSMS.Api.Controllers
 				return response.Failed(ex.Message);
 			}
 		}
+
+		[HttpGet("types/invoice")]
+		public async Task<ResponseDto<IEnumerable<string>>> GetInvoiceAdjustmentTypes()
+		{
+			var response = new ResponseDto<IEnumerable<string>>();
+			try
+			{
+				response.Result = await _adjustmentRepo.GetInvoiceTypes();
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
 	}
 }

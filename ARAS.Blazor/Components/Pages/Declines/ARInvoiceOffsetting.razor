@@ -1,4 +1,4 @@
-﻿@* @page "/declines/ar-invoice-offsetting/{RequestId:long}"
+﻿@page "/declines/ar-invoice-offsetting/{RequestId:long}"
 
 @using ARAS.Blazor.App_Code.Globals
 @using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting
@@ -16,6 +16,7 @@
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
+@inject IARInvoiceOffsettingService ARInvoiceOffsettingService
 @inject IRequestService RequestService
 @inject INoteService NoteService
 @inject ISearchOptionService SearchOptionService
@@ -23,7 +24,7 @@
 <h2>AR Invoice Offsetting</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<SearchInvoiceDetails OnSelectInvoice="OpenAdd" />
+	<SearchInvoiceDetails OnAdd="OpenAdd" OnLoadingChanged="HandleLoadingChanged" OnSearchChanged="HandleSearchChanged" />
 
 	<RadzenRow>
 		<div>
@@ -179,7 +180,7 @@
 
 	public async Task SubmitRequest()
 	{
-		// await ARInvoiceOffsettingService.Update(RequestId, Adjustments, Notes);
+		await ARInvoiceOffsettingService.Update(RequestId, Adjustments, Notes);
 	}
 
 	private void HandleSearchChanged(bool value)
@@ -193,4 +194,3 @@
 	}
 
 }
- *@

@@ -68,6 +68,26 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
+		[HttpPost("notes")]
+		public async Task<ResponseDto<string>> CreateMultipleAdjustmentNotes([FromForm] IEnumerable<NoteRowDto> notes)
+		{
+			var response = new ResponseDto<string>();
+
+			try
+			{
+				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
+				response.Result = await _attachService.CreateAsync(notes, accountId);
+				response.Message = "Notes Created Successfully";
+
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
 		[HttpGet("notes/{requestId:long}")]
 		public async Task<ResponseDto<IEnumerable<NoteRowDto>>> GetNotesByRequestId(long requestId)
 		{

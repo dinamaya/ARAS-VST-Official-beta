@@ -134,39 +134,43 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			return results.Select(r => r.Id);
 		}
 
-        public async Task<IEnumerable<long>> CreateAsync(IEnumerable<ARIAdjustmentCreateDto> data, string createdBy)
-        {
-            var date = DateTime.Now;
+		public async Task<IEnumerable<long>> CreateAsync(IEnumerable<ARIAdjustmentCreateDto> data, string createdBy)
+		{
+			var date = DateTime.Now;
 
-            IList<ARInvoiceOffsetting> results = [];
+			IList<ARInvoiceOffsetting> results = [];
 
-            foreach (var _data in data)
-            {
-                var adjustment = new ARInvoiceOffsetting
-                {
-                    RequestId = _data.RequestId,
-                    InvoiceId = _data.InvoiceNumber, // use as InvoiceId
-                    Amount = _data.AdjustmentAmount,
-                    Type = _data.Type,
+			foreach (var _data in data)
+			{
+				var adjustment = new ARInvoiceOffsetting
+				{
+					RequestId = _data.RequestId,
+					InvoiceId = _data.InvoiceNumber, // use as InvoiceId
+					Amount = _data.AdjustmentAmount,
+					Type = _data.Type,
 
-                    CreatedBy = createdBy,
-                    DateCreated = DateTime.Now,
-                    ModifiedBy = createdBy,
-                    DateModified = DateTime.Now,
-                    IsActive = true
-                };
+					CreatedBy = createdBy,
+					DateCreated = DateTime.Now,
+					ModifiedBy = createdBy,
+					DateModified = DateTime.Now,
+					IsActive = true
+				};
 
-                results.Add(adjustment);
-            }
+				results.Add(adjustment);
+			}
 
-            await _context.AROffsets.AddRangeAsync(results);
-            await _context.SaveChangesAsync();
+			await _context.AROffsets.AddRangeAsync(results);
+			await _context.SaveChangesAsync();
 
-            return results.Select(r => r.Id);
-        }
+			return results.Select(r => r.Id);
+		}
 
-        public async Task<IEnumerable<Adjustment>> GetByRequestId(long requestId) => 
+		public async Task<IEnumerable<Adjustment>> GetByRequestId(long requestId) => 
 			await _context.Adjustments.Where(a => a.RequestId == requestId && a.IsActive).ToListAsync();
+		
+		public async Task<Adjustment> GetOneByRequestId(long requestId) => await _context.Adjustments
+			.FirstOrDefaultAsync(a => a.RequestId == requestId && a.IsActive) ??
+			throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENT);
 
 		public async Task<Adjustment> GetById(long id) => 
 			await _context.Adjustments.Where(a => a.Id == id && a.IsActive).FirstOrDefaultAsync() ?? 
@@ -282,15 +286,34 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		}
 
         public async Task<IEnumerable<string>> GetTypes() => await _context.AdjustmentTypes.AsNoTracking().Select(a => a.Name).ToListAsync();
-        public async Task<IEnumerable<string>> GetReceiptTypes() => await _context.AdjustmentTypes.AsNoTracking()
+        
+		public async Task<IEnumerable<string>> GetReceiptTypes() => await _context.AdjustmentTypes.AsNoTracking()
 			.Where(a => a.Category == "Receipt")
 			.Select(a => a.Name)
 			.ToListAsync();
 
-        public async Task<AdjustmentBasicInfoDto> GetAdjustmentInfoByName(string adjustmentName) =>
+		public async Task<IEnumerable<string>> GetInvoiceTypes() => await _context.AdjustmentTypes.AsNoTracking()
+			.Where(a => a.Category == "Invoice")
+			.Select(a => a.Name)
+			.ToListAsync();
+
+		public async Task<AdjustmentBasicInfoDto> GetAdjustmentInfoByName(string adjustmentName) =>
 			await _context.AdjustmentTypes.AsNoTracking()
 				.Where(x => x.Name.Equals(adjustmentName))
 				.Select(x => new AdjustmentBasicInfoDto(x.Id, x.Code)).FirstOrDefaultAsync() ??
 				throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENTTYPE);
+
+        public async Task<long> UpdateAsync(long requestId, ReceiptAdjustmentUpdateRequestDto data, string modifiedBy)
+        {
+			var adjustment = await GetOneByRequestId(requestId);
+			adjustment.AdjustmentAmount = data.AdjustmentAmount;
+			adjustment.Remarks = data.Remarks;
+			adjustment.DateModified = DateTime.Now;
+			adjustment.ModifiedBy = modifiedBy;
+
+			await _context.SaveChangesAsync();
+
+			return adjustment.Id;
+		}
     }
 }

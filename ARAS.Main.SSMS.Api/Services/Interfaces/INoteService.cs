@@ -3,7 +3,9 @@ using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 
 namespace ARAS.Main.SSMS.Api.Services.Interfaces
 {
-	public interface INoteService : ICreateRepository<NoteCreateDto, string>
+	public interface INoteService : 
+		ICreateRepository<NoteCreateDto, string>,
+		ICreateRepository<IEnumerable<NoteRowDto>, string>
 	{
 		Task<IEnumerable<NoteRowDto>> GetByRequestId(long requestId);
 		Task<AttachmentDto> GetById(string Id);

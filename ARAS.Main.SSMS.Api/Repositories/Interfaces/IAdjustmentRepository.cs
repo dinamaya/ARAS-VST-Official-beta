@@ -9,12 +9,15 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 		ICreateMultipleRepository<AdjustmentCreateDto, long>,
 		ICreateMultipleRepository<APAROffsetCreateDto, long>,
 		ICreateMultipleRepository<ARIAdjustmentCreateDto, long>,
-		ICreateMultipleRepository<ReasonAdjustmentCreateDto, long>
+		ICreateMultipleRepository<ReasonAdjustmentCreateDto, long>,
+		IUpdateRepository<ReceiptAdjustmentUpdateRequestDto, long>
 	{
 		Task<IEnumerable<string>> GetTypes();
 		Task<IEnumerable<string>> GetReceiptTypes();
+		Task<IEnumerable<string>> GetInvoiceTypes();
 		Task<string> GetActivityNameByCode(string adjustmentTypeCode);
 		Task<IEnumerable<Adjustment>> GetByRequestId(long requestId);
+		Task<Adjustment> GetOneByRequestId(long requestId);
 		Task DeactivateDetails(long id);
 		Task DeactivateAllByRequestId(long requestId);
 		Task DeactivateAPARByRequestId(long requestId);

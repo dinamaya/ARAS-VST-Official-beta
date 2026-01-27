@@ -33,7 +33,7 @@
 	{
 		await base.OnInitializedAsync();
 		textFields = ConfigService.GetApproverSearchInvoiceCategories();
-		var adjustmentsTypes = await AdjustmentService.GetAdjustmentTypes();
+		var adjustmentsTypes = await AdjustmentService.GetReceiptTypes();
 		dropdowns = new Dictionary<string, IEnumerable<string>>
 		{
 			{ "Adjustment Type",  adjustmentsTypes},

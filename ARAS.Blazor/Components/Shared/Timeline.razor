@@ -20,12 +20,12 @@
 
 @code {
 	[Parameter] public long RequestId { get; set; }
-	private IEnumerable<TransactionHistoryDto> Transactions { get; set; } = [];
+	[Parameter] public IEnumerable<TransactionHistoryDto>? Transactions { get; set; }
 
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
-		Transactions = await TransactionService.GetHistoryByRequestId(RequestId);
+		Transactions ??= await TransactionService.GetHistoryByRequestId(RequestId);
 
 	}
 }

@@ -114,7 +114,7 @@
 
 	protected override async Task OnInitializedAsync()
 	{
-		ReceiptAdjustmentTypes = (await AdjustmentService.GetReceiptTypes()).Select((t, i) => new AdjustmentTypeSelectBarOption(i, t));
+		ReceiptAdjustmentTypes = (await AdjustmentService.GetInvoiceTypes()).Select((t, i) => new AdjustmentTypeSelectBarOption(i, t));
 		await base.OnInitializedAsync();
 		isReady = true;
 	}

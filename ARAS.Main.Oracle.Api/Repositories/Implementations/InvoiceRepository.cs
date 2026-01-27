@@ -286,5 +286,65 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 			return result;
 		}
-	}
+
+        public async Task<InvoiceDetailsDto> GetOneInvoiceDetails(InvoiceDetailsRequestDto invoice)
+        {
+			if(_config.IsOntest())
+			{
+				return Enumerable.Range(1, 5)
+					.Select(i => new InvoiceDetailsDto
+					{
+						Id = $"INV-{i:000}",
+						InvoiceNumber = $"5{i:00000}",
+						InvoiceAmount = 10000 + (i * 50),
+						InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
+						CustomerName = $"Customer {i}",
+						CustomerNumber = $"CUST-{1000 + i}",
+						DataSource = "AR",
+						InvoiceBalance = i % 5 == 0 ? 0 : i * 100
+					}).FirstOrDefault() ?? throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
+			}
+			await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
+
+			var sql = @"
+				 SELECT   apsa.amount_due_original InvoiceAmount,
+						   apsa.amount_due_remaining InvoiceBalance,
+						   rct.trx_date InvoiceDate,
+						   rct.trx_number InvoiceNumber,
+						   hca.account_name CustomerName,
+						   hca.account_number CustomerNumber,
+						   'AR' DataSource
+					FROM   ra_customer_trx_all rct,
+						   ra_cust_trx_types_all ctt,
+						   hz_cust_accounts hca,
+						   ar_payment_schedules_all apsa
+					WHERE       rct.cust_trx_type_id = ctt.cust_trx_type_id
+						   AND rct.bill_to_customer_id = hca.cust_account_id
+						   AND rct.customer_trx_id = apsa.customer_trx_id
+						   AND TRIM(rct.trx_number) = UPPER(:invnumb)
+						   AND apsa.amount_due_original = :invamnt
+						   AND rct.trx_date = :invdate
+						   AND TRIM(hca.account_name) = UPPER(:custname)
+						   AND hca.account_number = :custnumb
+					ORDER BY   rct.trx_date DESC, rct.trx_number
+				";
+
+			dynamic param = new
+			{
+				invnumb = invoice.InvoiceNumber,
+				invamnt = invoice.InvoiceAmount,
+				invdate = invoice.InvoiceDate.ToDateTime(TimeOnly.MinValue),
+				custname = invoice.CustomerName,
+				custnumb = invoice.CustomerNumber,
+			};
+
+			var result = await conn.QueryAsync<InvoiceDetailsDto>(
+				sql,
+				(object)param,
+				commandTimeout: 120
+			) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+
+			return result.DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate }).FirstOrDefault();
+		}
+    }
 }

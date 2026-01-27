@@ -87,7 +87,7 @@
 
 		</RadzenRow>
 
-		<AttachmentsDatatable Notes="Notes" IsDownloadable=false />
+		<ReceiptAttachmentsDatatable @ref="receiptAttachments" SelectedAdjustmentTypes="selectedAdjustmentTypes" Notes="Notes" IsDownloadable=false />
 		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
 			<button class="btn btn-dark mt-2" @onclick="OnSubmit">
 				Summary
@@ -109,7 +109,7 @@
 	private double RemainingBalance = 0d;
 	private double TotalAdjustmentAmount = 0d;
 	private bool isReady = false;
-
+	private ReceiptAttachmentsDatatable receiptAttachments;
 	protected override async Task OnInitializedAsync()
 	{
 		ReceiptAdjustmentTypes = (await AdjustmentService.GetReceiptTypes()).Select((t, i) => new AdjustmentTypeSelectBarOption(i, t));
@@ -138,15 +138,22 @@
 		Calculate();
 	}
 
-	private void OnAdjustmentTypeSelectionChanged()
+	private async Task OnAdjustmentTypeSelectionChanged()
 	{
 		var allTypes = ReceiptAdjustmentTypes.Select(t => t.Name);
 		var notExisting = allTypes
 			.Where(k => !selectedAdjustmentTypes.Contains(k))
 			.ToList();
 
+		var notesToRemove = Notes
+			.Where(n => !selectedAdjustmentTypes.Contains(n.AdjustmentType))
+			.ToList();
+
 		foreach (var key in notExisting)
 			_adjustments.Remove(key);
+
+		foreach (var note in notesToRemove)
+			await receiptAttachments.OnRemoveNote(note);
 
 		Calculate();
 	}

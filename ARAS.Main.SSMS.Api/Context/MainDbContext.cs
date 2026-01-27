@@ -10,8 +10,8 @@ namespace ARAS.Main.SSMS.Api.Context
 		public virtual DbSet<Adjustment> Adjustments { get; set; }
 		public virtual DbSet<AdjustmentType> AdjustmentTypes { get; set; }
         public virtual DbSet<APAROffset> APAROffsets { get; set; }
-        public virtual DbSet<ARInvoiceOffsetting> AROffsets { get; set; }
-        public virtual DbSet<CNDetails> CNDetails { get; set; }
+		public virtual DbSet<ARInvoiceOffsetting> AROffsets { get; set; }
+		public virtual DbSet<CNDetails> CNDetails { get; set; }
 		public virtual DbSet<Invoice> Invoices { get; set; }
 		public virtual DbSet<Note> Notes { get; set; }
 		public virtual DbSet<Request> Requests { get; set; }
@@ -22,13 +22,17 @@ namespace ARAS.Main.SSMS.Api.Context
         // SQL VIEWS
         public virtual DbSet<AparoffsetRowV> VwAparoffsetRows { get; set; }
 		public virtual DbSet<InvoiceNumbersV> VwInvoiceNumbers { get; set; }
-		public virtual DbSet<NotesV> VwNotes { get; set; }
-		public virtual DbSet<TransactionsHistoryV> VwTransactionsHistory { get; set; }
+
 		public virtual DbSet<RequestAdjustmentsV> VwRequestAdjustments { get; set; }
 		public virtual DbSet<RequestsNumberSourceV> VwRequestsNumberSources { get; set; }
 
 		// NEW SQL VIEWS
+		public virtual DbSet<AdjustmentsV> VwReceiptAdjustments { get; set; }
+		public virtual DbSet<AllAdjustmentRequestLatestStatusV> VwAllAdjustmentRequestLatestStatus { get; set; }
 		public virtual DbSet<LatestReceiptAdjustmentDetailsV> VwLatestReceiptAdjustmentDetails { get; set; }
+		public virtual DbSet<LatestInvoiceAdjustmentsV> VwLatestInvoiceAdjustments { get; set; }
+		public virtual DbSet<NotesV> VwNotes { get; set; }
+		public virtual DbSet<TransactionsHistoryV> VwTransactionsHistory { get; set; }
 
 		public MainDbContext(DbContextOptions<MainDbContext> options) : base(options) { }
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -69,26 +73,46 @@ namespace ARAS.Main.SSMS.Api.Context
 				.HasForeignKey(a => a.RequestId);
 			});
 
-            modelBuilder.Entity<ARInvoiceOffsetting>(entity =>
-            {
-                entity
-                  .HasOne(a => a.Invoice)
-                  .WithMany()
-                  .HasForeignKey(a => a.InvoiceId);
+			modelBuilder.Entity<ARInvoiceOffsetting>(entity =>
+			{
+				entity
+				  .HasOne(a => a.Invoice)
+				  .WithMany()
+				  .HasForeignKey(a => a.InvoiceId);
 
-                entity
-                  .HasOne(a => a.Request)
-                  .WithMany()
-                  .HasForeignKey(a => a.RequestId);
-            });
+				entity
+				  .HasOne(a => a.Request)
+				  .WithMany()
+				  .HasForeignKey(a => a.RequestId);
+			});
 
-            modelBuilder.Entity<Note>()
+			modelBuilder.Entity<Note>()
 			  .HasOne(a => a.Request)
 			  .WithMany()
 			  .HasForeignKey(a => a.RequestId);
 
 
 			// SQL VIEWS
+			modelBuilder.Entity<AdjustmentsV>(entity =>
+			{
+				entity
+					.HasNoKey()
+					.ToView("Adjustments_v");
+
+				entity.Property(e => e.AdjustmentTypeId).HasMaxLength(450);
+			});
+
+			modelBuilder.Entity<AllAdjustmentRequestLatestStatusV>(entity =>
+			{
+				entity
+					.HasNoKey()
+					.ToView("AllAdjustmentRequestLatestStatus_v");
+
+				entity.Property(e => e.AdjustmentCategory)
+					.HasMaxLength(7)
+					.IsUnicode(false);
+			}); 
+			
 			modelBuilder.Entity<LatestReceiptAdjustmentDetailsV>(entity =>
 			{
 				entity
@@ -99,6 +123,15 @@ namespace ARAS.Main.SSMS.Api.Context
 				entity.Property(e => e.UpdaterId).HasMaxLength(250);
 			});
 
+			modelBuilder.Entity<LatestInvoiceAdjustmentsV>(entity =>
+			{
+				entity
+					.HasNoKey()
+					.ToView("LatestInvoiceAdjustments_v");
+
+				entity.Property(e => e.ApproverId).HasMaxLength(250);
+				entity.Property(e => e.UpdaterId).HasMaxLength(250);
+			});
 
 
 			// OLD SQL VIEWS Can Be Remove

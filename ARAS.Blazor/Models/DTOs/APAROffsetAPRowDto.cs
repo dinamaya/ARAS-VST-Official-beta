@@ -16,7 +16,8 @@
             Id = details.Id;
             InvoiceAmount = details.InvoiceAmount;
             InvoiceNumber = details.InvoiceNumber;
-            CustomerName = details.CustomerName;
+            InvoiceDate = details.InvoiceDate;
+			CustomerName = details.CustomerName;
             CustomerNumber = details.CustomerNumber;
         }
     }

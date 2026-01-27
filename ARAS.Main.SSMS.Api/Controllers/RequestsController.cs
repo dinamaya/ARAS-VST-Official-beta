@@ -16,13 +16,15 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		private readonly IRequestRepository _requestRepo;
 		private readonly IBaseReceiptAdjustmentRepository _receiptAdjustmentRepo;
 		private readonly IAPAROffsetRepository _aparRepo;
+		private readonly IAROffsettingRepository _arRepo;
 
-        public RequestsController(ILogger<RequestsController> logger, IRequestRepository requestRepo, IBaseReceiptAdjustmentRepository receiptAdjustmentRepo, IAPAROffsetRepository aparRepo)
+        public RequestsController(ILogger<RequestsController> logger, IRequestRepository requestRepo, IBaseReceiptAdjustmentRepository receiptAdjustmentRepo, IAPAROffsetRepository aparRepo, IAROffsettingRepository arRepo)
         {
             _logger = logger;
             _requestRepo = requestRepo;
             _receiptAdjustmentRepo = receiptAdjustmentRepo;
             _aparRepo = aparRepo;
+            _arRepo = arRepo;
         }
 
         [HttpGet("details/{requestId:long}"), Authorize]
@@ -155,7 +157,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		}
 
 		[HttpPost("invoice/arr"), Authorize(Roles = "Requestor")]
-		public async Task<ResponseDto<long>> CreateInvoiceAdjusmentRequest([FromBody] IEnumerable<APAROffsetCreateDto> data)
+		public async Task<ResponseDto<long>> CreateARRInvoiceAdjusmentRequest([FromBody] IEnumerable<APAROffsetCreateDto> data)
 		{
 			var response = new ResponseDto<long>();
 			try
@@ -165,6 +167,29 @@ namespace ARAS.Main.SSMS.Api.Controllers
 				var requestCreation = new RequestCreationDto<IEnumerable<APAROffsetCreateDto>>(data, User.GetAccountBasicInfo());
 
 				long requestId = await _aparRepo.Create(requestCreation, accountInfo.Id);
+
+				response.Result = requestId;
+				response.Message = "Request Created Successfully";
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
+
+
+		[HttpPost("invoice/ari"), Authorize(Roles = "Requestor")]
+		public async Task<ResponseDto<long>> CreateARIInvoiceAdjustmentRequest([FromBody] IEnumerable<ARInvoiceOffsettingCreateDto> data)
+		{
+			var response = new ResponseDto<long>();
+			try
+			{
+				var accountInfo = User.GetAccountBasicInfo();
+
+				var requestCreation = new RequestCreationDto<IEnumerable<ARInvoiceOffsettingCreateDto>>(data, User.GetAccountBasicInfo());
+
+				long requestId = await _arRepo.Create(requestCreation, accountInfo.Id);
 
 				response.Result = requestId;
 				response.Message = "Request Created Successfully";

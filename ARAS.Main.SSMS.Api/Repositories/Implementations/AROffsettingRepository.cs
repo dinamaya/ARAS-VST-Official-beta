@@ -33,7 +33,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
                 IList<ARIAdjustmentCreateDto> adjustments = [];
 
-                string adjustmentTypeId = (await _adjustmentRepo.GetAdjustmentInfoByCode("ARR")).Id;
+                string adjustmentTypeId = (await _adjustmentRepo.GetAdjustmentInfoByCode("OFR")).Id;
                 var requestId = await _requestRepo.CreateAsync(adjustmentTypeId, createdBy);
 
                 var transaction = new TransactionCreateDto(requestId, "Pending");

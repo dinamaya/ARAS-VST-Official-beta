@@ -2,6 +2,7 @@
 using ARAS.Blazor.App_Code.Globals.Enums;
 using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Services.Interfaces;
+using Azure.Core;
 
 namespace ARAS.Blazor.Services.Implementations
 {
@@ -18,6 +19,7 @@ namespace ARAS.Blazor.Services.Implementations
             _noteService = noteService;
         }
 
+        public async Task<bool> IsUpdatable(long requestId) => await IsOnStatus(requestId, "is-updatable");
         public async Task<bool> IsApprovable(long requestId) => await IsOnStatus(requestId, "is-approvable");
 		public async Task<bool> IsValidatable(long requestId) => await IsOnStatus(requestId, "is-validatable");
 		public async Task<bool> IsDeclined(long requestId) => await IsOnStatus(requestId, "is-declined");
@@ -67,7 +69,6 @@ namespace ARAS.Blazor.Services.Implementations
 			return response.Result;
 		}
 
-
 		public async Task<IEnumerable<InvoiceAdjustmentRowDto>> GetInvoiceAdjustmentRequests(SearchRequestDto data)
 		{
 			var response = await _baseService.SendAsync<IEnumerable<InvoiceAdjustmentRowDto>>(new RequestDto<SearchRequestDto>()
@@ -85,7 +86,6 @@ namespace ARAS.Blazor.Services.Implementations
 
 			return response.Result;
 		}
-
 
 		public async Task<IEnumerable<ReceiptAdjustmentRowDto>> GetReceiptAdjustmentSubmissions(SearchRequestDto data)
         {
@@ -142,12 +142,13 @@ namespace ARAS.Blazor.Services.Implementations
 
 		public async Task Create(IEnumerable<BaseReceiptAdjustmentCreateDto> row, IEnumerable<NoteRowDto> notes)
 		{
-			var createResult = await _baseService.SendAsync<string>(new RequestDto<IEnumerable<BaseReceiptAdjustmentCreateDto>>()
-			{
-				ApiType = ApiType.POST,
-				URL = _configService.GetRequestsUrl("receipt"),
-				Data = row
-			},
+
+			var createResult = await _baseService.SendAsync<IEnumerable<ReceiptAdjustmentCreateResponseDto>>(new RequestDto<IEnumerable<BaseReceiptAdjustmentCreateDto>>()
+				{
+					ApiType = ApiType.POST,
+					URL = _configService.GetRequestsUrl("receipt"),
+					Data = row
+				},
 				onSuccessSendCallBack: (resp) =>
 				{
 					Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to create request" + resp.Message);
@@ -155,12 +156,31 @@ namespace ARAS.Blazor.Services.Implementations
 				}
 			);
 
-			//await _noteService.Create(createResult.Result, notes);
+			foreach(var note in notes)
+				note.Id = createResult.Result.Where(r => r.AdjustmentTypeCode == note.AdjustmentType).FirstOrDefault()?.RequestId.ToString() ?? string.Empty;
+
+			await _noteService.Create(notes);
 		}
 
-		public Task Update(long requestId, IEnumerable<BaseReceiptAdjustmentCreateDto> row, IEnumerable<NoteRowDto> notes)
+		public async Task Update(long requestId, ReceiptAdjustmentUpdateRequestDto row, IEnumerable<NoteRowDto> notes)
 		{
-			throw new NotImplementedException();
+			if(row.AdjustmentAmount != 0 || !string.IsNullOrEmpty(row.Remarks) )
+			{
+				var createResult = await _baseService.SendAsync<long>(new RequestDto<ReceiptAdjustmentUpdateRequestDto>()
+				{
+					ApiType = ApiType.PUT,
+					URL = _configService.GetRequestsUrl($"receipt/{requestId}"),
+					Data = row
+				},
+					onSuccessSendCallBack: (resp) =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to update request" + resp.Message);
+						return Task.CompletedTask;
+					}
+				);
+			}
+
+			await _noteService.Create(requestId, notes);
 		}
 
 		public async Task ApproveReceiptAdjustmentRequests(IEnumerable<long> data) => await UpdateAdjustmentStatus(data, _configService.GetApprovalsUrl());
@@ -184,5 +204,5 @@ namespace ARAS.Blazor.Services.Implementations
 				});
 		}
 
-	}
+    }
 }

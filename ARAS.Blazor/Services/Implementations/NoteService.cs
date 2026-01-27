@@ -41,6 +41,27 @@ namespace ARAS.Blazor.Services.Implementations
 				});
 		}
 
+		public async Task Create(IEnumerable<NoteRowDto> notes)
+		{
+
+			await _baseService.SendAsync<string>(
+				new RequestDto()
+				{
+					ApiType = ApiType.POST,
+					URL = _configService.GetFilesUrl($"notes"),
+					Data = notes,
+					ContentType = ContentType.MultipartFormData,
+					FormCollectionName = "notes"
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, resp.Message);
+					});
+				});
+		}
+
 		public async Task<IList<NoteRowDto>> GetRows(long requestId)
 		{
 			var response = await _baseService.SendAsync<IEnumerable<NoteRowDto>>(

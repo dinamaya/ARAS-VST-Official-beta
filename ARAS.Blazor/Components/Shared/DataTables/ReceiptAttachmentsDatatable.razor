@@ -66,8 +66,8 @@
 						</RadzenDataGridColumn>
 						<RadzenDataGridColumn Property="@nameof(NoteRowDto.Remarks)" Title="Remarks" />
 						<RadzenDataGridColumn Property="@nameof(NoteRowDto.AttachmentName)" Title="Attachment Name" />
-						<RadzenDataGridColumn Visible="ShowOtherColumns" Property="@nameof(NoteRowDto.DateUploaded)" Title="Date Created" />
-						<RadzenDataGridColumn Visible="ShowOtherColumns" Property="@nameof(NoteRowDto.Uploader)" Title="Uploader" />
+						<RadzenDataGridColumn Visible="ShowOtherColumns" Property="@nameof(NoteRowDto.DateUploaded)" Title="Date Uploaded" />
+						<RadzenDataGridColumn Visible="ShowOtherColumns" Property="@nameof(NoteRowDto.Uploader)" Title="Uploaded By" />
 						<RadzenDataGridColumn Property="@nameof(NoteRowDto.AdjustmentType)" Title="Adjustment Type" />
 					</Columns>
 				</RadzenDataGrid>
@@ -122,6 +122,8 @@
 		Notes.Remove(data);
 		await dataGrid.Reload();
 	}
+
+	public async Task OnRemoveNote(NoteRowDto data) => await RemoveNote(data);
 
 	private async Task DownloadAttachment(string noteId, string attachmentName)
 	{

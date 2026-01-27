@@ -1,4 +1,4 @@
-﻿@page "/updates/cdr/{RequestId:long}"
+﻿@page "/updates/receipt/{TypeCode}/{RequestId:long}"
 @using ARAS.Blazor.App_Code.Globals
 @using ARAS.Blazor.Components.Shared.DataTables
 @using ARAS.Blazor.Models.Complex
@@ -6,35 +6,77 @@
 @using ARAS.Blazor.Repositories.Interfaces
 @using ARAS.Blazor.Components.Shared.Others
 @using ARAS.Blazor.Components.Shared.Summaries
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 
 @inherits ComponentBase
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
 @inject IRequestService RequestService
 @inject IInvoiceService InvoiceService
+@inject IQueryService QueryService
+@inject IAuthService AuthService
 
-<h2>Cash Discount</h2>
+<h2>@adjustmentName</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 	@if (isReady)
 	{
 		<RadzenRow>
-			<RadzenColumn Size="12" SizeLG="4">
+			<RadzenColumn Size="12" SizeLG="@(isUpdatable && role == "Requestor" ? 4 : 6)">
 				<InvoiceSummary InvoiceDetails="invoice"/>
 			</RadzenColumn>
-			<RadzenColumn Size="12" SizeLG="8">
-				<CardStandard HeaderIcon="update" HeaderText="Update Adjustment">
-					<BodyTtemplate>
-						<CreateCashDiscountAdjustment 
-							InitialRemarks="@details.Remarks"
-							InitialDiscount="@details.AdjustmentAmount"
-							InitialDiscountType="2"
-							InvoiceAmount="@invoice.InvoiceAmount"
-							InvoiceBalance="@invoice.InvoiceBalance" 
-							RemarksRowCount="11" />
-					</BodyTtemplate>
-				</CardStandard>
-			</RadzenColumn>
+			@if (isUpdatable && role == "Requestor")
+			{
+				<RadzenColumn Size="12" SizeLG="8">
+					<CardStandard HeaderIcon="edit" HeaderText="Update Adjustment">
+						<BodyTtemplate>
+							@if(TypeCode == "cdr")
+							{
+								<CreateCashDiscountAdjustment 
+									AdjustmentAmountChanged="HandleAdjustment"
+									InitialRemarks="@details.Remarks"
+									InitialDiscount="@details.AdjustmentAmount"
+									InitialDiscountType="2"
+									InvoiceAmount="@invoice.InvoiceAmount"
+									InvoiceBalance="@invoice.InvoiceBalance"
+									RemarksRowCount="11" />
+							}
+							else
+							{
+								<BaseReceiptAdjustment 
+									AdjustmentName="@adjustmentName" 
+									IsAdjustable="true" 
+									InitialRemarks="@details.Remarks"
+									InitialAdjustment="@details.AdjustmentAmount"
+									AdjustmentAmountChanged="HandleAdjustment" />
+							}
+						</BodyTtemplate>
+					</CardStandard>
+				</RadzenColumn>
+			}
+			else
+			{
+				<RadzenColumn Size="12" SizeLG="6">
+					<CardStandard HeaderIcon="update" HeaderText="Update Adjustment">
+						<BodyTtemplate>
+							<RadzenColumn Size="12" class="mt-3 mt-lg-0">
+								<h4 class="mb-3">Other Information</h4>
+								<RadzenRow Gap="1em" class="border-0 p-3 border-radius-md bg-gray-100">
+									<RadzenColumn Size="12" SizeXL="6" SizeXS="12">
+										<div class="mb-2 text-sm">Discount Percentage: <div class="text-dark font-weight-bold ms-2">@(invoice.InvoiceAmount == 0 ? 0 : Math.Round((details.AdjustmentAmount / invoice.InvoiceAmount) * 100, 2)) %</div></div>
+										<div class="mb-2 text-sm">Discount Value: <div class="text-dark font-weight-bold ms-2">@details.AdjustmentAmount</div></div>
+									</RadzenColumn>
+									<RadzenColumn Size="12" SizeXL="6" SizeXS="12">
+										<div class="mb-2 text-sm">Remarks: </div>
+										<RadzenTextArea class="w-100" Disabled="true" Value="@details.Remarks"/>
+									</RadzenColumn>
+								</RadzenRow>
+							</RadzenColumn>
+						</BodyTtemplate>
+					</CardStandard>
+				</RadzenColumn>
+			}
 		</RadzenRow>
 		
 		<RadzenRow>
@@ -46,36 +88,68 @@
 			</RadzenColumn>
 		</RadzenRow>
 
-		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-			<RadzenRow>
-				<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
-					Submit
-				</button>
-			</RadzenRow>
-		</RadzenStack>
+		@if (isUpdatable)
+		{
+			<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+				<RadzenRow>
+					<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
+						Submit
+					</button>
+				</RadzenRow>
+			</RadzenStack>
+		}
 	}
 </RadzenStack>
 
 	@code {
 	[Parameter] public long RequestId { get; set; }
+	[Parameter] public string TypeCode { get; set; }
 
 	private RequestAuditDto requestAudit;
 	private ReceiptAdjustmentUpdateResponseDto details;
 	private InvoiceDetailsDto invoice;
-	private CreateCashDiscountAdjustment cashDiscount;
+	private ReceiptAdjustmentUpdateRequestDto data;
 
 	private bool isOnSearch;
 	private bool isLoading;
 	private bool isReady;
 	private bool isCashDiscountInitialized;
+	private bool isUpdatable;
+	private string role;
+	private string adjustmentName;
 
 	protected override async Task OnInitializedAsync()
 	{
 		isReady = false;
-		await base.OnInitializedAsync();
-		details = await RequestService.GetReceiptDetails(RequestId);
 
-		invoice = await InvoiceService.GetDetails(details.Invoice);
+		switch(TypeCode)
+		{
+			case "cdr":
+				adjustmentName = "Cash Discount";
+				isCashDiscountInitialized = true;
+				break;
+			case "bca":
+				adjustmentName = "Bank Charge";
+				isCashDiscountInitialized = true;
+				break;
+			case "sar":
+				adjustmentName = "Write";
+				break;
+		};
+
+		try
+		{
+			await base.OnInitializedAsync();
+			details = await RequestService.GetReceiptDetails(RequestId);
+			role = await AuthService.GetRole();
+			isUpdatable = await RequestService.IsUpdatable(RequestId);
+			data = new();
+			invoice = await InvoiceService.GetDetails(details.Invoice);
+		}
+		catch(Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Initialization Failed");
+		}
 		isReady = true;
 	}
 
@@ -83,14 +157,27 @@
 	{
 		try
 		{
+
 			// Guards.ThrowInvalidOperationIf(!adjustments.Any(), "Can't submit request because there are no adjustment in the current request");
 			Guards.ThrowInvalidOperationIf(isLoading, "Can't submit request while search operation is ongoing");
+			bool isConfirmed = await DialogService.Confirm("Are you sure you want to submit the changes of the current request?", "Update Submit Confirmation") ?? false;
 
+			if (!isConfirmed) return;
+
+			await RequestService.Update(RequestId, data, details.Notes);
+			var uri = QueryService.GetCurrentUrl(false);
+			NavigationManager.NavigateTo(uri, true);
 		}
 		catch (Exception ex)
 		{
 			await DialogService.Alert(ex.Message, "Request Submission Failed");
 		}
+	}
+
+	private void HandleAdjustment(AdjustmentEntry entry)
+	{
+		data.AdjustmentAmount = entry.Amount;
+		data.Remarks = entry.Remarks;
 	}
 
 	private void HandleSearchChanged(bool value) => isOnSearch = value;

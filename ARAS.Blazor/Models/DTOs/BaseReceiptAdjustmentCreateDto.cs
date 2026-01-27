@@ -13,6 +13,7 @@ namespace ARAS.Blazor.Models.DTOs
 		public string CustomerNumber { get; set; }
 		public string Remarks { get; set; }
 
+		public BaseReceiptAdjustmentCreateDto() { }
 		public BaseReceiptAdjustmentCreateDto(string adjustmentTypeName, InvoiceDetailsDto invoiceDetails, ReceiptAdjustmentEntry adjumentEntry)
 		{
 			AdjustmentType = adjustmentTypeName;

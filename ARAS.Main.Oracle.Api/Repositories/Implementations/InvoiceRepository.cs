@@ -291,7 +291,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
         {
 			if(_config.IsOntest())
 			{
-				return Enumerable.Range(1, 100)
+				return Enumerable.Range(1, 5)
 					.Select(i => new InvoiceDetailsDto
 					{
 						Id = $"INV-{i:000}",
@@ -302,13 +302,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 						CustomerNumber = $"CUST-{1000 + i}",
 						DataSource = "AR",
 						InvoiceBalance = i % 5 == 0 ? 0 : i * 100
-					})
-					.Where(l => l.InvoiceNumber == invoice.InvoiceNumber &&
-						l.InvoiceAmount == invoice.InvoiceAmount &&
-						DateOnly.FromDateTime(l.InvoiceDate) == invoice.InvoiceDate &&
-						l.CustomerName == invoice.CustomerName &&
-						l.CustomerNumber == invoice.CustomerNumber
-					).FirstOrDefault() ?? throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
+					}).FirstOrDefault() ?? throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
 			}
 			await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
 

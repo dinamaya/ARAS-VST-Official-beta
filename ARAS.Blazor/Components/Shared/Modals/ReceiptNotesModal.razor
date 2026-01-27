@@ -1,0 +1,192 @@
+﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.UI
+@using ARAS.Blazor.Components.UI.Buttons
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Main.SSMS.Api.Models.Dtos
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Globalization
+
+@inject IAttachmentService AttachementService
+@inject IJSRuntime JS
+@inject DialogService DialogService
+
+
+<RadzenStack>
+
+	<RadzenRow JustifyContent="JustifyContent.Center" Gap="0.5rem">
+		<RadzenColumn Size="12">
+			<RadzenFormField class="w-100" Text="Adjustment Type" Variant="@Variant.Outlined" Max>
+				<RadzenDropDown Data="SelectedAdjustmentTypes" @bind-Value="@NoteDetails.AdjustmentType" />
+			</RadzenFormField>
+			<ComponentValidator ValidationName="@nameof(NoteDetails.AdjustmentType)" />
+		</RadzenColumn>
+	</RadzenRow>
+
+	<RadzenRow JustifyContent="JustifyContent.Center" Gap="0.5rem">
+		<RadzenColumn Size="12">
+			<div>
+				<InputFile @ref="hiddenInput"
+						   OnChange="OnChange"
+						   style="opacity:0; position:absolute; width:0; height:0;"
+						   multiple="false" />
+
+			</div>
+			@if (NoteDetails.AttachmentData == null)
+			{
+				<div @onclick="@OpenFileBrowser"
+					 class="adv-file-upload border-dashed border-2 border-secondary border-radius-lg p-5 h-auto"
+					 style="cursor: pointer;">
+					<div class="d-flex align-items-center justify-content-center">
+						<div class="icon-shape shadow text-center border-radius-md">
+							<div>
+								<RadzenIcon Icon="upload" IconColor="#4F4D55" />
+							</div>
+						</div>
+						<div class="px-3">
+							<div>
+								Click to <b>Browse and Upload Files</b>
+							</div>
+							<div>
+								@FileUploadRequirements.AllowTypesMessage
+							</div>
+						</div>
+					</div>
+				</div>
+			}
+			else
+			{
+				<div class="border border-1 border-secondary border-radius-lg p-3 h-auto">
+					<div class="d-flex align-items-center justify-content-between">
+						<div class="d-flex align-items-center p-3 justify-content-start" style="width: 90%; overflow-x: hidden;">
+							<span class="pe-3">
+								<div class="icon-shape shadow text-center border-radius-md">
+									<div>
+										<RadzenIcon Icon="image" IconColor="#4F4D55" />
+									</div>
+								</div>
+							</span>
+							<div class="d-flex align-items-start flex-column">
+								<div>
+									<b>Filename: </b> <span>@NoteDetails.AttachmentName</span>
+								</div>
+								<div>
+									<b>Size: </b> <span>@NoteDetails.AttachmentSize?.ToString("N0", CultureInfo.InvariantCulture)</span> kb
+								</div>
+							</div>
+						</div>
+						<div>
+							<div>
+								<RadzenButton Icon="delete" Variant="Variant.Text" IconColor="red" Click="RemoveAttachment" />
+							</div>
+						</div>
+					</div>
+				</div>
+			}
+		</RadzenColumn>
+		<ComponentValidator ValidationName="@nameof(NoteDetails.Remarks)" />
+	</RadzenRow>
+
+	<RadzenRow JustifyContent="JustifyContent.Center" Gap="0.5rem">
+		<RadzenColumn Size="12">
+			<RadzenFormField class="w-100" Text="Remarks" Variant="@Variant.Outlined" Max>
+				<RadzenTextArea @bind-Value="@NoteDetails.Remarks" Rows="2" />
+			</RadzenFormField>
+			<ComponentValidator ValidationName="@nameof(NoteDetails.Remarks)" />
+		</RadzenColumn>
+	</RadzenRow>
+
+	<RadzenRow JustifyContent="JustifyContent.End" Gap="0.5rem">
+		<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+			<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-outline-dark">
+				Close
+			</button>
+			<SubmitButton Title="Add" Click="Add" />
+		</RadzenStack>
+	</RadzenRow>
+</RadzenStack>
+
+<style>
+	.adv-file-upload:hover {
+		background: #F8F8F8;
+	}
+</style>
+
+<script>
+	window.triggerFileInputClick = (element) => {
+		if (element) element.click();
+	};
+</script>
+
+@code {
+	[Parameter] public IEnumerable<string> SelectedAdjustmentTypes { get; set; }
+	[Parameter] public Func<NoteRowDto, Task> OnAdd { get; set; }
+	[Parameter] public FileUploadRequirementsDto FileUploadRequirements { get; set; } = new();
+	private NoteRowDto NoteDetails = new();
+	private InputFile hiddenInput;
+	private long maxMbSize = 0;
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+		maxMbSize = FileUploadRequirements.MaxSize * 1024 * 1024; // Convert 10MB to bytes
+	}
+
+	private async Task OpenFileBrowser()
+	{
+		await JS.InvokeVoidAsync("triggerFileInputClick", hiddenInput.Element);
+	}
+
+	private async Task Add()
+	{
+		try
+		{
+			Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(NoteDetails.AdjustmentType), "Can't Add Note. Please select an adjustment type to bind or assign the note");
+			Guards.ThrowInvalidOperationIf((NoteDetails.AttachmentData == null && string.IsNullOrEmpty(NoteDetails.Remarks)), "Can't Add Note. Please provide either an attachment or remarks");
+
+			await OnAdd?.Invoke(NoteDetails);
+			DialogService.Close(true);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(Exceptions.GetMessage(ex));
+		}
+
+	}
+
+	private async Task OnChange(InputFileChangeEventArgs args)
+	{
+		try
+		{
+			var file = args.File;
+			string ext = Path.GetExtension(file.Name).ToLower();
+			Guards.ThrowInvalidOperationIf(!FileUploadRequirements.AllowedTypes.Any(t => t.Equals(ext)), $"Incorrect file format. Please choose another file with the following formats {FileUploadRequirements.AllowTypesMessage}");
+			Guards.ThrowNullReferenceIf(file, "Attachment is either broken or empty.");
+
+			Guards.ThrowInvalidOperationIf(file.Size > maxMbSize, $"The uploaded file exceeded {FileUploadRequirements.MaxSize}Mb. Please choose another file");
+
+			using var stream = file.OpenReadStream(maxMbSize);
+			using var ms = new MemoryStream();
+			await stream.CopyToAsync(ms);
+
+			NoteDetails.AttachmentData = ms.ToArray();
+			NoteDetails.AttachmentName = file.Name;
+			NoteDetails.AttachmentSize = file.Size / 1024; // convert bytes to KB
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(Exceptions.GetMessage(ex));
+		}
+	}
+
+	private async Task RemoveAttachment()
+	{
+		try
+		{
+			NoteDetails = new();
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(Exceptions.GetMessage(ex));
+		}
+	}
+}

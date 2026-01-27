@@ -339,30 +339,6 @@
 				message = "AR Group contains an invalid row.";
 				return false;
 			}
-
-			// if (ar.RowType == ARRowType.Invoice)
-			// {
-			// 	if (string.IsNullOrWhiteSpace(ar.InvoiceNumber))
-			// 	{
-			// 		message = "AR Group: Invoice number is required for invoice rows.";
-			// 		return false;
-			// 	}
-			// }
-			// else
-			// {
-			// 	if (string.IsNullOrWhiteSpace(ar.AdjustmentReason))
-			// 	{
-			// 		message = "AR Group: Adjustment reason is required for adjustment rows.";
-			// 		return false;
-			// 	}
-			// }
-
-			// if (ar.InvoiceAmount == 0.0)
-			// {
-			// 	var id = ar.RowType == ARRowType.Invoice ? ar.InvoiceNumber : ar.AdjustmentReason;
-			// 	message = $"AR Group: Amount must not be 0.00 for '{id ?? "unknown"}'.";
-			// 	return false;
-			// }
 		}
 
 		return true;

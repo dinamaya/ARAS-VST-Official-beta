@@ -54,7 +54,7 @@
 		await base.OnInitializedAsync();
 		isApprovable = await RequestService.IsApprovable(RequestId);
 		var request = await RequestService.GetRequestDetails(RequestId);
-		rows = await ARInvoiceOffsettingService.GetAdjustments(RequestId);
+		// rows = await ARInvoiceOffsettingService.GetAdjustments(RequestId);
 		notes = await NoteService.GetRows(RequestId);
 
 		requestAudit = new RequestAuditDto(request);
@@ -65,7 +65,7 @@
 		bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"APPROVE\" this request?", "Approve Request") ?? false;
 		if (!isConfirmed) return;
 
-		await ARInvoiceOffsettingService.Approve(RequestId, notes);
+		// await ARInvoiceOffsettingService.Approve(RequestId, notes);
 		NavigationManager.NavigateTo("/approvals/ar-invoice-offsetting", true);
 	}
 
@@ -91,7 +91,7 @@
 			RequestId = RequestId
 		};
 
-		await ARInvoiceOffsettingService.Decline(createDto, notes);
+		// await ARInvoiceOffsettingService.Decline(createDto, notes);
 		NavigationManager.NavigateTo("/approvals/ar-invoice-offsetting", true);
 	}
 
@@ -118,7 +118,7 @@
 			RequestId = RequestId
 		};
 
-		await ARInvoiceOffsettingService.Reject(createReject, notes);
+		// await ARInvoiceOffsettingService.Reject(createReject, notes);
 		NavigationManager.NavigateTo("/approvals/ar-invoice-offsetting", true);
 	}
 }

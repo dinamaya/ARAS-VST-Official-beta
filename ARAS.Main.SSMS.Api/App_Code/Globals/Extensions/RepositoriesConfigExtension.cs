@@ -14,6 +14,7 @@ namespace ARAS.Main.SSMS.Api.App_Code.Globals.Extensions
 
 			services.AddScoped<IBaseReceiptAdjustmentRepository, BaseReceiptAdjustmentRepository>();
 			services.AddScoped<IAPAROffsetRepository, APAROffsetRepository>();
+			services.AddScoped<IAROffsettingRepository, AROffsettingRepository>();
 			services.AddScoped<IAdjustmentRepository, AdjustmentRepository>();
 			services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 			services.AddScoped<IRequestRepository, RequestRepository>();

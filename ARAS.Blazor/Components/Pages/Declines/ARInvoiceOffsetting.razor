@@ -105,7 +105,7 @@
 	{
 		await base.OnInitializedAsync();
 
-		Adjustments = (await ARInvoiceOffsettingService.GetAdjustments(RequestId)).ToList();
+		// Adjustments = (await ARInvoiceOffsettingService.GetAdjustments(RequestId)).ToList();
 		searchedInvoiceNumber = new InvoiceDetailsDto();
 		var request = await RequestService.GetRequestDetails(RequestId);
 		Notes = await NoteService.GetRows(RequestId);

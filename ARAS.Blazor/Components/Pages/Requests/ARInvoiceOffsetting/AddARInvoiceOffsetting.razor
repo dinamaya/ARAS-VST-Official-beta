@@ -1,52 +1,41 @@
 ﻿@using ARAS.Blazor.App_Code.Globals
-@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Components.UI
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
-@using ARAS.Blazor.Components.Shared.DataTables
-
 @inherits ComponentBase
 @inject DialogService DialogService
 
 <RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
-	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
-		<RadzenFormField Text="Invoice Number to adjust" Variant="@Variant.Outlined">
-			<RadzenTextBox @bind-Value="@InvoiceDetails.InvoiceNumber" ReadOnly />
-		</RadzenFormField>
-
-		<ComponentValidator ValidationName="@nameof(ARInvoiceOffsettingCreateValidationDto.InvoiceNumber)" />
+	<RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
+		<InvoiceDetailsSummary InvoiceDetails="InvoiceDetails" />
 	</RadzenStack>
 
-
-	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
-		<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
-			<RadzenTextArea @bind-Value="@remarks" Rows="4" />
-		</RadzenFormField>
-		<ComponentValidator ValidationName="@nameof(ARInvoiceOffsettingCreateValidationDto.Remarks)" />
-	</RadzenStack>
-
-	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
-		<SearchInvoiceCNDetails OnCnInvoicesChanged="HandleCnInvoicesChanged" OnSearchChanged="(isOnSearch) => null" OnLoadingChanged="(isLoading) => null" />
-	</RadzenStack>
-
-	<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
-		<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
+	<RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Style="width:100%;">
+		<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger d-flex justify-content-start">
 			Close
 		</button>
-		<button @onclick="OnAdd" class="btn btn-outline-primary">
-			Add
-		</button>
+		<div class="d-flex gap-2 ms-auto">
+			<button @onclick="OnAddAR" class="btn btn-outline-primary">
+				Add to AR
+			</button>
+			<button @onclick="OnAddCN" class="btn btn-outline-primary">
+				Add to CN/Sales
+			</button>
+		</div>
 	</RadzenStack>
 </RadzenStack>
 
 @code {
 
-	[Parameter] public IList<ARInvoiceOffsettingRowDto> Rows { get; set; }
-	[Parameter] public RadzenDataGrid<ARInvoiceOffsettingRowDto> Grid { get; set; }
+	[Parameter] public IList<ARInvoiceOffsettingRowDto> ARRows { get; set; }
+	[Parameter] public IList<ARInvoiceOffsettingCNDetailsDto> CNRows { get; set; }
+	[Parameter] public RadzenDataGrid<ARInvoiceOffsettingRowDto> ARGrid { get; set; }
+	[Parameter] public RadzenDataGrid<ARInvoiceOffsettingCNDetailsDto> CNGrid { get; set; }
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
 
-	private RadzenDataGrid<InvoiceDetailsDto> dataGrid;
-	private IList<InvoiceDetailsDto> cnInvoices = new List<InvoiceDetailsDto>();
+
+	private IEnumerable<string> invoices = new List<string>();
 	private string remarks = string.Empty;
 
 	protected override async Task OnInitializedAsync()
@@ -60,23 +49,28 @@
 
 	}
 
-	private async Task OnAdd()
+	private async Task OnAddAR()
 	{
 		try
 		{
-			bool isInvoiceDiscounted = Rows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
+			bool isInvoiceAdded = ARRows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
 
-			Guards.ThrowInvalidOperationIf(isInvoiceDiscounted, $"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the AR Offsetting adjustment table");
+			Guards.ThrowInvalidOperationIf(isInvoiceAdded, $"Invoice Number {InvoiceDetails.InvoiceNumber} has already been added");
 
-			var row = new ARInvoiceOffsettingRowDto(
-				remarks ?? string.Empty,
-				InvoiceDetails
-			);
-			row.CNInvoices = cnInvoices; // Pass the CN Invoices of Search CNInvoice Details Razor here
+			if (ARRows.Any())
+			{
+				var firstInvoice = ARRows.First();
+				if (firstInvoice.CustomerNumber != InvoiceDetails.CustomerNumber)
+				{
+					throw new InvalidOperationException("All invoices must belong to the same customer.");
+				}
+			}
 
-			Rows.Add(row);
+			var row = new ARInvoiceOffsettingRowDto("", InvoiceDetails);
 
-			await Grid.Reload();
+			ARRows.Add(row);
+
+			await ARGrid.Reload();
 			DialogService.Close(true);
 		}
 		catch (Exception ex)
@@ -85,9 +79,33 @@
 		}
 	}
 
-	private Task HandleCnInvoicesChanged(IList<InvoiceDetailsDto> invoices)
+	private async Task OnAddCN()
 	{
-		cnInvoices = invoices;
-		return Task.CompletedTask;
+		try
+		{
+			bool isInvoiceAdded = CNRows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
+
+			Guards.ThrowInvalidOperationIf(isInvoiceAdded, $"Invoice Number {InvoiceDetails.InvoiceNumber} has already been added");
+
+			if (CNRows.Any())
+			{
+				var firstInvoice = CNRows.First();
+				if (firstInvoice.CustomerNumber != InvoiceDetails.CustomerNumber)
+				{
+					throw new InvalidOperationException("All invoices must belong to the same customer.");
+				}
+			}
+
+			var row = new ARInvoiceOffsettingCNDetailsDto(InvoiceDetails);
+
+			CNRows.Add(row);
+
+			await CNGrid.Reload();
+			DialogService.Close(true);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(Exceptions.GetMessage(ex), "Add Adjustment Failed");
+		}
 	}
 }

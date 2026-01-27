@@ -9,23 +9,9 @@
         public string InvoiceNumber { get; set; } = string.Empty;
         public string CustomerName { get; set; } = string.Empty;
         public string CustomerNumber { get; set; } = string.Empty;
-        public string ReasonCode { get; set; } = string.Empty;
-        public string Remarks { get; set; } = string.Empty;
 
         public ARInvoiceOffsettingRowDto()
         {
-        }
-
-        public ARInvoiceOffsettingRowDto(string remarks)
-        {
-            SetValues(remarks);
-        }
-
-        public void SetValues(string remarks)
-        {
-            Remarks = remarks;
-            AdjustmentActivity = "AR Invoice Offsetting";
-            ReasonCode = "Offsetting";
         }
     }
 }

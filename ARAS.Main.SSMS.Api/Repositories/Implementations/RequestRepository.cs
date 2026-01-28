@@ -271,9 +271,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			{
 				case "REQUESTOR":
 					return query.Where(t => (t.RequestorFirstName + " " + t.RequestorLastName).ToUpper() == name);
-				case "APPROVER":
-					return query.Where(t => (t.ApproverFirstName + " " + t.ApproverLastName).ToUpper() == name);
-				case "VALIDATOR":
+				case "VALIDATOR" or "APPROVER":
 					return query;
 				default:
 					throw new Exception(Exceptions.INVALID_ROLE);
@@ -303,9 +301,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			{
 				case "REQUESTOR":
 					return query.Where(t => (t.RequestorFirstName + " " + t.RequestorLastName).ToUpper() == name);
-				case "APPROVER":
-					return query.Where(t => (t.ApproverFirstName + " " + t.ApproverLastName).ToUpper() == name);
-				case "VALIDATOR":
+				case "VALIDATOR" or "APPROVER":
 					return query;
 				default:
 					throw new Exception(Exceptions.INVALID_ROLE);

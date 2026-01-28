@@ -107,5 +107,40 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
         {
             throw new NotImplementedException();
         }
-    }
+
+		public async Task<APAROffsetRowDto> GetAPAdjustmentsByRequestId(long requestId)
+		{
+			return new APAROffsetRowDto()
+			{
+				APGroup = await _context.VwAparoffsetRows.AsNoTracking()
+					.Where(r => r.Type == "AP" && r.RequestiD == requestId && r.IsActive)
+					.Select(r => new APAROffsetAPRowDto()
+					{
+						Id = r.Id.ToString(),
+						InvoiceAmount = r.InvoiceAmount,
+						InvoiceNumber = r.InvoiceNumber,
+						InvoiceDate = r.InvoiceDate,
+						CustomerName = r.CustomerName,
+						CustomerNumber = r.CustomerNumber,
+					})
+				.ToListAsync(),
+				ARGroup = await _context.VwAparoffsetRows.AsNoTracking()
+					 .Where(r => r.Type == "AR" && r.RequestiD == requestId && r.IsActive)
+					 .Select(r => new APAROffsetARRowDto()
+					 {
+						 Id = r.Id.ToString(),
+						 Amount = r.InvoiceAmount,
+						 InvoiceNumber = r.InvoiceNumber,
+						 AdjustmentReason = r.ReasonCode,
+						 RowType = !string.IsNullOrEmpty(r.ReasonCode)
+						   ? ARRowType.Adjustment
+						  : ARRowType.Invoice,
+
+						 CustomerName = r.CustomerName,
+						 CustomerNumber = r.CustomerNumber
+					 })
+					.ToListAsync()
+			};
+		}
+	}
 }

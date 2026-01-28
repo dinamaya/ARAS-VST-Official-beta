@@ -81,6 +81,11 @@
 						</RadzenDataGridColumn>
 						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.CustomerName)" Title="Customer Name" />
 						<RadzenDataGridColumn Width="140px" Property="@nameof(InvoiceAdjustmentRowDto.RequestId)" Title="Ref. No." />
+						<RadzenDataGridColumn Width="140px" Property="@nameof(InvoiceAdjustmentRowDto.Status)" Title="Status">
+							<Template Context="data">
+								<StatusBadge Status="@data.Status" Style="font-size: 12px;" />
+							</Template>
+						</RadzenDataGridColumn>
 						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.InvoiceNumber)" Title="Invoice Number" />
 						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.AdjustmentType)" Title="Adjustment Type" />
 						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.Requestor)" Title="Requestor" />
@@ -89,11 +94,6 @@
 						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.DateApproved)" Title="Date Approved" />
 						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.Creator)" Title="Updated By" />
 						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.DateCreated)" Title="Date Updated" />
-						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.Status)" Title="Status">
-							<Template Context="data">
-								<StatusBadge Status="@data.Status" Style="font-size: 12px;" />
-							</Template>
-						</RadzenDataGridColumn>
 					</Columns>
 				</RadzenDataGrid>
 			}

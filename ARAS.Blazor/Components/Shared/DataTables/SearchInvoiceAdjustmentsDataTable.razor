@@ -94,6 +94,11 @@
 						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.DateApproved)" Title="Date Approved" />
 						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.Creator)" Title="Updated By" />
 						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.DateCreated)" Title="Date Updated" />
+						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.Status)" Title="Status">
+							<Template Context="data">
+								<StatusBadge Status="@data.Status" Style="font-size: 12px;" />
+							</Template>
+						</RadzenDataGridColumn>
 					</Columns>
 				</RadzenDataGrid>
 			}

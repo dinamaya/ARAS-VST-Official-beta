@@ -61,7 +61,8 @@ namespace ARAS.Blazor.Services.Implementations
 					});
 				});
 
-			return arResponse.Result;
+			//return arResponse.Result;
+			return null;
 		}
 
 		private static List<APAROffsetCreateDto> ToCreateDto(IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows)

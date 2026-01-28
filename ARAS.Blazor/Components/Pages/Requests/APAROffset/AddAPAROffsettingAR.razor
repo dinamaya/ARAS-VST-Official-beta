@@ -23,9 +23,11 @@
 
 @code {
 
-	[Parameter] public IList<APAROffsetAPRowDto> Rows { get; set; }
-	[Parameter] public RadzenDataGrid<APAROffsetAPRowDto> Grid { get; set; }
+	[Parameter] public IList<APAROffsetARRowDto> Rows { get; set; }
+	[Parameter] public RadzenDataGrid<APAROffsetARRowDto> Grid { get; set; }
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
+
+	[Parameter] public IList<APAROffsetAPRowDto> APRows { get; set; }
 
 	private IEnumerable<string> invoices = new List<string>();
 	private string remarks = string.Empty;
@@ -47,18 +49,27 @@
 		{
 			bool isInvoiceDiscounted = Rows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
 
-			Guards.ThrowInvalidOperationIf(isInvoiceDiscounted, $"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the AR Offsetting adjustment table");
+			Guards.ThrowInvalidOperationIf(isInvoiceDiscounted, $"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the AP Offsetting adjustment table");
 
-			if (Rows.Any())
+			var firstInvoiceRow = Rows.FirstOrDefault(r => r.RowType == ARRowType.Invoice && !string.IsNullOrWhiteSpace(r.CustomerNumber));
+			if (firstInvoiceRow is not null)
 			{
-				var firstInvoice = Rows.First();
-				if (firstInvoice.CustomerNumber != InvoiceDetails.CustomerNumber)
+				if (firstInvoiceRow.CustomerNumber != InvoiceDetails.CustomerNumber)
 				{
 					throw new InvalidOperationException("All invoices must belong to the same customer.");
 				}
 			}
 
-			var row = new APAROffsetAPRowDto(InvoiceDetails);
+			// if (APRows != null && APRows.Any())
+			// {
+			// 	var firstAP = APRows.First();
+			// 	if (firstAP.CustomerName != InvoiceDetails.CustomerName)
+			// 	{
+			// 		throw new InvalidOperationException("Selected AR invoice must belong to the same customer as the AP group.");
+			// 	}
+			// }
+
+			var row = new APAROffsetARRowDto(InvoiceDetails);
 
 			Rows.Add(row);
 

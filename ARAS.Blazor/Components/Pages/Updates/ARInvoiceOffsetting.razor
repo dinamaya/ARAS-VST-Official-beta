@@ -1,0 +1,353 @@
+﻿@page "/updates/invoice/ofr/{RequestId:long}"
+
+@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting
+@using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting.Modal
+@using ARAS.Blazor.Components.Shared.Modals
+@using ARAS.Blazor.Components.Shared.Summaries
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Implementations
+@using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Components.Shared.DataTables
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize]
+@inherits ComponentBase
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inject IQueryService QueryService
+@inject IAuthService AuthService
+@inject IARInvoiceOffsettingService ARInvoiceOffsettingService
+@inject IRequestService RequestService
+@inject INoteService NoteService
+
+<h2>AR Invoice Offsetting</h2>
+
+<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+	<SearchInvoiceDetails OnSelectInvoice="OpenAdd" />
+
+	<RadzenRow Gap="1.5rem">
+		<RadzenColumn Size="6">
+			<div class="text-center pb-3">
+				<h3 class="pb-0 mb-0">AR GROUP</h3>
+			</div>
+			<div class="py-4 px-3 w-100 card">
+				<RadzenDataGrid @ref="arGrid"
+								AllowFiltering="false"
+								AllowColumnResize="true"
+								AllowAlternatingRows="false"
+								AllowSorting="true"
+								PageSize="20"
+								AllowPaging="true"
+								PagerHorizontalAlign="HorizontalAlign.Left"
+								ShowPagingSummary="true"
+								Data="@ARInvoice"
+								LogicalFilterOperator="LogicalFilterOperator.Or"
+								SelectionMode="DataGridSelectionMode.Single">
+					<Columns>
+						<RadzenDataGridColumn Property="@nameof(ARInvoiceOffsettingRowDto.InvoiceNumber)" Title="Invoice No.">
+							<FooterTemplate>
+								<b>Total Amount:</b>
+							</FooterTemplate>
+						</RadzenDataGridColumn>
+
+						<RadzenDataGridColumn Property="@nameof(ARInvoiceOffsettingRowDto.CustomerName)" Title="Customer Name">
+							<Template Context="data">
+								@((string.IsNullOrWhiteSpace(data.CustomerName) ? data.CustomerNumber : data.CustomerName))
+							</Template>
+						</RadzenDataGridColumn>
+
+						<RadzenDataGridColumn Property="@nameof(ARInvoiceOffsettingRowDto.InvoiceAmount)" Title="Amount">
+							<Template Context="data">
+								@data.InvoiceAmount.ToPhp()
+							</Template>
+							<FooterTemplate>
+								<b>@ARInvoice?.Sum(a => a.InvoiceAmount).ToPhp()</b>
+							</FooterTemplate>
+						</RadzenDataGridColumn>
+
+						<RadzenDataGridColumn TItem="ARInvoiceOffsettingRowDto" Context="data" TextAlign="TextAlign.Right">
+							<Template Context="data">
+								<RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Click="@(async args => await OnRemoveARRow(data))" />
+							</Template>
+						</RadzenDataGridColumn>
+
+					</Columns>
+				</RadzenDataGrid>
+			</div>
+		</RadzenColumn>
+		<RadzenColumn Size="6">
+			<div class="text-center pb-3">
+				<h3 class="pb-0 mb-0">CN/Sales Invoices</h3>
+			</div>
+
+			<div class="py-4 px-3 w-100 card">
+				<RadzenDataGrid TItem="ARInvoiceOffsettingCNDetailsDto"
+								@ref="cnGrid"
+								Data="@CNInvoice"
+								AllowFiltering="false"
+								AllowPaging="false"
+								AllowSorting="false"
+								EditMode="DataGridEditMode.Single"
+								ShowPagingSummary="false"
+								LogicalFilterOperator="LogicalFilterOperator.Or"
+								SelectionMode="DataGridSelectionMode.Single">
+
+
+
+					<Columns>
+						<RadzenDataGridColumn TItem="ARInvoiceOffsettingCNDetailsDto" Title="Invoice No.">
+							<Template Context="data">
+								<div>@data.InvoiceNumber</div>
+							</Template>
+
+							<FooterTemplate>
+								<b>Total Amount:</b>
+							</FooterTemplate>
+
+							<EditTemplate Context="data">
+								<div>@data.InvoiceNumber</div>
+							</EditTemplate>
+						</RadzenDataGridColumn>
+
+						<RadzenDataGridColumn TItem="ARInvoiceOffsettingCNDetailsDto" Title="Customer Name">
+							<Template Context="data">
+								<div>@data.CustomerName</div>
+							</Template>
+						</RadzenDataGridColumn>
+
+						<RadzenDataGridColumn TItem="ARInvoiceOffsettingCNDetailsDto" Property="Amount" Title="Amount">
+							<Template Context="data">
+								@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+							</Template>
+							<EditTemplate Context="data">
+								<div style="position: relative; z-index: 1;">
+									<RadzenNumeric @bind-Value="data.InvoiceAmount"
+												   Name="@($"Amount_{data.Id}")"
+												   Style="width:100%"
+												   Step="0.01" />
+								</div>
+
+								<RadzenRequiredValidator Component="@($"Amount_{data.Id}")"
+														 Text="Amount is required"
+														 Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
+
+
+							</EditTemplate>
+
+							<FooterTemplate>
+								<b>@CNInvoice.Sum(a => a.InvoiceAmount).ToString("C2", new System.Globalization.CultureInfo("en-PH"))</b>
+							</FooterTemplate>
+						</RadzenDataGridColumn>
+
+						<RadzenDataGridColumn TItem="ARInvoiceOffsettingCNDetailsDto" Context="data" TextAlign="TextAlign.Right">
+							<Template Context="data">
+								<RadzenButton Icon="delete"
+											  Size="ButtonSize.Small"
+											  ButtonStyle="ButtonStyle.Danger"
+											  Click="@(() => OnRemoveCNRow(data))" />
+							</Template>
+						</RadzenDataGridColumn>
+					</Columns>
+				</RadzenDataGrid>
+			</div>
+
+		</RadzenColumn>
+	</RadzenRow>
+
+	<AttachmentsDatatable Notes="Notes" IsDownloadable=false />
+
+	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+
+		<RadzenRow>
+			<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
+				Submit
+			</button>
+		</RadzenRow>
+	</RadzenStack>
+</RadzenStack>
+
+@code {
+	[Parameter] public long RequestId { get; set; }
+
+	[Parameter] public IList<ARInvoiceOffsettingRowDto> ARInvoice { get; set; }
+	[Parameter] public IList<ARInvoiceOffsettingCNDetailsDto> CNInvoice { get; set; }
+	private IList<NoteRowDto> Notes { get; set; } = new List<NoteRowDto>();
+
+	private InvoiceDetailsDto searchedInvoiceNumber;
+	private RadzenDataGrid<ARInvoiceOffsettingCNDetailsDto> cnGrid;
+	private RadzenDataGrid<ARInvoiceOffsettingRowDto> arGrid;
+
+	private bool isOnSearch;
+	private bool isLoading;
+	private bool isReady = false;
+	private bool isUpdatable = false;
+	private bool isRequestUpdatable => isUpdatable && role == "Requestor";
+	private string role;
+
+	// track newly added rows so we can remove them on cancel if they remain empty
+	private HashSet<string> newlyAddedRowIds = new();
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+
+		CNInvoice = new List<ARInvoiceOffsettingCNDetailsDto>();
+		ARInvoice = new List<ARInvoiceOffsettingRowDto>();
+		searchedInvoiceNumber = new InvoiceDetailsDto();
+
+		role = await AuthService.GetRole();
+		isReady = true;
+		isUpdatable = await RequestService.IsUpdatable(RequestId);
+		Notes = await NoteService.GetRows(RequestId);
+		StateHasChanged();
+
+		if (cnGrid is not null)
+			await cnGrid.Reload();
+	}
+
+	public async Task OpenAdd(InvoiceDetailsDto invoiceDetails)
+	{
+		await DialogService.OpenAsync<AddARInvoiceOffsetting>(
+			"Confirm AR Invoice Number",
+			new Dictionary<string, object>()
+			{
+				{ "ARRows", ARInvoice },
+				{ "ARGrid", arGrid },
+				{ "CNRows", CNInvoice },
+				{ "CNGrid", cnGrid },
+				{ "InvoiceDetails", invoiceDetails },
+
+			},
+			new DialogOptions() { Width = "800px", Height = "auto" }
+		);
+	}
+
+	public async Task OnSubmit()
+	{
+		try
+		{
+			Guards.ThrowInvalidOperationIf(!ARInvoice.Any(), "Can't submit request because there are no adjustment in the current request");
+			Guards.ThrowInvalidOperationIf(isLoading, "Can't submit request while search operation is ongoing");
+
+			// row-level validation before opening modal
+			if (!ValidateARRows(out var message))
+			{
+				await DialogService.Alert(message, "Validation Failed");
+				return;
+			}
+
+			var arTotal = ARInvoice.Sum(a => a.InvoiceAmount);
+			var cnTotal = Math.Round(CNInvoice.Sum(a => a.InvoiceAmount), 2);
+
+			Guards.ThrowInvalidOperationIf((arTotal != cnTotal), "AR and CN/Sales Invoice amounts must balance.");
+
+			await SubmitRequest();
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Submission Failed");
+		}
+	}
+
+	public async Task SubmitRequest()
+	{
+		await ARInvoiceOffsettingService.Create(ARInvoice, CNInvoice);
+
+		var uri = QueryService.GetCurrentUrl(false);
+		NavigationManager.NavigateTo(uri, true);
+	}
+
+	private void HandleSearchChanged(bool value)
+	{
+		isOnSearch = value;
+	}
+
+	private void HandleLoadingChanged(bool value)
+	{
+		isLoading = value;
+	}
+
+	private async Task AddInvoiceRow()
+	{
+		var newRow = new ARInvoiceOffsettingRowDto
+		{
+			Id = Guid.NewGuid().ToString(),
+			InvoiceNumber = string.Empty,
+			InvoiceAmount = 0.00d
+		};
+
+		ARInvoice.Add(newRow);
+		newlyAddedRowIds.Add(newRow.Id);
+		await arGrid.Reload();
+		await arGrid.EditRow(newRow);
+	}
+
+	private async Task OnRemoveARRow(ARInvoiceOffsettingRowDto item)
+	{
+		ARInvoice.Remove(item);
+		newlyAddedRowIds.Remove(item?.Id);
+		await arGrid.Reload();
+		StateHasChanged();
+	}
+
+	private async Task OnRemoveCNRow(ARInvoiceOffsettingCNDetailsDto item)
+	{
+		CNInvoice.Remove(item);
+		await cnGrid.Reload();
+	}
+
+	private async Task CancelEditRow(ARInvoiceOffsettingCNDetailsDto data)
+	{
+		cnGrid.CancelEditRow(data);
+
+		if (data != null && !string.IsNullOrEmpty(data.Id) && newlyAddedRowIds.Contains(data.Id))
+		{
+			if (IsRowEffectivelyEmpty(data))
+			{
+				CNInvoice.Remove(data);
+				newlyAddedRowIds.Remove(data.Id);
+				await cnGrid.Reload();
+			}
+			else
+			{
+				newlyAddedRowIds.Remove(data.Id);
+			}
+		}
+	}
+
+	private bool IsRowEffectivelyEmpty(ARInvoiceOffsettingCNDetailsDto row)
+	{
+		if (row == null)
+		{
+			return true;
+		}
+		else
+		{
+			return (row.InvoiceAmount == 0.0);
+		}
+	}
+
+	private bool ValidateARRows(out string message)
+	{
+		message = string.Empty;
+
+		if (ARInvoice == null || !ARInvoice.Any())
+		{
+			message = "AR Group has no rows.";
+			return false;
+		}
+
+		foreach (var ar in ARInvoice)
+		{
+			if (ar == null)
+			{
+				message = "AR Group contains an invalid row.";
+				return false;
+			}
+		}
+
+		return true;
+	}
+}

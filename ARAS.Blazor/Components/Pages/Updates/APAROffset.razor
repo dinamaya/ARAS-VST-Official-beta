@@ -2,6 +2,7 @@
 
 @using ARAS.Blazor.App_Code.Globals
 @using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Components.Pages.Requests.APAROffset
 @using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting
 @using ARAS.Blazor.Components.Pages.Requests.APAROffset.Modal
 @using ARAS.Blazor.Components.Shared.Modals
@@ -271,7 +272,6 @@
 	private InvoiceDetailsDto searchedInvoiceNumber;
 	private RadzenDataGrid<APAROffsetAPRowDto> apGrid;
 	private RadzenDataGrid<APAROffsetARRowDto> arGrid;
-	private RequestAuditDto requestAudit;
 
 	private bool isOnSearch;
 	private bool isLoading;
@@ -292,12 +292,8 @@
 		var adjustments = await APAROffsetService.GetAdjustments(RequestId);
 		APAdjustments = adjustments.APGroup.ToList();
 		ARAdjustments = adjustments.ARGroup.ToList();
-
 		searchedInvoiceNumber = new InvoiceDetailsDto();
-		requestAudit = new RequestAuditDto();
-
 		reasonCodes = await SearchOptionService.GetReasonCodes();
-		requestAudit.Requestor = await AuthService.GetLastFirstName();
 		role = await AuthService.GetRole();
 		isReady = true;
 		isUpdatable = await RequestService.IsUpdatable(RequestId);

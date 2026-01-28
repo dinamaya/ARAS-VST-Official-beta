@@ -128,13 +128,10 @@
 	[Parameter, SupplyParameterFromQuery(Name = "sd")] public string? StartDate { get; set; }
 
 	[Parameter, SupplyParameterFromQuery(Name = "ed")] public string? EndDate { get; set; }
-
+	[Parameter, SupplyParameterFromQuery(Name = "token")] public string? Token { get; set; }
 	private bool isOnSearch { get; set; }
 	private bool isLoading { get; set; }
-	private string? _lastValue;
-	private string? _lastCategory;
-	private string? _lastStartDate;
-	private string? _lastEndDate;
+	private string? _lastToken;
 
 	private SearchRequestDto searchRequest;
 	private IList<string> categories;
@@ -174,13 +171,10 @@
 		if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(category))
 			return;
 
-		if (value == _lastValue && category == _lastCategory && startDate == _lastStartDate && endDate == _lastEndDate)
+		if (Token == _lastToken)
 			return;
 
-		_lastValue = value;
-		_lastCategory = category;
-		_lastStartDate = startDate;
-		_lastEndDate = endDate;
+		_lastToken = Token;
 
 		searchRequest.Value = value;
 		searchRequest.Category = category;
@@ -221,10 +215,13 @@
 	private async Task Navigate()
 	{
 		var param = new Dictionary<string, object>();
+		var token = Guid.NewGuid().ToString("N");
+
 		param.Add("c", searchRequest.Category);
 		param.Add("v", searchRequest.Value);
 		param.Add("sd", searchRequest.StartDate.ToString());
 		param.Add("ed", searchRequest.EndDate.ToString());
+        param.Add("token", token);
 
 		Nav.NavigateTo(Nav.GetUriWithQueryParameters(param));
 	}
@@ -248,6 +245,9 @@
 
 		if (searchRequest.EndDate > DateOnly.FromDateTime(DateTime.Today))
 			searchRequest.EndDate = DateOnly.FromDateTime(DateTime.Today);
+
+		if (searchRequest.EndDate < searchRequest.StartDate)
+			searchRequest.EndDate = searchRequest.StartDate;
 	}
 
 	private async Task OnEndDateChanged(DateOnly value)

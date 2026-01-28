@@ -231,20 +231,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.FirstOrDefaultAsync();
 		}
 
-        public async Task<ReportsDto> GetTransactionRequestForReport()
-        {
-            return await _context.VwLatestRequestTransactions
-				.OrderByDescending(t => t.DateRequested)
-				.Select(t => new ReportsDto
-				{
-					RequestNumber = t.RequestNumber ?? string.Empty,
-					AdjustmentTypeCode = t.AdjustmentTypeCode ?? string.Empty,
-					DateRequested = t.DateRequested,
-					Status = t.Status ?? string.Empty
-				})
-				.FirstOrDefaultAsync() ?? new ReportsDto();
-        }
-
         private static string ValidateFullName(string fName, string lName) =>
 			string.IsNullOrEmpty(lName) && string.IsNullOrEmpty(fName) ? string.Empty : lName + ", " + fName;
 

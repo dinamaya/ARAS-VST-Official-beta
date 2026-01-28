@@ -89,7 +89,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			var response = new ResponseDto<APAROffsetRowDto>();
 			try
 			{
-				response.Result = await _aparOffsetRepo.GetAPAdjustmentsByRequestId(requestId);
+				//response.Result = await _aparOffsetRepo.GetAPAdjustmentsByRequestId(requestId);
 				return response;
 			}
 			catch (Exception ex)

@@ -23,10 +23,10 @@
 	@if (isReady)
 	{
 		<RadzenRow>
-			<RadzenColumn Size="12" SizeLG="@(isUpdatable && role == "Requestor" ? 4 : 6)">
+			<RadzenColumn Size="12" SizeLG="@(isRequestUpdatable ? 4 : 6)">
 				<InvoiceSummary InvoiceDetails="invoice"/>
 			</RadzenColumn>
-			@if (isUpdatable && role == "Requestor")
+			@if (isRequestUpdatable)
 			{
 				<RadzenColumn Size="12" SizeLG="8">
 					<CardStandard HeaderIcon="edit" HeaderText="Update Adjustment">
@@ -117,6 +117,7 @@
 	private bool isUpdatable;
 	private string role;
 	private string adjustmentName;
+    private bool isRequestUpdatable => isUpdatable && role == "Requestor";
 
 	protected override async Task OnInitializedAsync()
 	{

@@ -1,0 +1,267 @@
+﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.App_Code.Globals.Enums
+@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Components.Shared.Summaries
+@using ARAS.Blazor.Models.Complex
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Components.Shared.Skeletons
+
+@inject IConfigService ConfigService
+@inject IInvoiceService InvoiceService
+@inject IQueryService QueryService
+@inject DialogService DialogService
+@inject NavigationManager Nav
+@inherits ComponentBase
+
+<RadzenRow>
+	<div class="px-3 pt-2 pb-0 w-100 card">
+
+		<RadzenRow AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Left" class="w-100" Gap="1rem">
+			@if (OptionsTemplate is not null)
+			{
+				<RadzenColumn Size="12">
+					@OptionsTemplate
+				</RadzenColumn>
+			}
+
+			<RadzenColumn Size="12" SizeLG="10">
+				<RadzenRow class="w-100">
+					@if (categories.First() != searchRequest.Category)
+					{
+
+						<RadzenColumn Size="12" SizeLG="6">
+							<RadzenDropDown TValue="string" Change="(key) => OnCategoryChanged((string)key)" class="w-100 mt-2 pb-1" Data="@categories" @bind-Value="searchRequest.Category" />
+						</RadzenColumn>
+						var option = DropdownFields?.GetValueOrDefault(searchRequest.Category);
+
+						@if (option != null)
+						{
+							<RadzenColumn Size="12" SizeLG="6">
+								<RadzenDropDown ClearSearchAfterSelection="true" class="w-100 mt-2 pb-1" Data="@option" @bind-Value="searchRequest.Value" TValue="string" />
+							</RadzenColumn>
+						}
+						else
+						{
+							<RadzenColumn Size="12" SizeLG="6">
+								<RadzenFormField class="w-100 border-0 mb-2" Text="@categories.FirstOrDefault(c => c == searchRequest.Category)" Variant="Variant.Outlined">
+									<RadzenTextBox @bind-Value="@searchRequest.Value" />
+								</RadzenFormField>
+							</RadzenColumn>
+						}
+					}
+					else
+					{
+						<RadzenColumn Size="12">
+							<RadzenDropDown TValue="string" Change="(key) => OnCategoryChanged((string)key)" class="w-100 mt-2 pb-1" Data="@categories" @bind-Value="searchRequest.Category"/>
+						</RadzenColumn>
+					}
+				</RadzenRow>
+
+				@if (categories.First() != searchRequest.Category)
+				{
+					<RadzenRow class="w-100 pb-3">
+						<RadzenColumn Size="12" SizeMD="6">
+							<RadzenLabel Text="From" Component="StartDate" />
+							<RadzenDatePicker class="w-100"
+											  TValue="DateOnly"
+											  Name="StartDate"
+											  Change="@((args) => OnStartDateChanged(DateOnly.FromDateTime((DateTime)args)))"
+											  @bind-Value="searchRequest.StartDate" />
+						</RadzenColumn>
+
+						<RadzenColumn Size="12" SizeMD="6">
+							<RadzenLabel Text="To" Component="EndDate" />
+							<RadzenDatePicker class="w-100"
+											  TValue="DateOnly"
+											  Name="EndDate"
+											  Change="@((args) => OnEndDateChanged(DateOnly.FromDateTime((DateTime)args)))"
+											  @bind-Value="searchRequest.EndDate" />
+						</RadzenColumn>
+					</RadzenRow>
+				}
+			</RadzenColumn>
+
+			<RadzenColumn Size="12" SizeLG="2">
+				<RadzenContent>
+					@if (!isLoading)
+					{
+						<RadzenButton Text="Search" class="w-100 mt-2 mb-3" Click="Navigate" />
+					}
+					else
+					{
+						<RadzenButton Text="Searching" class="w-100 mt-2 mb-3" Disabled="true" />
+					}
+				</RadzenContent>
+			</RadzenColumn>
+		</RadzenRow>
+	</div>
+</RadzenRow>
+
+@if (isOnSearch)
+{
+	<RadzenRow class="w-100">
+		@ResultTemplate(isLoading)
+	</RadzenRow>
+
+	@if(ChildContent is not null)
+	{	<RadzenRow class="w-100">
+			@ChildContent
+		</RadzenRow>
+	}
+}
+
+@code {
+	[Parameter] public EventCallback<SearchRequestDto> OnSearch { get; set; }
+	[Parameter] public EventCallback<bool> OnSearchChanged { get; set; }
+	[Parameter] public EventCallback<bool> OnLoadingChanged { get; set; }
+	[Parameter] public Dictionary<string, IEnumerable<string>>? DropdownFields { get; set; }
+	[Parameter] public IEnumerable<string> TextFields { get; set; }
+	[Parameter] public RenderFragment? ChildContent { get; set; }
+	[Parameter] public RenderFragment? OptionsTemplate { get; set; }
+	[Parameter] public RenderFragment<bool> ResultTemplate { get; set; }
+
+	[Parameter, SupplyParameterFromQuery(Name = "c")] public string? Category { get; set; }
+
+	[Parameter, SupplyParameterFromQuery(Name = "v")] public string? Value { get; set; }
+
+	[Parameter, SupplyParameterFromQuery(Name = "sd")] public string? StartDate { get; set; }
+
+	[Parameter, SupplyParameterFromQuery(Name = "ed")] public string? EndDate { get; set; }
+	[Parameter, SupplyParameterFromQuery(Name = "token")] public string? Token { get; set; }
+	private bool isOnSearch { get; set; }
+	private bool isLoading { get; set; }
+	private string? _lastToken;
+
+	private SearchRequestDto searchRequest;
+	private IList<string> categories;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		// Combine the keys from both dictionaries to form the categories list
+		categories = [];
+
+		foreach (var key in TextFields)
+			categories.Add(key);
+
+		if(DropdownFields != null)
+		{
+			foreach (var key in DropdownFields.Keys)
+				categories.Add(key);
+		}
+
+		searchRequest = new()
+		{
+			Category = categories.FirstOrDefault(),
+			Value = string.Empty,
+			StartDate = DateOnly.FromDateTime(DateTime.Now.AddYears(-1)),
+			EndDate = DateOnly.FromDateTime(DateTime.Now),
+		};
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+		string value = QueryService.GetValue("v");
+		string category = QueryService.GetValue("c");
+		string startDate = QueryService.GetValue("sd");
+		string endDate = QueryService.GetValue("ed");
+
+		if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(category))
+			return;
+
+		if (Token == _lastToken)
+			return;
+
+		_lastToken = Token;
+
+		searchRequest.Value = value;
+		searchRequest.Category = category;
+		searchRequest.StartDate = DateOnly.Parse(startDate);
+		searchRequest.EndDate = DateOnly.Parse(endDate);
+
+		await SearchInvoice();
+	}
+
+	public async Task SearchInvoice()
+	{
+		await Task.Delay(10);
+		try
+		{
+			Guards.ThrowInvalidOperationIf(searchRequest.Value.Length < 3, "Please provided 3 or more character in the search invoice number field");
+
+			if (isLoading)
+			{
+				await DialogService.Alert("Please wait until the current search operation is complete");
+				return;
+			}
+
+			await SetIsOnSearch(true);
+			await SetIsLoading(true);
+
+			await Fetch();
+		}
+		catch (Exception ex)
+		{
+			await SetIsOnSearch(false);
+			await DialogService.Alert(ex.Message, "Search Invoice Number Details failed");
+		}
+		await SetIsLoading(false);
+	}
+
+	private async Task Fetch() => await OnSearch.InvokeAsync(searchRequest);
+
+	private async Task Navigate()
+	{
+		var param = new Dictionary<string, object>();
+		var token = Guid.NewGuid().ToString("N");
+
+		param.Add("c", searchRequest.Category);
+		param.Add("v", searchRequest.Value);
+		param.Add("sd", searchRequest.StartDate.ToString());
+		param.Add("ed", searchRequest.EndDate.ToString());
+        param.Add("token", token);
+
+		Nav.NavigateTo(Nav.GetUriWithQueryParameters(param));
+	}
+
+	private async Task SetIsOnSearch(bool value)
+	{
+		isOnSearch = value;
+		await OnSearchChanged.InvokeAsync(value);
+	}
+
+	private async Task SetIsLoading(bool value)
+	{
+		isLoading = value;
+		await OnLoadingChanged.InvokeAsync(value);
+	}
+
+	private async Task OnStartDateChanged(DateOnly value)
+	{
+		if (searchRequest.EndDate > searchRequest.StartDate.AddYears(1))
+			searchRequest.EndDate = searchRequest.StartDate.AddYears(1);
+
+		if (searchRequest.EndDate > DateOnly.FromDateTime(DateTime.Today))
+			searchRequest.EndDate = DateOnly.FromDateTime(DateTime.Today);
+
+		if (searchRequest.EndDate < searchRequest.StartDate)
+			searchRequest.EndDate = searchRequest.StartDate;
+	}
+
+	private async Task OnEndDateChanged(DateOnly value)
+	{
+		if (searchRequest.StartDate < searchRequest.EndDate.AddYears(-1))
+			searchRequest.StartDate = searchRequest.EndDate.AddYears(-1);
+
+		if (searchRequest.EndDate < searchRequest.StartDate)
+			searchRequest.StartDate = searchRequest.EndDate;
+	}
+
+	private async Task OnCategoryChanged(string key)
+	{
+		bool isDropdown = DropdownFields?.ContainsKey(key) ?? false;
+		searchRequest.Value = isDropdown ? DropdownFields?.GetValueOrDefault(key).FirstOrDefault() : string.Empty;
+	}
+}

@@ -1,0 +1,5 @@
+﻿@ARAS.Blazor_HostAddress = https://localhost:7252
+
+GET {{ARAS.Blazor_HostAddress}}/api/auth/logout
+
+###

@@ -1,0 +1,102 @@
+﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+@using ARAS.Blazor.Models.DTOs
+
+@page "/ops/accounts"
+@attribute [Authorize]
+@inject IOpsService OpsService
+@inject DialogService DialogService
+
+<h3>Accounts</h3>
+
+<div class="rz-my-12 rz-p-4 w-100 card">
+	@if (_accounts == null)
+	{
+		<RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
+			<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:30px;" />
+			<RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" class="w-100">
+				@for (int i = 0; i < 7; i++)
+				{
+					<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:30px;" />
+				}
+			</RadzenStack>
+			@for (int i = 0; i < 5; i++)
+			{
+				<RadzenStack Orientation="Orientation.Horizontal" Gap="1rem">
+					@for (int j = 0; j < 7; j++)
+					{
+						<RadzenSkeleton Animation="SkeletonAnimation.Wave" class="w-100" Style="height:25px;" />
+					}
+				</RadzenStack>
+			}
+		</RadzenStack>
+	}
+	else
+	{
+		<RadzenDataGrid 
+			@ref=_dataGrid
+			AllowFiltering="true"
+			AllowColumnResize="true"
+			AllowAlternatingRows="false"
+			FilterMode="FilterMode.Advanced"
+			AllowSorting="true"
+			PageSize="5"
+			AllowPaging="true"
+			PagerHorizontalAlign="HorizontalAlign.Left"
+			ShowPagingSummary="true"
+			Data="@_accounts"
+			class="border-0"
+			LogicalFilterOperator="LogicalFilterOperator.Or"
+			SelectionMode="DataGridSelectionMode.Single">
+			<Columns>
+				<RadzenDataGridColumn Title="Option" Sortable="false" Filterable="false" Width="100px" TextAlign="TextAlign.Center">
+					<Template Context="data">
+						<RadzenButton Icon="Edit" Variant="Variant.Outlined" Click="@(args => OpenEditAccount(data))" />
+					</Template>
+				</RadzenDataGridColumn>
+				<RadzenDataGridColumn Property="@nameof(AccountRowDto.FirstName)" Title="First Name"/>
+				<RadzenDataGridColumn Property="@nameof(AccountRowDto.LastName)" Title="Last Name" />
+				<RadzenDataGridColumn Property="@nameof(AccountRowDto.Email)" Title="Email"/>
+				<RadzenDataGridColumn Property="@nameof(AccountRowDto.AccountRole)" Title="Account Role" Width="100px" />
+				<RadzenDataGridColumn Property="@nameof(AccountRowDto.GroupCode)" Title="Group Code" />
+				<RadzenDataGridColumn Property="@nameof(AccountRowDto.IsActive)" Title="Status" Width="130px" />
+			</Columns>
+		</RadzenDataGrid>
+	}
+</div>
+
+<style>
+	tr.rz-data-row:hover {
+		background-color: #DFDFDF6E;
+		transition: background-color 0.2s ease-in-out;
+	}
+</style>
+@code {
+	private RadzenDataGrid<AccountRowDto> _dataGrid;
+	private IEnumerable<AccountRowDto>? _accounts;
+	private IEnumerable<DropdownOptionDto> _roles;
+	private string _accountId = "";
+
+	protected override async Task OnInitializedAsync()
+	{
+		_accounts = null;
+		_accounts = await OpsService.GetAccounts();
+		_roles = await OpsService.GetRoles();
+	}
+
+	private async Task OpenEditAccount(AccountRowDto account)
+	{
+		_accountId = account.Id;
+		await DialogService.OpenAsync<AccountEdit>(
+			"Edit Account",
+			new Dictionary<string, object>()
+			{
+				{ "AccountId", _accountId },
+				{ "Roles", _roles },
+				{ "DataGrid", _dataGrid }
+			},
+			new DialogOptions() { Width = "800px", Height = "auto" }
+		);
+	}
+}

@@ -1,0 +1,47 @@
+﻿<div class="p-0 w-100 card @ContainerClass" style="@ContainerStyle">
+	<div class="card-header shadow-lg @HeaderClass">
+		<RadzenRow>
+			<RadzenColumn Size="12" SizeMD="6" SizeLG="8">
+				@if (string.IsNullOrEmpty(HeaderIcon))
+				{
+					<h3 class="mb-0 d-block">@HeaderText</h3>
+				}
+				else
+				{
+					<div class="d-flex align-items-center">
+						<div class="icon-shape bg-gradient-dark shadow text-center border-radius-md">
+							<div>
+								<RadzenIcon Icon="@HeaderIcon" />
+							</div>
+						</div>
+						<div class="ms-3">
+							<h3 class="mb-0 d-block">@HeaderText</h3>
+						</div>
+					</div>
+				}
+			</RadzenColumn>
+		</RadzenRow>
+	</div>
+	<div class="card-body overflow-auto overflow-x-hidden @BodyClass">
+		@BodyTtemplate
+	</div>
+
+	@if (FooterTtemplate != null)
+	{
+		<div class="card-footer @FooterClass">
+			@FooterTtemplate
+		</div>
+	}
+</div>
+
+@code{
+    [Parameter] public string HeaderText { get; set; } = "Card Header";
+    [Parameter] public string HeaderIcon { get; set; }
+    [Parameter] public RenderFragment BodyTtemplate { get; set; }
+    [Parameter] public RenderFragment? FooterTtemplate { get; set; }
+    [Parameter] public string? ContainerClass { get; set; }
+    [Parameter] public string? ContainerStyle { get; set; }
+    [Parameter] public string? HeaderClass { get; set; }
+    [Parameter] public string? BodyClass { get; set; }
+    [Parameter] public string? FooterClass { get; set; }
+}

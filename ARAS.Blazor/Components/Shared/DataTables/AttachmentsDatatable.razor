@@ -1,0 +1,129 @@
+﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.Shared.Modals
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Main.SSMS.Api.Models.Dtos
+@using ARAS.Blazor.Components.Shared.Skeletons
+
+@inject IAttachmentService AttachementService
+@inject DialogService DialogService
+
+<RadzenRow>
+	<div class="card blur shadow-blur w-100">
+		<div class="card-header shadow-md">
+			<RadzenRow>
+				<RadzenColumn Size="12" SizeMD="6" SizeLG="8">
+					<div class="d-flex align-items-center">
+						<div class="icon-shape bg-gradient-dark shadow text-center border-radius-md">
+							<div>
+								<RadzenIcon Icon="contract_edit" />
+							</div>
+						</div>
+						<div class="ms-3">
+							<h3 class="mb-0 d-block">Notes / Attachments</h3>
+						</div>
+					</div>
+				</RadzenColumn>
+
+				<RadzenColumn Size="12" SizeMD="6" SizeLG="4" class="d-flex align-items-center justify-content-end mt-md-0 mt-3">
+					@if (!isLoading && ShowAddButton)
+					{
+						<button class="btn btn-primary border-1 my-0 px-5 w-100 w-md-auto" @onclick="@(OnAdd)">
+							<i class="fa-regular fa-add d-md-none d-lg-inline-block"></i>
+							<span class="ms-1">Add Notes</span>
+						</button>
+					}
+				</RadzenColumn>
+			</RadzenRow>
+		</div>
+
+		<div class="card-body overflow-auto p-4">
+			@if (isLoading)
+			{
+				<DatatableSkeleton ColumnCount="7" RowCount="3"/>
+			}
+			else
+			{
+				<RadzenDataGrid 
+					@ref=dataGrid
+					class="border-0 mt-3"
+					AllowFiltering="true"
+					AllowColumnResize="true"
+					AllowAlternatingRows="false"
+					FilterMode="FilterMode.Advanced"
+					AllowSorting="true"
+					PageSize="20"
+					AllowPaging="true"
+					PagerHorizontalAlign="HorizontalAlign.Left"
+					ShowPagingSummary="true"
+					Data="@Notes"
+					LogicalFilterOperator="LogicalFilterOperator.Or"
+					SelectionMode="DataGridSelectionMode.Single">
+					<Columns>
+						<RadzenDataGridColumn Frozen="true" Title="Option" Sortable="false" Filterable="false" Width="80px" TextAlign="TextAlign.Center">
+							<Template Context="data">
+								<RadzenButton Visible="(IsDownloadable && !string.IsNullOrEmpty(data.AttachmentName) && !string.IsNullOrEmpty(data.Id))" Icon="download" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Click="@(args => DownloadAttachment(data.Id, data.AttachmentName))" />
+								<RadzenButton Visible="!IsReadOnly && string.IsNullOrEmpty(data.Id)" Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined" Click="@(args => RemoveNote(data))" />
+							</Template>
+						</RadzenDataGridColumn>
+						<RadzenDataGridColumn Property="@nameof(NoteRowDto.Remarks)" Title="Remarks" />
+						<RadzenDataGridColumn Property="@nameof(NoteRowDto.AttachmentName)" Title="Attachment Name" />
+						<RadzenDataGridColumn Visible="ShowOtherColumns" Property="@nameof(NoteRowDto.DateUploaded)" Title="Date Uploaded" />
+						<RadzenDataGridColumn Visible="ShowOtherColumns" Property="@nameof(NoteRowDto.Uploader)" Title="Uploaded By" />
+					</Columns>
+				</RadzenDataGrid>
+			}
+		</div>
+	</div>
+</RadzenRow>
+<script src="@Assets["/js/services/attachmentDownload.js"]"></script>
+
+@code
+{
+	[Parameter] public IList<NoteRowDto> Notes { get; set; }
+	[Parameter] public bool IsReadOnly { get; set; } = false;
+	[Parameter] public bool IsDownloadable { get; set; } = true;
+	[Parameter] public bool ShowOtherColumns { get; set; } = false;
+	[Parameter] public bool ShowAddButton { get; set; } = true;
+
+	private bool isLoading { get; set; } = false;
+	private FileUploadRequirementsDto fileUploadRequirements;
+	private RadzenDataGrid<NoteRowDto> dataGrid;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		fileUploadRequirements = await AttachementService.GetFileUploadRequirements();
+	}
+
+	private async Task OnAdd()
+	{
+		await DialogService.OpenAsync<NotesModal>("Add Notes / Attachments",
+			new Dictionary<string, object>()
+			{
+				{ "FileUploadRequirements", fileUploadRequirements },
+				{ "OnAdd", AddNote },
+			},
+			new DialogOptions() { Width = "600px", Height = "auto" }
+		);
+	}
+
+	private async Task AddNote(NoteRowDto data)
+	{
+		var attachmentAlreadyExist = Notes.Any(n => !string.IsNullOrEmpty(n.AttachmentName) && n.AttachmentName == data.AttachmentName);
+		Guards.ThrowInvalidOperationIf(attachmentAlreadyExist, "Can't attachment note because it is already in the list");
+		Notes.Add(data);
+		await dataGrid.Reload();
+	}
+
+	private async Task RemoveNote(NoteRowDto data)
+	{
+		Notes.Remove(data);
+		await dataGrid.Reload();
+	}
+
+	private async Task DownloadAttachment(string noteId, string attachmentName)
+	{
+		await AttachementService.Download(noteId, attachmentName);
+	}
+
+}

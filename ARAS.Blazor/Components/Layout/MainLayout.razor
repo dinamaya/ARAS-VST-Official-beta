@@ -1,0 +1,57 @@
+﻿@using ARAS.Blazor.Services.Interfaces
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.AspNetCore.Identity
+@using Radzen.Blazor
+@using Radzen
+
+@using ARAS.Blazor.Components.Layout
+
+@inject NavigationManager Navigation
+@inject IAuthService AuthService
+@inherits LayoutComponentBase
+
+<div>
+	<RadzenNotification />
+	<RadzenDialog />
+	<main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg">
+		<RadzenLayout Style="grid-template-areas: 'rz-sidebar rz-header' 'rz-sidebar rz-body'">
+			@if (isAuthenticated)
+			{
+				<NavMenu />
+			}
+
+			<!-- BODY -->
+			<RadzenBody>
+				<div class="px-4">
+					@Body
+				</div>
+			</RadzenBody>
+		</RadzenLayout>
+	</main>
+</div>
+
+@code {
+	bool isAuthenticated = false;
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		isAuthenticated = await AuthService.IsAuthenticated();
+	}
+}
+
+<style>
+
+	.rz-navigation-item, .rz-navigation-item-wrapper {
+		margin: 0.5em 0.6em;
+		border-radius: 0.8em;
+	}
+
+	.rz-navigation-item-wrapper.rz-navigation-item-wrapper-active, .rz-navigation-item-link {
+		border-radius: 0.8em;
+	}
+
+	.rz-panel-menu .rz-navigation-item-wrapper:hover {
+		border-radius: 0.8em;
+	}
+</style>

@@ -1,0 +1,7 @@
+﻿@page "/submissions/apar-offset"
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@inject IAPAROffsetService ReaderService
+
+<BaseAdjustmentSubmission RouteName="apar-offset" Title="AP AR : Offset" RequestSubmissionReader="ReaderService" />

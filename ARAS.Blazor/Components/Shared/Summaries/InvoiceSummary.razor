@@ -1,0 +1,11 @@
+﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Models.DTOs
+
+<CardStandard HeaderText="Invoice Details" ContainerStyle="position: sticky; top: 0;" HeaderIcon="receipt_long">
+	<BodyTtemplate>
+		<InvoiceReceiptDetailsSummary InvoiceDetails="@InvoiceDetails" />
+	</BodyTtemplate>
+</CardStandard>
+@code{
+	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
+}

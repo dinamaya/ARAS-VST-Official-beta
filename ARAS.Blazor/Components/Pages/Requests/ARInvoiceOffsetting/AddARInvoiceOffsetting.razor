@@ -1,0 +1,111 @@
+﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.Shared.Summaries
+@using ARAS.Blazor.Components.UI
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@inherits ComponentBase
+@inject DialogService DialogService
+
+<RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
+	<RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
+		<InvoiceDetailsSummary InvoiceDetails="InvoiceDetails" />
+	</RadzenStack>
+
+	<RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Style="width:100%;">
+		<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger d-flex justify-content-start">
+			Close
+		</button>
+		<div class="d-flex gap-2 ms-auto">
+			<button @onclick="OnAddAR" class="btn btn-outline-primary">
+				Add to AR
+			</button>
+			<button @onclick="OnAddCN" class="btn btn-outline-primary">
+				Add to CN/Sales
+			</button>
+		</div>
+	</RadzenStack>
+</RadzenStack>
+
+@code {
+
+	[Parameter] public IList<ARInvoiceOffsettingRowDto> ARRows { get; set; }
+	[Parameter] public IList<ARInvoiceOffsettingCNDetailsDto> CNRows { get; set; }
+	[Parameter] public RadzenDataGrid<ARInvoiceOffsettingRowDto> ARGrid { get; set; }
+	[Parameter] public RadzenDataGrid<ARInvoiceOffsettingCNDetailsDto> CNGrid { get; set; }
+	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
+
+
+	private IEnumerable<string> invoices = new List<string>();
+	private string remarks = string.Empty;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+
+	}
+
+	private async Task OnAddAR()
+	{
+		try
+		{
+			bool isInvoiceAdded = ARRows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
+
+			Guards.ThrowInvalidOperationIf(isInvoiceAdded, $"Invoice Number {InvoiceDetails.InvoiceNumber} has already been added");
+
+			if (ARRows.Any())
+			{
+				var firstInvoice = ARRows.First();
+				if (firstInvoice.CustomerNumber != InvoiceDetails.CustomerNumber)
+				{
+					throw new InvalidOperationException("All invoices must belong to the same customer.");
+				}
+			}
+
+			var row = new ARInvoiceOffsettingRowDto("", InvoiceDetails);
+
+			ARRows.Add(row);
+
+			await ARGrid.Reload();
+			DialogService.Close(true);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(Exceptions.GetMessage(ex), "Add Adjustment Failed");
+		}
+	}
+
+	private async Task OnAddCN()
+	{
+		try
+		{
+			bool isInvoiceAdded = CNRows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
+
+			Guards.ThrowInvalidOperationIf(isInvoiceAdded, $"Invoice Number {InvoiceDetails.InvoiceNumber} has already been added");
+
+			if (CNRows.Any())
+			{
+				var firstInvoice = CNRows.First();
+				if (firstInvoice.CustomerNumber != InvoiceDetails.CustomerNumber)
+				{
+					throw new InvalidOperationException("All invoices must belong to the same customer.");
+				}
+			}
+
+			var row = new ARInvoiceOffsettingCNDetailsDto(InvoiceDetails);
+
+			CNRows.Add(row);
+
+			await CNGrid.Reload();
+			DialogService.Close(true);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(Exceptions.GetMessage(ex), "Add Adjustment Failed");
+		}
+	}
+}

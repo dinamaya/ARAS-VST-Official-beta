@@ -1,0 +1,57 @@
+﻿@using ARAS.Blazor.Components.Pages.Requests.APAROffset.Summaries
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Components.Pages.Requests
+
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+
+<RadzenStack>
+    <APAROffsetSummary APAdjustments="APAdjustments" ARAdjustments="ARAdjustments" RequestAudit="RequestAudit"/>
+
+    <RadzenStack class="w-100 mt-3" Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Gap="0.5rem">
+        <button @onclick="@Export" class="btn btn-dark">
+            Export
+        </button>
+
+        <RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+            <button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
+                Close
+            </button>
+            <SubmitButton Title="Submit" Click="Submit" DisabledTitle="Submitting" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public IEnumerable<APAROffsetAPRowDto> APAdjustments { get; set; }
+    [Parameter] public IEnumerable<APAROffsetARRowDto> ARAdjustments { get; set; }
+    [Parameter] public IEnumerable<NoteRowDto> Notes { get; set; }
+    [Parameter] public Func<Task> OnSubmit { get; set; }
+    [Parameter] public RequestAuditDto RequestAudit { get; set; }
+    [Parameter] public string SuccessSubmissionRoute { get; set; }
+
+    public async Task Submit()
+    {
+        try
+        {
+            await OnSubmit.Invoke();
+            NavigationManager.NavigateTo(SuccessSubmissionRoute, true);
+        }
+        catch (Exception ex)
+        {
+            await DialogService.Alert(ex.Message, "Request Submission Failed");
+        }
+    }
+
+    public async Task Export()
+    {
+        try
+        {
+            await DialogService.Alert("Can't Export. This is not yet Implemented", "Request Export Failed");
+        }
+        catch (Exception ex)
+        {
+            await DialogService.Alert(ex.Message, "Request Export Failed");
+        }
+    }
+}

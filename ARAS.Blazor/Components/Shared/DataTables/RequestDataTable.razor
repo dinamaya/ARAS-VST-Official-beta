@@ -1,0 +1,108 @@
+﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Components.Shared.Skeletons
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Components.UI.Badges
+
+@inject NavigationManager NavigationManager
+@inject IAuthService AuthService
+
+@inherits ComponentBase
+
+<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+	<RadzenRow>
+		<div class="py-4 px-3 w-100 card">
+			@if (isLoading)
+			{
+				<DatatableSkeleton ColumnCount="7" RowCount="3"/>
+			}
+			else
+			{
+				<RadzenDataGrid class="border-0"
+								AllowFiltering="true"
+								AllowColumnResize="true"
+								AllowAlternatingRows="false"
+								FilterMode="FilterMode.Advanced"
+								AllowSorting="true"
+								PageSize="20"
+								AllowPaging="true"
+								PagerHorizontalAlign="HorizontalAlign.Left"
+								ShowPagingSummary="true"
+								Data="@requests"
+								LogicalFilterOperator="LogicalFilterOperator.Or"
+								SelectionMode="DataGridSelectionMode.Single">
+					<Columns>
+						<RadzenDataGridColumn Frozen="true" Title="Option" Sortable="false" Filterable="false" Width="180px" TextAlign="TextAlign.Center">
+							<Template Context="data">
+								@if (data.Status == "Declined" && accountDetails.IsInRole("Requestor"))
+								{
+									<RadzenButton Icon="edit_document" ButtonStyle="ButtonStyle.Dark" Variant="Variant.Outlined" Text="Update" Click="@(args => OnSelect(data.Status, data.RequestId))" />
+								}
+								else
+								{
+									<RadzenButton Icon="edit_document" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Text="@SelectButtonTitle" Click="@(args => OnSelect(data.Status, data.RequestId))" />
+								}
+							</Template>
+						</RadzenDataGridColumn>
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.RequestNumber)" Width="220px"  Title="Request Number" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Status)" Width="180px" Title="Status">
+							<Template Context="data">
+								<StatusBadge Status="@data.Status" Style="font-size: 0.9em" />
+							</Template>
+						</RadzenDataGridColumn>	
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Requestor)" Width="220px" Title="Requestor" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateRequested)" Width="220px" Title="Date Requested" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Approver)" Width="220px" Title="Approver" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateApproved)" Width="220px" Title="Date Approved" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Validator)" Width="220px" Title="Validator" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateValidated)" Width="220px" Title="Date Validated" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Creator)" Width="220px" Title="Updated By" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateCreated)" Width="220px" Title="Date Updated" />
+					</Columns>
+				</RadzenDataGrid>
+			}
+		</div>
+	</RadzenRow>
+</RadzenStack>
+
+@code 
+{
+	[Parameter] public Func<Task<IEnumerable<TransactionRequestRowDto>>> OnDateLoad { get; set; }
+	[Parameter] public string SelectButtonTitle { get; set; }
+
+	/// <summary>
+	/// When the button is clicked in the datatable it will navigate to that page / route
+	/// </summary>
+	[Parameter] public string ViewRoute { get; set; }
+
+	/// <summary>
+	/// Provide Update Route if there are data with status equals to Declined
+	/// </summary>
+	[Parameter] public string? UpdateRoute { get; set; }
+
+	private IEnumerable<TransactionRequestRowDto> requests { get; set; }
+	private bool isLoading { get; set; } = true;
+	private AccountDetailsDto accountDetails { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		accountDetails = await AuthService.GetAccountDetails();
+		await base.OnInitializedAsync();
+
+		isLoading = true;
+
+		requests = await OnDateLoad.Invoke();
+
+		isLoading = false;
+	}
+
+	protected override async Task OnParametersSetAsync() => await base.OnInitializedAsync();
+
+	private async Task OnSelect(string status, long requestId)
+	{
+		@if (status == "Declined" && accountDetails.IsInRole("Requestor"))
+			NavigationManager.NavigateTo($"/{UpdateRoute}/{requestId}");
+		else
+			NavigationManager.NavigateTo($"/{ViewRoute}/{requestId}");
+	}
+}

@@ -1,0 +1,125 @@
+﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+
+@inherits ComponentBase
+
+@inject IAuthService AuthService
+@inject IConfigService Config
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<!-- SIDEBAR -->
+<RadzenSidebar @bind-Expanded="@sidebarExpanded" class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-3 ps ps--active-y sidebar-container">
+
+	<div class="sidebar-header">
+		<NavLink href="/" class="navbar-brand m-0 px-4 pt-5 pb-4 d-flex align-items-center">
+			<img src="img/icons/icon_vst_sm.svg" style="max-height: 2.5rem;" alt="logo" />
+			<span class="ms-2 fs-6 fw-bold text-dark">AR-<span class="text-primary">Adjustments</span></span>
+		</NavLink>
+		<hr class="horizontal dark mt-0">
+	</div>
+	<!-- Navigation Menu -->
+	<div class="menu-wrapper">
+		<RadzenPanelMenu Style="background: transparent;" class="px-1">
+		<RadzenPanelMenuItem Text="Dashboard" Path="/" Icon="space_dashboard" Style="border: none" />
+		@if (accountDetails.IsInRole("Admin"))
+		{
+			<RadzenPanelMenuItem Text="Operations" Icon="action_key" Style="border: none">
+				<RadzenPanelMenuItem Text="Accounts" Path="/ops/accounts" Style="background: transparent; border: none;" />
+			</RadzenPanelMenuItem>
+		}
+		else if (accountDetails.IsInRole("Requestor"))
+		{
+			<RadzenPanelMenuItem Text="Requests" Icon="assignment_add" Style="border: none">
+				<MenuItem Text="Receipt" Route="/requests/receipt" />
+				<RadzenPanelMenuItem Text="Invoice" Style="border: none">
+					<MenuItem Text="AP-AR" Route="/requests/invoice/apar-offset" />
+					<MenuItem Text="AR Invoice" Route="/requests/invoice/ar-invoice-offsetting" />
+				</RadzenPanelMenuItem>
+			</RadzenPanelMenuItem>
+		}
+		else if (accountDetails.IsInRole("Approver"))
+		{
+			<RadzenPanelMenuItem Text="Approvals" Icon="assignment_turned_in" Style="border: none">
+				<MenuItem Text="Receipt" Route="/approvals/receipt" />
+				<MenuItem Text="Invoice" Route="/approvals/invoice" />
+			</RadzenPanelMenuItem>
+		}
+		<RadzenPanelMenuItem Text="Submissions" Icon="fact_check" Style="border: none">
+			<MenuItem Text="Receipt" Route="/submissions/receipt" />
+			<MenuItem Text="Invoice" Route="/submissions/invoice" />
+		</RadzenPanelMenuItem>
+	</RadzenPanelMenu>
+	</div>
+</RadzenSidebar>
+
+<!-- HEADER / TOP BAR -->
+<RadzenHeader Style="background-color:transparent; box-shadow:none; border:none;">
+	<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Style="width:100%; padding:2.4em 1rem; height:60px; border:none;">
+
+		<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="5">
+			<RadzenSidebarToggle Class="text-primary" Click="@(() => sidebarExpanded = !sidebarExpanded)" />
+		</RadzenStack>
+
+		<RadzenProfileMenu Style="background-color: transparent; box-shadow:none; border-radius: 0.8em;">
+			<Template>
+				<div class="profile-menu d-flex align-items-center">
+					<div class="custom-avatar-square me-3 letter-spacing-2">@avatar</div>
+					<div>
+						<div class="profile-username">@accountDetails.FullName</div>
+						<div class="profile-role">@accountDetails.AccountRole @groupCode</div>
+					</div>
+				</div>
+			</Template>
+			<ChildContent>
+				<RadzenProfileMenuItem Text="Account Profile" Icon="person" />
+				<RadzenProfileMenuItem >
+					<RadzenContent>
+						<RadzenAppearanceToggle />
+					</RadzenContent>
+				</RadzenProfileMenuItem>
+				<div @onclick="Logout">
+					<RadzenProfileMenuItem Text="Logout" Icon="logout" />
+				</div>
+			</ChildContent>
+		</RadzenProfileMenu>
+	</RadzenStack>
+</RadzenHeader>
+
+@code {
+	bool sidebarExpanded = true;
+	string avatar = "";
+	string groupCode = "";
+	AccountDetailsDto accountDetails = new();
+
+	protected override async Task OnInitializedAsync()
+	{
+		accountDetails = await AuthService.GetAccountDetails();
+		string[] fullName = accountDetails.FullName.Split(" ");
+		groupCode = accountDetails.GroupCode == "" ? "" : $"({accountDetails.GroupCode})";
+		avatar = fullName[0].First().ToString().ToUpper() + fullName[1]?.FirstOrDefault().ToString()?.ToUpper();
+	}
+
+	private async Task Logout()
+	{
+		try
+		{
+			var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+			string currentUrl = Uri.EscapeDataString(uri.GetLeftPart(UriPartial.Path));
+			string externalUrl = Config.GetAuthUrl($"aad/logout?url={currentUrl}");
+			Navigation.NavigateTo(externalUrl, forceLoad: true);
+		}
+		catch (Exception ex)
+		{
+			await Task.Delay(10);
+			NotificationService.Notify(new NotificationMessage
+			{
+				Severity = NotificationSeverity.Error,
+				Summary = "Error",
+				Detail = ex.Message,
+				Duration = 5000
+			});
+		}
+	}
+}

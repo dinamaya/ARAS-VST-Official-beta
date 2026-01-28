@@ -1,0 +1,42 @@
+﻿<span 
+	class="badge badge-sm @badgeStyle @Class"
+    style="@Style"
+	title="Status">
+	@Status
+</span>
+
+@code {
+    [Parameter] public string Status { get; set; }
+    [Parameter] public string Class { get; set; }
+    [Parameter] public string Style { get; set; }
+    [Parameter] public EventCallback<string> OnIconStyleSet { get; set; }
+
+    private string badgeStyle = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        badgeStyle = Status switch
+        {
+            "Rejected" => "bg-gradient-danger",
+            "Declined" => "bg-gradient-warning",
+            "Approved" => "bg-gradient-primary",
+            "Pending" => "bg-gradient-info",
+            "Resubmitted" => "bg-gradient-info",
+            _ => "bg-gradient-success"
+        };
+
+        string iconClass = Status switch
+        {
+            "Rejected" => "ni-fat-remove fs-3 text-danger",
+            "Declined" => "ni-curved-next text-warning flip-y",
+            "Approved" => "ni-like-2 text-primary",
+            "Pending" => "ni-bell-55 text-info",
+            "Resubmitted" => "ni-bell-55 text-info",
+            _ => "ni-check-bold text-success"
+        };
+
+        if (OnIconStyleSet.HasDelegate)
+            await OnIconStyleSet.InvokeAsync(iconClass);
+    }
+}
+

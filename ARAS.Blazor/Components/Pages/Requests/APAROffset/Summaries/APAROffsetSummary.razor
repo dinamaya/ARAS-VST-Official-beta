@@ -1,0 +1,136 @@
+﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Components.Shared.Summaries
+
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inherits ComponentBase
+
+<RadzenStack Gap="0">
+    <RadzenImage Path="@Assets["/img/icons/VST-ECS.png"]" Style="width: 170px" />
+
+    <div class="px-3 py-2 mt-2 mb-2">
+        <RadzenRow Gap="1.5rem">
+            <RadzenColumn Size="6">
+                <div style="font-size: 1.2rem;">
+                    <b>NAME:</b>
+                    <span class="pl-1">@APAdjustments?.FirstOrDefault()?.CustomerName</span>
+                </div>
+            </RadzenColumn>
+            <RadzenColumn Size="6"> 
+                <div style="font-size: 1.2rem;">
+                    <b>REF. NO:</b>
+                    <span class="pl-1">@RequestAudit?.ReferenceNumber</span>
+                </div>
+            </RadzenColumn>
+        </RadzenRow>
+    </div>
+    
+    <RadzenRow Gap="1rem">
+        <RadzenColumn Size="6">
+            <div class="py-2 text-center border border-1">
+                <h3 class="mb-0">AP GROUP</h3>
+            </div>
+            <div class="py-4 w-100">
+                <RadzenDataGrid Data="@APAdjustments" TItem="APAROffsetAPRowDto"
+                                AllowFiltering="false"
+                                AllowPaging="false"
+                                AllowSorting="false"
+                                ShowPagingSummary="false">
+                    <Columns>
+                        <RadzenDataGridColumn Property="@nameof(APAROffsetAPRowDto.InvoiceNumber)" Title="Invoice Number">
+                            <FooterTemplate>
+                                <b>TOTAL</b>
+                            </FooterTemplate>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn Property="@nameof(APAROffsetAPRowDto.InvoiceAmount)" Title="Invoice Amount">
+                            <Template Context="data">
+                                @data?.InvoiceAmount.ToPhp()
+                            </Template>
+                            <FooterTemplate>
+                                <b>@APAdjustments?.Sum(a => a.InvoiceAmount).ToPhp()</b>
+                            </FooterTemplate>
+                        </RadzenDataGridColumn>
+
+                    </Columns>
+                </RadzenDataGrid>
+            </div>
+        </RadzenColumn>
+        <RadzenColumn Size="6" >
+            <div class="py-2 text-center border border-1">
+                <h3 class="mb-0">AR GROUP</h3>
+            </div>
+            <div class="py-4 w-100">
+                <RadzenDataGrid Data="@ARAdjustments" TItem="APAROffsetARRowDto"
+                                AllowFiltering="false"
+                                AllowPaging="false"
+                                AllowSorting="false"
+                                ShowPagingSummary="false">
+                    <Columns>
+                        <RadzenDataGridColumn Title="Description">
+                            <Template Context="data">
+                                @if (data.RowType == ARRowType.Invoice)
+                                {
+                                    @data.InvoiceNumber
+                                }
+                                else
+                                {
+                                    @data.AdjustmentReason
+                                }
+                            </Template>
+                            <FooterTemplate>
+                                <b>TOTAL</b>
+                            </FooterTemplate>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn Property="Amount" Title="Amount">
+                            <Template Context="data">
+                                @data.Amount.ToPhp()
+                            </Template>
+                            <FooterTemplate>
+                                <b>@ARAdjustments?.Sum(a => a.Amount).ToPhp()</b>
+                            </FooterTemplate>
+                        </RadzenDataGridColumn>
+
+                    </Columns>
+                </RadzenDataGrid>
+            </div>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <RadzenTable class="w-100 pb-2" GridLines="DataGridGridLines.Both" AllowAlternatingRows="false">
+        <RadzenTableBody>
+            <RadzenTableRow>
+                <RadzenTableCell Style="width: 220px; text-align: center">
+                    <b>Requested By:</b>
+                </RadzenTableCell>
+                <RadzenTableCell Style="width: 170px; text-align: center">
+                    <b>Approved By:</b>
+                </RadzenTableCell>
+                <RadzenTableCell Style="width: 220px; text-align: center">
+                    <b>Validated By:</b>
+                </RadzenTableCell>
+            </RadzenTableRow>
+            <RadzenTableRow>
+                <RadzenTableCell Style="width: 220px; text-align: center">
+                    @RequestAudit?.Requestor
+                </RadzenTableCell>
+                <RadzenTableCell Style="width: 170px; text-align: center">
+                    @RequestAudit?.Approver
+                </RadzenTableCell>
+                <RadzenTableCell Style="width: 220p; text-align: center">
+                    @RequestAudit?.Validator
+                </RadzenTableCell>
+            </RadzenTableRow>
+        </RadzenTableBody>
+    </RadzenTable>
+    
+</RadzenStack>
+
+@code {
+    [Parameter] public IEnumerable<APAROffsetAPRowDto> APAdjustments { get; set; }
+    [Parameter] public IEnumerable<APAROffsetARRowDto> ARAdjustments { get; set; }
+    [Parameter] public RequestAuditDto RequestAudit { get; set; }
+    [Parameter] public string ReferenceNumber { get; set; }
+}

@@ -1,0 +1,177 @@
+﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Components.Shared.Summaries
+@using ARAS.Blazor.Components.UI
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@inherits ComponentBase
+@inject DialogService DialogService
+<RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
+	<RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
+		<InvoiceSummary InvoiceDetails="InvoiceDetails" InvoiceDateText="GL Date"/>
+	</RadzenStack>
+
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenRow>
+			<RadzenLabel Style="width: 100%;" Text="Reason Codes" />
+		</RadzenRow>
+		<RadzenRow>
+			<RadzenDropDown @bind-Value=@reasonCode Data=@ReasonCodes Style="width: 100%;" Name="Reason Codes" />
+		</RadzenRow>
+		<ComponentValidator ValidationName="@nameof(SRAutoNetRowDto.ReasonCode)" />
+	</RadzenStack>
+
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<SearchCNDetails OnAdd="(data) => OnAddRemarks(data)" OnSearchChanged="(isOnSearch) => null" OnLoadingChanged="(isLoading) => null" />
+	</RadzenStack>
+
+	<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+		<RadzenDataGrid TItem="SRAutoNetRemarksDto"
+						@ref="dataGrid"
+						Data="@remarks"
+						AllowFiltering="false"
+						AllowPaging="false"
+						AllowSorting="false"
+						ShowPagingSummary="false">
+
+			<Columns>
+				<RadzenDataGridColumn TItem="SRAutoNetRemarksDto" Title="CN Ref">
+					<Template Context="data">
+						@data.CNRef
+					</Template>
+
+					<FooterTemplate>
+						<b>Total Amount: (@remarks.Count)</b>
+					</FooterTemplate>
+
+				</RadzenDataGridColumn>
+
+				<RadzenDataGridColumn TItem="SRAutoNetRemarksDto" Title="CN Amt">
+					<Template Context="data">
+						@data.CNAmt.ToPhp()
+					</Template>
+
+					<FooterTemplate>
+						<b>@remarks.Sum(a => a.CNAmt).ToPhp()</b>
+					</FooterTemplate>
+				</RadzenDataGridColumn>
+
+				<RadzenDataGridColumn TItem="SRAutoNetRemarksDto" Title="WT">
+					<Template Context="data">
+						@data.WT.ToPhp()
+					</Template>
+
+					<FooterTemplate>
+						<b>@remarks.Sum(a => a.WT).ToPhp()</b>
+					</FooterTemplate>
+				</RadzenDataGridColumn>
+
+				<RadzenDataGridColumn TItem="SRAutoNetRemarksDto" Context="data" Title="Option" TextAlign="TextAlign.Center" Width="150px">
+					<Template Context="data">
+						<RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Click="@((args) => OnRemoveRow(data))" />
+					</Template>
+				</RadzenDataGridColumn>
+			</Columns>
+		</RadzenDataGrid>
+	</RadzenStack>
+
+	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+		<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-outline-dark">
+			Close
+		</button>
+		<button @onclick="OnAddAdjustment" class="btn btn-primary">
+			Add
+		</button>
+	</RadzenStack>
+</RadzenStack>
+
+@code {
+	[Parameter] public IEnumerable<string> ReasonCodes { get; set; }
+	[Parameter] public IList<SRAutoNetRowDto> Rows { get; set; }
+	[Parameter] public RadzenDataGrid<SRAutoNetRowDto> Grid { get; set; }
+	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
+
+	private RadzenDataGrid<SRAutoNetRemarksDto> dataGrid;
+
+	private IList<SRAutoNetRemarksDto> remarks = [];
+	private string reasonCode = string.Empty;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		reasonCode = ReasonCodes.FirstOrDefault();
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+	}
+
+	private async Task OnRemoveRow(SRAutoNetRemarksDto item)
+	{
+		remarks.Remove(item);
+		await dataGrid.Reload();
+	}
+
+	private async Task OnAddRemarks(SearchCNDetailsRowDto data)
+	{
+		try
+		{
+			var newRow = new SRAutoNetRemarksDto();
+			newRow.CNRef = data.CNRef;
+			newRow.CNAmt = data.CNAmt;
+			newRow.WT = data.WT;
+
+			Validate(newRow);
+
+			remarks.Add(newRow);
+			await dataGrid.Reload();
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(Exceptions.GetMessage(ex), "Add Adjustment Failed");
+		}
+	}
+
+	private async Task OnAddAdjustment()
+	{
+		try
+		{
+			ValidateAddAdjustment();
+
+			Rows.Add(new SRAutoNetRowDto(reasonCode, remarks, InvoiceDetails));
+			await Grid.Reload();
+			DialogService.Close(true);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(Exceptions.GetMessage(ex), "Add Adjustment Failed");
+		}
+	}
+
+	private void Validate(SRAutoNetRemarksDto data)
+	{
+		Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(data.CNRef), $"CN Ref is Empty. CN Ref is required");
+		
+		bool isExisted = remarks.Any(r => r.CNRef == data.CNRef);
+		Guards.ThrowInvalidOperationIf(isExisted, $"CN Ref is already existed");
+
+		bool isExceeded = remarks.Sum(r => r.WT) > InvoiceDetails.InvoiceAmount;
+		Guards.ThrowInvalidOperationIf(isExceeded, $"WT should be less than or equals to {InvoiceDetails.InvoiceAmount.ToPhp()}");
+	}
+
+	private void ValidateAddAdjustment()
+	{
+		bool isInvoiceAdjusted = Rows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
+		Guards.ThrowInvalidOperationIf(isInvoiceAdjusted, $"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the write-off adjustment table");
+
+		bool hasEmptyRemarks = remarks.Any(r => r.HasEmpty());
+		Guards.ThrowInvalidOperationIf(hasEmptyRemarks, $"The current adjustment contains invalid inputs. Please recheck your inputs");
+
+		bool isEmpty = !remarks.Any();
+		Guards.ThrowInvalidOperationIf(isEmpty, $"Empty Remarks. Please add 1 or more Remarks.");
+
+		bool isExceeded = remarks.Sum(r => r.WT) > InvoiceDetails.InvoiceAmount;
+		Guards.ThrowInvalidOperationIf(isExceeded, $"WT should be less than or equals to {InvoiceDetails.InvoiceAmount.ToPhp()}");
+	}
+}

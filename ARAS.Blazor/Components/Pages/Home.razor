@@ -1,0 +1,16 @@
+﻿@using ARAS.Blazor.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+
+@page "/"
+@attribute [Authorize]
+@inject NavigationManager Navigation
+@inject ITokenService TokenService
+
+@inherits ComponentBase
+<h1>HOME</h1>
+@code {
+	protected override Task OnInitializedAsync()
+	{
+		return base.OnInitializedAsync();
+	}
+}

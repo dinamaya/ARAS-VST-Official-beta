@@ -1,0 +1,34 @@
+﻿@using ARAS.Blazor.Components.Shared
+@using ARAS.Blazor.Components.Shared.DataTables
+@using ARAS.Blazor.Models.DTOs
+
+@inject IInvoiceService InvoiceService
+@inject IConfigService ConfigService
+@inherits ComponentBase
+
+<MainSearchBar OnSearch="HandleSearch" TextFields="textFields">
+	<ResultTemplate Context="isLoading">
+		<SearchInvoiceDataTable IsLoading="isLoading" InvoiceRows="results" Select="OnSelectChanged" />
+	</ResultTemplate>
+</MainSearchBar>
+
+@code{
+    [Parameter] public EventCallback<InvoiceDetailsDto> OnSelectInvoice { get; set; }
+	private IEnumerable<InvoiceDetailsDto> results { get; set; }
+	private IEnumerable<string> textFields { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		textFields = ConfigService.GetRequstorSearchInvoiceCategories();
+	}
+
+	private async Task HandleSearch(SearchRequestDto request)
+	{
+		results = await InvoiceService.GetDetailsList(request);
+	}
+
+	protected async Task OnSelectChanged(InvoiceDetailsDto invoiceDetails)
+	{
+		await OnSelectInvoice.InvokeAsync(invoiceDetails);
+	}
+}

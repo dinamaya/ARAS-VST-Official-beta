@@ -242,6 +242,10 @@
 			Guards.ThrowInvalidOperationIf(!ARInvoice.Any(), "Can't submit request because there are no adjustment in the current request");
 			Guards.ThrowInvalidOperationIf(isLoading, "Can't submit request while search operation is ongoing");
 
+			bool isConfirmed = await DialogService.Confirm("Would you like to submit the following \"Invoice Adjustment(s)\"?", "Update AR Invoice Offset Request") ?? false;
+			if (!isConfirmed)
+				return;
+
 			// row-level validation before opening modal
 			if (!ValidateARRows(out var message))
 			{

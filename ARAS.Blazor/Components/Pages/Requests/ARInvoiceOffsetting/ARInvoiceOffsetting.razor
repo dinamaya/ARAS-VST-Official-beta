@@ -225,8 +225,7 @@
 			Guards.ThrowInvalidOperationIf(isLoading, "Can't submit request while search operation is ongoing");
 
 			bool isConfirmed = await DialogService.Confirm("Would you like to submit the following \"Invoice Adjustment(s)\"?", "Create AR Invoice Offset Request") ?? false;
-
-			if (isConfirmed)
+			if (!isConfirmed)
 				return;
 
 			// row-level validation before opening modal

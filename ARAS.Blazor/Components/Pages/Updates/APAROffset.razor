@@ -5,7 +5,6 @@
 @using ARAS.Blazor.Components.Pages.Requests.APAROffset
 @using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting
 @using ARAS.Blazor.Components.Pages.Requests.APAROffset.Modal
-@using ARAS.Blazor.Components.Shared.Modals
 @using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
@@ -330,6 +329,10 @@
 		{
 			Guards.ThrowInvalidOperationIf(!ARAdjustments.Any(), "Can't submit request because there are no adjustment in the current request");
 			Guards.ThrowInvalidOperationIf(isLoading, "Can't submit request while search operation is ongoing");
+
+			bool isConfirmed = await DialogService.Confirm("Would you like to submit the following \"Invoice Adjustment(s)\"?", "Update AP-AR Offset Request") ?? false;
+			if (!isConfirmed)
+				return;
 
 			// row-level validation before opening modal
 			if (!ValidateARRows(out var message))

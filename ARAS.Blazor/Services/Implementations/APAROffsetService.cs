@@ -39,30 +39,44 @@ namespace ARAS.Blazor.Services.Implementations
 				}
 			);
 
-			//await _noteService.Create(createResult.Result, notes);
+			await _noteService.Create(createResult.Result, notes);
 		}
 
 		public async Task Update(long requestId, IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes)
         {
 			var requestsDto = ToCreateDto(apRows, arRows);
+
+			var createResult = await _baseService.SendAsync<long>(new RequestDto<IEnumerable<APAROffsetCreateDto>>()
+				{
+					ApiType = ApiType.PUT,
+					URL = _configService.GetRequestsUrl($"invoice/arr/{requestId}"),
+					Data = requestsDto
+				},
+				onSuccessSendCallBack: (resp) =>
+				{
+					Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to update request" + resp.Message);
+					return Task.CompletedTask;
+				}
+			);
+
+			await _noteService.Create(requestId, notes);
 		}
 
 		public async Task<APAROffsetRowDto> GetAdjustments(long requestId)
 		{
-			//var arResponse = await _baseService.SendAsync<APAROffsetRowDto>(new RequestDto()
-			//	{
-			//		URL = $"{adjustmentUrl}aar/{requestId}",
-			//	},
-			//	onSuccessSendCallBack: async (resp) =>
-			//	{
-			//		await Task.Run(() =>
-			//		{
-			//			Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch the AR adjustments");
-			//		});
-			//	});
+			var arResponse = await _baseService.SendAsync<APAROffsetRowDto>(new RequestDto()
+				{
+					URL = _configService.GetAdjustmentsUrl($"aar/{requestId}"),
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch the AR adjustments");
+					});
+				});
 
-			//return arResponse.Result;
-			return null;
+			return arResponse.Result;
 		}
 
 		private static List<APAROffsetCreateDto> ToCreateDto(IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows)

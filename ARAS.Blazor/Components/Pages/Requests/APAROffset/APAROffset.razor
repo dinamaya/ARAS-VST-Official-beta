@@ -296,6 +296,11 @@
 			Guards.ThrowInvalidOperationIf(!ARAdjustments.Any(), "Can't submit request because there are no adjustment in the current request");
 			Guards.ThrowInvalidOperationIf(isLoading, "Can't submit request while search operation is ongoing");
 
+			bool isConfirmed = await DialogService.Confirm("Would you like to submit the following \"Invoice Adjustment(s)\"?", "Create AP-AR Offset Request") ?? false;
+			
+			if (isConfirmed)
+				return;
+
 			// row-level validation before opening modal
 			if (!ValidateARRows(out var message))
 			{
@@ -329,7 +334,8 @@
             "Confirm AR Invoice Number",
             new Dictionary<string, object>()
             {
-                { "Rows", ARAdjustments },
+				{ "APRows", APAdjustments },
+				{ "Rows", ARAdjustments },
                 { "Grid", arGrid },
 				{ "InvoiceDetails", data },
             },

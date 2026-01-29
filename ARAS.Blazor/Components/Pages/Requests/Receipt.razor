@@ -181,7 +181,7 @@
 			await base.OnSubmit();
 			var x = selectedAdjustmentTypes;
 
-			bool isConfirmed = await DialogService.Confirm("Would you like to submit the following \"Receipt Adjustment(s)\"?", "Create Submit Receipt Adjustment(s)") ?? false;
+			bool isConfirmed = await DialogService.Confirm("Would you like to submit the following \"Receipt Adjustment(s)\"?", "Create Receipt Adjustment(s)") ?? false;
 
 			if (!isConfirmed) return;
 			IList<BaseReceiptAdjustmentCreateDto> requests = new List<BaseReceiptAdjustmentCreateDto>();

@@ -11,10 +11,14 @@ namespace ARAS.Main.SSMS.Api.Controllers
 	{
 		private readonly ILogger<AdjustmentsController> _logger;
 		private readonly IAdjustmentRepository _adjustmentRepo;
+		private readonly IAPAROffsetRepository _aparOffsetRepo;
+		private readonly IAROffsettingRepository _arOffsetRepo;
 
-        public AdjustmentsController(IAdjustmentRepository adjustmentRepo)
+        public AdjustmentsController(IAdjustmentRepository adjustmentRepo, IAPAROffsetRepository aparOffsetRepo, IAROffsettingRepository arOffsetRepo)
         {
             _adjustmentRepo = adjustmentRepo;
+            _aparOffsetRepo = aparOffsetRepo;
+            _arOffsetRepo = arOffsetRepo;
         }
 
         [HttpGet("activity/{adjustmentTypeCode}")]
@@ -72,6 +76,38 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			try
 			{
 				response.Result = await _adjustmentRepo.GetInvoiceTypes();
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("aar/{requestId:long}")]
+		public async Task<ResponseDto<APAROffsetRowDto>> GetAPAdjustments(long requestId)
+		{
+			var response = new ResponseDto<APAROffsetRowDto>();
+			try
+			{
+				response.Result = await _aparOffsetRepo.GetAPAdjustmentsByRequestId(requestId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("ofr/{requestId:long}")]
+		public async Task<ResponseDto<IEnumerable<ARInvoiceOffsettingRowDto>>> GetARAdjustments(long requestId)
+		{
+			var response = new ResponseDto<IEnumerable<ARInvoiceOffsettingRowDto>>();
+			try
+			{
+				response.Result = await _arOffsetRepo.GetAdjustmentsByRequestId(requestId);
 				return response;
 			}
 			catch (Exception ex)

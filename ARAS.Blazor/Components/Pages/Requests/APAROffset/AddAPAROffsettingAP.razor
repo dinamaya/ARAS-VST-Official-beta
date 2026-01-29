@@ -23,11 +23,9 @@
 
 @code {
 
-	[Parameter] public IList<APAROffsetARRowDto> Rows { get; set; }
-	[Parameter] public RadzenDataGrid<APAROffsetARRowDto> Grid { get; set; }
+	[Parameter] public IList<APAROffsetAPRowDto> Rows { get; set; }
+	[Parameter] public RadzenDataGrid<APAROffsetAPRowDto> Grid { get; set; }
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
-
-	[Parameter] public IList<APAROffsetAPRowDto> APRows { get; set; }
 
 	private IEnumerable<string> invoices = new List<string>();
 	private string remarks = string.Empty;
@@ -49,9 +47,9 @@
 		{
 			bool isInvoiceDiscounted = Rows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
 
-			Guards.ThrowInvalidOperationIf(isInvoiceDiscounted, $"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the AP Offsetting adjustment table");
+			Guards.ThrowInvalidOperationIf(isInvoiceDiscounted, $"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the AR Offsetting adjustment table");
 
-			var firstInvoiceRow = Rows.FirstOrDefault(r => r.RowType == ARRowType.Invoice && !string.IsNullOrWhiteSpace(r.CustomerNumber));
+			var firstInvoiceRow = Rows.FirstOrDefault(r => !string.IsNullOrWhiteSpace(r.CustomerNumber));
 			if (firstInvoiceRow is not null)
 			{
 				if (firstInvoiceRow.CustomerNumber != InvoiceDetails.CustomerNumber)
@@ -60,16 +58,16 @@
 				}
 			}
 
-			if (APRows != null && APRows.Any())
-			{
-				var firstAP = APRows.First();
-				if (firstAP.CustomerNumber != InvoiceDetails.CustomerNumber)
-				{
-					throw new InvalidOperationException("Selected AR invoice must belong to the same customer as the AP group.");
-				}
-			}
+			// if (Rows.Any())
+			// {
+			// 	var firstInvoice = Rows.First();
+			// 	if (firstInvoice.CustomerNumber != InvoiceDetails.CustomerNumber)
+			// 	{
+			// 		throw new InvalidOperationException("All invoices must belong to the same customer.");
+			// 	}
+			// }
 
-			var row = new APAROffsetARRowDto(InvoiceDetails);
+			var row = new APAROffsetAPRowDto(InvoiceDetails);
 
 			Rows.Add(row);
 

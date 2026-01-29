@@ -7,5 +7,6 @@ namespace ARAS.Blazor.Services.Interfaces
 	{
 		Task Create(IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes);
 		Task Update(long requestId, IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes);
+		Task<APAROffsetRowDto> GetAdjustments(long requestId);
 	}
 }

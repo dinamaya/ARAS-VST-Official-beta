@@ -30,6 +30,7 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 			try
 			{
 				IList<TransactionCreateDto> transactions = [];
+				requestIds = [.. requestIds.Distinct()];
 
 				foreach (var requestId in requestIds)
 				{
@@ -51,7 +52,7 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 		public async Task Decline(IEnumerable<long> requestIds, string createdBy)
 		{
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
-
+			requestIds = [.. requestIds.Distinct()];
 			try
 			{
 				IList<TransactionCreateDto> transactions = [];
@@ -76,6 +77,7 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 		public async Task Reject(IEnumerable<long> requestIds, string createdBy)
 		{
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
+			requestIds = [.. requestIds.Distinct()];
 
 			try
 			{

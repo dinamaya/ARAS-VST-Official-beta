@@ -5,8 +5,8 @@ namespace ARAS.Blazor.Services.Interfaces
 {
     public interface IARInvoiceOffsettingService
     {
-        Task Create(IEnumerable<ARInvoiceOffsettingRowDto> arRows, IEnumerable<ARInvoiceOffsettingCNDetailsDto> cnRows);
-        Task Update(long requestId, IEnumerable<ARInvoiceOffsettingRowDto> rows, IEnumerable<NoteRowDto> notes);
+        Task Create(IEnumerable<ARInvoiceOffsettingRowDto> arRows, IEnumerable<ARInvoiceOffsettingRowDto> cnRows, IEnumerable<NoteRowDto> notes);
+        Task Update(long requestId, IEnumerable<ARInvoiceOffsettingRowDto> arRows, IEnumerable<ARInvoiceOffsettingRowDto> cnRows, IEnumerable<NoteRowDto> notes);
 		Task<IEnumerable<ARInvoiceOffsettingRowDto>> GetAdjustments(long requestId);
 	}
 }

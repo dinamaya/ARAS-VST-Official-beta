@@ -159,7 +159,14 @@
 		</RadzenRow>
 	}
 
-	<AttachmentsDatatable Notes="Notes" ShowOtherColumns="true" />
+	<RadzenRow>
+		<RadzenColumn Size="12" SizeMD="4">
+			<Timeline RequestId="@RequestId" />
+		</RadzenColumn>
+		<RadzenColumn Size="12" SizeMD="8">
+			<AttachmentsDatatable Notes="Notes" ShowOtherColumns="true" />
+		</RadzenColumn>
+	</RadzenRow>
 
 	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
 
@@ -257,11 +264,7 @@
 
 	public async Task SubmitRequest()
 	{
-		List<ARInvoiceOffsettingRowDto> list = [];
-		list.AddRange(ARInvoice);
-		list.AddRange(CNInvoice);
-
-		await ARInvoiceOffsettingService.Update(RequestId, list, Notes);
+		await ARInvoiceOffsettingService.Update(RequestId, ARInvoice, CNInvoice, Notes);
 
 		var uri = QueryService.GetCurrentUrl(false);
 		NavigationManager.NavigateTo(uri, true);

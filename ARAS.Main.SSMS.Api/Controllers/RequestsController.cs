@@ -194,6 +194,21 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
+		[HttpPut("invoice/ari/{requestId:long}"), Authorize(Roles = "Requestor")]
+		public async Task<ResponseDto<long>> UpdateARIRequest(long requestId, [FromBody] IEnumerable<ARInvoiceOffsettingCreateDto> data)
+		{
+			var response = new ResponseDto<long>();
+			try
+			{
+				var requestCreation = new RequestCreationDto<IEnumerable<ARInvoiceOffsettingCreateDto>>(data, User.GetAccountBasicInfo());
+				response.Result = await _arRepo.Update(requestId, requestCreation, requestCreation.CreatorId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
 
 		[HttpPost("invoice/ari"), Authorize(Roles = "Requestor")]
 		public async Task<ResponseDto<long>> CreateARIInvoiceAdjustmentRequest([FromBody] IEnumerable<ARInvoiceOffsettingCreateDto> data)

@@ -22,7 +22,9 @@ namespace ARAS.Blazor.Services.Implementations
 			_noteService = noteService;
 		}
 
-		private static List<ARInvoiceOffsettingCreateDto> ToCreateDto(IEnumerable<ARInvoiceOffsettingRowDto> arRows, IEnumerable<ARInvoiceOffsettingCNDetailsDto> cnRows)
+		private static List<ARInvoiceOffsettingCreateDto> ToCreateDto(
+			IEnumerable<ARInvoiceOffsettingRowDto> arRows, 
+			IEnumerable<ARInvoiceOffsettingRowDto> cnRows)
 		{
 			var arRequests = arRows.Select(r => new ARInvoiceOffsettingCreateDto()
 			{
@@ -47,7 +49,7 @@ namespace ARAS.Blazor.Services.Implementations
 			return cnRequests.Concat(arRequests).ToList();
 		}
 
-		public async Task Create(IEnumerable<ARInvoiceOffsettingRowDto> arRows, IEnumerable<ARInvoiceOffsettingCNDetailsDto> cnRows)
+		public async Task Create(IEnumerable<ARInvoiceOffsettingRowDto> arRows, IEnumerable<ARInvoiceOffsettingRowDto> cnRows, IEnumerable<NoteRowDto> notes)
 		{
 			var requestsDto = ToCreateDto(arRows, cnRows);
 
@@ -64,9 +66,10 @@ namespace ARAS.Blazor.Services.Implementations
 				}
 			);
 
+			await _noteService.Create(createResult.Result, notes);
 		}
 
-        public  async Task<IEnumerable<ARInvoiceOffsettingRowDto>> GetAdjustments(long requestId)
+		public  async Task<IEnumerable<ARInvoiceOffsettingRowDto>> GetAdjustments(long requestId)
         {
 			var arResponse = await _baseService.SendAsync<IEnumerable<ARInvoiceOffsettingRowDto>>(new RequestDto()
 				{
@@ -83,9 +86,24 @@ namespace ARAS.Blazor.Services.Implementations
 			return arResponse.Result;
 		}
 
-        public async Task Update(long requestId, IEnumerable<ARInvoiceOffsettingRowDto> rows, IEnumerable<NoteRowDto> notes)
+        public async Task Update(long requestId, IEnumerable<ARInvoiceOffsettingRowDto> arRows, IEnumerable<ARInvoiceOffsettingRowDto> cnRows, IEnumerable<NoteRowDto> notes)
 		{
-			throw new NotImplementedException();
+			var requestsDto = ToCreateDto(arRows, cnRows);
+
+			var result = await _baseService.SendAsync<long>(new RequestDto<IEnumerable<ARInvoiceOffsettingCreateDto>>()
+				{
+					ApiType = ApiType.PUT,
+					URL = _configService.GetRequestsUrl($"invoice/ari/{requestId}"),
+					Data = requestsDto
+				},
+				onSuccessSendCallBack: (resp) =>
+				{
+					Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to update request" + resp.Message);
+					return Task.CompletedTask;
+				}
+			);
+
+			await _noteService.Create(requestId, notes);
 		}
 
 	}

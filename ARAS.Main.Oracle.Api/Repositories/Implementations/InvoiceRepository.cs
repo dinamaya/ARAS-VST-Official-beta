@@ -156,7 +156,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 				commandTimeout: 120
 			) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
 
-			return result.DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
+			return result.Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max).DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
 		}
 
         public async Task<InvoiceAPDetailsDto> GetAPInvoiceNo(string invoiceNo)

@@ -9,9 +9,12 @@
 		</div>
 		<div class="card-body p-3">
 			<div class="timeline timeline-one-side" data-timeline-axis-style="dotted">
-				@foreach (var transaction in Transactions)
+				@if (Transactions != null)
 				{
-					<TransactionHistoryRow TransactionHistory="transaction"/>
+					@foreach (var transaction in Transactions)
+					{
+						<TransactionHistoryRow TransactionHistory="transaction"/>
+					}
 				}
 			</div>
 		</div>
@@ -26,6 +29,6 @@
 	{
 		await base.OnInitializedAsync();
 		Transactions ??= await TransactionService.GetHistoryByRequestId(RequestId);
-
+		StateHasChanged();
 	}
 }

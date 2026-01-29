@@ -70,11 +70,6 @@
 						<RadzenDataGridColumn Width="300px" Property="@nameof(ReceiptAdjustmentRowDto.DateApproved)" Title="Date Approved" />
 						<RadzenDataGridColumn Width="300px" Property="@nameof(ReceiptAdjustmentRowDto.Creator)" Title="Updated By" />
 						<RadzenDataGridColumn Width="300px" Property="@nameof(ReceiptAdjustmentRowDto.DateCreated)" Title="Date Updated" />
-						<RadzenDataGridColumn Width="300px" Property="@nameof(ReceiptAdjustmentRowDto.Status)" Title="Status">
-							<Template Context="data">
-								<StatusBadge Status="@data.Status" Style="font-size: 12px;" />
-							</Template>
-						</RadzenDataGridColumn>
 					</Columns>
 				</RadzenDataGrid>
 			}
@@ -117,7 +112,7 @@
 
 	private async Task OnSelect(ReceiptAdjustmentRowDto selectedRow)
 	{
-		NavManager.NavigateTo($"/updates/receipt/{selectedRow.AdjustmentTypeCode}/{selectedRow.RequestId}");
+		NavManager.NavigateTo($"/submissions/receipt/{selectedRow.AdjustmentTypeCode}/{selectedRow.RequestId}");
 	}
 
 	private Task OnFilter(string status)

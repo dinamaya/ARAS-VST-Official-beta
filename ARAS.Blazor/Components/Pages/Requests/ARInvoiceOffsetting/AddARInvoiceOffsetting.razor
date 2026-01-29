@@ -29,9 +29,9 @@
 @code {
 
 	[Parameter] public IList<ARInvoiceOffsettingRowDto> ARRows { get; set; }
-	[Parameter] public IList<ARInvoiceOffsettingCNDetailsDto> CNRows { get; set; }
+	[Parameter] public IList<ARInvoiceOffsettingRowDto> CNRows { get; set; }
 	[Parameter] public RadzenDataGrid<ARInvoiceOffsettingRowDto> ARGrid { get; set; }
-	[Parameter] public RadzenDataGrid<ARInvoiceOffsettingCNDetailsDto> CNGrid { get; set; }
+	[Parameter] public RadzenDataGrid<ARInvoiceOffsettingRowDto> CNGrid { get; set; }
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
 
 
@@ -53,7 +53,7 @@
 	{
 		try
 		{
-			bool isInvoiceAdded = ARRows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
+			bool isInvoiceAdded = CNRows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber) || ARRows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
 
 			Guards.ThrowInvalidOperationIf(isInvoiceAdded, $"Invoice Number {InvoiceDetails.InvoiceNumber} has already been added");
 
@@ -66,7 +66,7 @@
 				}
 			}
 
-			var row = new ARInvoiceOffsettingRowDto("", InvoiceDetails);
+			var row = new ARInvoiceOffsettingRowDto(InvoiceDetails);
 
 			ARRows.Add(row);
 
@@ -83,7 +83,7 @@
 	{
 		try
 		{
-			bool isInvoiceAdded = CNRows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
+			bool isInvoiceAdded = CNRows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber) || ARRows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
 
 			Guards.ThrowInvalidOperationIf(isInvoiceAdded, $"Invoice Number {InvoiceDetails.InvoiceNumber} has already been added");
 
@@ -96,7 +96,7 @@
 				}
 			}
 
-			var row = new ARInvoiceOffsettingCNDetailsDto(InvoiceDetails);
+			var row = new ARInvoiceOffsettingRowDto(InvoiceDetails);
 
 			CNRows.Add(row);
 

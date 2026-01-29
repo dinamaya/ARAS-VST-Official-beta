@@ -81,7 +81,7 @@
 			</div>
 
 			<div class="py-4 px-3 w-100 card">
-				<RadzenDataGrid TItem="ARInvoiceOffsettingCNDetailsDto"
+				<RadzenDataGrid TItem="ARInvoiceOffsettingRowDto"
 								@ref="cnGrid"
 								Data="@CNInvoice"
 								AllowFiltering="false"
@@ -95,7 +95,7 @@
 
 
 					<Columns>
-						<RadzenDataGridColumn TItem="ARInvoiceOffsettingCNDetailsDto" Title="Invoice No.">
+						<RadzenDataGridColumn TItem="ARInvoiceOffsettingRowDto" Title="Invoice No.">
 							<Template Context="data">
 									<div>@data.InvoiceNumber</div>
 							</Template>
@@ -109,13 +109,13 @@
 							</EditTemplate>
 						</RadzenDataGridColumn>
 
-						<RadzenDataGridColumn TItem="ARInvoiceOffsettingCNDetailsDto" Title="Customer Name">
+						<RadzenDataGridColumn TItem="ARInvoiceOffsettingRowDto" Title="Customer Name">
 							<Template Context="data">
 							<div>@data.CustomerName</div>
 							</Template>
 						</RadzenDataGridColumn>
 
-						<RadzenDataGridColumn TItem="ARInvoiceOffsettingCNDetailsDto" Property="Amount" Title="Amount">
+						<RadzenDataGridColumn TItem="ARInvoiceOffsettingRowDto" Property="Amount" Title="Amount">
 							<Template Context="data">
 								@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
 							</Template>
@@ -139,7 +139,7 @@
 							</FooterTemplate>
 						</RadzenDataGridColumn>
 
-						<RadzenDataGridColumn TItem="ARInvoiceOffsettingCNDetailsDto" Context="data" TextAlign="TextAlign.Right">
+						<RadzenDataGridColumn TItem="ARInvoiceOffsettingRowDto" Context="data" TextAlign="TextAlign.Right">
 							<Template Context="data">
 								<RadzenButton Icon="delete"
 											  Size="ButtonSize.Small"
@@ -168,11 +168,11 @@
 
 @code {
 	[Parameter] public IList<ARInvoiceOffsettingRowDto> ARInvoice { get; set; }
-	[Parameter] public IList<ARInvoiceOffsettingCNDetailsDto> CNInvoice { get; set; }
+	[Parameter] public IList<ARInvoiceOffsettingRowDto> CNInvoice { get; set; }
 	private IList<NoteRowDto> Notes { get; set; } = new List<NoteRowDto>();
 
 	private InvoiceDetailsDto searchedInvoiceNumber;
-	private RadzenDataGrid<ARInvoiceOffsettingCNDetailsDto> cnGrid;
+	private RadzenDataGrid<ARInvoiceOffsettingRowDto> cnGrid;
 	private RadzenDataGrid<ARInvoiceOffsettingRowDto> arGrid;
 	private RequestAuditDto requestAudit;
 
@@ -186,7 +186,7 @@
 	{
 		await base.OnInitializedAsync();
 
-		CNInvoice = new List<ARInvoiceOffsettingCNDetailsDto>();
+		CNInvoice = new List<ARInvoiceOffsettingRowDto>();
 		ARInvoice = new List<ARInvoiceOffsettingRowDto>();
 		searchedInvoiceNumber = new InvoiceDetailsDto();
 		requestAudit = new RequestAuditDto();
@@ -224,6 +224,10 @@
 			Guards.ThrowInvalidOperationIf(!ARInvoice.Any(), "Can't submit request because there are no adjustment in the current request");
 			Guards.ThrowInvalidOperationIf(isLoading, "Can't submit request while search operation is ongoing");
 
+			bool isConfirmed = await DialogService.Confirm("Would you like to submit the following \"Invoice Adjustment(s)\"?", "Create AR Invoice Offset Request") ?? false;
+			if (!isConfirmed)
+				return;
+
 			// row-level validation before opening modal
 			if (!ValidateARRows(out var message))
 			{
@@ -246,7 +250,7 @@
 
 	public async Task SubmitRequest()
 	{
-		await ARInvoiceOffsettingService.Create(ARInvoice, CNInvoice);
+		await ARInvoiceOffsettingService.Create(ARInvoice, CNInvoice, Notes);
 
 		var uri = QueryService.GetCurrentUrl(false);
 	    NavigationManager.NavigateTo(uri, true);
@@ -285,13 +289,13 @@
 		StateHasChanged();
 	}
 
-	private async Task OnRemoveCNRow(ARInvoiceOffsettingCNDetailsDto item)
+	private async Task OnRemoveCNRow(ARInvoiceOffsettingRowDto item)
 	{
 		CNInvoice.Remove(item);
 		await cnGrid.Reload();
 	}
 
-	private async Task CancelEditRow(ARInvoiceOffsettingCNDetailsDto data)
+	private async Task CancelEditRow(ARInvoiceOffsettingRowDto data)
 	{
 		cnGrid.CancelEditRow(data);
 
@@ -310,7 +314,7 @@
 		}
 	}
 
-	private bool IsRowEffectivelyEmpty(ARInvoiceOffsettingCNDetailsDto row)
+	private bool IsRowEffectivelyEmpty(ARInvoiceOffsettingRowDto row)
 	{
 		if (row == null)
 		{
@@ -339,30 +343,6 @@
 				message = "AR Group contains an invalid row.";
 				return false;
 			}
-
-			// if (ar.RowType == ARRowType.Invoice)
-			// {
-			// 	if (string.IsNullOrWhiteSpace(ar.InvoiceNumber))
-			// 	{
-			// 		message = "AR Group: Invoice number is required for invoice rows.";
-			// 		return false;
-			// 	}
-			// }
-			// else
-			// {
-			// 	if (string.IsNullOrWhiteSpace(ar.AdjustmentReason))
-			// 	{
-			// 		message = "AR Group: Adjustment reason is required for adjustment rows.";
-			// 		return false;
-			// 	}
-			// }
-
-			// if (ar.InvoiceAmount == 0.0)
-			// {
-			// 	var id = ar.RowType == ARRowType.Invoice ? ar.InvoiceNumber : ar.AdjustmentReason;
-			// 	message = $"AR Group: Amount must not be 0.00 for '{id ?? "unknown"}'.";
-			// 	return false;
-			// }
 		}
 
 		return true;

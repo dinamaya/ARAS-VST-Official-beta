@@ -70,11 +70,6 @@
 						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.DateApproved)" Title="Date Approved" />
 						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.Creator)" Title="Updated By" />
 						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.DateCreated)" Title="Date Updated" />
-						<RadzenDataGridColumn Width="300px" Property="@nameof(InvoiceAdjustmentRowDto.Status)" Title="Status">
-							<Template Context="data">
-								<StatusBadge Status="@data.Status" Style="font-size: 12px;" />
-							</Template>
-						</RadzenDataGridColumn>
 					</Columns>
 				</RadzenDataGrid>
 			}
@@ -83,7 +78,6 @@
 </RadzenRow>
 
 @code {
-	[Parameter] public EventCallback<InvoiceAdjustmentRowDto> Select { get; set; }
 	[Parameter] public IEnumerable<InvoiceAdjustmentRowDto> Rows { get; set; }
 	[Parameter] public string Role { get; set; }
 	[Parameter] public bool IsLoading { get; set; }
@@ -114,8 +108,18 @@
 
 	private async Task OnSelect(InvoiceAdjustmentRowDto selectedRow)
 	{
-		if (Select.HasDelegate)
-			await Select.InvokeAsync(selectedRow);
+		string code = "";
+		switch (selectedRow.AdjustmentType)
+		{
+			case "AR Invoice Offsetting":
+				code = "ofr";
+				break;
+			case "AP-AR: Off Set":
+				code = "arr";
+				break;
+		}
+
+		NavManager.NavigateTo($"/submissions/invoice/{code}/{selectedRow.RequestId}");
 	}
 
 	private Task OnFilter(string status)

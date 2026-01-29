@@ -158,7 +158,7 @@
 				}
 			],
 			"UpstreamPathTemplate": "/request/{everything}",
-			"UpstreamHttpMethod": [ "GET", "POST" ]
+			"UpstreamHttpMethod": [ "GET", "POST", "PUT" ]
 		},
 		{
 			"DownstreamPathTemplate": "/api/transactions/{everything}",

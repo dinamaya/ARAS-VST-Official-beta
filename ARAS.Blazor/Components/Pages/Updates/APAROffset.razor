@@ -1,4 +1,4 @@
-﻿@page "/updates/invoice/arr/{RequestId:long}"
+﻿@page "/submissions/invoice/arr/{RequestId:long}"
 
 @using ARAS.Blazor.App_Code.Globals
 @using ARAS.Blazor.App_Code.Globals.Extensions
@@ -243,7 +243,7 @@
 				<Timeline RequestId="@RequestId" />
 			</RadzenColumn>
 			<RadzenColumn Size="12" SizeMD="8">
-				<AttachmentsDatatable Notes="Notes" IsDownloadable=false />
+				<AttachmentsDatatable Notes="Notes" ShowOtherColumns="true" />
 			</RadzenColumn>
 		</RadzenRow>
 

@@ -66,7 +66,24 @@ namespace ARAS.Blazor.Services.Implementations
 
 		}
 
-		public async Task Update(long requestId, IEnumerable<ARInvoiceOffsettingRowDto> rows, IEnumerable<NoteRowDto> notes)
+        public  async Task<IEnumerable<ARInvoiceOffsettingRowDto>> GetAdjustments(long requestId)
+        {
+			var arResponse = await _baseService.SendAsync<IEnumerable<ARInvoiceOffsettingRowDto>>(new RequestDto()
+				{
+					URL = _configService.GetAdjustmentsUrl($"ofr/{requestId}"),
+				},
+				onSuccessSendCallBack: async (resp) =>
+				{
+					await Task.Run(() =>
+					{
+						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to fetch the AR adjustments");
+					});
+				}
+			);
+			return arResponse.Result;
+		}
+
+        public async Task Update(long requestId, IEnumerable<ARInvoiceOffsettingRowDto> rows, IEnumerable<NoteRowDto> notes)
 		{
 			throw new NotImplementedException();
 		}

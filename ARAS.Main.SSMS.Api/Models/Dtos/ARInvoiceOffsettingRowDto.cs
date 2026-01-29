@@ -9,6 +9,7 @@
 		public string InvoiceNumber { get; set; } = string.Empty;
 		public string CustomerName { get; set; } = string.Empty;
 		public string CustomerNumber { get; set; } = string.Empty;
+		public string Type { get; set; } = string.Empty;
 
 		public ARInvoiceOffsettingRowDto()
 		{

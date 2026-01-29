@@ -112,7 +112,7 @@
 
 	private async Task OnSelect(ReceiptAdjustmentRowDto selectedRow)
 	{
-		NavManager.NavigateTo($"/updates/receipt/{selectedRow.AdjustmentTypeCode}/{selectedRow.RequestId}");
+		NavManager.NavigateTo($"/submissions/receipt/{selectedRow.AdjustmentTypeCode}/{selectedRow.RequestId}");
 	}
 
 	private Task OnFilter(string status)

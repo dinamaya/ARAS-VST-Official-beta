@@ -1,0 +1,85 @@
+﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.Components.Shared.Summaries
+@using ARAS.Blazor.Components.UI
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@inherits ComponentBase
+@inject DialogService DialogService
+
+<RadzenStack Orientation="Orientation.Vertical" Style="height: 100%;" Gap="1.6em">
+	<RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
+		<InvoiceDetailsSummary InvoiceDetails="InvoiceDetails" />
+	</RadzenStack>
+
+	<RadzenStack Visible="true" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+		<button @onclick="@((args) => DialogService.Close(true))" class="btn btn-danger">
+			Close
+		</button>
+		<button @onclick="OnAdd" class="btn btn-outline-primary">
+			Add
+		</button>
+	</RadzenStack>
+</RadzenStack>
+
+@code {
+
+	[Parameter] public IList<APAROffsetARRowDto> Rows { get; set; }
+	[Parameter] public RadzenDataGrid<APAROffsetARRowDto> Grid { get; set; }
+	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
+
+	[Parameter] public IList<APAROffsetAPRowDto> APRows { get; set; }
+
+	private IEnumerable<string> invoices = new List<string>();
+	private string remarks = string.Empty;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+
+	}
+
+	private async Task OnAdd()
+	{
+		try
+		{
+			bool isInvoiceDiscounted = Rows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
+
+			Guards.ThrowInvalidOperationIf(isInvoiceDiscounted, $"Invoice Number {InvoiceDetails.InvoiceNumber} has been added in the AP Offsetting adjustment table");
+
+			var firstInvoiceRow = Rows.FirstOrDefault(r => r.RowType == ARRowType.Invoice && !string.IsNullOrWhiteSpace(r.CustomerNumber));
+			if (firstInvoiceRow is not null)
+			{
+				if (firstInvoiceRow.CustomerNumber != InvoiceDetails.CustomerNumber)
+				{
+					throw new InvalidOperationException("All invoices must belong to the same customer.");
+				}
+			}
+
+			// if (APRows != null && APRows.Any())
+			// {
+			// 	var firstAP = APRows.First();
+			// 	if (firstAP.CustomerName != InvoiceDetails.CustomerName)
+			// 	{
+			// 		throw new InvalidOperationException("Selected AR invoice must belong to the same customer as the AP group.");
+			// 	}
+			// }
+
+			var row = new APAROffsetARRowDto(InvoiceDetails);
+
+			Rows.Add(row);
+
+			await Grid.Reload();
+			StateHasChanged();
+			DialogService.Close(true);
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(Exceptions.GetMessage(ex), "Add Adjustment Failed");
+		}
+	}
+}

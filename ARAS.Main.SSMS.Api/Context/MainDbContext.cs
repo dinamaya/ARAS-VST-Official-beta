@@ -29,6 +29,7 @@ namespace ARAS.Main.SSMS.Api.Context
 		// NEW SQL VIEWS
 		public virtual DbSet<AdjustmentsV> VwReceiptAdjustments { get; set; }
 		public virtual DbSet<AllAdjustmentRequestLatestStatusV> VwAllAdjustmentRequestLatestStatus { get; set; }
+		public virtual DbSet<AradjustmentsV> VwAradjustmentsVw { get; set; }
 		public virtual DbSet<LatestReceiptAdjustmentDetailsV> VwLatestReceiptAdjustmentDetails { get; set; }
 		public virtual DbSet<LatestInvoiceAdjustmentsV> VwLatestInvoiceAdjustments { get; set; }
 		public virtual DbSet<NotesV> VwNotes { get; set; }
@@ -100,6 +101,13 @@ namespace ARAS.Main.SSMS.Api.Context
 					.ToView("Adjustments_v");
 
 				entity.Property(e => e.AdjustmentTypeId).HasMaxLength(450);
+			});
+			
+			modelBuilder.Entity<AradjustmentsV>(entity =>
+			{
+				entity
+					.HasNoKey()
+					.ToView("ARAdjustments_v");
 			});
 
 			modelBuilder.Entity<AllAdjustmentRequestLatestStatusV>(entity =>

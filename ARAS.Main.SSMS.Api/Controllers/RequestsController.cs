@@ -156,6 +156,22 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
+		[HttpPut("invoice/arr/{requestId:long}"), Authorize(Roles = "Requestor")]
+		public async Task<ResponseDto<long>> UpdateAPARRequest(long requestId, [FromBody] IEnumerable<APAROffsetCreateDto> data)
+		{
+			var response = new ResponseDto<long>();
+			try
+			{
+				var requestCreation = new RequestCreationDto<IEnumerable<APAROffsetCreateDto>>(data, User.GetAccountBasicInfo());
+				response.Result = await _aparRepo.Update(requestId, requestCreation, requestCreation.CreatorId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
+
 		[HttpPost("invoice/arr"), Authorize(Roles = "Requestor")]
 		public async Task<ResponseDto<long>> CreateARRInvoiceAdjusmentRequest([FromBody] IEnumerable<APAROffsetCreateDto> data)
 		{
@@ -178,6 +194,21 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
+		[HttpPut("invoice/ari/{requestId:long}"), Authorize(Roles = "Requestor")]
+		public async Task<ResponseDto<long>> UpdateARIRequest(long requestId, [FromBody] IEnumerable<ARInvoiceOffsettingCreateDto> data)
+		{
+			var response = new ResponseDto<long>();
+			try
+			{
+				var requestCreation = new RequestCreationDto<IEnumerable<ARInvoiceOffsettingCreateDto>>(data, User.GetAccountBasicInfo());
+				response.Result = await _arRepo.Update(requestId, requestCreation, requestCreation.CreatorId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				return response.Failed(ex.Message);
+			}
+		}
 
 		[HttpPost("invoice/ari"), Authorize(Roles = "Requestor")]
 		public async Task<ResponseDto<long>> CreateARIInvoiceAdjustmentRequest([FromBody] IEnumerable<ARInvoiceOffsettingCreateDto> data)

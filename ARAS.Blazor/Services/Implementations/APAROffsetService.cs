@@ -45,6 +45,21 @@ namespace ARAS.Blazor.Services.Implementations
 		public async Task Update(long requestId, IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes)
         {
 			var requestsDto = ToCreateDto(apRows, arRows);
+
+			var createResult = await _baseService.SendAsync<long>(new RequestDto<IEnumerable<APAROffsetCreateDto>>()
+				{
+					ApiType = ApiType.PUT,
+					URL = _configService.GetRequestsUrl($"invoice/arr/{requestId}"),
+					Data = requestsDto
+				},
+				onSuccessSendCallBack: (resp) =>
+				{
+					Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to update request" + resp.Message);
+					return Task.CompletedTask;
+				}
+			);
+
+			await _noteService.Create(requestId, notes);
 		}
 
 		public async Task<APAROffsetRowDto> GetAdjustments(long requestId)

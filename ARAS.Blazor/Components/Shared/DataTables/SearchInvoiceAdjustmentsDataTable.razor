@@ -141,6 +141,19 @@
 	{
 		if (Select.HasDelegate)
 			await Select.InvokeAsync(selectedRow);
+
+		string code = "";
+		switch (selectedRow.AdjustmentType)
+		{
+			case "AR Invoice Offsetting":
+				code = "ofr";
+				break;
+			case "AP-AR: Off Set":
+				code = "arr";
+				break;
+		}
+
+		NavManager.NavigateTo($"/submissions/invoice/{code}/{selectedRow.RequestId}");
 	}
 
 	private void ToggleRow(InvoiceAdjustmentRowDto row) => dataGrid.SelectRow(row);

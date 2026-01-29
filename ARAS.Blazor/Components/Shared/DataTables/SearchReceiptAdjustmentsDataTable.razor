@@ -143,6 +143,7 @@
 	{
 		if (Select.HasDelegate)
 			await Select.InvokeAsync(selectedRow);
+		NavManager.NavigateTo($"/submissions/receipt/{selectedRow.AdjustmentTypeCode}/{selectedRow.RequestId}");
 	}
 
 	private void ToggleRow(ReceiptAdjustmentRowDto row) => dataGrid.SelectRow(row);

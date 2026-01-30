@@ -31,6 +31,14 @@
 		<SearchInvoiceAPARDetails OnAPAdd="AddAP" OnARAdd="AddAR" />
 	}
 
+	@code { [Parameter, SupplyParameterFromQuery(Name = "q")] public string? QueryAction { get; set; } }
+	@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
+	{
+		<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
+			Invoice Adjustment updated successfully
+		</RadzenAlert>
+	}
+
 	@if (isReady)
 	{
 		<RadzenRow Gap="1.5rem">
@@ -283,6 +291,11 @@
 
 	// track newly added rows so we can remove them on cancel if they remain empty
 	private HashSet<string> newlyAddedRowIds = new();
+	
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+	}
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -358,7 +371,7 @@
 	{
 		await APAROffsetService.Update(isRequestUpdatable, RequestId, APAdjustments, ARAdjustments, Notes);
 
-		var uri = QueryService.GetCurrentUrl(false);
+		var uri = NavigationManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
 		NavigationManager.NavigateTo(uri, true);
 	}
 

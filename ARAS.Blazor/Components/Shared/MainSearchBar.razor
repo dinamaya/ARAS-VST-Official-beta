@@ -221,9 +221,9 @@
 		param.Add("v", searchRequest.Value);
 		param.Add("sd", searchRequest.StartDate.ToString());
 		param.Add("ed", searchRequest.EndDate.ToString());
-        param.Add("token", token);
-
-		Nav.NavigateTo(Nav.GetUriWithQueryParameters(param));
+		param.Add("token", token);
+		
+		Nav.NavigateTo(Nav.GetUriWithQueryParameters(QueryService.GetCurrentUrl(false), param));
 	}
 
 	private async Task SetIsOnSearch(bool value)

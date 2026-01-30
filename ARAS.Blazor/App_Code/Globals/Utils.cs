@@ -50,6 +50,8 @@ namespace ARAS.Blazor.App_Code.Globals
 			public static string DecodeString(string value) => string.IsNullOrWhiteSpace(value) ? string.Empty : Uri.UnescapeDataString(value.Trim());
 
 		}
+		public static bool Equals(string value, string other) => !string.IsNullOrEmpty(value) && value.Equals(other, StringComparison.CurrentCultureIgnoreCase);
+
 		public static string GetErrorDescription(IdentityResult result) => result.Errors.FirstOrDefault()?.Description ?? "";
 
 		public static TResult? ConvertTo<TInput, TResult>(TInput input)

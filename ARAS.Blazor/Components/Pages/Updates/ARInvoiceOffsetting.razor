@@ -25,7 +25,18 @@
 <h2>AR Invoice Offsetting</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<SearchInvoiceDetails OnSelectInvoice="OpenAdd" />
+	@if (isRequestUpdatable)
+	{
+		<SearchInvoiceDetails OnSelectInvoice="OpenAdd" />
+	}
+
+	@code { [Parameter, SupplyParameterFromQuery(Name = "q")] public string? QueryAction { get; set; } }
+	@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
+	{
+		<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
+			Invoice Adjustment updated successfully
+		</RadzenAlert>
+	}
 
 	@if (isReady)
 	{
@@ -69,12 +80,14 @@
 								</FooterTemplate>
 							</RadzenDataGridColumn>
 
-							<RadzenDataGridColumn TItem="ARInvoiceOffsettingRowDto" Context="data" TextAlign="TextAlign.Right">
-								<Template Context="data">
-									<RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Click="@(async args => await OnRemoveARRow(data))" />
-								</Template>
-							</RadzenDataGridColumn>
-
+							@if (isRequestUpdatable)
+							{
+								<RadzenDataGridColumn TItem="ARInvoiceOffsettingRowDto" Context="data" TextAlign="TextAlign.Right">
+									<Template Context="data">
+										<RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Click="@(async args => await OnRemoveARRow(data))" />
+									</Template>
+								</RadzenDataGridColumn>
+							}
 						</Columns>
 					</RadzenDataGrid>
 				</div>
@@ -143,14 +156,17 @@
 								</FooterTemplate>
 							</RadzenDataGridColumn>
 
-							<RadzenDataGridColumn TItem="ARInvoiceOffsettingRowDto" Context="data" TextAlign="TextAlign.Right">
-								<Template Context="data">
-									<RadzenButton Icon="delete"
-												  Size="ButtonSize.Small"
-												  ButtonStyle="ButtonStyle.Danger"
-												  Click="@(() => OnRemoveCNRow(data))" />
-								</Template>
-							</RadzenDataGridColumn>
+							@if (isRequestUpdatable)
+							{
+								<RadzenDataGridColumn TItem="ARInvoiceOffsettingRowDto" Context="data" TextAlign="TextAlign.Right">
+									<Template Context="data">
+										<RadzenButton Icon="delete"
+													  Size="ButtonSize.Small"
+													  ButtonStyle="ButtonStyle.Danger"
+													  Click="@(() => OnRemoveCNRow(data))" />
+									</Template>
+								</RadzenDataGridColumn>
+							}
 						</Columns>
 					</RadzenDataGrid>
 				</div>
@@ -198,6 +214,11 @@
 
 	// track newly added rows so we can remove them on cancel if they remain empty
 	private HashSet<string> newlyAddedRowIds = new();
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+	}
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -270,7 +291,7 @@
 	{
 		await ARInvoiceOffsettingService.Update(isRequestUpdatable, RequestId, ARInvoice, CNInvoice, Notes);
 
-		var uri = QueryService.GetCurrentUrl(false);
+		var uri = NavigationManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
 		NavigationManager.NavigateTo(uri, true);
 	}
 

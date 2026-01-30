@@ -22,7 +22,13 @@
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 	<SearchInvoiceDetails OnSelectInvoice="OnInvoiceSelected" />
-
+	@code { [Parameter, SupplyParameterFromQuery(Name = "q")] public string? QueryAction { get; set; } }
+	@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
+	{
+		<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
+			Receipt Adjustment created successfully
+		</RadzenAlert>
+	}
 	@if (isReady && !string.IsNullOrEmpty(SearchedInvoice.CustomerName))
 	{
 		<RadzenRow Gap="2.5em">
@@ -96,8 +102,8 @@
 	}
 </RadzenStack>
 
-	@code {
-
+@code 
+{
 	private IEnumerable<AdjustmentTypeSelectBarOption> ReceiptAdjustmentTypes;
 	private IEnumerable<string> selectedAdjustmentTypes = ["Cash Discount"];
 	private readonly Dictionary<string, ReceiptAdjustmentEntry> _adjustments = new();
@@ -193,8 +199,8 @@
 			}
 
 			await RequestService.Create(requests, Notes);
-
-			var uri = QueryService.GetCurrentUrl(false);
+			
+			var uri = NavManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
 			NavManager.NavigateTo(uri, true);
 		}
 		catch (Exception ex)

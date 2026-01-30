@@ -24,7 +24,13 @@
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 	<SearchInvoiceDetails OnSelectInvoice="OpenAdd" />
-
+	@code { [Parameter, SupplyParameterFromQuery(Name = "q")] public string? QueryAction { get; set; } }
+	@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
+	{
+		<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
+			Invoice Adjustment created successfully
+		</RadzenAlert>
+	}
 	<RadzenRow Gap="1.5rem">
 		<RadzenColumn Size="6">
 			<div class="text-center pb-3">
@@ -182,6 +188,11 @@
 	// track newly added rows so we can remove them on cancel if they remain empty
 	private HashSet<string> newlyAddedRowIds = new();
 
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+	}
+
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
@@ -252,7 +263,7 @@
 	{
 		await ARInvoiceOffsettingService.Create(ARInvoice, CNInvoice, Notes);
 
-		var uri = QueryService.GetCurrentUrl(false);
+		var uri = NavigationManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
 	    NavigationManager.NavigateTo(uri, true);
 	}
 

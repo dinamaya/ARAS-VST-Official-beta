@@ -23,6 +23,14 @@
 	@if (isReady)
 	{
 		<RadzenRow>
+			@code { [Parameter, SupplyParameterFromQuery(Name = "q")] public string? QueryAction { get; set; } }
+			@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
+			{
+				<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
+					@adjustmentName Adjustment updated successfully
+				</RadzenAlert>
+			}
+
 			<RadzenColumn Size="12" SizeLG="@(isRequestUpdatable ? 4 : 6)">
 				<InvoiceSummary InvoiceDetails="invoice"/>
 			</RadzenColumn>
@@ -119,6 +127,11 @@
 	private string adjustmentName;
     private bool isRequestUpdatable => isUpdatable && role == "Requestor";
 
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+	}
+
 	protected override async Task OnInitializedAsync()
 	{
 		isReady = false;
@@ -134,7 +147,7 @@
 				isCashDiscountInitialized = true;
 				break;
 			case "sar":
-				adjustmentName = "Write";
+				adjustmentName = "Write Off Small Amount";
 				break;
 		};
 
@@ -166,7 +179,7 @@
 			if (!isConfirmed) return;
 
 			await RequestService.Update(isRequestUpdatable, RequestId, data, details.Notes);
-			var uri = QueryService.GetCurrentUrl(false);
+			var uri = NavigationManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
 			NavigationManager.NavigateTo(uri, true);
 		}
 		catch (Exception ex)

@@ -37,6 +37,16 @@
 			Invoice Adjustment updated successfully
 		</RadzenAlert>
 	}
+	@if (isStatusChangeable)
+	{
+		<RadzenColumn Size="12">
+			<RadzenStack JustifyContent="JustifyContent.Right" Orientation="Orientation.Horizontal">
+				<RadzenButton ButtonStyle="ButtonStyle.Danger" Text="Reject" class="btn-danger" Icon="cancel" Click="OnReject" />
+				<RadzenButton ButtonStyle="ButtonStyle.Warning" Text="Decline" class="btn-dark" Icon="thumb_down" Click="OnDecline" />
+				<RadzenButton ButtonStyle="ButtonStyle.Success" Text="Approve" class="btn-success" Icon="thumb_up" Click="OnApprove" />
+			</RadzenStack>
+		</RadzenColumn>
+	}
 
 	@if (isReady)
 	{
@@ -185,11 +195,10 @@
 	</RadzenRow>
 
 	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-
 		<RadzenRow>
-			<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
-				Submit
-			</button>
+			<RadzenColumn>
+				<RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Submit" class="btn-primary" Icon="send" Click="OnSubmit" />
+			</RadzenColumn>
 		</RadzenRow>
 	</RadzenStack>
 </RadzenStack>
@@ -209,6 +218,7 @@
 	private bool isLoading;
 	private bool isReady = false;
 	private bool isUpdatable = false;
+	private bool isStatusChangeable = false;
 	private bool isRequestUpdatable => isUpdatable && role == "Requestor";
 	private string role;
 
@@ -232,6 +242,8 @@
 		role = await AuthService.GetRole();
 		isReady = true;
 		isUpdatable = await RequestService.IsUpdatable(RequestId);
+		bool isApprovable = await RequestService.IsApprovable(RequestId);
+		isStatusChangeable = role == "Approver" && isApprovable;
 		Notes = await NoteService.GetRows(RequestId);
 		StateHasChanged();
 
@@ -290,9 +302,7 @@
 	public async Task SubmitRequest()
 	{
 		await ARInvoiceOffsettingService.Update(isRequestUpdatable, RequestId, ARInvoice, CNInvoice, Notes);
-
-		var uri = NavigationManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
-		NavigationManager.NavigateTo(uri, true);
+		RefreshPage();
 	}
 
 	private void HandleSearchChanged(bool value)
@@ -385,5 +395,59 @@
 		}
 
 		return true;
+	}
+
+	protected async Task OnApprove()
+	{
+		try
+		{
+			bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"APPROVE\" this request?", "Approve Request") ?? false;
+			if (!isConfirmed) return;
+
+			await RequestService.Approve(RequestId, Notes);
+			RefreshPage();
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Approval Failed");
+		}
+	}
+
+	protected async Task OnDecline()
+	{
+		try
+		{
+			bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"DECLINE\" this request?", "Decline Request") ?? false;
+			if (!isConfirmed) return;
+
+			await RequestService.Decline(RequestId, Notes);
+			RefreshPage();
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Decline Failed");
+		}
+	}
+
+	protected async Task OnReject()
+	{
+		try
+		{
+			bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"REJECT\" this request?", "Reject Request") ?? false;
+			if (!isConfirmed) return;
+
+			await RequestService.Reject(RequestId, Notes);
+			RefreshPage();
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Decline Failed");
+		}
+	}
+
+	protected void RefreshPage()
+	{
+		var uri = NavigationManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
+		NavigationManager.NavigateTo(uri, true);
 	}
 }

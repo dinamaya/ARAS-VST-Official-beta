@@ -3,6 +3,7 @@ using ARAS.Blazor.App_Code.Globals.Enums;
 using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Services.Interfaces;
 using Azure.Core;
+using Microsoft.AspNetCore.Routing;
 
 namespace ARAS.Blazor.Services.Implementations
 {
@@ -179,6 +180,10 @@ namespace ARAS.Blazor.Services.Implementations
 		public async Task RejectReceiptAdjustmentRequests(IEnumerable<long> data) => await UpdateAdjustmentStatus(data, _configService.GetRejectionsUrl());
 		public async Task DeclineReceiptAdjustmentRequests(IEnumerable<long> data) => await UpdateAdjustmentStatus(data, _configService.GetDeclinesUrl());
 
+		public async Task Approve(long requestId, IEnumerable<NoteRowDto> notes) => await UpdateOneRequestStatus(requestId, _configService.GetApprovalsUrl(), "Approve", notes);
+		public async Task Decline(long requestId, IEnumerable<NoteRowDto> notes) => await UpdateOneRequestStatus(requestId, _configService.GetDeclinesUrl(), "Decline", notes);
+		public async Task Reject(long requestId, IEnumerable<NoteRowDto> notes) => await UpdateOneRequestStatus(requestId, _configService.GetRejectionsUrl(), "Approve", notes);
+
 		private async Task UpdateAdjustmentStatus(IEnumerable<long> data, string route)
 		{
 			var response = await _baseService.SendAsync<string>(new RequestDto<IEnumerable<long>>()
@@ -186,15 +191,22 @@ namespace ARAS.Blazor.Services.Implementations
 				URL = route,
 				ApiType = ApiType.POST,
 				Data = data
-			},
-				onSuccessSendCallBack: async (resp) =>
-				{
-					await Task.Run(() =>
-					{
-						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to update the request");
-					});
-				});
+			});
+
+			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to update the request");
 		}
 
-    }
+		private async Task UpdateOneRequestStatus(long requestId, string route, string statusName, IEnumerable<NoteRowDto> notes)
+		{
+			var response = await _baseService.SendAsync<string>(new RequestDto<long>()
+			{
+				URL = route + requestId,
+				ApiType = ApiType.POST,
+			});
+
+			Guards.ThrowInvalidOperationIf(!response.IsSuccess, response.Message);
+
+			await _noteService.Create(requestId, notes);
+		}
+	}
 }

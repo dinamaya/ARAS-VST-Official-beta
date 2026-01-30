@@ -37,6 +37,7 @@ namespace ARAS.Blazor.Services.Implementations
 
 		public async Task Create(IEnumerable<NoteRowDto> notes)
 		{
+			if (!notes.Any()) return;
 
 			var result = await _baseService.SendAsync<string>(
 				new RequestDto()

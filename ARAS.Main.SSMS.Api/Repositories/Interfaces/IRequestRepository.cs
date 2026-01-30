@@ -23,5 +23,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 		Task Approve(long requestId, string modifiedBy);
 		Task Decline(long requestId, string modifiedBy);
 		Task Reject(long requestId, string modifiedBy);
+		Task<string> InvoiceExistingAdjustments(string invoiceNumber, IEnumerable<string> adjustmentTypeIds);
 	}
 }

@@ -8,6 +8,7 @@ using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
+using System.Runtime.InteropServices;
 
 namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 {
@@ -408,6 +409,17 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				await dbTransaction.RollbackAsync();
 				throw;
 			}
+		}
+
+        public async Task<string> InvoiceExistingAdjustments(string invoiceNumber, IEnumerable<string> adjustmentTypeIds)
+        {
+            var adjustments = await _context.VwReceiptAdjustments.AsNoTracking().Where(t => t.InvoiceNumber == invoiceNumber).ToListAsync();
+			string existingAdjustments = string.Empty;
+			foreach(var adj in adjustments)
+				if(adjustmentTypeIds.Any(a => a == adj.AdjustmentTypeId))
+					existingAdjustments += adj.AdjustmentType + ", ";
+
+			return existingAdjustments.Length < 1 ? string.Empty : existingAdjustments.Remove(existingAdjustments.Length - 2);
 		}
     }
 }

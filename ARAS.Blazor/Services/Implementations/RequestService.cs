@@ -151,7 +151,7 @@ namespace ARAS.Blazor.Services.Implementations
 				Data = row
 			});
 
-			Guards.ThrowInvalidOperationIf(!createResult.IsSuccess, "Failed to create request" + createResult.Message);
+			Guards.ThrowInvalidOperationIf(!createResult.IsSuccess, createResult.Message);
 
 			foreach (var note in notes)
 				note.Id = createResult.Result.Where(r => r.AdjustmentTypeCode == note.AdjustmentType).FirstOrDefault()?.RequestId.ToString() ?? string.Empty;

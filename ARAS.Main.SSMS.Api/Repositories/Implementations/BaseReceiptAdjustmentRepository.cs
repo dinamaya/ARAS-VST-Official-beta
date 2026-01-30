@@ -1,4 +1,5 @@
-﻿using ARAS.Main.SSMS.Api.Context;
+﻿using ARAS.Main.SSMS.Api.App_Code.Globals;
+using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using ARAS.Main.SSMS.Api.Services.Interfaces;
@@ -39,6 +40,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 			try
 			{
+				string invoiceNumber = data.Model.Select(d => d.InvoiceNumber).First();
 				IList<string> adjustmentTypeIds = [];
 				IEnumerable<long> requestIds = [];
 
@@ -55,7 +57,12 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					string adjustmentType = (await _adjustmentRepo.GetAdjustmentInfoByName(adjustmentName)).Id;
 					adjustmentTypeIds.Add(adjustmentType);
 				}
+
 				requestIds = await _requestRepo.CreateAsync(adjustmentTypeIds, createdBy);
+				
+				string existingAdjustments = await _requestRepo.InvoiceExistingAdjustments(invoiceNumber, adjustmentTypeIds);
+
+				Guards.ThrowInvalidOperationIf(!string.IsNullOrEmpty(existingAdjustments), "Invoice Number already has the following adjustments:\n" + existingAdjustments);
 
 				foreach (var requestId in requestIds)
 					transactions.Add(new TransactionCreateDto(requestId, "Pending"));

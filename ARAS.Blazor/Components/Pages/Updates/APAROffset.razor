@@ -26,7 +26,10 @@
 <h2>AP AR : Offset</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<SearchInvoiceAPARDetails OnAPAdd="AddAP" OnARAdd="AddAR" />
+	@if (isRequestUpdatable)
+	{
+		<SearchInvoiceAPARDetails OnAPAdd="AddAP" OnARAdd="AddAR" />
+	}
 
 	@if (isReady)
 	{
@@ -246,16 +249,13 @@
 			</RadzenColumn>
 		</RadzenRow>
 
-		@if (isUpdatable)
-		{
-			<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-				<RadzenRow>
-					<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
-						Submit
-					</button>
-				</RadzenRow>
-			</RadzenStack>
-		}
+		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+			<RadzenRow>
+				<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
+					Submit
+				</button>
+			</RadzenRow>
+		</RadzenStack>
 	}
 </RadzenStack>
 
@@ -356,7 +356,7 @@
 
 	public async Task SubmitRequest()
 	{
-		await APAROffsetService.Update(RequestId, APAdjustments, ARAdjustments, Notes);
+		await APAROffsetService.Update(isRequestUpdatable, RequestId, APAdjustments, ARAdjustments, Notes);
 
 		var uri = QueryService.GetCurrentUrl(false);
 		NavigationManager.NavigateTo(uri, true);

@@ -165,7 +165,7 @@
 
 			if (!isConfirmed) return;
 
-			await RequestService.Update(RequestId, data, details.Notes);
+			await RequestService.Update(isRequestUpdatable, RequestId, data, details.Notes);
 			var uri = QueryService.GetCurrentUrl(false);
 			NavigationManager.NavigateTo(uri, true);
 		}

@@ -26,7 +26,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			return await _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
-				(t.Status == "Pending" || t.Status == "Resubmitted")
+				(t.Status == "Pending" || t.Status == "Resubmitted" || t.Status == "Declined")
 			);
 		}
 

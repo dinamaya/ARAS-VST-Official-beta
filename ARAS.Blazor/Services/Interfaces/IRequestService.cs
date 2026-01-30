@@ -20,7 +20,7 @@ namespace ARAS.Blazor.Services.Interfaces
 		Task RejectReceiptAdjustmentRequests(IEnumerable<long> data);
 		Task DeclineReceiptAdjustmentRequests(IEnumerable<long> data);
 
-		Task Update(long requestId, ReceiptAdjustmentUpdateRequestDto row, IEnumerable<NoteRowDto> notes);
+		Task Update(bool isUpdatable, long requestId, ReceiptAdjustmentUpdateRequestDto row, IEnumerable<NoteRowDto> notes);
 		Task Create(IEnumerable<BaseReceiptAdjustmentCreateDto> row, IEnumerable<NoteRowDto> notes);
 	}
 }

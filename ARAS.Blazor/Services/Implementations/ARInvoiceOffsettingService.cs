@@ -58,13 +58,9 @@ namespace ARAS.Blazor.Services.Implementations
 				ApiType = ApiType.POST,
 				URL = _configService.GetRequestsUrl("invoice/ari"),
 				Data = requestsDto
-			},
-				onSuccessSendCallBack: (resp) =>
-				{
-					Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to create request" + resp.Message);
-					return Task.CompletedTask;
-				}
-			);
+			});
+			
+			Guards.ThrowInvalidOperationIf(!createResult.IsSuccess, "Failed to create request" + createResult.Message);
 
 			await _noteService.Create(createResult.Result, notes);
 		}
@@ -86,22 +82,21 @@ namespace ARAS.Blazor.Services.Implementations
 			return arResponse.Result;
 		}
 
-        public async Task Update(long requestId, IEnumerable<ARInvoiceOffsettingRowDto> arRows, IEnumerable<ARInvoiceOffsettingRowDto> cnRows, IEnumerable<NoteRowDto> notes)
+        public async Task Update(bool isUpdatable, long requestId, IEnumerable<ARInvoiceOffsettingRowDto> arRows, IEnumerable<ARInvoiceOffsettingRowDto> cnRows, IEnumerable<NoteRowDto> notes)
 		{
-			var requestsDto = ToCreateDto(arRows, cnRows);
+			if (isUpdatable)
+			{
+				var requestsDto = ToCreateDto(arRows, cnRows);
 
-			var result = await _baseService.SendAsync<long>(new RequestDto<IEnumerable<ARInvoiceOffsettingCreateDto>>()
+				var result = await _baseService.SendAsync<long>(new RequestDto<IEnumerable<ARInvoiceOffsettingCreateDto>>()
 				{
 					ApiType = ApiType.PUT,
 					URL = _configService.GetRequestsUrl($"invoice/ari/{requestId}"),
 					Data = requestsDto
-				},
-				onSuccessSendCallBack: (resp) =>
-				{
-					Guards.ThrowInvalidOperationIf(!resp.IsSuccess, "Failed to update request" + resp.Message);
-					return Task.CompletedTask;
-				}
-			);
+				});
+
+				Guards.ThrowInvalidOperationIf(!result.IsSuccess, "Failed to update request" + result.Message);
+			}
 
 			await _noteService.Create(requestId, notes);
 		}

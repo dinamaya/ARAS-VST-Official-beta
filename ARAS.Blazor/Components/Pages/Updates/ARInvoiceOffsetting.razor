@@ -268,7 +268,7 @@
 
 	public async Task SubmitRequest()
 	{
-		await ARInvoiceOffsettingService.Update(RequestId, ARInvoice, CNInvoice, Notes);
+		await ARInvoiceOffsettingService.Update(isRequestUpdatable, RequestId, ARInvoice, CNInvoice, Notes);
 
 		var uri = QueryService.GetCurrentUrl(false);
 		NavigationManager.NavigateTo(uri, true);

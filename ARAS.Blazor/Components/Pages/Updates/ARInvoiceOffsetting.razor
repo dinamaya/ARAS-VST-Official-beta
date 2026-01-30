@@ -203,6 +203,8 @@
 	</RadzenStack>
 </RadzenStack>
 
+<input type="hidden" value="@inputHash" />
+
 @code {
 	[Parameter] public long RequestId { get; set; }
 
@@ -221,7 +223,7 @@
 	private bool isStatusChangeable = false;
 	private bool isRequestUpdatable => isUpdatable && role == "Requestor";
 	private string role;
-
+	private string inputHash = string.Empty;
 	// track newly added rows so we can remove them on cancel if they remain empty
 	private HashSet<string> newlyAddedRowIds = new();
 
@@ -242,6 +244,9 @@
 		role = await AuthService.GetRole();
 		isReady = true;
 		isUpdatable = await RequestService.IsUpdatable(RequestId);
+		var hashedAdjustments = CNInvoice.Concat(ARInvoice);
+		inputHash = Utils.Security.ObjectHash(hashedAdjustments);
+
 		bool isApprovable = await RequestService.IsApprovable(RequestId);
 		isStatusChangeable = role == "Approver" && isApprovable;
 		Notes = await NoteService.GetRows(RequestId);
@@ -290,7 +295,6 @@
 			var cnTotal = Math.Round(CNInvoice.Sum(a => a.InvoiceAmount), 2);
 
 			Guards.ThrowInvalidOperationIf((arTotal != cnTotal), "AR and CN/Sales Invoice amounts must balance.");
-
 			await SubmitRequest();
 		}
 		catch (Exception ex)
@@ -301,7 +305,10 @@
 
 	public async Task SubmitRequest()
 	{
-		await ARInvoiceOffsettingService.Update(isRequestUpdatable, RequestId, ARInvoice, CNInvoice, Notes);
+		IEnumerable<ARInvoiceOffsettingRowDto> data = CNInvoice.Concat(ARInvoice);
+		string newHash = Utils.Security.ObjectHash(data);
+		bool _isUpdatable = isRequestUpdatable && !newHash.Equals(inputHash);
+		await ARInvoiceOffsettingService.Update(_isUpdatable, RequestId, ARInvoice, CNInvoice, Notes);
 		RefreshPage();
 	}
 

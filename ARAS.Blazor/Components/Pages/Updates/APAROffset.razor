@@ -277,6 +277,8 @@
 	}
 </RadzenStack>
 
+<input type="hidden" value="@inputHash" />
+
 @code 
 	{
 	[Parameter] public long RequestId { get; set; }
@@ -297,6 +299,7 @@
 	private bool isStatusChangeable = false;
 	private bool isRequestUpdatable => isUpdatable && role == "Requestor";
 	private string role;
+	private string inputHash = string.Empty;
 
 	private double NetBalance => (APAdjustments?.Sum(a => a.InvoiceAmount) ?? 0) - (ARAdjustments?.Sum(a => a.Amount) ?? 0);
 
@@ -320,6 +323,8 @@
 		role = await AuthService.GetRole();
 		isReady = true;
 		isUpdatable = await RequestService.IsUpdatable(RequestId);
+		inputHash = Utils.Security.ObjectHash(adjustments);
+
 		bool isApprovable = await RequestService.IsApprovable(RequestId);
 		isStatusChangeable = role == "Approver" && isApprovable;
 		Notes = await NoteService.GetRows(RequestId);
@@ -371,7 +376,6 @@
 			var arTotal = Math.Round(ARAdjustments.Sum(a => a.Amount), 2);
 
 			Guards.ThrowInvalidOperationIf((apTotal != arTotal), "AP and AR amounts must balance.");
-
 			await SubmitRequest();
 		}
 		catch (Exception ex)
@@ -382,7 +386,14 @@
 
 	public async Task SubmitRequest()
 	{
-		await APAROffsetService.Update(isRequestUpdatable, RequestId, APAdjustments, ARAdjustments, Notes);
+		APAROffsetRowDto data = new()
+		{
+			APGroup = APAdjustments,
+			ARGroup = ARAdjustments
+		};
+		string newHash = Utils.Security.ObjectHash(data);
+		bool _isUpdatable = isRequestUpdatable && !newHash.Equals(inputHash);
+		await APAROffsetService.Update(_isUpdatable, RequestId, APAdjustments, ARAdjustments, Notes);
 		RefreshPage();
 	}
 

@@ -1,6 +1,8 @@
 ﻿using Humanizer;
 using Microsoft.AspNetCore.Identity;
 using Newtonsoft.Json;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace ARAS.Blazor.App_Code.Globals
 {
@@ -49,6 +51,20 @@ namespace ARAS.Blazor.App_Code.Globals
 
 			public static string DecodeString(string value) => string.IsNullOrWhiteSpace(value) ? string.Empty : Uri.UnescapeDataString(value.Trim());
 
+			public static string ObjectHash(object data)
+			{
+				string val = JsonConvert.SerializeObject(data);
+				return ComputeHash(val);
+			}
+
+			public static string ComputeHash(string value)
+			{
+				using var sha = SHA256.Create();
+				var bytes = Encoding.UTF8.GetBytes(value ?? string.Empty);
+				var hash = sha.ComputeHash(bytes);
+
+				return Convert.ToHexString(hash);
+			}
 		}
 		public static bool Equals(string value, string other) => !string.IsNullOrEmpty(value) && value.Equals(other, StringComparison.CurrentCultureIgnoreCase);
 

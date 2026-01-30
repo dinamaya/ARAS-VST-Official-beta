@@ -317,7 +317,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		}
 
 		private async Task<IEnumerable<InvoiceAdjustmentRowDto>> ToRequestAdjustmentRow(IQueryable<LatestInvoiceAdjustmentsV> query) =>
-			await query.Select(q => new InvoiceAdjustmentRowDto()
+			(await query.Select(q => new InvoiceAdjustmentRowDto()
 			{
 				RequestId = q.RequestId,
 				Requestor = ValidateFullName(q.RequestorFirstName, q.RequestorLastName),
@@ -332,10 +332,10 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				InvoiceNumber = q.InvoiceNumber,
 				ReferencesCount = "0" // Placeholder as ReferencesCount is not available in LatestReceiptAdjustmentDetailsV
 			})
-			.ToListAsync();
+            .ToListAsync()).OrderByDescending(a => a.DateCreated);
 
 		private async Task<IEnumerable<ReceiptAdjustmentRowDto>> ToRequestAdjustmentRow(IQueryable<LatestReceiptAdjustmentDetailsV> query) =>
-			await query.Select(q => new ReceiptAdjustmentRowDto()
+			(await query.Select(q => new ReceiptAdjustmentRowDto()
 			{
 				RequestId = q.RequestId,
 				Requestor = ValidateFullName(q.RequestorFirstName, q.RequestorLastName),
@@ -350,7 +350,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				AdjustmentType = q.AdjustmentType,
 				AdjustmentTypeCode = q.AdjustmentTypeCode.ToLower()
 			})
-			.ToListAsync();
+            .ToListAsync()).OrderByDescending(a => a.DateCreated);
 
         public async Task Approve(long requestId, string modifiedBy)
         {

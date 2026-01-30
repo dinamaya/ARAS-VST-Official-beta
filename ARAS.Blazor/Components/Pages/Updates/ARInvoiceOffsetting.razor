@@ -25,7 +25,28 @@
 <h2>AR Invoice Offsetting</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<SearchInvoiceDetails OnSelectInvoice="OpenAdd" />
+	@if (isRequestUpdatable)
+	{
+		<SearchInvoiceDetails OnSelectInvoice="OpenAdd" />
+	}
+
+	@code { [Parameter, SupplyParameterFromQuery(Name = "q")] public string? QueryAction { get; set; } }
+	@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
+	{
+		<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
+			Invoice Adjustment updated successfully
+		</RadzenAlert>
+	}
+	@if (isStatusChangeable)
+	{
+		<RadzenColumn Size="12">
+			<RadzenStack JustifyContent="JustifyContent.Right" Orientation="Orientation.Horizontal">
+				<RadzenButton ButtonStyle="ButtonStyle.Danger" Text="Reject" class="btn-danger" Icon="cancel" Click="OnReject" />
+				<RadzenButton ButtonStyle="ButtonStyle.Warning" Text="Decline" class="btn-dark" Icon="thumb_down" Click="OnDecline" />
+				<RadzenButton ButtonStyle="ButtonStyle.Success" Text="Approve" class="btn-success" Icon="thumb_up" Click="OnApprove" />
+			</RadzenStack>
+		</RadzenColumn>
+	}
 
 	@if (isReady)
 	{
@@ -69,12 +90,14 @@
 								</FooterTemplate>
 							</RadzenDataGridColumn>
 
-							<RadzenDataGridColumn TItem="ARInvoiceOffsettingRowDto" Context="data" TextAlign="TextAlign.Right">
-								<Template Context="data">
-									<RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Click="@(async args => await OnRemoveARRow(data))" />
-								</Template>
-							</RadzenDataGridColumn>
-
+							@if (isRequestUpdatable)
+							{
+								<RadzenDataGridColumn TItem="ARInvoiceOffsettingRowDto" Context="data" TextAlign="TextAlign.Right">
+									<Template Context="data">
+										<RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Click="@(async args => await OnRemoveARRow(data))" />
+									</Template>
+								</RadzenDataGridColumn>
+							}
 						</Columns>
 					</RadzenDataGrid>
 				</div>
@@ -143,14 +166,17 @@
 								</FooterTemplate>
 							</RadzenDataGridColumn>
 
-							<RadzenDataGridColumn TItem="ARInvoiceOffsettingRowDto" Context="data" TextAlign="TextAlign.Right">
-								<Template Context="data">
-									<RadzenButton Icon="delete"
-												  Size="ButtonSize.Small"
-												  ButtonStyle="ButtonStyle.Danger"
-												  Click="@(() => OnRemoveCNRow(data))" />
-								</Template>
-							</RadzenDataGridColumn>
+							@if (isRequestUpdatable)
+							{
+								<RadzenDataGridColumn TItem="ARInvoiceOffsettingRowDto" Context="data" TextAlign="TextAlign.Right">
+									<Template Context="data">
+										<RadzenButton Icon="delete"
+													  Size="ButtonSize.Small"
+													  ButtonStyle="ButtonStyle.Danger"
+													  Click="@(() => OnRemoveCNRow(data))" />
+									</Template>
+								</RadzenDataGridColumn>
+							}
 						</Columns>
 					</RadzenDataGrid>
 				</div>
@@ -169,14 +195,15 @@
 	</RadzenRow>
 
 	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-
 		<RadzenRow>
-			<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
-				Submit
-			</button>
+			<RadzenColumn>
+				<RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Submit" class="btn-primary" Icon="send" Click="OnSubmit" />
+			</RadzenColumn>
 		</RadzenRow>
 	</RadzenStack>
 </RadzenStack>
+
+<input type="hidden" value="@inputHash" />
 
 @code {
 	[Parameter] public long RequestId { get; set; }
@@ -193,11 +220,17 @@
 	private bool isLoading;
 	private bool isReady = false;
 	private bool isUpdatable = false;
+	private bool isStatusChangeable = false;
 	private bool isRequestUpdatable => isUpdatable && role == "Requestor";
 	private string role;
-
+	private string inputHash = string.Empty;
 	// track newly added rows so we can remove them on cancel if they remain empty
 	private HashSet<string> newlyAddedRowIds = new();
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+	}
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -211,6 +244,11 @@
 		role = await AuthService.GetRole();
 		isReady = true;
 		isUpdatable = await RequestService.IsUpdatable(RequestId);
+		var hashedAdjustments = CNInvoice.Concat(ARInvoice);
+		inputHash = Utils.Security.ObjectHash(hashedAdjustments);
+
+		bool isApprovable = await RequestService.IsApprovable(RequestId);
+		isStatusChangeable = role == "Approver" && isApprovable;
 		Notes = await NoteService.GetRows(RequestId);
 		StateHasChanged();
 
@@ -257,7 +295,6 @@
 			var cnTotal = Math.Round(CNInvoice.Sum(a => a.InvoiceAmount), 2);
 
 			Guards.ThrowInvalidOperationIf((arTotal != cnTotal), "AR and CN/Sales Invoice amounts must balance.");
-
 			await SubmitRequest();
 		}
 		catch (Exception ex)
@@ -268,10 +305,11 @@
 
 	public async Task SubmitRequest()
 	{
-		await ARInvoiceOffsettingService.Update(RequestId, ARInvoice, CNInvoice, Notes);
-
-		var uri = QueryService.GetCurrentUrl(false);
-		NavigationManager.NavigateTo(uri, true);
+		IEnumerable<ARInvoiceOffsettingRowDto> data = CNInvoice.Concat(ARInvoice);
+		string newHash = Utils.Security.ObjectHash(data);
+		bool _isUpdatable = isRequestUpdatable && !newHash.Equals(inputHash);
+		await ARInvoiceOffsettingService.Update(_isUpdatable, RequestId, ARInvoice, CNInvoice, Notes);
+		RefreshPage();
 	}
 
 	private void HandleSearchChanged(bool value)
@@ -364,5 +402,59 @@
 		}
 
 		return true;
+	}
+
+	protected async Task OnApprove()
+	{
+		try
+		{
+			bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"APPROVE\" this request?", "Approve Request") ?? false;
+			if (!isConfirmed) return;
+
+			await RequestService.Approve(RequestId, Notes);
+			RefreshPage();
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Approval Failed");
+		}
+	}
+
+	protected async Task OnDecline()
+	{
+		try
+		{
+			bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"DECLINE\" this request?", "Decline Request") ?? false;
+			if (!isConfirmed) return;
+
+			await RequestService.Decline(RequestId, Notes);
+			RefreshPage();
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Decline Failed");
+		}
+	}
+
+	protected async Task OnReject()
+	{
+		try
+		{
+			bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"REJECT\" this request?", "Reject Request") ?? false;
+			if (!isConfirmed) return;
+
+			await RequestService.Reject(RequestId, Notes);
+			RefreshPage();
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Decline Failed");
+		}
+	}
+
+	protected void RefreshPage()
+	{
+		var uri = NavigationManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
+		NavigationManager.NavigateTo(uri, true);
 	}
 }

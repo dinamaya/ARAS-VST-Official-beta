@@ -1,21 +1,29 @@
-﻿using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
+﻿using ARAS.Main.SSMS.Api.App_Code.Globals;
+using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
 using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Models.Entities;
 using ARAS.Main.SSMS.Api.Models.Views;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
+using System.Runtime.InteropServices;
 
 namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 {
 	public class RequestRepository : IRequestRepository
 	{
 		private readonly MainDbContext _context;
+		private readonly ITransactionRepository _transactionRepo;
 
-		public RequestRepository(MainDbContext context) => _context = context;
+        public RequestRepository(MainDbContext context, ITransactionRepository transactionRepo)
+        {
+            _context = context;
+            _transactionRepo = transactionRepo;
+        }
 
-		public async Task<Request> GetById(long id) => await _context.Requests.FindAsync(id) ?? throw new InvalidOperationException(Exceptions.NOTFOUND_REQUEST);
+        public async Task<Request> GetById(long id) => await _context.Requests.FindAsync(id) ?? throw new InvalidOperationException(Exceptions.NOTFOUND_REQUEST);
 
 		/// <summary>
 		/// Checks if the request is updatable
@@ -26,7 +34,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			return await _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
-				(t.Status == "Pending" || t.Status == "Resubmitted")
+				(t.Status == "Pending" || t.Status == "Resubmitted" || t.Status == "Declined")
 			);
 		}
 
@@ -67,7 +75,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			return await _context.VwLatestReceiptAdjustmentDetails.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
-				!(t.Status == "Rejected" || t.Status == "Declined")
+				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "Approved" || t.Status == "Posted")
 			);
 		}
 
@@ -343,5 +351,75 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				AdjustmentTypeCode = q.AdjustmentTypeCode.ToLower()
 			})
 			.ToListAsync();
+
+        public async Task Approve(long requestId, string modifiedBy)
+        {
+			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
+
+			try
+			{
+				bool isApprovable = await IsApprovable(requestId);
+				Guards.ThrowInvalidOperationIf(!isApprovable, Exceptions.ALREADY_APPROVED);
+				var transaction = new TransactionCreateDto(requestId, "Approved");
+
+				await _transactionRepo.CreateAsync(transaction, modifiedBy);
+				await dbTransaction.CommitAsync();
+			}
+			catch
+			{
+				await dbTransaction.RollbackAsync();
+				throw;
+			}
+		}
+
+        public async Task Decline(long requestId, string modifiedBy)
+        {
+			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
+			try
+			{
+				bool isDeclinable = await IsDeclinable(requestId);
+				Guards.ThrowInvalidOperationIf(!isDeclinable, Exceptions.ALREADY_DECLINED);
+				var transaction = new TransactionCreateDto(requestId, "Declined");
+
+				await _transactionRepo.CreateAsync(transaction, modifiedBy);
+				await dbTransaction.CommitAsync();
+			}
+			catch
+			{
+				await dbTransaction.RollbackAsync();
+				throw;
+			}
+		}
+
+        public async Task Reject(long requestId, string modifiedBy)
+        {
+			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
+
+			try
+			{
+				bool isRejectable = await IsRejectable(requestId);
+				Guards.ThrowInvalidOperationIf(!isRejectable, Exceptions.ALREADY_REJECT);
+				var transaction = new TransactionCreateDto(requestId, "Rejected");
+
+				await _transactionRepo.CreateAsync(transaction, modifiedBy);
+				await dbTransaction.CommitAsync();
+			}
+			catch
+			{
+				await dbTransaction.RollbackAsync();
+				throw;
+			}
+		}
+
+        public async Task<string> InvoiceExistingAdjustments(string invoiceNumber, IEnumerable<string> adjustmentTypeIds)
+        {
+            var adjustments = await _context.VwReceiptAdjustments.AsNoTracking().Where(t => t.InvoiceNumber == invoiceNumber).ToListAsync();
+			string existingAdjustments = string.Empty;
+			foreach(var adj in adjustments)
+				if(adjustmentTypeIds.Any(a => a == adj.AdjustmentTypeId))
+					existingAdjustments += adj.AdjustmentType + ", ";
+
+			return existingAdjustments.Length < 1 ? string.Empty : existingAdjustments.Remove(existingAdjustments.Length - 2);
+		}
     }
 }

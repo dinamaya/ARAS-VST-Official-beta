@@ -59,7 +59,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("is-approvable/{requestId:long}"), Authorize(Roles = "Approver")]
+		[HttpGet("is-approvable/{requestId:long}")]
 		public async Task<ResponseDto<bool>> IsApprovable(long requestId)
 		{
 			var response = new ResponseDto<bool>();

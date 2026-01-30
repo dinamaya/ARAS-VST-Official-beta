@@ -26,7 +26,28 @@
 <h2>AP AR : Offset</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<SearchInvoiceAPARDetails OnAPAdd="AddAP" OnARAdd="AddAR" />
+	@if (isRequestUpdatable)
+	{
+		<SearchInvoiceAPARDetails OnAPAdd="AddAP" OnARAdd="AddAR" />
+	}
+
+	@code { [Parameter, SupplyParameterFromQuery(Name = "q")] public string? QueryAction { get; set; } }
+	@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
+	{
+		<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
+			Invoice Adjustment updated successfully
+		</RadzenAlert>
+	}
+	@if (isStatusChangeable)
+	{
+		<RadzenColumn Size="12">
+			<RadzenStack JustifyContent="JustifyContent.Right" Orientation="Orientation.Horizontal">
+				<RadzenButton ButtonStyle="ButtonStyle.Danger" Text="Reject" class="btn-danger" Icon="cancel" Click="OnReject" />
+				<RadzenButton ButtonStyle="ButtonStyle.Warning" Text="Decline" class="btn-dark" Icon="thumb_down" Click="OnDecline" />
+				<RadzenButton ButtonStyle="ButtonStyle.Success" Text="Approve" class="btn-success" Icon="thumb_up" Click="OnApprove" />
+			</RadzenStack>
+		</RadzenColumn>
+	}
 
 	@if (isReady)
 	{
@@ -246,18 +267,17 @@
 			</RadzenColumn>
 		</RadzenRow>
 
-		@if (isUpdatable)
-		{
-			<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-				<RadzenRow>
-					<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
-						Submit
-					</button>
-				</RadzenRow>
-			</RadzenStack>
-		}
+		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+			<RadzenRow>
+				<RadzenColumn>
+					<RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Submit" class="btn-primary" Icon="send" Click="OnSubmit" />
+				</RadzenColumn>
+			</RadzenRow>
+		</RadzenStack>
 	}
 </RadzenStack>
+
+<input type="hidden" value="@inputHash" />
 
 @code 
 	{
@@ -276,13 +296,20 @@
 	private bool isLoading;
 	private bool isReady = false;
 	private bool isUpdatable = false;
+	private bool isStatusChangeable = false;
 	private bool isRequestUpdatable => isUpdatable && role == "Requestor";
 	private string role;
+	private string inputHash = string.Empty;
 
 	private double NetBalance => (APAdjustments?.Sum(a => a.InvoiceAmount) ?? 0) - (ARAdjustments?.Sum(a => a.Amount) ?? 0);
 
 	// track newly added rows so we can remove them on cancel if they remain empty
 	private HashSet<string> newlyAddedRowIds = new();
+
+	protected override async Task OnParametersSetAsync()
+	{
+		await base.OnParametersSetAsync();
+	}
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -296,6 +323,10 @@
 		role = await AuthService.GetRole();
 		isReady = true;
 		isUpdatable = await RequestService.IsUpdatable(RequestId);
+		inputHash = Utils.Security.ObjectHash(adjustments);
+
+		bool isApprovable = await RequestService.IsApprovable(RequestId);
+		isStatusChangeable = role == "Approver" && isApprovable;
 		Notes = await NoteService.GetRows(RequestId);
 		StateHasChanged();
 		await apGrid.Reload();
@@ -345,7 +376,6 @@
 			var arTotal = Math.Round(ARAdjustments.Sum(a => a.Amount), 2);
 
 			Guards.ThrowInvalidOperationIf((apTotal != arTotal), "AP and AR amounts must balance.");
-
 			await SubmitRequest();
 		}
 		catch (Exception ex)
@@ -356,10 +386,15 @@
 
 	public async Task SubmitRequest()
 	{
-		await APAROffsetService.Update(RequestId, APAdjustments, ARAdjustments, Notes);
-
-		var uri = QueryService.GetCurrentUrl(false);
-		NavigationManager.NavigateTo(uri, true);
+		APAROffsetRowDto data = new()
+		{
+			APGroup = APAdjustments,
+			ARGroup = ARAdjustments
+		};
+		string newHash = Utils.Security.ObjectHash(data);
+		bool _isUpdatable = isRequestUpdatable && !newHash.Equals(inputHash);
+		await APAROffsetService.Update(_isUpdatable, RequestId, APAdjustments, ARAdjustments, Notes);
+		RefreshPage();
 	}
 
 	protected async Task AddAR(InvoiceDetailsDto data)
@@ -537,5 +572,59 @@
 		}
 
 		return true;
+	}
+
+	protected async Task OnApprove()
+	{
+		try
+		{
+			bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"APPROVE\" this request?", "Approve Request") ?? false;
+			if (!isConfirmed) return;
+
+			await RequestService.Approve(RequestId, Notes);
+			RefreshPage();
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Approval Failed");
+		}
+	}
+
+	protected async Task OnDecline()
+	{
+		try
+		{
+			bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"DECLINE\" this request?", "Decline Request") ?? false;
+			if (!isConfirmed) return;
+
+			await RequestService.Decline(RequestId, Notes);
+			RefreshPage();
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Decline Failed");
+		}
+	}
+
+	protected async Task OnReject()
+	{
+		try
+		{
+			bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"REJECT\" this request?", "Reject Request") ?? false;
+			if (!isConfirmed) return;
+
+			await RequestService.Reject(RequestId, Notes);
+			RefreshPage();
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Request Decline Failed");
+		}
+	}
+
+	protected void RefreshPage()
+	{
+		var uri = NavigationManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
+		NavigationManager.NavigateTo(uri, true);
 	}
 }

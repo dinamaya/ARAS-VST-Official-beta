@@ -18,12 +18,11 @@ namespace ARAS.Blazor.Services.Implementations
 
 		public async Task Create(long requestId, IEnumerable<NoteRowDto> notes)
 		{
-
 			var filtered = notes.Where(n => string.IsNullOrEmpty(n.Id));
 			if (!filtered.Any()) return;
 			Guards.ThrowInvalidOperationIf(requestId == default || requestId == 0, "There is a problem while creating notes");
 
-			await _baseService.SendAsync<string>(
+			var response = await _baseService.SendAsync<string>(
 				new RequestDto()
 				{
 					ApiType = ApiType.POST,
@@ -31,20 +30,16 @@ namespace ARAS.Blazor.Services.Implementations
 					Data = filtered,
 					ContentType = ContentType.MultipartFormData,
 					FormCollectionName = "notes"
-				},
-				onSuccessSendCallBack: async (resp) =>
-				{
-					await Task.Run(() =>
-					{
-						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, resp.Message);
-					});
 				});
+
+			Guards.ThrowInvalidOperationIf(!response.IsSuccess, response.Message);
 		}
 
 		public async Task Create(IEnumerable<NoteRowDto> notes)
 		{
+			if (!notes.Any()) return;
 
-			await _baseService.SendAsync<string>(
+			var result = await _baseService.SendAsync<string>(
 				new RequestDto()
 				{
 					ApiType = ApiType.POST,
@@ -52,14 +47,9 @@ namespace ARAS.Blazor.Services.Implementations
 					Data = notes,
 					ContentType = ContentType.MultipartFormData,
 					FormCollectionName = "notes"
-				},
-				onSuccessSendCallBack: async (resp) =>
-				{
-					await Task.Run(() =>
-					{
-						Guards.ThrowInvalidOperationIf(!resp.IsSuccess, resp.Message);
-					});
 				});
+		
+			Guards.ThrowInvalidOperationIf(!result.IsSuccess, result.Message);
 		}
 
 		public async Task<IList<NoteRowDto>> GetRows(long requestId)

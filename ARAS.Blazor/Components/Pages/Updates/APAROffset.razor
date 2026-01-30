@@ -392,6 +392,7 @@
 			ARGroup = ARAdjustments
 		};
 		string newHash = Utils.Security.ObjectHash(data);
+		Guards.ThrowInvalidOperationIf(newHash.Equals(inputHash), "No changes detected in the current request.");
 		bool _isUpdatable = isRequestUpdatable && !newHash.Equals(inputHash);
 		await APAROffsetService.Update(_isUpdatable, RequestId, APAdjustments, ARAdjustments, Notes);
 		RefreshPage();

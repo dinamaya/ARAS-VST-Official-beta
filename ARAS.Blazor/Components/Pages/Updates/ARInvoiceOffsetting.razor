@@ -308,6 +308,8 @@
 		IEnumerable<ARInvoiceOffsettingRowDto> data = CNInvoice.Concat(ARInvoice);
 		string newHash = Utils.Security.ObjectHash(data);
 		bool _isUpdatable = isRequestUpdatable && !newHash.Equals(inputHash);
+
+		Guards.ThrowInvalidOperationIf(newHash.Equals(inputHash), "No changes detected in the current request.");
 		await ARInvoiceOffsettingService.Update(_isUpdatable, RequestId, ARInvoice, CNInvoice, Notes);
 		RefreshPage();
 	}

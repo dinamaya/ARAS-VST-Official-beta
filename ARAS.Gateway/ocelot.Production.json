@@ -220,7 +220,7 @@
 				}
 			],
 			"UpstreamPathTemplate": "/erp/adjustment/{everything}",
-			"UpstreamHttpMethod": [ "GET" ]
+			"UpstreamHttpMethod": [ "GET", "POST" ]
 		}
 	],
 	"GlobalConfiguration": {

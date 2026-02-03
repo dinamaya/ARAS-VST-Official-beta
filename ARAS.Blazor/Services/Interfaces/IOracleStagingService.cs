@@ -4,6 +4,6 @@ namespace ARAS.Blazor.Services.Interfaces
 {
 	public interface IOracleStagingService
 	{
-		Task Create(AdjustmentPostingDto data);
+		Task Create(IEnumerable<AdjustmentPostingDto> data);
 	}
 }

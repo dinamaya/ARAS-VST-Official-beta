@@ -6,6 +6,7 @@
 @using ARAS.Blazor.Repositories.Interfaces
 @using ARAS.Blazor.Components.Shared.Others
 @using ARAS.Blazor.Components.Shared.Summaries
+@using ARAS.Main.Oracle.Api.Models.Dtos
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 
@@ -211,8 +212,8 @@
 		{
 			bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"APPROVE\" this request?", "Approve Request") ?? false;
 			if (!isConfirmed) return;
-
-			await RequestService.Approve(RequestId, details.Notes);
+			var stagingDetails = await RequestService.GetReceiptStagingDataByRequestId(RequestId);
+			await RequestService.Approve(RequestId, details.Notes, stagingDetails);
 			RefreshPage();
 		}
 		catch (Exception ex)

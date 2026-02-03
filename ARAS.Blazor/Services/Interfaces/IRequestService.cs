@@ -1,5 +1,6 @@
 ﻿using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Repositories.Interfaces;
+using ARAS.Main.Oracle.Api.Models.Dtos;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace ARAS.Blazor.Services.Interfaces
@@ -16,6 +17,8 @@ namespace ARAS.Blazor.Services.Interfaces
 		Task<IEnumerable<InvoiceAdjustmentRowDto>> GetInvoiceAdjustmentRequests(SearchRequestDto data);
 		Task<IEnumerable<ReceiptAdjustmentRowDto>> GetReceiptAdjustmentSubmissions(SearchRequestDto data);
 		Task<IEnumerable<InvoiceAdjustmentRowDto>> GetInvoiceAdjustmentSubmissions(SearchRequestDto data);
+		Task<IEnumerable<AdjustmentPostingDto>> GetReceiptStagingDataByRequestId(long requestId);
+
 		Task ApproveReceiptAdjustmentRequests(IEnumerable<long> data);
 		Task RejectReceiptAdjustmentRequests(IEnumerable<long> data);
 		Task DeclineReceiptAdjustmentRequests(IEnumerable<long> data);
@@ -23,7 +26,7 @@ namespace ARAS.Blazor.Services.Interfaces
 		Task Update(bool isUpdatable, long requestId, ReceiptAdjustmentUpdateRequestDto row, IEnumerable<NoteRowDto> notes);
 		Task Create(IEnumerable<BaseReceiptAdjustmentCreateDto> row, IEnumerable<NoteRowDto> notes);
 
-		Task Approve(long requestId, IEnumerable<NoteRowDto> notes);
+		Task Approve(long requestId, IEnumerable<NoteRowDto> notes, IEnumerable<AdjustmentPostingDto> postingData);
 		Task Decline(long requestId, IEnumerable<NoteRowDto> notes);
 		Task Reject(long requestId, IEnumerable<NoteRowDto> notes);
 	}

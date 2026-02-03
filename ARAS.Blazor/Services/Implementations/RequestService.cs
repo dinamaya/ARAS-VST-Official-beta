@@ -2,6 +2,7 @@
 using ARAS.Blazor.App_Code.Globals.Enums;
 using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Services.Interfaces;
+using ARAS.Main.Oracle.Api.Models.Dtos;
 using Azure.Core;
 using Microsoft.AspNetCore.Routing;
 
@@ -12,12 +13,14 @@ namespace ARAS.Blazor.Services.Implementations
 		private readonly IBaseService _baseService;
 		private readonly IConfigService _configService;
 		private readonly INoteService _noteService;
+		private readonly IOracleStagingService _oracleStagingService;
 
-        public RequestService(IBaseService baseService, IConfigService configService, INoteService noteService)
+        public RequestService(IBaseService baseService, IConfigService configService, INoteService noteService, IOracleStagingService oracleStagingService)
         {
             _baseService = baseService;
             _configService = configService;
             _noteService = noteService;
+            _oracleStagingService = oracleStagingService;
         }
 
         public async Task<bool> IsUpdatable(long requestId) => await IsOnStatus(requestId, "is-updatable");
@@ -180,7 +183,12 @@ namespace ARAS.Blazor.Services.Implementations
 		public async Task RejectReceiptAdjustmentRequests(IEnumerable<long> data) => await UpdateAdjustmentStatus(data, _configService.GetRejectionsUrl());
 		public async Task DeclineReceiptAdjustmentRequests(IEnumerable<long> data) => await UpdateAdjustmentStatus(data, _configService.GetDeclinesUrl());
 
-		public async Task Approve(long requestId, IEnumerable<NoteRowDto> notes) => await UpdateOneRequestStatus(requestId, _configService.GetApprovalsUrl(), "Approve", notes);
+		public async Task Approve(long requestId, IEnumerable<NoteRowDto> notes, IEnumerable<AdjustmentPostingDto> postingData)
+		{
+			await UpdateOneRequestStatus(requestId, _configService.GetApprovalsUrl(), "Approve", notes);
+			await _oracleStagingService.Create(postingData);
+		}
+
 		public async Task Decline(long requestId, IEnumerable<NoteRowDto> notes) => await UpdateOneRequestStatus(requestId, _configService.GetDeclinesUrl(), "Decline", notes);
 		public async Task Reject(long requestId, IEnumerable<NoteRowDto> notes) => await UpdateOneRequestStatus(requestId, _configService.GetRejectionsUrl(), "Approve", notes);
 
@@ -207,6 +215,18 @@ namespace ARAS.Blazor.Services.Implementations
 			Guards.ThrowInvalidOperationIf(!response.IsSuccess, response.Message);
 
 			await _noteService.Create(requestId, notes);
+		}
+
+		public async Task<IEnumerable<AdjustmentPostingDto>> GetReceiptStagingDataByRequestId(long requestId)
+        {
+			var response = await _baseService.SendAsync<IEnumerable<AdjustmentPostingDto>>(new RequestDto<long>()
+			{
+				URL = _configService.GetAdjustmentsUrl($"stage/receipt/{requestId}"),
+			});
+
+			Guards.ThrowInvalidOperationIf(!response.IsSuccess, response.Message);
+
+			return response.Result;
 		}
 	}
 }

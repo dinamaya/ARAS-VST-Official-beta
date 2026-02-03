@@ -582,7 +582,7 @@
 			bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"APPROVE\" this request?", "Approve Request") ?? false;
 			if (!isConfirmed) return;
 
-			await RequestService.Approve(RequestId, Notes);
+			await RequestService.Approve(RequestId, Notes, null);
 			RefreshPage();
 		}
 		catch (Exception ex)

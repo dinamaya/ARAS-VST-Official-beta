@@ -154,5 +154,25 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				Type = a.InvoiceType
 			}).ToListAsync();
 		}
-	}
+
+        public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingData(long requestId)
+        {
+			return await _context.VwStagingRequestAdjustment
+			 .Where(a => a.RequestId == requestId)
+			 .Select(a => new AdjustmentPostingDto
+			 {
+				 AdjustmentId = a.AdjustmentId,
+				 InvoiceNumber = a.InvoiceNumber,
+				 AdjustmentAmount = a.AdjustmentAmount,
+				 InvoiceDate = a.InvoiceDate,
+				 PaymentScheduleId = null,
+				 DateApplied = DateTime.Now,
+				 AdjustmentActivity = a.Activity,
+				 ReasonCode = a.ReasonCode,
+				 Remarks = a.Remarks,
+				 CustomerName = a.CustomerName,
+				 CustomerNumber = a.CustomerNumber
+			 }).ToListAsync();
+		}
+    }
 }

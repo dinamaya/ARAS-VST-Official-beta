@@ -5,5 +5,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
     {
 		Task<long> Update(long requestId, RequestCreationDto<IEnumerable<ARInvoiceOffsettingCreateDto>> data, string modifiedBy);
 		Task<IEnumerable<ARInvoiceOffsettingRowDto>> GetAdjustmentsByRequestId(long requestId);
+		Task<IEnumerable<AdjustmentPostingDto>> GetStagingData(long requestId);
 	}
 }

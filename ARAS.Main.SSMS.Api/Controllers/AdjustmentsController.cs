@@ -13,12 +13,14 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		private readonly IAdjustmentRepository _adjustmentRepo;
 		private readonly IAPAROffsetRepository _aparOffsetRepo;
 		private readonly IAROffsettingRepository _arOffsetRepo;
+		private readonly IBaseReceiptAdjustmentRepository _receiptRepo;
 
-        public AdjustmentsController(IAdjustmentRepository adjustmentRepo, IAPAROffsetRepository aparOffsetRepo, IAROffsettingRepository arOffsetRepo)
+        public AdjustmentsController(IAdjustmentRepository adjustmentRepo, IAPAROffsetRepository aparOffsetRepo, IAROffsettingRepository arOffsetRepo, IBaseReceiptAdjustmentRepository receiptRepo)
         {
             _adjustmentRepo = adjustmentRepo;
             _aparOffsetRepo = aparOffsetRepo;
             _arOffsetRepo = arOffsetRepo;
+            _receiptRepo = receiptRepo;
         }
 
         [HttpGet("activity/{adjustmentTypeCode}")]
@@ -116,6 +118,24 @@ namespace ARAS.Main.SSMS.Api.Controllers
 				return response.Failed(ex.Message);
 			}
 		}
+
+		[HttpGet("stage/ofr/{requestId:long}")]
+		public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetARInvoiceStagingData(long requestId)
+		{
+			var response = new ResponseDto<IEnumerable<AdjustmentPostingDto>>();
+			try
+			{
+				response.Result = await _arOffsetRepo.GetStagingData(requestId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
+
 		[HttpGet("stage/receipt/{requestId:long}")]
 		public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetReceiptAdjustmentStagingData(long requestId)
 		{

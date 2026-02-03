@@ -30,3 +30,27 @@ Content-Type: application/json
 }
 
 ###
+
+POST {{ARAS.Main.Oracle.Api_HostAddress}}/api/adjustment/stage
+Content-Type: application/json
+
+[
+    {
+      "adjustmentId": 10,
+      "invoiceNumber": "197745",
+      "adjustmentAmount": 59525,
+      "invoiceDate": "2024-10-23T00:00:00",
+      "paymentScheduleId": null,
+      "dateApplied": "2026-02-03T13:25:07.113",
+      "adjustmentActivity": "Cash Discount",
+      "reasonCode": "DISCOUNT",
+      "remarks": "asdasdasdasda",
+      "customerName": "AEROPHONE ENTERPRISES & CO.",
+      "customerNumber": "1006"
+    }
+  ]
+###
+
+GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/adjustment/stage
+
+###

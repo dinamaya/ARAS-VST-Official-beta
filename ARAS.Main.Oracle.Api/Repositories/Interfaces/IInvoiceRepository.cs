@@ -1,4 +1,5 @@
 ﻿using ARAS.Main.Oracle.Api.Models.Dtos;
+using Oracle.ManagedDataAccess.Client;
 
 namespace ARAS.Main.Oracle.Api.Repositories.Interfaces
 {
@@ -12,5 +13,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Interfaces
 		Task<InvoiceDetailsDto> GetOneInvoiceDetails(InvoiceDetailsRequestDto invoice);
 
 		Task<IEnumerable<SearchCNDetailsRowDto>> GetSRAutoNetCNDetails(string invoiceNumber);
+		Task<string> GetCustomerTrxIdByInvoiceDetails(CustomerInvoiceRequestDto invoiceDetails);
+		Task<string> GetCustomerTrxIdByInvoiceDetails(OracleConnection oracleConnection, CustomerInvoiceRequestDto invoiceDetails);
 	}
 }

@@ -5,6 +5,7 @@ using ARAS.Main.Oracle.Api.Models.Dtos;
 using ARAS.Main.Oracle.Api.Repositories.Interfaces;
 using ARAS.Main.Oracle.Api.Services.Interfaces;
 using Dapper;
+using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using System.DirectoryServices.Protocols;
 
@@ -346,5 +347,82 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 			return result.DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate }).FirstOrDefault();
 		}
-    }
+
+		public async Task<string> GetCustomerTrxIdByInvoiceDetails(CustomerInvoiceRequestDto invoiceDetails)
+		{
+			var conn = await oracleConnection.OpenWithoutPolicyAsync();
+
+			var sql = @"
+				SELECT
+					rct.customer_trx_id
+				FROM
+					ra_customer_trx_all rct,
+					ra_cust_trx_types_all ctt,
+					hz_cust_accounts hca,
+					ar_payment_schedules_all apsa
+				WHERE
+					rct.cust_trx_type_id = ctt.cust_trx_type_id
+					AND rct.bill_to_customer_id = hca.cust_account_id
+					AND rct.customer_trx_id = apsa.customer_trx_id
+    
+					AND TRIM(rct.trx_number) = UPPER(:invnumb)
+					AND rct.trx_date = :invdate
+					AND TRIM(hca.account_name) = UPPER(:custname)
+					AND hca.account_number = :custnumb";
+
+			dynamic param = new
+			{
+				invnumb = invoiceDetails.InvoiceNumber,
+				invdate = invoiceDetails.InvoiceDate.ToDateTime(TimeOnly.MinValue),
+				custname = invoiceDetails.CustomerName,
+				custnumb = invoiceDetails.CustomerNumber,
+			};
+
+			var result = await conn.QueryFirstAsync<string>(
+				sql,
+				(object)param,
+				commandTimeout: 120
+			) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+
+			return result;
+		}
+
+
+		public async Task<string> GetCustomerTrxIdByInvoiceDetails(OracleConnection oracleConnection, CustomerInvoiceRequestDto invoiceDetails)
+		{
+			var sql = @"
+				SELECT
+					rct.customer_trx_id
+				FROM
+					ra_customer_trx_all rct,
+					ra_cust_trx_types_all ctt,
+					hz_cust_accounts hca,
+					ar_payment_schedules_all apsa
+				WHERE
+					rct.cust_trx_type_id = ctt.cust_trx_type_id
+					AND rct.bill_to_customer_id = hca.cust_account_id
+					AND rct.customer_trx_id = apsa.customer_trx_id
+    
+					AND TRIM(rct.trx_number) = UPPER(:invnumb)
+					AND rct.trx_date = :invdate
+					AND TRIM(hca.account_name) = UPPER(:custname)
+					AND hca.account_number = :custnumb";
+
+			dynamic param = new
+			{
+				invnumb = invoiceDetails.InvoiceNumber,
+				invdate = invoiceDetails.InvoiceDate.ToDateTime(TimeOnly.MinValue),
+				custname = invoiceDetails.CustomerName,
+				custnumb = invoiceDetails.CustomerNumber,
+			};
+
+			var result = await oracleConnection.QueryFirstOrDefaultAsync<string>(
+				sql,
+				(object)param,
+				commandTimeout: 120
+			) ?? throw new InvalidOperationException(Exceptions.INVALID_CUSTOMER_TRX_ID);
+
+			return result;
+		}
+	}
 }

@@ -8,6 +8,7 @@ using ARAS.Main.Oracle.Api.Services.Interfaces;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Oracle.ManagedDataAccess.Client;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace ARAS.Main.Oracle.Api.Repositories.Implementations
@@ -16,18 +17,20 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 	{
 		private readonly MainDbContext efContext;
 		private readonly IOracleConnectionFactory oracleConnection;
+		private readonly IInvoiceRepository invoiceRepo;
 		private readonly IConfigurationService _config;
 		private readonly ILogger<IAdjustmentRepository> _logger;
 
-		public AdjustmentRepository(MainDbContext efContext, IOracleConnectionFactory oracleConnection, IConfigurationService config, ILogger<IAdjustmentRepository> logger)
-		{
-			this.efContext = efContext;
-			this.oracleConnection = oracleConnection;
-			_config = config;
-			_logger = logger;
-		}
+        public AdjustmentRepository(MainDbContext efContext, IOracleConnectionFactory oracleConnection, IConfigurationService config, ILogger<IAdjustmentRepository> logger, IInvoiceRepository invoiceRepo)
+        {
+            this.efContext = efContext;
+            this.oracleConnection = oracleConnection;
+            _config = config;
+            _logger = logger;
+            this.invoiceRepo = invoiceRepo;
+        }
 
-		public async Task<IEnumerable<string>> GetReasonCodes()
+        public async Task<IEnumerable<string>> GetReasonCodes()
 		{
 			if (_config.IsOntest())
 				return _config.GetReasonCodes();
@@ -73,72 +76,107 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			return result;
 		}
 
-		public async Task Create(AdjustmentPostingDto data)
+		public async Task Create(IEnumerable<AdjustmentPostingDto> data)
 		{
-			await using var conn = await oracleConnection.OpenWithoutPolicyAsync();
+			var conn = await oracleConnection.OpenWithoutPolicyAsync();
+			var list = new List<AdjustmentCreateStagingRow>();
+
+			foreach(var item in data)
+			{
+				var receivableActivity = await GetReceivableActivityByName(conn, item.AdjustmentActivity);
+				string customerTrxId = await invoiceRepo.GetCustomerTrxIdByInvoiceDetails(conn, new()
+				{
+					InvoiceNumber = item.InvoiceNumber,
+					InvoiceDate = DateOnly.FromDateTime(item.InvoiceDate),
+					CustomerName = item.CustomerName,
+					CustomerNumber = item.CustomerNumber,
+				});
+				
+				list.Add(new AdjustmentCreateStagingRow {
+					ReceivableActivityId = receivableActivity.Id,
+					CustomerTrxId = customerTrxId,
+					AdjustmentsDetails = item
+				});
+			}
+
+			await CreateStageRow(list);
+		}
+
+        public async Task<ReceivablesActivityDto> GetReceivableActivityByName(string adjustmentActivity)
+        {
+			var conn = await oracleConnection.OpenWithoutPolicyAsync();
 
 			var sql = @"
-					INSERT INTO APPS.XXMSI_AR_ADJ_STG
-					(
-						HEADER_ID,
-						CUSTOMER_TRX_ID,
-						INVOICE_NUMBER,
-						AMOUNT,
-						CREATED_FROM,
-						GL_DATE,
-						TYPE,
-						PAYMENT_SCHEDULE_ID,
-						APPLY_DATE,
-						RECEIVABLES_TRX_ID,
-						REASON_CODE,
-						COMMENTS,
-						ACCOUNT_NAME,
-						ACCOUNT_NUMBER,
-						STG_FLAG,
-						INT_FLAG,
-						INV_FLAG
-					)
-					VALUES(
-						:AdjustmentId,
-						:CustomerTRXId,
-						:InvoiceNumber,
-						:AdjustmentAmount,
-						'ADJUSTMENT API',
-						:GLDate,
-						'LINE',
-						:PaymentScheduleId, -- IS IT NULL?
-						:DateApplied,
-						:TransactionTypeId,
-						:ReasonCode,
-						:Remarks,
-						:AccountName,
-						:AccountNumber,
-						1,
-						0,
-						0
-					)
-				";
+				SELECT DISTINCT
+					RECEIVABLES_TRX_ID Id,
+					NAME Name
+				FROM
+					ar_receivables_trx_all
+				WHERE
+					TYPE = 'ADJUST' AND 
+					UPPER(TRIM(NAME)) = UPPER(:adjustmentActivity) 
+			";
 
-			var param = new {
-				AdjustmentId = data.AdjustmentId,
-				CustomerTRXId = data.CustomerTRXId,
-				InvoiceNumber = data.InvoiceNumber,
-				AdjustmentAmount = data.AdjustmentAmount,
-				GLDate = data.GLDate,
-				PaymentScheduleId = data.PaymentScheduleId,
-				DateApplied = data.DateApplied,
-				TransactionTypeId = data.TransactionTypeId,
-				ReasonCode = data.ReasonCode,
-				Remarks = data.Remarks,
-				AccountName = data.AccountName,
-				AccountNumber = data.AccountNumber
-			};
-
-			await conn.ExecuteAsync(
-				sql,
-				param,
+			var result = await conn.QueryFirstOrDefaultAsync<ReceivablesActivityDto>(sql,
+				new { adjustmentActivity = $"{adjustmentActivity}" },
 				commandTimeout: 120
-			);
+			) ?? throw new Exception(Exceptions.INVALID_RECEIVABLE_ACTIVITY);
+			return result;
+		}
+
+        public async Task<ReceivablesActivityDto> GetReceivableActivityByName(OracleConnection oracleConnection, string adjustmentActivity)
+        {
+			var sql = @"
+				SELECT DISTINCT
+					RECEIVABLES_TRX_ID Id,
+					NAME Name
+				FROM
+					ar_receivables_trx_all
+				WHERE
+					TYPE = 'ADJUST' AND 
+					UPPER(TRIM(NAME)) = UPPER(:adjustmentActivity) 
+			";
+
+			var result = await oracleConnection.QueryFirstOrDefaultAsync<ReceivablesActivityDto>(sql,
+				new { adjustmentActivity = $"{adjustmentActivity}" },
+				commandTimeout: 120
+			) ?? throw new Exception(Exceptions.INVALID_RECEIVABLE_ACTIVITY);
+			return result;
+		}
+
+		public async Task<IEnumerable<ARAdjustmentsStaging>> GetAll()
+		{
+			return await efContext.AdjustmentsStaging.ToListAsync();
+		}
+
+		private async Task CreateStageRow(IEnumerable<AdjustmentCreateStagingRow> rows)
+		{
+			var list = new List<ARAdjustmentsStaging>();
+			foreach (var row in rows)
+			{
+				list.Add(new()
+				{
+					HeaderId = row.AdjustmentsDetails.AdjustmentId,
+					CustomerTrxId = long.Parse(row.CustomerTrxId),
+					InvoiceNumber = row.AdjustmentsDetails.InvoiceNumber,
+					Amount = Convert.ToDecimal(row.AdjustmentsDetails.AdjustmentAmount),
+					CreatedFrom = "ADJUSTMENT API",
+					GlDate = row.AdjustmentsDetails.InvoiceDate,
+					Type = "LINE",
+					PaymentScheduleId = null,
+					ApplyDate = row.AdjustmentsDetails.DateApplied,
+					ReceivablesTrxId = row.ReceivableActivityId,
+					ReasonCode = row.AdjustmentsDetails.ReasonCode,
+					Comments = row.AdjustmentsDetails.Remarks,
+					AccountName = row.AdjustmentsDetails.CustomerName,
+					AccountNumber = long.Parse(row.AdjustmentsDetails.CustomerNumber),
+					StgFlag = "1",
+					IntFlag = "0",
+					InvFlag = "0"
+				});
+			}
+			await efContext.AdjustmentsStaging.AddRangeAsync(list);
+			await efContext.SaveChangesAsync();
 		}
 	}
 }

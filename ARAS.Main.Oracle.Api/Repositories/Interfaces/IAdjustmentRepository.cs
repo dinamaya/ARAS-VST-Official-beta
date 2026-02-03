@@ -1,4 +1,6 @@
 ﻿using ARAS.Main.Oracle.Api.Models.Dtos;
+using ARAS.Main.Oracle.Api.Models.Entities;
+using Oracle.ManagedDataAccess.Client;
 
 namespace ARAS.Main.Oracle.Api.Repositories.Interfaces
 {
@@ -6,6 +8,9 @@ namespace ARAS.Main.Oracle.Api.Repositories.Interfaces
 	{
 		Task<IEnumerable<string>> GetReasonCodes();
 		Task<IEnumerable<ReceivablesActivityDto>> GetReceivableActivities();
-		Task Create(AdjustmentPostingDto data);
+		Task<ReceivablesActivityDto> GetReceivableActivityByName(string adjustmentActivity);
+		Task<ReceivablesActivityDto> GetReceivableActivityByName(OracleConnection oracleConnection, string adjustmentActivity);
+		Task Create(IEnumerable<AdjustmentPostingDto> data);
+		Task<IEnumerable<ARAdjustmentsStaging>> GetAll();
 	}
 }

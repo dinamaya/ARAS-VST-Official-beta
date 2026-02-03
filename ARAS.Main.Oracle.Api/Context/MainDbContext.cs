@@ -6,6 +6,7 @@ namespace ARAS.Main.Oracle.Api.Context
 	public class MainDbContext : DbContext
 	{
 		public virtual DbSet<ReasonCode> ReasonCodes { get; set; }
+		public virtual DbSet<ARAdjustmentsStaging> AdjustmentsStaging { get; set; }
 
 		public MainDbContext(DbContextOptions<MainDbContext> options) : base(options)
 		{

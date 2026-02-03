@@ -133,5 +133,26 @@ namespace ARAS.Main.Oracle.Api.Controllers
 				return _response.Failed(ex.Message);
 			}
 		}
+
+		[HttpGet("customer-trx-id")]
+		public async Task<ResponseDto<string>> GetCustomerTrxId([FromBody] CustomerInvoiceRequestDto data)
+		{
+			ResponseDto<string> _response = new();
+			try
+			{
+				_response.Result = await _invoiceRepo.GetCustomerTrxIdByInvoiceDetails(data);
+				return _response;
+			}
+			catch (OracleException ex)
+			{
+				_logger.LogError(Exceptions.CANT_CONNECT);
+				return _response.Failed(Exceptions.CANT_CONNECT);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return _response.Failed(ex.Message);
+			}
+		}
 	}
 }

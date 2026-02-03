@@ -34,6 +34,7 @@ namespace ARAS.Main.SSMS.Api.Context
 		public virtual DbSet<LatestInvoiceAdjustmentsV> VwLatestInvoiceAdjustments { get; set; }
 		public virtual DbSet<NotesV> VwNotes { get; set; }
 		public virtual DbSet<TransactionsHistoryV> VwTransactionsHistory { get; set; }
+		public virtual DbSet<StagingRequestAdjustmentV> VwStagingRequestAdjustment { get; set; }
 
 		public MainDbContext(DbContextOptions<MainDbContext> options) : base(options) { }
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -141,6 +142,12 @@ namespace ARAS.Main.SSMS.Api.Context
 				entity.Property(e => e.UpdaterId).HasMaxLength(250);
 			});
 
+			modelBuilder.Entity<StagingRequestAdjustmentV>(entity =>
+			{
+				entity
+					.HasNoKey()
+					.ToView("StagingRequestAdjustment_v");
+			});
 
 			// OLD SQL VIEWS Can Be Remove
 			modelBuilder.Entity<AparoffsetRowV>(entity =>

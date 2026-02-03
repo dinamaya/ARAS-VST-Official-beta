@@ -116,5 +116,20 @@ namespace ARAS.Main.SSMS.Api.Controllers
 				return response.Failed(ex.Message);
 			}
 		}
+		[HttpGet("stage/receipt/{requestId:long}")]
+		public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetReceiptAdjustmentStagingData(long requestId)
+		{
+			var response = new ResponseDto<IEnumerable<AdjustmentPostingDto>>();
+			try
+			{
+				response.Result = await _receiptRepo.GetStagingData(requestId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
 	}
 }

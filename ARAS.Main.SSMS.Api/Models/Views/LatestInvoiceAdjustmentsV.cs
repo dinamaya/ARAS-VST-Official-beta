@@ -1,8 +1,12 @@
-﻿
+﻿using System;
+using System.Collections.Generic;
+
 namespace ARAS.Main.SSMS.Api.Models.Views;
 
 public partial class LatestInvoiceAdjustmentsV
 {
+    public long AdjustmentId { get; set; }
+
     public long TransactionId { get; set; }
 
     public long RequestId { get; set; }

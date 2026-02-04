@@ -80,6 +80,14 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		}
 
 		/// <summary>
+		/// Checks if the request is rejectable
+		/// </summary>
+		/// <param name="requestId"></param>
+		/// <returns></returns>
+		public async Task<bool> IsPostable(long requestId) => 
+			await _context.VwLatestReceiptAdjustmentDetails.AsNoTracking().AnyAsync(t =>t.RequestId == requestId && t.Status != "Posted");
+
+		/// <summary>
 		/// Checks if the request is currently declined
 		/// </summary>
 		/// <param name="requestId"></param>
@@ -324,7 +332,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				DateRequested = q.DateRequested.ToString(Formats.Date.DISPLAY_COMPLETE),
 				Approver = ValidateFullName(q.ApproverFirstName, q.ApproverLastName),
 				DateApproved = q.DateApproved.HasValue ? ((DateTime)q.DateApproved).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
-				Creator = ValidateFullName(q.UpdaterFirstName, q.UpdaterLastName),
+				Creator =  q.Status == "Posted" ? "SYSTEM" : ValidateFullName(q.UpdaterFirstName, q.UpdaterLastName),
 				DateCreated = q.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
 				Status = q.Status,
 				CustomerName = q.CustomerName,
@@ -342,7 +350,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				DateRequested = q.DateRequested.ToString(Formats.Date.DISPLAY_COMPLETE),
 				Approver = ValidateFullName(q.ApproverFirstName, q.ApproverLastName),
 				DateApproved = q.DateApproved.HasValue ? ((DateTime)q.DateApproved).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
-				Creator =  ValidateFullName(q.UpdaterFirstName, q.UpdaterLastName),
+				Creator =  q.Status == "Posted" ? "SYSTEM" : ValidateFullName(q.UpdaterFirstName, q.UpdaterLastName),
 				DateCreated = q.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
 				Status = q.Status,
 				CustomerName = q.CustomerName,

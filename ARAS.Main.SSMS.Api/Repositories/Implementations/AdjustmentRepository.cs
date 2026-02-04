@@ -315,5 +315,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 			return adjustment.Id;
 		}
+
+        public async Task<IEnumerable<long>> GetAllApproved() => await _context.VwApprovedReceiptAdjustments.AsNoTracking().Select(a => a.AdjustmentId).ToListAsync();
     }
 }

@@ -37,7 +37,7 @@ namespace ARAS.Main.SSMS.Api.Context.Seeders
 				},
 				new AdjustmentType()
 				{
-					Activity = "Bank Charges",
+					Activity = "Bank Charge",
 					Name = "Bank Charges",
 					Code = "BCA",
 					ReasonCode = "CHARGES",

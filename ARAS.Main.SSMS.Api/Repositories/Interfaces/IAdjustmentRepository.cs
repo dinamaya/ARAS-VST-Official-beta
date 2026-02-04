@@ -26,5 +26,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
         Task<AdjustmentBasicInfoDto> GetAdjustmentInfoByCode(string adjustmentTypeCode);
         Task<AdjustmentBasicInfoDto> GetAdjustmentInfoByName(string adjustmentName);
 		Task<IEnumerable<RequestAdjustmentsV>> GetAllByRequestIdAndCode(long requestId, string adjustmentTypeCode);
+		Task<IEnumerable<long>> GetAllApproved();
 	}
 }

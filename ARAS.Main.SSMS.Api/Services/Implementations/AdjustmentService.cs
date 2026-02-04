@@ -2,11 +2,9 @@
 using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
 using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
-using ARAS.Main.SSMS.Api.Models.Entities;
-using ARAS.Main.SSMS.Api.Repositories.Implementations;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using ARAS.Main.SSMS.Api.Services.Interfaces;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 
 namespace ARAS.Main.SSMS.Api.Services.Implementations
 {
@@ -37,6 +35,36 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 					bool isApprovable = await _requestRepo.IsApprovable(requestId);
 					Guards.ThrowInvalidOperationIf(!isApprovable, Exceptions.ALREADY_APPROVED);
 					transactions.Add(new TransactionCreateDto(requestId, "Approved"));
+				}
+
+				await _transactionRepo.CreateAsync(transactions, createdBy);
+				await dbTransaction.CommitAsync();
+			}
+			catch
+			{
+				await dbTransaction.RollbackAsync();
+				throw;
+			}
+		}
+
+        public async Task Post(IEnumerable<long> adjustmentIds, string createdBy)
+		{
+			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
+
+			try
+			{
+				IList<TransactionCreateDto> transactions = [];
+				IEnumerable<long> requestIds = (await _context
+					.VwApprovedReceiptAdjustments
+					.Where(x => adjustmentIds.Contains(x.AdjustmentId))
+					.Select(x => x.RequestId).ToListAsync()).Distinct();
+
+				foreach (var requestId in requestIds)
+				{
+					bool isPostable = await _requestRepo.IsPostable(requestId);
+					
+					Guards.ThrowInvalidOperationIf(!isPostable, Exceptions.INVALID_POSTED);
+					transactions.Add(new TransactionCreateDto(requestId, "Posted"));
 				}
 
 				await _transactionRepo.CreateAsync(transactions, createdBy);

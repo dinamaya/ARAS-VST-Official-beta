@@ -14,6 +14,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 		Task<bool> IsDeclinable (long requestId);
 		Task<bool> IsRejectable (long requestId);
 		Task<bool> IsDeclined (long requestId);
+		Task<bool> IsPostable (long requestId);
 
 		Task<string> GetRequestNumberById (long requestId);
 

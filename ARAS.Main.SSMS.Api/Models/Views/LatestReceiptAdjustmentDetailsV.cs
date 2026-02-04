@@ -29,11 +29,11 @@ public partial class LatestReceiptAdjustmentDetailsV
 
     public DateTime? DateApproved { get; set; }
 
-    public string UpdaterId { get; set; } = null!;
+    public string? UpdaterId { get; set; } = null!;
 
-    public string UpdaterFirstName { get; set; } = null!;
+    public string? UpdaterFirstName { get; set; } = null!;
 
-    public string UpdaterLastName { get; set; } = null!;
+    public string? UpdaterLastName { get; set; } = null!;
 
     public DateTime DateCreated { get; set; }
 

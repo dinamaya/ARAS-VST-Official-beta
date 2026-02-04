@@ -15,13 +15,15 @@ namespace ARAS.Main.SSMS.Api.Controllers
 	{
 		private readonly ILogger<ApprovalsController> _logger;
 		private readonly IAdjustmentService _adjustmentService;
+		private readonly IAdjustmentRepository _adjustmentRepo;
 		private readonly IRequestRepository _requestRepo;
 
-        public ApprovalsController(ILogger<ApprovalsController> logger, IAdjustmentService adjustmentService, IRequestRepository requestRepo)
+        public ApprovalsController(ILogger<ApprovalsController> logger, IAdjustmentService adjustmentService, IRequestRepository requestRepo, IAdjustmentRepository adjustmentRepo)
         {
             _logger = logger;
             _adjustmentService = adjustmentService;
             _requestRepo = requestRepo;
+            _adjustmentRepo = adjustmentRepo;
         }
 
         [HttpPost]
@@ -55,6 +57,23 @@ namespace ARAS.Main.SSMS.Api.Controllers
 
 				response.Result = "Success";
 				response.Message = "Request has been successfully APPROVED";
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet, AllowAnonymous]
+		public async Task<ResponseDto<IEnumerable<long>>> Get()
+		{
+			var response = new ResponseDto<IEnumerable<long>>();
+			try
+			{
+				response.Result = await _adjustmentRepo.GetAllApproved();
+				response.Message = "Successfully Fetched approved request adjustment IDs";
 				return response;
 			}
 			catch (Exception ex)

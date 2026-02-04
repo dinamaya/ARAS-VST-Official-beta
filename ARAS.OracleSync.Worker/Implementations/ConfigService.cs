@@ -16,5 +16,13 @@ namespace ARAS.OracleSync.Worker.Implementations
 
 		public string GetRequestsApiUrl(string route = null) =>
 			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Requests")}{route}";
-	}
+
+		public string GetApprovalsUrl(string route = null) =>
+			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Approvals")}{route}";
+
+        public string GetSSMSAdjustmentsApiUrl(string route = null) =>
+			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Adjustments")}{route}";
+
+        public int GetRefreshTime() => _config.GetValue<int>("WorkerConfig:Milleseconds");
+    }
 }

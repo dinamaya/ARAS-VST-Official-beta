@@ -1,5 +1,6 @@
 using ARAS.OracleSync.Worker.Interfaces;
 using ARAS.OracleSync.Worker.Models.DTOs;
+using Newtonsoft.Json;
 
 namespace ARAS.OracleSync.Worker
 {
@@ -24,20 +25,35 @@ namespace ARAS.OracleSync.Worker
 				// Fetch all adjustments in staging table that already has 3 True Flags
 				// Fetch all adjustments in Validated adjustments in Main table
 				// Update the Status of those adjustments to Posted
-				var response = await _baseService.SendAsync<IEnumerable<string>>(new RequestDto()
+
+				var approvedAdjustmentIds = await _baseService.SendAsync<IEnumerable<long>>(new()
 				{
-					ApiType = App_Code.Enums.ApiType.GET,
-					URL = _config.GetOracleAdjustmentsApiUrl("reason-codes")
+					URL = _config.GetApprovalsUrl()
 				});
 
-				_logger.LogInformation($"Success Result Oracle Connection");
+				_logger.LogInformation(JsonConvert.SerializeObject(approvedAdjustmentIds.Result));
 
-				foreach(string code in response.Result)
+				var postedAdjustmentIds = await _baseService.SendAsync<IEnumerable<PostedResponseDto>>(new()
 				{
-					_logger.LogInformation(code);
+					URL = _config.GetOracleAdjustmentsApiUrl("stage/posted"),
+					Data = approvedAdjustmentIds.Result,
+					ApiType = App_Code.Enums.ApiType.POST
+				});
+
+				_logger.LogInformation(JsonConvert.SerializeObject(postedAdjustmentIds.Result));
+
+				if (postedAdjustmentIds.Result != null && postedAdjustmentIds.Result.Any())
+				{
+					var statusPosted = await _baseService.SendAsync<string>(new RequestDto<IEnumerable<long>>()
+					{
+						URL = _config.GetSSMSAdjustmentsApiUrl("stage"),
+						Data = approvedAdjustmentIds.Result,
+						ApiType = App_Code.Enums.ApiType.POST
+					});
+					_logger.LogInformation(JsonConvert.SerializeObject(statusPosted.Result));
 				}
 
-				await Task.Delay(10000, stoppingToken);
+				await Task.Delay(_config.GetRefreshTime(), stoppingToken);
 			}
 		}
 	}

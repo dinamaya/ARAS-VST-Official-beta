@@ -16,7 +16,6 @@
 
 <RadzenRow>
 	<div class="px-3 pt-2 pb-0 w-100 card">
-
 		<RadzenRow AlignItems="AlignItems.Start" JustifyContent="JustifyContent.Left" class="w-100" Gap="1rem">
 			@if (OptionsTemplate is not null)
 			{
@@ -96,7 +95,13 @@
 			</RadzenColumn>
 		</RadzenRow>
 	</div>
-</RadzenRow>
+	@if (isValueEmpty)
+	{
+		<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Warning" Size="AlertSize.Medium" AllowClose=true>
+			Please provide 3 or more character(s) in the search value field
+		</RadzenAlert>
+	}
+	</RadzenRow>
 
 @if (isOnSearch)
 {
@@ -131,6 +136,7 @@
 	[Parameter, SupplyParameterFromQuery(Name = "token")] public string? Token { get; set; }
 	private bool isOnSearch { get; set; }
 	private bool isLoading { get; set; }
+	private bool isValueEmpty => Value != null && (searchRequest.Value == string.Empty || searchRequest.Value.Length < 3);
 	private string? _lastToken;
 
 	private SearchRequestDto searchRequest;
@@ -189,7 +195,7 @@
 		await Task.Delay(10);
 		try
 		{
-			Guards.ThrowInvalidOperationIf(searchRequest.Value.Length < 3, "Please provided 3 or more character in the search invoice number field");
+			if (searchRequest.Value.Length < 3) return;
 
 			if (isLoading)
 			{

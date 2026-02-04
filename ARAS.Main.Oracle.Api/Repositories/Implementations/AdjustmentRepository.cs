@@ -144,10 +144,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			return result;
 		}
 
-		public async Task<IEnumerable<ARAdjustmentsStaging>> GetAll()
-		{
-			return await efContext.AdjustmentsStaging.ToListAsync();
-		}
+		public async Task<IEnumerable<ARAdjustmentsStaging>> GetAll() => await efContext.AdjustmentsStaging.ToListAsync();
 
 		private async Task CreateStageRow(IEnumerable<AdjustmentCreateStagingRow> rows)
 		{
@@ -178,5 +175,34 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			await efContext.AdjustmentsStaging.AddRangeAsync(list);
 			await efContext.SaveChangesAsync();
 		}
-	}
+
+        public async Task<IEnumerable<PostedResponseDto>> GetPosted(IEnumerable<long> adjustmentIds)
+        {
+			if (!adjustmentIds.Any()) return [];
+
+			var conn = await oracleConnection.OpenWithoutPolicyAsync();
+
+			string sql = @"
+				SELECT 
+					stg.HEADER_ID HeaderId,
+					rta.NAME AdjustmentActivityName
+				FROM 
+					APPS.XXMSI_AR_ADJ_STG stg, 
+					(
+						SELECT   DISTINCT
+							RECEIVABLES_TRX_ID Id,
+							NAME Name
+						FROM   ar_receivables_trx_all
+						WHERE   TYPE = 'ADJUST'
+					) rta
+				WHERE   
+					stg.RECEIVABLES_TRX_ID = rta.Id AND 
+					stg.STG_FLAG = '1' AND 
+					stg.INT_FLAG = '1' AND 
+					stg.INV_FLAG = '1'";
+
+			var result = await conn.QueryAsync<PostedResponseDto>(sql,commandTimeout: 120) ?? throw new Exception(Exceptions.INVALID_RECEIVABLE_ACTIVITY);
+			return result.Join(adjustmentIds, r => r.HeaderId, id => id, (r, id) => r);
+		}
+    }
 }

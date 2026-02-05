@@ -179,7 +179,20 @@ namespace ARAS.Blazor.Services.Implementations
 			await _noteService.Create(requestId, notes);
 		}
 
-		public async Task ApproveReceiptAdjustmentRequests(IEnumerable<long> data) => await UpdateAdjustmentStatus(data, _configService.GetApprovalsUrl());
+		public async Task ApproveReceiptAdjustmentRequests(IEnumerable<long> data)
+		{
+			await UpdateAdjustmentStatus(data, _configService.GetApprovalsUrl());
+			var postingData = await GetReceiptStagingDataByRequestId(data);
+			await _oracleStagingService.Create(postingData);
+		}
+
+		public async Task ApproveInvoiceAdjustmentRequests(IEnumerable<long> data)
+		{
+			await UpdateAdjustmentStatus(data, _configService.GetApprovalsUrl());
+			//var postingData = await GetReceiptStagingDataByRequestId(data);
+			//await _oracleStagingService.Create(postingData);
+		}
+
 		public async Task RejectReceiptAdjustmentRequests(IEnumerable<long> data) => await UpdateAdjustmentStatus(data, _configService.GetRejectionsUrl());
 		public async Task DeclineReceiptAdjustmentRequests(IEnumerable<long> data) => await UpdateAdjustmentStatus(data, _configService.GetDeclinesUrl());
 
@@ -228,5 +241,19 @@ namespace ARAS.Blazor.Services.Implementations
 
 			return response.Result;
 		}
-	}
+
+        public async Task<IEnumerable<AdjustmentPostingDto>> GetReceiptStagingDataByRequestId(IEnumerable<long> requestIds)
+        {
+			var response = await _baseService.SendAsync<IEnumerable<AdjustmentPostingDto>>(new RequestDto<IEnumerable<long>>()
+			{
+				URL = _configService.GetAdjustmentsUrl($"stage/receipt"),
+				Data = requestIds,
+				ApiType = ApiType.POST
+			});
+
+			Guards.ThrowInvalidOperationIf(!response.IsSuccess, response.Message);
+
+			return response.Result;
+		}
+    }
 }

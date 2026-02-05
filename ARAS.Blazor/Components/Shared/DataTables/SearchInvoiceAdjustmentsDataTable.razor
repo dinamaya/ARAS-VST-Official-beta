@@ -190,7 +190,7 @@
 		return Task.CompletedTask;
 	}
 
-	private async Task OnApprove(MouseEventArgs args) => await OnStatusUpdate("APPROVE", "Approval", RequestService.ApproveReceiptAdjustmentRequests);
+	private async Task OnApprove(MouseEventArgs args) => await OnStatusUpdate("APPROVE", "Approval", RequestService.ApproveInvoiceAdjustmentRequests);
 
 	private async Task OnReject(MouseEventArgs args) => await OnStatusUpdate("REJECT", "Rejection", RequestService.RejectReceiptAdjustmentRequests);
 

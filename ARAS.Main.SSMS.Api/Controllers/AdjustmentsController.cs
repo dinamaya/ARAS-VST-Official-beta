@@ -144,7 +144,23 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			var response = new ResponseDto<IEnumerable<AdjustmentPostingDto>>();
 			try
 			{
-				response.Result = await _receiptRepo.GetStagingData(requestId);
+				response.Result = await _receiptRepo.GetStagingDataByRequestId(requestId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpPost("stage/receipt")]
+		public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetReceiptAdjustmentStagingData([FromBody] IEnumerable<long> requestIds)
+		{
+			var response = new ResponseDto<IEnumerable<AdjustmentPostingDto>>();
+			try
+			{
+				response.Result = await _receiptRepo.GetStagingDataByRequestIds(requestIds);
 				return response;
 			}
 			catch (Exception ex)

@@ -178,7 +178,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			};
 		}
 
-        public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingData(long requestId)
+        public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByRequestId(long requestId)
         {
             return await _context.VwStagingRequestAdjustment
 				.Where(a => a.RequestId == requestId)
@@ -198,7 +198,27 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				}).ToListAsync();
 		}
 
-        public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByAdjustmentId(long adjustmentId)
+		public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByRequestIds(IEnumerable<long> requestIds)
+		{
+			return await _context.VwStagingRequestAdjustment
+			   .Where(a => requestIds.Contains(a.RequestId))
+			   .Select(a => new AdjustmentPostingDto
+			   {
+				   AdjustmentId = a.AdjustmentId,
+				   InvoiceNumber = a.InvoiceNumber,
+				   AdjustmentAmount = a.AdjustmentAmount,
+				   InvoiceDate = a.InvoiceDate,
+				   PaymentScheduleId = null,
+				   DateApplied = DateTime.Now,
+				   AdjustmentActivity = a.Activity,
+				   ReasonCode = a.ReasonCode,
+				   Remarks = a.Remarks,
+				   CustomerName = a.CustomerName,
+				   CustomerNumber = a.CustomerNumber
+			   }).ToListAsync();
+		}
+
+		public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByAdjustmentId(long adjustmentId)
         {
 			return await _context.VwStagingRequestAdjustment
 				.Where(a => a.AdjustmentId == adjustmentId)
@@ -217,7 +237,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					CustomerNumber = a.CustomerNumber
 				}).ToListAsync();
 		}
-
 
 		public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByAdjustmentId(IEnumerable<long> adjustmentIds)
 		{
@@ -239,5 +258,5 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					CustomerNumber = a.CustomerNumber
 				}).ToListAsync();
 		}
-	}
+    }
 }

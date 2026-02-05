@@ -148,35 +148,51 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 		private async Task CreateStageRow(IEnumerable<AdjustmentCreateStagingRow> rows)
 		{
-			var list = new List<ARAdjustmentsStaging>();
-			foreach (var row in rows)
+			var list = rows.Select(row => new ARAdjustmentsStaging
 			{
-				list.Add(new()
-				{
-					HeaderId = row.AdjustmentsDetails.AdjustmentId,
-					CustomerTrxId = long.Parse(row.CustomerTrxId),
-					InvoiceNumber = row.AdjustmentsDetails.InvoiceNumber,
-					Amount = Convert.ToDecimal(row.AdjustmentsDetails.AdjustmentAmount),
-					CreatedFrom = "ADJUSTMENT API",
-					GlDate = row.AdjustmentsDetails.InvoiceDate,
-					Type = "LINE",
-					PaymentScheduleId = null,
-					ApplyDate = row.AdjustmentsDetails.DateApplied,
-					ReceivablesTrxId = row.ReceivableActivityId,
-					ReasonCode = row.AdjustmentsDetails.ReasonCode,
-					Comments = row.AdjustmentsDetails.Remarks,
-					AccountName = row.AdjustmentsDetails.CustomerName,
-					AccountNumber = long.Parse(row.AdjustmentsDetails.CustomerNumber),
-					StgFlag = "1",
-					IntFlag = "0",
-					InvFlag = "0"
-				});
-			}
+				HeaderId = row.AdjustmentsDetails.AdjustmentId,
+				CustomerTrxId = long.Parse(row.CustomerTrxId),
+				InvoiceNumber = row.AdjustmentsDetails.InvoiceNumber,
+				Amount = Convert.ToDecimal(row.AdjustmentsDetails.AdjustmentAmount),
+				CreatedFrom = "ADJUSTMENT API",
+				GlDate = row.AdjustmentsDetails.InvoiceDate,
+				Type = "LINE",
+				PaymentScheduleId = null,
+				ApplyDate = row.AdjustmentsDetails.DateApplied,
+				ReceivablesTrxId = row.ReceivableActivityId,
+				ReasonCode = row.AdjustmentsDetails.ReasonCode,
+				Comments = row.AdjustmentsDetails.Remarks,
+				AccountName = row.AdjustmentsDetails.CustomerName,
+				AccountNumber = long.Parse(row.AdjustmentsDetails.CustomerNumber),
+				StgFlag = "1",
+				IntFlag = "0",
+				InvFlag = "0"
+			})
+			.GroupBy(x => x.HeaderId)
+			.Select(g => g.First())
+			.ToList();
+
+			var headerIds = list.Select(x => x.HeaderId).ToList();
+
+			var existing = await efContext.AdjustmentsStaging
+				.Where(x => headerIds.Contains(x.HeaderId))
+				.Select(x => x.HeaderId)
+				.ToListAsync();
+
+			var existingSet = existing.ToHashSet();
+
+			list = list
+				.Where(x => !existingSet.Contains(x.HeaderId))
+				.ToList();
+
+			if (!list.Any())
+				return;
+
 			await efContext.AdjustmentsStaging.AddRangeAsync(list);
 			await efContext.SaveChangesAsync();
 		}
 
-        public async Task<IEnumerable<PostedResponseDto>> GetPosted(IEnumerable<long> adjustmentIds)
+		public async Task<IEnumerable<PostedResponseDto>> GetPosted(IEnumerable<long> adjustmentIds)
         {
 			if (!adjustmentIds.Any()) return [];
 

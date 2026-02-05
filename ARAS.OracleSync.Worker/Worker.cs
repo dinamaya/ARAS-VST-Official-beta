@@ -1,6 +1,10 @@
+using ARAS.OracleSync.Worker.App_Code;
+using ARAS.OracleSync.Worker.App_Code.Enums;
+using ARAS.OracleSync.Worker.Implementations;
 using ARAS.OracleSync.Worker.Interfaces;
 using ARAS.OracleSync.Worker.Models.DTOs;
 using Newtonsoft.Json;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ARAS.OracleSync.Worker
 {
@@ -26,29 +30,51 @@ namespace ARAS.OracleSync.Worker
 				// Fetch all adjustments in Validated adjustments in Main table
 				// Update the Status of those adjustments to Posted
 
-				var approvedAdjustmentIds = await _baseService.SendAsync<IEnumerable<long>>(new()
+				var approvedAdjustmentIds = (await _baseService.SendAsync<IEnumerable<long>>(new()
 				{
 					URL = _config.GetApprovalsUrl()
-				});
+				})).Result;
 
-				_logger.LogInformation(JsonConvert.SerializeObject(approvedAdjustmentIds.Result));
+				_logger.LogInformation(JsonConvert.SerializeObject(approvedAdjustmentIds));
 
-				var postedAdjustmentIds = await _baseService.SendAsync<IEnumerable<PostedResponseDto>>(new()
+				var postedAdjustmentIds = (await _baseService.SendAsync<IEnumerable<PostedResponseDto>>(new()
 				{
 					URL = _config.GetOracleAdjustmentsApiUrl("stage/posted"),
-					Data = approvedAdjustmentIds.Result,
+					Data = approvedAdjustmentIds,
 					ApiType = App_Code.Enums.ApiType.POST
-				});
+				})).Result;
 
-				_logger.LogInformation(JsonConvert.SerializeObject(postedAdjustmentIds.Result));
+				var postedIds = postedAdjustmentIds.Select(x => x.HeaderId);
+				var unPostedIds = approvedAdjustmentIds.Except(postedIds).ToList();
 
-				if (postedAdjustmentIds.Result != null && postedAdjustmentIds.Result.Any())
+				_logger.LogInformation(JsonConvert.SerializeObject(postedIds));
+
+				if(unPostedIds.Any())
+				{
+					var fetchUnpostedDetailsResponse = await _baseService.SendAsync<IEnumerable<AdjustmentPostingDto>>(new RequestDto<IEnumerable<long>>()
+					{
+						URL = _config.GetSSMSAdjustmentsApiUrl($"stage/receipt/adjustments"),
+						Data = unPostedIds,
+						ApiType = ApiType.POST
+					});
+
+					if(!fetchUnpostedDetailsResponse.IsSuccess) continue;
+
+					var newlyPostedAdjustmentIds = await _baseService.SendAsync<string>(new RequestDto<IEnumerable<AdjustmentPostingDto>>()
+					{
+						URL = _config.GetOracleAdjustmentsApiUrl("stage"),
+						Data = fetchUnpostedDetailsResponse.Result,
+						ApiType = ApiType.POST
+					});
+				}
+
+				if (postedAdjustmentIds != null && postedAdjustmentIds.Any())
 				{
 					var statusPosted = await _baseService.SendAsync<string>(new RequestDto<IEnumerable<long>>()
 					{
 						URL = _config.GetSSMSAdjustmentsApiUrl("stage"),
-						Data = approvedAdjustmentIds.Result,
-						ApiType = App_Code.Enums.ApiType.POST
+						Data = approvedAdjustmentIds,
+						ApiType = ApiType.POST
 					});
 					_logger.LogInformation(JsonConvert.SerializeObject(statusPosted.Result));
 				}

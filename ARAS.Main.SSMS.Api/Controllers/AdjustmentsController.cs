@@ -154,6 +154,38 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
+		[HttpGet("stage/receipt/adjustment/{adjustmentId:long}")]
+		public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetReceiptAdjustmentStagingDataByAdjustmentId(long adjustmentId)
+		{
+			var response = new ResponseDto<IEnumerable<AdjustmentPostingDto>>();
+			try
+			{
+				response.Result = await _receiptRepo.GetStagingDataByAdjustmentId(adjustmentId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpPost("stage/receipt/adjustments")]
+		public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetReceiptAdjustmentStagingDataByAdjustmentId([FromBody] IEnumerable<long> adjustmentIds)
+		{
+			var response = new ResponseDto<IEnumerable<AdjustmentPostingDto>>();
+			try
+			{
+				response.Result = await _receiptRepo.GetStagingDataByAdjustmentId(adjustmentIds);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
 		[HttpPost("stage")]
 		public async Task<ResponseDto<string>> PostAdjustmentStagingData(IEnumerable<long> adjustmentId)
 		{

@@ -197,5 +197,47 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					CustomerNumber = a.CustomerNumber
 				}).ToListAsync();
 		}
-    }
+
+        public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByAdjustmentId(long adjustmentId)
+        {
+			return await _context.VwStagingRequestAdjustment
+				.Where(a => a.AdjustmentId == adjustmentId)
+				.Select(a => new AdjustmentPostingDto
+				{
+					AdjustmentId = a.AdjustmentId,
+					InvoiceNumber = a.InvoiceNumber,
+					AdjustmentAmount = a.AdjustmentAmount,
+					InvoiceDate = a.InvoiceDate,
+					PaymentScheduleId = null,
+					DateApplied = DateTime.Now,
+					AdjustmentActivity = a.Activity,
+					ReasonCode = a.ReasonCode,
+					Remarks = a.Remarks,
+					CustomerName = a.CustomerName,
+					CustomerNumber = a.CustomerNumber
+				}).ToListAsync();
+		}
+
+
+		public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByAdjustmentId(IEnumerable<long> adjustmentIds)
+		{
+			adjustmentIds = [.. adjustmentIds.Distinct()];
+			return await _context.VwStagingRequestAdjustment
+				.Where(a => adjustmentIds.Contains(a.AdjustmentId))
+				.Select(a => new AdjustmentPostingDto
+				{
+					AdjustmentId = a.AdjustmentId,
+					InvoiceNumber = a.InvoiceNumber,
+					AdjustmentAmount = a.AdjustmentAmount,
+					InvoiceDate = a.InvoiceDate,
+					PaymentScheduleId = null,
+					DateApplied = DateTime.Now,
+					AdjustmentActivity = a.Activity,
+					ReasonCode = a.ReasonCode,
+					Remarks = a.Remarks,
+					CustomerName = a.CustomerName,
+					CustomerNumber = a.CustomerNumber
+				}).ToListAsync();
+		}
+	}
 }

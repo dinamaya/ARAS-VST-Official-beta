@@ -24,5 +24,15 @@ namespace ARAS.Blazor.Services.Implementations
 
 			return result.Result ?? [];
 		}
-	}
+
+        public async Task<IEnumerable<TransactionHistoryDto>> GetLatestTransactions()
+        {
+            var result = await _baseService.SendAsync<IEnumerable<TransactionHistoryDto>>(new RequestDto()
+            {
+                URL = _configService.GetTransactionsUrl("latest")
+            });
+
+            return result.Result ?? [];
+        }
+    }
 }

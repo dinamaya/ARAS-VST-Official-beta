@@ -27,4 +27,7 @@ public partial class TransactionsHistoryV
 	public string? AttachmentName { get; set; }
 
 	public string? AccountRole { get; set; }
+
+    public string? Activity { get; set; }
+
 }

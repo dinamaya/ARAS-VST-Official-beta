@@ -75,7 +75,33 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				}).ToListAsync();
 		}
 
-		public async Task<IEnumerable<EmailTimelineDetailsDto>> GetEmailHistoryByRequestId(long requestId)
+
+        public async Task<IEnumerable<TransactionHistoryDto>> GetLatestTransactions(string requestorId, int count)
+        {
+            return await context.VwTransactionsHistory
+                .AsNoTracking()
+                .Join(context.Requests,
+                      t => t.RequestId,
+                      r => r.Id,
+                      (t, r) => new { t, r })
+                .Where(x => x.r.CreatedBy == requestorId)
+                .OrderByDescending(x => x.t.DateCreated)
+                .Take(count)
+                .Select(x => new TransactionHistoryDto
+                {
+                    TransactionId = x.t.TransactionId,
+                    RequestNumber = x.t.RequestId.ToString(),
+                    Creator = x.t.LastName + ", " + x.t.FirstName,
+                    DateCreated = x.t.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
+                    Description = x.t.Description,
+                    AttachmentName = x.t.AttachmentName,
+                    Status = x.t.Status,
+                    AccountRole = x.t.AccountRole,
+					Activity = x.t.Activity
+                }).ToListAsync();
+        }
+
+        public async Task<IEnumerable<EmailTimelineDetailsDto>> GetEmailHistoryByRequestId(long requestId)
 		{
 			var history = await context.VwTransactionsHistory
 				.AsNoTracking()

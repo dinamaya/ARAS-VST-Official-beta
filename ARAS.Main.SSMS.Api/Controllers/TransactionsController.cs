@@ -2,6 +2,9 @@
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ARAS.Blazor.App_Code.Globals.Extensions;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace ARAS.Main.SSMS.Api.Controllers
 {
@@ -28,7 +31,25 @@ namespace ARAS.Main.SSMS.Api.Controllers
 				response.Message = $"Successfully fetched the history of the request {requestId}";
 				return response;
 			}
-			catch (Exception ex) 
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return response.Failed(ex.Message);
+            }
+        }
+
+        [HttpGet("latest"), Authorize]
+        public async Task<ResponseDto<IEnumerable<TransactionHistoryDto>>> GetLatest()
+        {
+            var response = new ResponseDto<IEnumerable<TransactionHistoryDto>>();
+            try
+            {
+                var accountInfo = User.GetAccountBasicInfo();
+                response.Result = await _transactionRepo.GetLatestTransactions(accountInfo.Id, 6);
+                response.Message = "Successfully fetched latest transactions";
+                return response;
+            }
+            catch (Exception ex) 
 			{ 
 				_logger.LogError(ex.Message);
 				return response.Failed(ex.Message);

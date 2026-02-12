@@ -20,8 +20,9 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 
 		Task<TransactionRequestRowDto> GetTransactionRequestByRequestId(long requestId);
 		Task<RequestUpdateEmailDetailsDto> GetForEmailDetailsById (long requestId);
+        Task<int> GetPendingRequestCount(string userId);
 
-		Task Approve(long requestId, string modifiedBy);
+        Task Approve(long requestId, string modifiedBy);
 		Task Decline(long requestId, string modifiedBy);
 		Task Reject(long requestId, string modifiedBy);
 		Task<string> InvoiceExistingAdjustments(string invoiceNumber, IEnumerable<string> adjustmentTypeIds);

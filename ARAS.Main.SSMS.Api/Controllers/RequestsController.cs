@@ -123,7 +123,24 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpPost("receipt"), Authorize(Roles = "Requestor")]
+        [HttpGet("count/pending"), Authorize(Roles = "Requestor")]
+        public async Task<ResponseDto<int>> GetPendingRequestCount()
+        {
+            var response = new ResponseDto<int>();
+            try
+            {
+                var accountInfo = User.GetAccountBasicInfo();
+                response.Result = await _requestRepo.GetPendingRequestCount(accountInfo.Id);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return response.Failed(ex.Message);
+            }
+        }
+
+        [HttpPost("receipt"), Authorize(Roles = "Requestor")]
 		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentCreateResponseDto>>> CreateReceiptAdjusmentRequest([FromBody] IEnumerable<BaseReceiptAdjustmentCreateDto> data)
 		{
 			var response = new ResponseDto<IEnumerable<ReceiptAdjustmentCreateResponseDto>>();

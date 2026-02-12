@@ -152,8 +152,19 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 		}
 
+        public async Task<int> GetPendingRequestCount(string userId)
+        {
+            return await _context.VwAllAdjustmentRequestLatestStatus
+                .AsNoTracking()
+                .Join(_context.Requests,
+                    v => v.RequestId,
+                    r => r.Id,
+                    (v, r) => new { v, r })
+                .Where(x => x.r.CreatedBy == userId && x.v.Status == "Pending")
+                .CountAsync();
+        }
 
-		public async Task<IEnumerable<InvoiceAdjustmentRowDto>> GetInvoicedjustmentApprovals(SearchRequestDto data)
+        public async Task<IEnumerable<InvoiceAdjustmentRowDto>> GetInvoicedjustmentApprovals(SearchRequestDto data)
 		{
 			data.Value = data.Value.ToUpper();
 

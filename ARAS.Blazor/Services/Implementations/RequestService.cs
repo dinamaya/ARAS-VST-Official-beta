@@ -28,7 +28,17 @@ namespace ARAS.Blazor.Services.Implementations
 		public async Task<bool> IsValidatable(long requestId) => await IsOnStatus(requestId, "is-validatable");
 		public async Task<bool> IsDeclined(long requestId) => await IsOnStatus(requestId, "is-declined");
 
-		public async Task<TransactionRequestRowDto> GetRequestDetails(long requestId)
+        public async Task<int> GetPendingRequestCount()
+        {
+            var response = await _baseService.SendAsync<int>(new RequestDto()
+            {
+                URL = _configService.GetRequestsUrl("count/pending"),
+            });
+
+            return response.IsSuccess ? response.Result : 0;
+        }
+
+        public async Task<TransactionRequestRowDto> GetRequestDetails(long requestId)
 		{
 			var response = await _baseService.SendAsync<TransactionRequestRowDto>(new RequestDto()
 				{

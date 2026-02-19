@@ -1,5 +1,6 @@
 ﻿using ARAS.Main.SSMS.Api.App_Code.Globals;
 using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
+using ARAS.Main.SSMS.Api.App_Code.Globals.Helpers;
 using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
@@ -49,17 +50,49 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 
         public async Task Post(IEnumerable<long> adjustmentIds, string createdBy)
 		{
-			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
+            adjustmentIds = [.. adjustmentIds.Distinct()];
 
-			try
+            try
+            {
+				var requestIds = adjustmentIds
+					.Select(StagingHeaderIdHelper.Parse)
+					.Select(x => x.RequestId)
+					.Distinct();
+
+				await PostByRequestIds(requestIds, createdBy);
+			}
+			catch (ArgumentException)
 			{
-				IList<TransactionCreateDto> transactions = [];
 				IEnumerable<long> requestIds = (await _context
 					.VwApprovedReceiptAdjustments
 					.Where(x => adjustmentIds.Contains(x.AdjustmentId))
-					.Select(x => x.RequestId).ToListAsync()).Distinct();
+					.Select(x => x.RequestId)
+					.ToListAsync()).Distinct();
 
-				foreach (var requestId in requestIds)
+				await PostByRequestIds(requestIds, createdBy);
+			}
+			catch (OverflowException)
+			{	IEnumerable<long> requestIds = (await _context
+					.VwApprovedReceiptAdjustments
+					.Where(x => adjustmentIds.Contains(x.AdjustmentId))
+                    .Select(x => x.RequestId)
+                    .ToListAsync()).Distinct();
+
+                await PostByRequestIds(requestIds, createdBy);
+            }
+
+        }
+
+        public async Task PostByRequestIds(IEnumerable<long> requestIds, string createdBy)
+        {
+            await using var dbTransaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                IList<TransactionCreateDto> transactions = [];
+                requestIds = requestIds.Distinct();
+
+                foreach (var requestId in requestIds)
 				{
 					bool isPostable = await _requestRepo.IsPostable(requestId);
 					

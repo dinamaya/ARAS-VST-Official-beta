@@ -1,4 +1,5 @@
 ﻿using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
+using ARAS.Main.SSMS.Api.App_Code.Globals.Helpers;
 using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Models.Entities;
@@ -165,22 +166,22 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			return results.Select(r => r.Id);
 		}
 
-		public async Task<IEnumerable<Adjustment>> GetByRequestId(long requestId) => 
+		public async Task<IEnumerable<Adjustment>> GetByRequestId(long requestId) =>
 			await _context.Adjustments.Where(a => a.RequestId == requestId && a.IsActive).ToListAsync();
-		
+
 		public async Task<Adjustment> GetOneByRequestId(long requestId) => await _context.Adjustments
 			.FirstOrDefaultAsync(a => a.RequestId == requestId && a.IsActive) ??
 			throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENT);
 
-		public async Task<Adjustment> GetById(long id) => 
-			await _context.Adjustments.Where(a => a.Id == id && a.IsActive).FirstOrDefaultAsync() ?? 
+		public async Task<Adjustment> GetById(long id) =>
+			await _context.Adjustments.Where(a => a.Id == id && a.IsActive).FirstOrDefaultAsync() ??
 			throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENT);
-		
+
 		public async Task DeactivateDetails(long id)
 		{
 			var adjustment = await GetById(id);
 			var invoice = await _invoiceRepo.GetById(adjustment.Id);
-			
+
 			adjustment.IsActive = false;
 			invoice.IsActive = false;
 
@@ -202,11 +203,12 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.Where(a => a.RequestId == requestId && a.IsActive)
 				.ToListAsync();
 
-			foreach (var row in rows){
+			foreach (var row in rows)
+			{
 				row.IsActive = false;
 				_context.APAROffsets.Update(row);
-                await _context.SaveChangesAsync();
-            }
+				await _context.SaveChangesAsync();
+			}
 		}
 
 		/// <summary>
@@ -242,34 +244,34 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			string datePart = today.ToString(Formats.Date.REFERNUMBER);
 			string indexPart = nextIndex.ToString("D3");
 
-			if(adjCode == "SRR" || adjCode == "SAR")
+			if (adjCode == "SRR" || adjCode == "SAR")
 				return $"{groupCode}-WOR-{datePart}-{indexPart}";
-			
+
 			return $"{groupCode}-{adjCode}-{datePart}-{indexPart}";
 		}
 
-        public async Task<string> GenerateAPARReferenceNumber()
-        {
-            var today = DateOnly.FromDateTime(DateTime.Now.Date);
-            string aparCode = "APAR";
+		public async Task<string> GenerateAPARReferenceNumber()
+		{
+			var today = DateOnly.FromDateTime(DateTime.Now.Date);
+			string aparCode = "APAR";
 
-            var requests = _context.VwRequestsNumberSources.AsNoTracking().Where(r =>
-                r.AdjustmentTypeCode == "ARR" &&
+			var requests = _context.VwRequestsNumberSources.AsNoTracking().Where(r =>
+				r.AdjustmentTypeCode == "ARR" &&
 				r.RequestDate == today
-            );
+			);
 
-            int nextIndex = (await requests.CountAsync()) + 1;
+			int nextIndex = (await requests.CountAsync()) + 1;
 
-            string datePart = today.ToString("MM.dd.yyyy");
-            string indexPart = nextIndex.ToString("D3");
+			string datePart = today.ToString("MM.dd.yyyy");
+			string indexPart = nextIndex.ToString("D3");
 
-            return $"APAR-{datePart}-{indexPart}";
-        }
+			return $"APAR-{datePart}-{indexPart}";
+		}
 
-        public async Task<AdjustmentBasicInfoDto> GetAdjustmentInfoByCode(string adjustmentTypeCode) => 
+		public async Task<AdjustmentBasicInfoDto> GetAdjustmentInfoByCode(string adjustmentTypeCode) =>
 			await _context.AdjustmentTypes.AsNoTracking()
 			.Where(x => x.Code.Equals(adjustmentTypeCode))
-			.Select(x => new AdjustmentBasicInfoDto(x.Id, x.Name)).FirstOrDefaultAsync() ?? 
+			.Select(x => new AdjustmentBasicInfoDto(x.Id, x.Name)).FirstOrDefaultAsync() ??
 			throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENTTYPE);
 
 		public async Task<IEnumerable<RequestAdjustmentsV>> GetAllByRequestIdAndCode(long requestId, string adjustmentTypeCode)
@@ -285,8 +287,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			return await _context.AdjustmentTypes.AsNoTracking().Where(a => a.Code == adjustmentTypeCode).Select(a => a.Activity).FirstAsync();
 		}
 
-        public async Task<IEnumerable<string>> GetTypes() => await _context.AdjustmentTypes.AsNoTracking().Select(a => a.Name).ToListAsync();
-        
+		public async Task<IEnumerable<string>> GetTypes() => await _context.AdjustmentTypes.AsNoTracking().Select(a => a.Name).ToListAsync();
+
 		public async Task<IEnumerable<string>> GetReceiptTypes() => await _context.AdjustmentTypes.AsNoTracking()
 			.Where(a => a.Category == "Receipt")
 			.Select(a => a.Name)
@@ -303,8 +305,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.Select(x => new AdjustmentBasicInfoDto(x.Id, x.Code)).FirstOrDefaultAsync() ??
 				throw new InvalidOperationException(Exceptions.NOTFOUND_ADJUSTMENTTYPE);
 
-        public async Task<long> UpdateAsync(long requestId, ReceiptAdjustmentUpdateRequestDto data, string modifiedBy)
-        {
+		public async Task<long> UpdateAsync(long requestId, ReceiptAdjustmentUpdateRequestDto data, string modifiedBy)
+		{
 			var adjustment = await GetOneByRequestId(requestId);
 			adjustment.AdjustmentAmount = data.AdjustmentAmount;
 			adjustment.Remarks = data.Remarks;
@@ -316,6 +318,21 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			return adjustment.Id;
 		}
 
-        public async Task<IEnumerable<long>> GetAllApproved() => await _context.VwApprovedReceiptAdjustments.AsNoTracking().Select(a => a.AdjustmentId).ToListAsync();
-    }
+		public async Task<IEnumerable<long>> GetAllApproved() => await _context.VwApprovedReceiptAdjustments.AsNoTracking().Select(a => a.AdjustmentId).ToListAsync();
+
+		public async Task<IEnumerable<ApprovedAdjustmentSyncDto>> GetAllApprovedForSync()
+		{
+			return await _context.VwApprovedReceiptAdjustments
+				.AsNoTracking()
+				.Select(a => new ApprovedAdjustmentSyncDto
+				{
+					RequestId = a.RequestId,
+					AdjustmentId = a.AdjustmentId,
+					HeaderId = StagingHeaderIdHelper.Generate(a.RequestId, a.AdjustmentId)
+				})
+				.ToListAsync();
+		}
+
+
+	}
 }

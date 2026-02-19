@@ -187,13 +187,13 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		}
 
 		[HttpPost("stage/receipt/adjustments")]
-		public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetReceiptAdjustmentStagingDataByAdjustmentId([FromBody] IEnumerable<long> adjustmentIds)
-		{
-			var response = new ResponseDto<IEnumerable<AdjustmentPostingDto>>();
+        public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetReceiptAdjustmentStagingDataByAdjustmentId([FromBody] IEnumerable<long> headerIds)
+        {
+            var response = new ResponseDto<IEnumerable<AdjustmentPostingDto>>();
 			try
 			{
-				response.Result = await _receiptRepo.GetStagingDataByAdjustmentId(adjustmentIds);
-				return response;
+                response.Result = await _receiptRepo.GetStagingDataByAdjustmentId(headerIds);
+                return response;
 			}
 			catch (Exception ex)
 			{
@@ -218,5 +218,23 @@ namespace ARAS.Main.SSMS.Api.Controllers
 				return response.Failed(ex.Message);
 			}
 		}
-	}
+
+
+        [HttpPost("stage/requests")]
+        public async Task<ResponseDto<string>> PostAdjustmentStagingRequestData([FromBody] IEnumerable<long> requestIds)
+        {
+            var response = new ResponseDto<string>();
+            try
+            {
+                await _adjustmentService.PostByRequestIds(requestIds, "SYSTEM");
+                response.Result = "Request Status Posted";
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return response.Failed(ex.Message);
+            }
+        }
+    }
 }

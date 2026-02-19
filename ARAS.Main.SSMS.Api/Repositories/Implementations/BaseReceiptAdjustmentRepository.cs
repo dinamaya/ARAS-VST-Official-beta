@@ -1,4 +1,5 @@
 ﻿using ARAS.Main.SSMS.Api.App_Code.Globals;
+using ARAS.Main.SSMS.Api.App_Code.Globals.Helpers;
 using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
@@ -184,8 +185,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.Where(a => a.RequestId == requestId)
 				.Select(a => new AdjustmentPostingDto
 				{
-					AdjustmentId = a.AdjustmentId,
-					InvoiceNumber = a.InvoiceNumber,
+                    HeaderId = StagingHeaderIdHelper.Generate(a.RequestId, a.AdjustmentId),
+                    InvoiceNumber = a.InvoiceNumber,
 					AdjustmentAmount = a.AdjustmentAmount,
 					InvoiceDate = a.InvoiceDate,
 					PaymentScheduleId = null,
@@ -204,8 +205,9 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			   .Where(a => requestIds.Contains(a.RequestId))
 			   .Select(a => new AdjustmentPostingDto
 			   {
-				   AdjustmentId = a.AdjustmentId,
-				   InvoiceNumber = a.InvoiceNumber,
+                   HeaderId = StagingHeaderIdHelper.Generate(a.RequestId, a.AdjustmentId),
+                   AdjustmentId = a.AdjustmentId,
+                   InvoiceNumber = a.InvoiceNumber,
 				   AdjustmentAmount = a.AdjustmentAmount,
 				   InvoiceDate = a.InvoiceDate,
 				   PaymentScheduleId = null,
@@ -224,8 +226,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.Where(a => a.AdjustmentId == adjustmentId)
 				.Select(a => new AdjustmentPostingDto
 				{
-					AdjustmentId = a.AdjustmentId,
-					InvoiceNumber = a.InvoiceNumber,
+                    HeaderId = StagingHeaderIdHelper.Generate(a.RequestId, a.AdjustmentId),
+                    InvoiceNumber = a.InvoiceNumber,
 					AdjustmentAmount = a.AdjustmentAmount,
 					InvoiceDate = a.InvoiceDate,
 					PaymentScheduleId = null,
@@ -241,11 +243,27 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByAdjustmentId(IEnumerable<long> adjustmentIds)
 		{
 			adjustmentIds = [.. adjustmentIds.Distinct()];
-			return await _context.VwStagingRequestAdjustment
-				.Where(a => adjustmentIds.Contains(a.AdjustmentId))
-				.Select(a => new AdjustmentPostingDto
+            if (!adjustmentIds.Any()) return [];
+
+            var keyPairs = adjustmentIds
+                .Select(StagingHeaderIdHelper.Parse)
+                .ToList();
+
+            var requestIds = keyPairs
+                .Select(x => x.RequestId)
+                .Distinct()
+                .ToList();
+
+            var keySet = keyPairs
+                .Select(x => $"{x.RequestId}:{x.AdjustmentId}")
+                .ToHashSet();
+
+            var rows = await _context.VwStagingRequestAdjustment
+                .Where(a => requestIds.Contains(a.RequestId))
+                .Select(a => new AdjustmentPostingDto
 				{
-					AdjustmentId = a.AdjustmentId,
+                    HeaderId = StagingHeaderIdHelper.Generate(a.RequestId, a.AdjustmentId),
+                    AdjustmentId = a.AdjustmentId,
 					InvoiceNumber = a.InvoiceNumber,
 					AdjustmentAmount = a.AdjustmentAmount,
 					InvoiceDate = a.InvoiceDate,
@@ -256,7 +274,14 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					Remarks = a.Remarks,
 					CustomerName = a.CustomerName,
 					CustomerNumber = a.CustomerNumber
-				}).ToListAsync();
-		}
+                })
+                .ToListAsync();
+
+            return rows.Where(x =>
+            {
+                var parsed = StagingHeaderIdHelper.Parse(x.HeaderId);
+                return keySet.Contains($"{parsed.RequestId}:{parsed.AdjustmentId}");
+            });
+        }
     }
 }

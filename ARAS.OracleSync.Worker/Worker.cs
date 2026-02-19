@@ -25,29 +25,37 @@ namespace ARAS.OracleSync.Worker
 		{
 			while (!stoppingToken.IsCancellationRequested)
 			{
-				// TODO: Implement Fetching and then updating of the Main SSMS Request Rows' Status to Posted here
-				// Fetch all adjustments in staging table that already has 3 True Flags
-				// Fetch all adjustments in Validated adjustments in Main table
-				// Update the Status of those adjustments to Posted
+                // TODO: Implement Fetching and then updating of the Main SSMS Request Rows' Status to Posted here
+                // Fetch all adjustments in staging table that already has 3 True Flags
+                // Fetch all adjustments in Validated adjustments in Main table
+                // Update the Status of those adjustments to Posted
 
-				var approvedAdjustmentIds = (await _baseService.SendAsync<IEnumerable<long>>(new()
-				{
-					URL = _config.GetApprovalsUrl()
-				})).Result;
+                var approvedAdjustments = (await _baseService.SendAsync<IEnumerable<ApprovedAdjustmentSyncDto>>(new()
+                {
+                    URL = _config.GetApprovalsUrl("sync")
+                })).Result;
 
-				_logger.LogInformation(JsonConvert.SerializeObject(approvedAdjustmentIds));
+                if (approvedAdjustments == null || !approvedAdjustments.Any())
+                {
+                    await Task.Delay(_config.GetRefreshTime(), stoppingToken);
+                    continue;
+                }
 
-				var postedAdjustmentIds = (await _baseService.SendAsync<IEnumerable<PostedResponseDto>>(new()
+                var approvedHeaderIds = approvedAdjustments.Select(x => x.HeaderId).Distinct().ToList();
+
+                _logger.LogInformation(JsonConvert.SerializeObject(approvedHeaderIds));
+
+                var postedAdjustmentIds = (await _baseService.SendAsync<IEnumerable<PostedResponseDto>>(new()
 				{
 					URL = _config.GetOracleAdjustmentsApiUrl("stage/posted"),
-					Data = approvedAdjustmentIds,
-					ApiType = App_Code.Enums.ApiType.POST
+                    Data = approvedHeaderIds,
+                    ApiType = App_Code.Enums.ApiType.POST
 				})).Result;
 
 				var postedIds = postedAdjustmentIds.Select(x => x.HeaderId);
-				var unPostedIds = approvedAdjustmentIds.Except(postedIds).ToList();
+                var unPostedIds = approvedHeaderIds.Except(postedIds).ToList();
 
-				_logger.LogInformation(JsonConvert.SerializeObject(postedIds));
+                _logger.LogInformation(JsonConvert.SerializeObject(postedIds));
 
 				if(unPostedIds.Any())
 				{
@@ -70,11 +78,18 @@ namespace ARAS.OracleSync.Worker
 
 				if (postedAdjustmentIds != null && postedAdjustmentIds.Any())
 				{
-					var statusPosted = await _baseService.SendAsync<string>(new RequestDto<IEnumerable<long>>()
+                    var postedHeaderSet = postedIds.ToHashSet();
+                    var postedRequestIds = approvedAdjustments
+                        .Where(x => postedHeaderSet.Contains(x.HeaderId))
+                        .Select(x => x.RequestId)
+                        .Distinct()
+                        .ToList();
+
+                    var statusPosted = await _baseService.SendAsync<string>(new RequestDto<IEnumerable<long>>()
 					{
-						URL = _config.GetSSMSAdjustmentsApiUrl("stage"),
-						Data = approvedAdjustmentIds,
-						ApiType = ApiType.POST
+                        URL = _config.GetSSMSAdjustmentsApiUrl("stage/requests"),
+                        Data = postedRequestIds,
+                        ApiType = ApiType.POST
 					});
 					_logger.LogInformation(JsonConvert.SerializeObject(statusPosted.Result));
 				}

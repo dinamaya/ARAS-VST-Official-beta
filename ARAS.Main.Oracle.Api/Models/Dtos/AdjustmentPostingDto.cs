@@ -2,8 +2,9 @@
 {
 	public record AdjustmentPostingDto
 	{
-		public long AdjustmentId { get; set; } // Header ID
-		public string InvoiceNumber { get; set; }
+        public long HeaderId { get; set; }
+        public long AdjustmentId { get; set; } // Source adjustment id
+        public string InvoiceNumber { get; set; }
 		public double AdjustmentAmount { get; set; } // Amount
 		
 		//public string CreatedFrom { get; set; } Default to ADJUSTMENT API

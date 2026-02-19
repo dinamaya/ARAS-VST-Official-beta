@@ -150,8 +150,8 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 		{
 			var list = rows.Select(row => new ARAdjustmentsStaging
 			{
-				HeaderId = row.AdjustmentsDetails.AdjustmentId,
-				CustomerTrxId = long.Parse(row.CustomerTrxId),
+                HeaderId = row.AdjustmentsDetails.HeaderId,
+                CustomerTrxId = long.Parse(row.CustomerTrxId),
 				InvoiceNumber = row.AdjustmentsDetails.InvoiceNumber,
 				Amount = Convert.ToDecimal(row.AdjustmentsDetails.AdjustmentAmount),
 				CreatedFrom = "ADJUSTMENT API",

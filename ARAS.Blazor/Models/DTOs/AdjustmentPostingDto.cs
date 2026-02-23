@@ -2,7 +2,8 @@
 {
 	public record AdjustmentPostingDto
 	{
-		public long AdjustmentId { get; set; }
+        public long HeaderId { get; set; }
+        public long AdjustmentId { get; set; }
 		public string InvoiceNumber { get; set; }
 		public double AdjustmentAmount { get; set; }
 		public DateTime InvoiceDate { get; set; }

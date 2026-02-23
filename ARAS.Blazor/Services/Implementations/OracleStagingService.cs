@@ -16,7 +16,8 @@ namespace ARAS.Blazor.Services.Implementations
 				ApiType = ApiType.POST
 			});
 
-			Guards.ThrowNullReferenceIf(response?.Result, response.Message);
-		}
+            Guards.ThrowInvalidOperationIf(!(response?.IsSuccess ?? false), response?.Message ?? "Failed to create Oracle staging row.");
+            Guards.ThrowNullReferenceIf(response?.Result, response?.Message ?? "Oracle staging returned no result.");
+        }
 	}
 }

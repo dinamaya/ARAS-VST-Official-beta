@@ -25,7 +25,6 @@ namespace ARAS.OracleSync.Worker
 		{
 			while (!stoppingToken.IsCancellationRequested)
 			{
-                // TODO: Implement Fetching and then updating of the Main SSMS Request Rows' Status to Posted here
                 // Fetch all adjustments in staging table that already has 3 True Flags
                 // Fetch all adjustments in Validated adjustments in Main table
                 // Update the Status of those adjustments to Posted

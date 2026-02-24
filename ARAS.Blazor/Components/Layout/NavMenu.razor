@@ -91,9 +91,18 @@
 	protected override async Task OnInitializedAsync()
 	{
 		accountDetails = await AuthService.GetAccountDetails();
-		string[] fullName = accountDetails.FullName.Split(" ");
-		groupCode = accountDetails.GroupCode == "" ? "" : $"({accountDetails.GroupCode})";
-		avatar = fullName[0].First().ToString().ToUpper() + fullName[1]?.FirstOrDefault().ToString()?.ToUpper();
+		var tokens = (accountDetails.FullName ?? string.Empty)
+			.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+		var firstInitial = tokens.Length > 0 && tokens[0].Length > 0
+			? char.ToUpper(tokens[0][0]).ToString()
+			: string.Empty;
+
+		var secondInitial = tokens.Length > 1 && tokens[1].Length > 0
+			? char.ToUpper(tokens[1][0]).ToString()
+			: string.Empty;
+
+		avatar = firstInitial + secondInitial;
 	}
 
 	private async Task Logout()

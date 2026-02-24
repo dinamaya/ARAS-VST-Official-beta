@@ -31,7 +31,7 @@
 		}
 		else if (accountDetails.IsInRole("Requestor"))
 		{
-			<RadzenPanelMenuItem Text="Requests" Icon="assignment_add" Style="border: none">
+				<RadzenPanelMenuItem Text="File Request" Icon="assignment_add" Style="border: none">
 				<MenuItem Text="Receipt" Route="/requests/receipt" />
 				<RadzenPanelMenuItem Text="Invoice" Style="border: none">
 					<MenuItem Text="AP-AR" Route="/requests/invoice/apar-offset" />
@@ -41,12 +41,12 @@
 		}
 		else if (accountDetails.IsInRole("Approver"))
 		{
-			<RadzenPanelMenuItem Text="Approvals" Icon="assignment_turned_in" Style="border: none">
+			<RadzenPanelMenuItem Text="My Approval Queue" Icon="assignment_turned_in" Style="border: none">
 				<MenuItem Text="Receipt" Route="/approvals/receipt" />
 				<MenuItem Text="Invoice" Route="/approvals/invoice" />
 			</RadzenPanelMenuItem>
 		}
-		<RadzenPanelMenuItem Text="Submissions" Icon="fact_check" Style="border: none">
+			<RadzenPanelMenuItem Text="Request History" Icon="fact_check" Style="border: none">
 			<MenuItem Text="Receipt" Route="/submissions/receipt" />
 			<MenuItem Text="Invoice" Route="/submissions/invoice" />
 		</RadzenPanelMenuItem>

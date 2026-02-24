@@ -140,6 +140,23 @@ namespace ARAS.Main.SSMS.Api.Controllers
             }
         }
 
+        [HttpGet("count/approved"), Authorize(Roles = "Requestor")]
+        public async Task<ResponseDto<int>> GetApprovedRequestCount()
+        {
+            var response = new ResponseDto<int>();
+            try
+            {
+                var accountInfo = User.GetAccountBasicInfo();
+                response.Result = await _requestRepo.GetApprovedRequestCount(accountInfo.Id);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return response.Failed(ex.Message);
+            }
+        }
+
         [HttpPost("receipt"), Authorize(Roles = "Requestor")]
 		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentCreateResponseDto>>> CreateReceiptAdjusmentRequest([FromBody] IEnumerable<BaseReceiptAdjustmentCreateDto> data)
 		{

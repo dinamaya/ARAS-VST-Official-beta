@@ -69,7 +69,7 @@
                                 <div class="numbers">
                                     <p class="text-sm mb-0 text-capitalize font-weight-bold">Approved</p>
                                     <h5 class="font-weight-bolder mb-0">
-                                        744
+                                        @approvedCount
                                     </h5>
                                 </div>
                             </div>
@@ -235,6 +235,7 @@
     private List<TransactionHistoryDto> latestTransactions;
     private string role = string.Empty;
     private int pendingCount = 0;
+    private int approvedCount = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -245,6 +246,7 @@
             var result = await TransactionService.GetLatestTransactions();
             latestTransactions = result?.ToList() ?? new List<TransactionHistoryDto>();
             pendingCount = await RequestService.GetPendingRequestCount();
+            approvedCount = await RequestService.GetApprovedRequestCount();
         }
         await base.OnInitializedAsync();
     }

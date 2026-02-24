@@ -21,6 +21,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 		Task<TransactionRequestRowDto> GetTransactionRequestByRequestId(long requestId);
 		Task<RequestUpdateEmailDetailsDto> GetForEmailDetailsById (long requestId);
         Task<int> GetPendingRequestCount(string userId);
+        Task<int> GetApprovedRequestCount(string userId);
 
         Task Approve(long requestId, string modifiedBy);
 		Task Decline(long requestId, string modifiedBy);

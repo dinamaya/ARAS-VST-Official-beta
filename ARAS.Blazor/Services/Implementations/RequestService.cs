@@ -38,6 +38,16 @@ namespace ARAS.Blazor.Services.Implementations
             return response.IsSuccess ? response.Result : 0;
         }
 
+        public async Task<int> GetApprovedRequestCount()
+        {
+            var response = await _baseService.SendAsync<int>(new RequestDto()
+            {
+                URL = _configService.GetRequestsUrl("count/approved"),
+            });
+
+            return response.IsSuccess ? response.Result : 0;
+        }
+
         public async Task<TransactionRequestRowDto> GetRequestDetails(long requestId)
 		{
 			var response = await _baseService.SendAsync<TransactionRequestRowDto>(new RequestDto()

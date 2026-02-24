@@ -12,6 +12,7 @@ namespace ARAS.Blazor.Services.Interfaces
 		Task<bool> IsValidatable(long requestId);
 		Task<bool> IsDeclined(long requestId);
         Task<int> GetPendingRequestCount();
+        Task<int> GetApprovedRequestCount();
         Task<TransactionRequestRowDto> GetRequestDetails(long requestId);
 		Task<ReceiptAdjustmentUpdateResponseDto> GetReceiptDetails(long requestId);
 		Task<IEnumerable<ReceiptAdjustmentRowDto>> GetReceiptAdjustmentRequests(SearchRequestDto data);

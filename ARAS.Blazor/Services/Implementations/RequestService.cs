@@ -48,6 +48,46 @@ namespace ARAS.Blazor.Services.Implementations
             return response.IsSuccess ? response.Result : 0;
         }
 
+        public async Task<int> GetDeclinedRequestCount()
+        {
+            var response = await _baseService.SendAsync<int>(new RequestDto()
+            {
+                URL = _configService.GetRequestsUrl("count/declined"),
+            });
+
+            return response.IsSuccess ? response.Result : 0;
+        }
+
+        public async Task<int> GetResubmittedRequestCount()
+        {
+            var response = await _baseService.SendAsync<int>(new RequestDto()
+            {
+                URL = _configService.GetRequestsUrl("count/resubmitted"),
+            });
+
+            return response.IsSuccess ? response.Result : 0;
+        }
+
+        public async Task<int> GetPostedRequestCount()
+        {
+            var response = await _baseService.SendAsync<int>(new RequestDto()
+            {
+                URL = _configService.GetRequestsUrl("count/posted"),
+            });
+
+            return response.IsSuccess ? response.Result : 0;
+        }
+
+        public async Task<int> GetRejectedRequestCount()
+        {
+            var response = await _baseService.SendAsync<int>(new RequestDto()
+            {
+                URL = _configService.GetRequestsUrl("count/rejected"),
+            });
+
+            return response.IsSuccess ? response.Result : 0;
+        }
+
         public async Task<TransactionRequestRowDto> GetRequestDetails(long requestId)
 		{
 			var response = await _baseService.SendAsync<TransactionRequestRowDto>(new RequestDto()

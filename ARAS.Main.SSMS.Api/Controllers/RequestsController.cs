@@ -157,6 +157,74 @@ namespace ARAS.Main.SSMS.Api.Controllers
             }
         }
 
+        [HttpGet("count/declined"), Authorize(Roles = "Requestor")]
+        public async Task<ResponseDto<int>> GetDeclinedRequestCount()
+        {
+            var response = new ResponseDto<int>();
+            try
+            {
+                var accountInfo = User.GetAccountBasicInfo();
+                response.Result = await _requestRepo.GetDeclinedRequestCount(accountInfo.Id);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return response.Failed(ex.Message);
+            }
+        }
+
+        [HttpGet("count/resubmitted"), Authorize(Roles = "Requestor")]
+        public async Task<ResponseDto<int>> GetResubmittedRequestCount()
+        {
+            var response = new ResponseDto<int>();
+            try
+            {
+                var accountInfo = User.GetAccountBasicInfo();
+                response.Result = await _requestRepo.GetResubmittedRequestCount(accountInfo.Id);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return response.Failed(ex.Message);
+            }
+        }
+
+        [HttpGet("count/posted"), Authorize(Roles = "Requestor")]
+        public async Task<ResponseDto<int>> GetPostedRequestCount()
+        {
+            var response = new ResponseDto<int>();
+            try
+            {
+                var accountInfo = User.GetAccountBasicInfo();
+                response.Result = await _requestRepo.GetPostedRequestCount(accountInfo.Id);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return response.Failed(ex.Message);
+            }
+        }
+
+        [HttpGet("count/rejected"), Authorize(Roles = "Requestor")]
+        public async Task<ResponseDto<int>> GetRejectedRequestCount()
+        {
+            var response = new ResponseDto<int>();
+            try
+            {
+                var accountInfo = User.GetAccountBasicInfo();
+                response.Result = await _requestRepo.GetRejectedRequestCount(accountInfo.Id);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return response.Failed(ex.Message);
+            }
+        }
+
         [HttpPost("receipt"), Authorize(Roles = "Requestor")]
 		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentCreateResponseDto>>> CreateReceiptAdjusmentRequest([FromBody] IEnumerable<BaseReceiptAdjustmentCreateDto> data)
 		{

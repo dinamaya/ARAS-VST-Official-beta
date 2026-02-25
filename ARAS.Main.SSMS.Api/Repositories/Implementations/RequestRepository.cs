@@ -176,6 +176,54 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                 .CountAsync();
         }
 
+        public async Task<int> GetDeclinedRequestCount(string userId)
+        {
+            return await _context.VwAllAdjustmentRequestLatestStatus
+                .AsNoTracking()
+                .Join(_context.Requests,
+                    v => v.RequestId,
+                    r => r.Id,
+                    (v, r) => new { v, r })
+                .Where(x => x.r.CreatedBy == userId && x.v.Status == "Declined")
+                .CountAsync();
+        }
+
+        public async Task<int> GetResubmittedRequestCount(string userId)
+        {
+            return await _context.VwAllAdjustmentRequestLatestStatus
+                .AsNoTracking()
+                .Join(_context.Requests,
+                    v => v.RequestId,
+                    r => r.Id,
+                    (v, r) => new { v, r })
+                .Where(x => x.r.CreatedBy == userId && x.v.Status == "Resubmitted")
+                .CountAsync();
+        }
+
+        public async Task<int> GetPostedRequestCount(string userId)
+        {
+            return await _context.VwAllAdjustmentRequestLatestStatus
+                .AsNoTracking()
+                .Join(_context.Requests,
+                    v => v.RequestId,
+                    r => r.Id,
+                    (v, r) => new { v, r })
+                .Where(x => x.r.CreatedBy == userId && x.v.Status == "Posted")
+                .CountAsync();
+        }
+
+        public async Task<int> GetRejectedRequestCount(string userId)
+        {
+            return await _context.VwAllAdjustmentRequestLatestStatus
+                .AsNoTracking()
+                .Join(_context.Requests,
+                    v => v.RequestId,
+                    r => r.Id,
+                    (v, r) => new { v, r })
+                .Where(x => x.r.CreatedBy == userId && x.v.Status == "Rejected")
+                .CountAsync();
+        }
+
         public async Task<IEnumerable<InvoiceAdjustmentRowDto>> GetInvoicedjustmentApprovals(SearchRequestDto data)
 		{
 			data.Value = data.Value.ToUpper();

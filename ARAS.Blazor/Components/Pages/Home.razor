@@ -90,7 +90,7 @@
                                 <div class="numbers">
                                     <p class="text-sm mb-0 text-capitalize font-weight-bold">Declined</p>
                                     <h5 class="font-weight-bolder mb-0">
-                                        1,414
+                                        @declinedCount
                                     </h5>
                                 </div>
                             </div>
@@ -111,7 +111,7 @@
                                 <div class="numbers">
                                     <p class="text-sm mb-0 text-capitalize font-weight-bold">Resubmitted</p>
                                     <h5 class="font-weight-bolder mb-0">
-                                        1.76
+                                        @resubmittedCount
                                     </h5>
                                 </div>
                             </div>
@@ -132,7 +132,7 @@
                                 <div class="numbers">
                                     <p class="text-sm mb-0 text-capitalize font-weight-bold">Posted</p>
                                     <h5 class="font-weight-bolder mb-0">
-                                        1,414
+                                        @postedCount
                                     </h5>
                                 </div>
                             </div>
@@ -153,7 +153,7 @@
                                 <div class="numbers">
                                     <p class="text-sm mb-0 text-capitalize font-weight-bold">Rejected</p>
                                     <h5 class="font-weight-bolder mb-0">
-                                        1.76
+                                        @rejectedCount
                                     </h5>
                                 </div>
                             </div>
@@ -247,6 +247,11 @@
     private string role = string.Empty;
     private int pendingCount = 0;
     private int approvedCount = 0;
+    private int declinedCount = 0;
+    private int resubmittedCount = 0;
+    private int postedCount = 0;
+    private int rejectedCount = 0;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -258,6 +263,11 @@
             latestTransactions = result?.ToList() ?? new List<TransactionHistoryDto>();
             pendingCount = await RequestService.GetPendingRequestCount();
             approvedCount = await RequestService.GetApprovedRequestCount();
+            declinedCount = await RequestService.GetDeclinedRequestCount();
+            resubmittedCount = await RequestService.GetResubmittedRequestCount();
+            postedCount = await RequestService.GetPostedRequestCount();
+            rejectedCount = await RequestService.GetRejectedRequestCount();
+
         }
         await base.OnInitializedAsync();
     }

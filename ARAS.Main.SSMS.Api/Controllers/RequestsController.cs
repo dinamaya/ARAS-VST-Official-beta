@@ -123,7 +123,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-        [HttpGet("count/pending"), Authorize(Roles = "Requestor")]
+        [HttpGet("count/pending"), Authorize]
         public async Task<ResponseDto<int>> GetPendingRequestCount()
         {
             var response = new ResponseDto<int>();
@@ -140,7 +140,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
             }
         }
 
-        [HttpGet("count/approved"), Authorize(Roles = "Requestor")]
+        [HttpGet("count/approved"), Authorize]
         public async Task<ResponseDto<int>> GetApprovedRequestCount()
         {
             var response = new ResponseDto<int>();
@@ -157,7 +157,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
             }
         }
 
-        [HttpGet("count/declined"), Authorize(Roles = "Requestor")]
+        [HttpGet("count/declined"), Authorize]
         public async Task<ResponseDto<int>> GetDeclinedRequestCount()
         {
             var response = new ResponseDto<int>();
@@ -174,7 +174,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
             }
         }
 
-        [HttpGet("count/resubmitted"), Authorize(Roles = "Requestor")]
+        [HttpGet("count/resubmitted"), Authorize]
         public async Task<ResponseDto<int>> GetResubmittedRequestCount()
         {
             var response = new ResponseDto<int>();
@@ -191,7 +191,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
             }
         }
 
-        [HttpGet("count/posted"), Authorize(Roles = "Requestor")]
+        [HttpGet("count/posted"), Authorize]
         public async Task<ResponseDto<int>> GetPostedRequestCount()
         {
             var response = new ResponseDto<int>();
@@ -208,7 +208,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
             }
         }
 
-        [HttpGet("count/rejected"), Authorize(Roles = "Requestor")]
+        [HttpGet("count/rejected"), Authorize]
         public async Task<ResponseDto<int>> GetRejectedRequestCount()
         {
             var response = new ResponseDto<int>();

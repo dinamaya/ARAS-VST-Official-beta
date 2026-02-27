@@ -254,7 +254,6 @@
 @code {
     AccountDetailsDto accountDetails = new();
     private List<TransactionHistoryDto> latestTransactions;
-    private string role = string.Empty;
     private int pendingCount = 0;
     private int approvedCount = 0;
     private int declinedCount = 0;
@@ -269,9 +268,7 @@
     {
         accountDetails = await AuthService.GetAccountDetails();
         profileImageUrl = $"/api/auth/aad/photo?v={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
-        role = await AuthService.GetRole();
-        if (string.Equals(role, "Requestor", StringComparison.OrdinalIgnoreCase))
-        {
+
             var result = await TransactionService.GetLatestTransactions();
             latestTransactions = result?.ToList() ?? new List<TransactionHistoryDto>();
             pendingCount = await RequestService.GetPendingRequestCount();
@@ -280,7 +277,7 @@
             resubmittedCount = await RequestService.GetResubmittedRequestCount();
             postedCount = await RequestService.GetPostedRequestCount();
             rejectedCount = await RequestService.GetRejectedRequestCount();
-        }
+        
         await base.OnInitializedAsync();
     }
 

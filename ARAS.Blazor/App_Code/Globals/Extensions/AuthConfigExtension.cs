@@ -55,8 +55,9 @@ namespace ARAS.Blazor.App_Code.Globals.Extensions
 
 				options.ResponseType = "code";
 				options.SaveTokens = true;
+                options.Scope.Add("User.Read");
 
-				options.TokenValidationParameters.NameClaimType = "name";
+                options.TokenValidationParameters.NameClaimType = "name";
 				options.TokenValidationParameters.RoleClaimType = "roles";
 
 				options.Events = new OpenIdConnectEvents

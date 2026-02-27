@@ -7,8 +7,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Mvc;
+using System.Net.Http.Headers;
 using System.Security.Claims;
-
 namespace ARAS.Auth.Api.Controllers
 {
 	[Route("api/auth")]
@@ -91,7 +91,34 @@ namespace ARAS.Auth.Api.Controllers
 			return Redirect(Utils.Security.DecodeString(url));
 		}
 
-		[HttpGet("aad/logout")]
+        [HttpGet("aad/photo")]
+        public async Task<IActionResult> GetProfilePhoto()
+        {
+            try
+            {
+                var accessToken = await HttpContext.GetTokenAsync("access_token");
+                if (string.IsNullOrWhiteSpace(accessToken))
+                    return NotFound();
+
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                using var response = await httpClient.GetAsync("https://graph.microsoft.com/v1.0/me/photo/$value");
+                if (!response.IsSuccessStatusCode)
+                    return NotFound();
+
+                var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                var imageBytes = await response.Content.ReadAsByteArrayAsync();
+                return File(imageBytes, contentType);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Unable to load profile photo from Microsoft Graph.");
+                return NotFound();
+            }
+        }
+
+        [HttpGet("aad/logout")]
 		public async Task<IActionResult> Logout(string url)
 		{
 			try

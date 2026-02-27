@@ -20,7 +20,7 @@
             <div class="row gx-4">
                 <div class="col-auto">
                     <div class="avatar avatar-xl position-relative">
-                        <img src="@Assets["/img/avatar.png"]" alt="profile_image" class="w-100 border-radius-lg shadow-sm">
+                        <img src="@profileImageUrl" alt="profile_image" class="w-100 border-radius-lg shadow-sm" onerror="this.onerror=null;this.src='/img/avatar.png';">
                     </div>
                 </div>
                 <div class="col-auto my-auto">
@@ -261,12 +261,14 @@
     private int resubmittedCount = 0;
     private int postedCount = 0;
     private int rejectedCount = 0;
+    private string profileImageUrl = "/img/avatar.png";
     //EventConsole console;
     bool showDataLabels = false;
 
     protected override async Task OnInitializedAsync()
     {
         accountDetails = await AuthService.GetAccountDetails();
+        profileImageUrl = $"/api/auth/aad/photo?v={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
         role = await AuthService.GetRole();
         if (string.Equals(role, "Requestor", StringComparison.OrdinalIgnoreCase))
         {

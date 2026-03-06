@@ -62,14 +62,16 @@ namespace ARAS.Blazor.Context
 			var requestorId = "ROL51f72eacb7c2411e84fcde08dd36cf21";
 			var approverId = "ROLd43f5ae8518046d4804b91f0fc133eab";
 			var validatorId = "ROLe80ca6b642b44e77b8bc7766df5d99d5";
+            var fsgApproverId = "ROL09e86c072e434493caf64564a13824d3";
 
-			// Seed roles with GUIDs
-			modelBuilder.Entity<IdentityRole>().HasData(
+            // Seed roles with GUIDs
+            modelBuilder.Entity<IdentityRole>().HasData(
 				new IdentityRole { Id = opsId, Name = "Ops", NormalizedName = "OPS" },
 				new IdentityRole { Id = requestorId, Name = "Requestor", NormalizedName = "REQUESTOR" },
-				new IdentityRole { Id = approverId, Name = "Approver", NormalizedName = "APPROVER" },
-				new IdentityRole { Id = validatorId, Name = "Validator", NormalizedName = "VALIDATOR" }
-			);
+                new IdentityRole { Id = approverId, Name = "CNC Approver", NormalizedName = "CNC APPROVER" },
+                new IdentityRole { Id = validatorId, Name = "FSG Validator", NormalizedName = "FSG VALIDATOR" },
+                new IdentityRole { Id = fsgApproverId, Name = "FSG Approver", NormalizedName = "FSG APPROVER" }
+            );
 
 		}
 	}

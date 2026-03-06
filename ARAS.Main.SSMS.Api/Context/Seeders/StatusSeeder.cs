@@ -9,39 +9,38 @@ namespace ARAS.Main.SSMS.Api.Context.Seeders
 		{
 			using var context = new MainDbContext(serviceProvider.GetRequiredService<DbContextOptions<MainDbContext>>());
 
-			var date = DateTime.Now;
+            if (!context.Statuses.Any())
+            {
+                await context.Statuses.AddRangeAsync(
+                    new Status { Name = "For CNC Approval" },
+                    new Status { Name = "For ERP Posting" },
+                    new Status { Name = "For FSG Validation" },
+                    new Status { Name = "For FSG Approval" },
+                    new Status { Name = "Declined" },
+                    new Status { Name = "Rejected" },
+                    new Status { Name = "Posted" }
+                );
+            }
+            else
+            {
+                var statuses = await context.Statuses.ToListAsync();
 
-			if (context.Statuses.Any())
-				return;
+                var pending = statuses.FirstOrDefault(s => s.Name == "Pending");
+                if (pending != null) pending.Name = "For CNC Approval";
 
-			await context.Statuses.AddRangeAsync(
-				new Status()
-				{
-					Name = "Pending",
-				},
-				new Status()
-				{
-					Name = "Approved",
-				},
-				new Status()
-				{
-					Name = "Resubmitted",
-				},
-				new Status()
-				{
-					Name = "Declined",
-				},
-				new Status()
-				{
-					Name = "Rejected",
-				},
-				new Status()
-				{
-					Name = "Posted",
-				}
-			);
+                var approved = statuses.FirstOrDefault(s => s.Name == "Approved");
+                if (approved != null) approved.Name = "For ERP Posting";
 
-			await context.SaveChangesAsync();
+                var resubmitted = statuses.FirstOrDefault(s => s.Name == "Resubmitted");
+                if (resubmitted != null) resubmitted.Name = "For CNC Approval";
+
+                if (!statuses.Any(s => s.Name == "For FSG Validation"))
+                    context.Statuses.Add(new Status { Name = "For FSG Validation" });
+
+                if (!statuses.Any(s => s.Name == "For FSG Approval"))
+                    context.Statuses.Add(new Status { Name = "For FSG Approval" });
+            }
+            await context.SaveChangesAsync();
 		}
 
 		public static async Task Run(IServiceProvider serviceProvider) => await new StatusSeeder().Seed(serviceProvider);

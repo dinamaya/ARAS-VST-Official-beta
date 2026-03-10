@@ -1,4 +1,4 @@
-﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Components.Shared.Skeletons
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Components.UI.Badges
@@ -104,10 +104,10 @@
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
-		filterSelection = ["All", "Approved", "Posted"];
+		filterSelection = ["All", "For ERP Posting", "Posted"];
 
-		if (!Role.Equals("approver"))
-			filterSelection = filterSelection.Union(["Pending", "Resubmitted", "Declined", "Rejected"]);
+		if (!string.Equals(Role, "Approver", StringComparison.OrdinalIgnoreCase) && !string.Equals(Role, "CNC Approver", StringComparison.OrdinalIgnoreCase))
+			filterSelection = filterSelection.Union(["For CNC Approval", "For FSG Validation", "For FSG Approval", "Declined", "Rejected"]);
 	}
 
 	private async Task OnSelect(ReceiptAdjustmentRowDto selectedRow)
@@ -121,10 +121,11 @@
 
 		filteredRows = status switch
 		{
-			"Pending" => Rows.Where(r => r.Status == "Pending"),
-			"Approved" => Rows.Where(r => r.Status == "Approved"),
+			"For CNC Approval" => Rows.Where(r => r.Status == "For CNC Approval" || r.Status == "Pending" || r.Status == "Resubmitted"),
+			"For ERP Posting" => Rows.Where(r => r.Status == "For ERP Posting" || r.Status == "Approved"),
+			"For FSG Validation" => Rows.Where(r => r.Status == "For FSG Validation"),
+			"For FSG Approval" => Rows.Where(r => r.Status == "For FSG Approval"),
 			"Declined" => Rows.Where(r => r.Status == "Declined"),
-			"Resubmitted" => Rows.Where(r => r.Status == "Resubmitted"),
 			"Rejected" => Rows.Where(r => r.Status == "Rejected"),
 			"Posted" => Rows.Where(r => r.Status == "Posted"),
 			_ => Rows

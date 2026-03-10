@@ -1,4 +1,4 @@
-﻿using ARAS.Main.SSMS.Api.App_Code.Globals;
+using ARAS.Main.SSMS.Api.App_Code.Globals;
 using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
 using ARAS.Main.SSMS.Api.App_Code.Globals.Helpers;
 using ARAS.Main.SSMS.Api.Context;
@@ -35,7 +35,7 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 				{
 					bool isApprovable = await _requestRepo.IsApprovable(requestId);
 					Guards.ThrowInvalidOperationIf(!isApprovable, Exceptions.ALREADY_APPROVED);
-					transactions.Add(new TransactionCreateDto(requestId, "Approved"));
+					transactions.Add(new TransactionCreateDto(requestId, "For ERP Posting"));
 				}
 
 				await _transactionRepo.CreateAsync(transactions, createdBy);

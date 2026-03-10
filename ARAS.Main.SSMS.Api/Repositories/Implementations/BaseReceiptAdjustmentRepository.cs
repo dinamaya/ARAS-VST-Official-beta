@@ -1,4 +1,4 @@
-﻿using ARAS.Main.SSMS.Api.App_Code.Globals;
+using ARAS.Main.SSMS.Api.App_Code.Globals;
 using ARAS.Main.SSMS.Api.App_Code.Globals.Helpers;
 using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
@@ -66,7 +66,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				Guards.ThrowInvalidOperationIf(!string.IsNullOrEmpty(existingAdjustments), "Invoice Number already has the following adjustments:\n" + existingAdjustments);
 
 				foreach (var requestId in requestIds)
-					transactions.Add(new TransactionCreateDto(requestId, "Pending"));
+					transactions.Add(new TransactionCreateDto(requestId, "For CNC Approval"));
 				transactionIds = await _transactionRepo.CreateAsync(transactions, createdBy);
 
 				foreach (var invoice in data.Model)
@@ -126,7 +126,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				var prevTimeline = await _transactionRepo.GetHistoryByRequestId(requestId);
 				var prevCreatorRole = prevTimeline.LastOrDefault().AccountRole;
 
-				var transaction = new TransactionCreateDto(requestId, "Resubmitted");
+				var transaction = new TransactionCreateDto(requestId, "For CNC Approval");
 				var transactId = await _transactionRepo.CreateAsync(transaction, modifiedBy);
 
 				var adjustmentUpdate = new ReceiptAdjustmentUpdateRequestDto()

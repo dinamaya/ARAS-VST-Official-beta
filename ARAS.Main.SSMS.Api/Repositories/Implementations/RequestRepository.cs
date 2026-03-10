@@ -1,4 +1,4 @@
-﻿using ARAS.Main.SSMS.Api.App_Code.Globals;
+using ARAS.Main.SSMS.Api.App_Code.Globals;
 using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
 using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
@@ -34,7 +34,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			return await _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
-				(t.Status == "Pending" || t.Status == "Resubmitted" || t.Status == "Declined")
+				(t.Status == "For CNC Approval" || t.Status == "Pending" || t.Status == "Resubmitted" || t.Status == "Declined")
 			);
 		}
 
@@ -47,7 +47,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			return await _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
-				(t.Status == "Pending" || t.Status == "Resubmitted")
+				(t.Status == "For CNC Approval" || t.Status == "Pending" || t.Status == "Resubmitted")
 			);
 		}
 
@@ -60,7 +60,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			var latest = await _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking().Where(t =>
 				t.RequestId == requestId &&
-				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "Approved" || t.Status == "Posted")
+				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "Approved" || t.Status == "For ERP Posting" || t.Status == "Posted")
 			).ToListAsync();
 
 			return latest.Count() > 0;
@@ -75,17 +75,17 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			return await _context.VwLatestReceiptAdjustmentDetails.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
-				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "Approved" || t.Status == "Posted")
+				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "Approved" || t.Status == "For ERP Posting" || t.Status == "Posted")
 			);
 		}
 
 		/// <summary>
-		/// Checks if the request is rejectable
+		/// Checks if the request is postable
 		/// </summary>
 		/// <param name="requestId"></param>
 		/// <returns></returns>
-		public async Task<bool> IsPostable(long requestId) => 
-			await _context.VwLatestReceiptAdjustmentDetails.AsNoTracking().AnyAsync(t =>t.RequestId == requestId && t.Status != "Posted");
+		public async Task<bool> IsPostable(long requestId) =>
+			await _context.VwLatestReceiptAdjustmentDetails.AsNoTracking().AnyAsync(t => t.RequestId == requestId && (t.Status == "For ERP Posting" || t.Status == "Approved"));
 
 		/// <summary>
 		/// Checks if the request is currently declined
@@ -160,7 +160,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                     v => v.RequestId,
                     r => r.Id,
                     (v, r) => new { v, r })
-                .Where(x => x.r.CreatedBy == userId && x.v.Status == "Pending")
+                .Where(x => x.r.CreatedBy == userId && (x.v.Status == "For CNC Approval" || x.v.Status == "Pending" || x.v.Status == "Resubmitted"))
                 .CountAsync();
         }
 
@@ -172,7 +172,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                     v => v.RequestId,
                     r => r.Id,
                     (v, r) => new { v, r })
-                .Where(x => x.r.CreatedBy == userId && x.v.Status == "Approved")
+                .Where(x => x.r.CreatedBy == userId && (x.v.Status == "For ERP Posting" || x.v.Status == "Approved"))
                 .CountAsync();
         }
 
@@ -196,7 +196,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                     v => v.RequestId,
                     r => r.Id,
                     (v, r) => new { v, r })
-                .Where(x => x.r.CreatedBy == userId && x.v.Status == "Resubmitted")
+                .Where(x => x.r.CreatedBy == userId && (x.v.Status == "For FSG Validation" || x.v.Status == "For FSG Approval" || x.v.Status == "Resubmitted"))
                 .CountAsync();
         }
 
@@ -323,12 +323,12 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 		private IQueryable<LatestReceiptAdjustmentDetailsV> GetReceiptAdjustmentsForApprovals() =>
 			_context.VwLatestReceiptAdjustmentDetails.AsNoTracking()
-				.Where(t => (t.Status == "Pending") || (t.Status == "Resubmitted") && t.ApproverId == null);
+				.Where(t => (t.Status == "For CNC Approval" || t.Status == "Pending" || t.Status == "Resubmitted") && t.ApproverId == null);
 
 
 		private IQueryable<LatestInvoiceAdjustmentsV> GetInvoiceAdjustmentsForApprovals() =>
 			_context.VwLatestInvoiceAdjustments.AsNoTracking()
-				.Where(t => (t.Status == "Pending") || (t.Status == "Resubmitted") && t.ApproverId == null);
+				.Where(t => (t.Status == "For CNC Approval" || t.Status == "Pending" || t.Status == "Resubmitted") && t.ApproverId == null);
 
 		private IQueryable<LatestInvoiceAdjustmentsV> GetInvoiceAdjustmentsSubmissions() =>
 			_context.VwLatestInvoiceAdjustments.AsNoTracking();
@@ -354,15 +354,17 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		private IQueryable<LatestReceiptAdjustmentDetailsV> FilterByRole(IQueryable<LatestReceiptAdjustmentDetailsV> query, string role, string name)
 		{
 			name = name.ToUpper();
-			switch (role.ToUpper())
-			{
-				case "REQUESTOR":
-					return query.Where(t => (t.RequestorFirstName + " " + t.RequestorLastName).ToUpper() == name);
-				case "VALIDATOR" or "APPROVER":
-					return query;
-				default:
-					throw new Exception(Exceptions.INVALID_ROLE);
-			}
+			if (string.Equals(role, "Requestor", StringComparison.OrdinalIgnoreCase))
+				return query.Where(t => (t.RequestorFirstName + " " + t.RequestorLastName).ToUpper() == name);
+
+			if (string.Equals(role, "Validator", StringComparison.OrdinalIgnoreCase) ||
+				string.Equals(role, "Approver", StringComparison.OrdinalIgnoreCase) ||
+				string.Equals(role, "CNC Approver", StringComparison.OrdinalIgnoreCase) ||
+				string.Equals(role, "FSG Validator", StringComparison.OrdinalIgnoreCase) ||
+				string.Equals(role, "FSG Approver", StringComparison.OrdinalIgnoreCase))
+				return query;
+
+			throw new Exception(Exceptions.INVALID_ROLE);
 		}
 
 
@@ -384,15 +386,17 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		private IQueryable<LatestInvoiceAdjustmentsV> FilterByRole(IQueryable<LatestInvoiceAdjustmentsV> query, string role, string name)
 		{
 			name = name.ToUpper();
-			switch (role.ToUpper())
-			{
-				case "REQUESTOR":
-					return query.Where(t => (t.RequestorFirstName + " " + t.RequestorLastName).ToUpper() == name);
-				case "VALIDATOR" or "APPROVER":
-					return query;
-				default:
-					throw new Exception(Exceptions.INVALID_ROLE);
-			}
+			if (string.Equals(role, "Requestor", StringComparison.OrdinalIgnoreCase))
+				return query.Where(t => (t.RequestorFirstName + " " + t.RequestorLastName).ToUpper() == name);
+
+			if (string.Equals(role, "Validator", StringComparison.OrdinalIgnoreCase) ||
+				string.Equals(role, "Approver", StringComparison.OrdinalIgnoreCase) ||
+				string.Equals(role, "CNC Approver", StringComparison.OrdinalIgnoreCase) ||
+				string.Equals(role, "FSG Validator", StringComparison.OrdinalIgnoreCase) ||
+				string.Equals(role, "FSG Approver", StringComparison.OrdinalIgnoreCase))
+				return query;
+
+			throw new Exception(Exceptions.INVALID_ROLE);
 		}
 
 		private async Task<IEnumerable<InvoiceAdjustmentRowDto>> ToRequestAdjustmentRow(IQueryable<LatestInvoiceAdjustmentsV> query) =>
@@ -439,7 +443,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			{
 				bool isApprovable = await IsApprovable(requestId);
 				Guards.ThrowInvalidOperationIf(!isApprovable, Exceptions.ALREADY_APPROVED);
-				var transaction = new TransactionCreateDto(requestId, "Approved");
+				var transaction = new TransactionCreateDto(requestId, "For ERP Posting");
 
 				await _transactionRepo.CreateAsync(transaction, modifiedBy);
 				await dbTransaction.CommitAsync();

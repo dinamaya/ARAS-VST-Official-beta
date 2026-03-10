@@ -1,4 +1,4 @@
-﻿<span 
+<span 
 	class="badge badge-sm @badgeStyle @Class"
     style="@Style"
 	title="Status">
@@ -15,28 +15,46 @@
 
     protected override async Task OnInitializedAsync()
     {
-        badgeStyle = Status switch
-        {
-            "Rejected" => "bg-gradient-danger",
-            "Declined" => "bg-gradient-warning",
-            "Approved" => "bg-gradient-primary",
-            "Pending" => "bg-gradient-info",
-            "Resubmitted" => "bg-gradient-info",
-            _ => "bg-gradient-success"
-        };
+        badgeStyle =
+            IsRejected(Status) ? "bg-gradient-danger" :
+            IsDeclined(Status) ? "bg-gradient-warning" :
+            IsForErpPosting(Status) ? "bg-gradient-primary" :
+            IsForFsgValidation(Status) ? "bg-gradient-secondary" :
+            IsForFsgApproval(Status) ? "bg-gradient-info" :
+            IsForCncApproval(Status) ? "bg-gradient-info" :
+            "bg-gradient-success";
 
-        string iconClass = Status switch
-        {
-            "Rejected" => "ni-fat-remove fs-3 text-danger",
-            "Declined" => "ni-curved-next text-warning flip-y",
-            "Approved" => "ni-like-2 text-primary",
-            "Pending" => "ni-bell-55 text-info",
-            "Resubmitted" => "ni-bell-55 text-info",
-            _ => "ni-check-bold text-success"
-        };
+        string iconClass =
+            IsRejected(Status) ? "ni-fat-remove fs-3 text-danger" :
+            IsDeclined(Status) ? "ni-curved-next text-warning flip-y" :
+            IsForErpPosting(Status) ? "ni-like-2 text-primary" :
+            IsForFsgValidation(Status) ? "ni-check-bold text-secondary" :
+            IsForFsgApproval(Status) ? "ni-user-run text-info" :
+            IsForCncApproval(Status) ? "ni-bell-55 text-info" :
+            "ni-check-bold text-success";
 
         if (OnIconStyleSet.HasDelegate)
             await OnIconStyleSet.InvokeAsync(iconClass);
     }
-}
 
+    private static bool IsForCncApproval(string? status) =>
+        string.Equals(status, "For CNC Approval", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(status, "Pending", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(status, "Resubmitted", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsForErpPosting(string? status) =>
+        string.Equals(status, "For ERP Posting", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(status, "Approved", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsForFsgValidation(string? status) =>
+        string.Equals(status, "For FSG Validation", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsForFsgApproval(string? status) =>
+        string.Equals(status, "For FSG Approval", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsDeclined(string? status) =>
+        string.Equals(status, "Declined", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsRejected(string? status) =>
+        string.Equals(status, "Rejected", StringComparison.OrdinalIgnoreCase);
+}

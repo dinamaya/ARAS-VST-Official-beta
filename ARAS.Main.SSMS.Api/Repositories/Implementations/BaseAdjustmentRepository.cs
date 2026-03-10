@@ -1,4 +1,4 @@
-﻿using ARAS.Main.SSMS.Api.App_Code.Globals;
+using ARAS.Main.SSMS.Api.App_Code.Globals;
 using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
 using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
@@ -53,7 +53,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				var adjustmentType = await _adjustmentRepo.GetAdjustmentInfoByCode(adjustmentTypeCode);
 				var requestId = await _requestRepo.CreateAsync(adjustmentType.Id, createdBy);
 
-				var transaction = new TransactionCreateDto(requestId, "Pending");
+				var transaction = new TransactionCreateDto(requestId, "For CNC Approval");
 				var transactId = await _transactionRepo.CreateAsync(transaction, createdBy);
 
 				var invoice = new InvoiceCreateDto(data.Model);
@@ -98,7 +98,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				var prevTimeline = await _transactionRepo.GetHistoryByRequestId(requestId);
 				var prevCreatorRole = prevTimeline.LastOrDefault().AccountRole;
 
-				var transaction = new TransactionCreateDto(requestId, "Pending");
+				var transaction = new TransactionCreateDto(requestId, "For CNC Approval");
 				var transactId = await _transactionRepo.CreateAsync(transaction, modifiedBy);
 
 				if(adjustmentTypeCode.Equals("arr"))
@@ -128,7 +128,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				var adjustmentType = await _adjustmentRepo.GetAdjustmentInfoByCode(adjustmentTypeCode);
 				Guards.ThrowInvalidOperationIf(!isApprovable, Exceptions.ALREADY_APPROVED);
 
-				var transaction = new TransactionCreateDto(data.RequestId, "Approved");
+				var transaction = new TransactionCreateDto(data.RequestId, "For ERP Posting");
 				var transactId = await _transactionRepo.CreateAsync(transaction, createdBy);
 
 				var timeline = await _transactionRepo.GetEmailHistoryByRequestId(data.RequestId);

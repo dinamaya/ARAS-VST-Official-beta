@@ -1,4 +1,4 @@
-﻿@page "/approvals/ar-invoice-offsetting/{RequestId:long}"
+@page "/approvals/ar-invoice-offsetting/{RequestId:long}"
 @using ARAS.Blazor.Components.Shared.DataTables
 @using ARAS.Blazor.Components.Shared.Modals
 @using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting.Summaries
@@ -6,7 +6,7 @@
 @using ARAS.Blazor.Services.Interfaces
 @using Microsoft.AspNetCore.Authorization
 
-@attribute [Authorize(Roles = "Approver")]
+@attribute [Authorize(Roles = "Approver,CNC Approver")]
 @inject IARInvoiceOffsettingService ARInvoiceOffsettingService
 @inject IRequestService RequestService
 @inject INoteService NoteService

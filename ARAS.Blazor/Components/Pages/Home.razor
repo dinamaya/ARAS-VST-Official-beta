@@ -1,4 +1,4 @@
-﻿@using ARAS.Blazor.Services.Interfaces
+@using ARAS.Blazor.Services.Interfaces
 @using Microsoft.AspNetCore.Authorization
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Components.Shared
@@ -45,7 +45,7 @@
                         <div class="row">
                             <div class="col-8">
                                 <div class="numbers">
-                                    <p class="text-sm mb-0 text-capitalize font-weight-bold">Pending</p>
+                                    <p class="text-sm mb-0 text-capitalize font-weight-bold">For CNC Approval</p>
                                     <h5 class="font-weight-bolder mb-0">
                                         @pendingCount
                                     </h5>
@@ -68,7 +68,7 @@
                         <div class="row">
                             <div class="col-8">
                                 <div class="numbers">
-                                    <p class="text-sm mb-0 text-capitalize font-weight-bold">Approved</p>
+                                    <p class="text-sm mb-0 text-capitalize font-weight-bold">For ERP Posting</p>
                                     <h5 class="font-weight-bolder mb-0">
                                         @approvedCount
                                     </h5>
@@ -110,7 +110,7 @@
                         <div class="row">
                             <div class="col-8">
                                 <div class="numbers">
-                                    <p class="text-sm mb-0 text-capitalize font-weight-bold">Resubmitted</p>
+                                    <p class="text-sm mb-0 text-capitalize font-weight-bold">FSG Review</p>
                                     <h5 class="font-weight-bolder mb-0">
                                         @resubmittedCount
                                     </h5>
@@ -327,6 +327,6 @@
 
     private bool IsActionStatus(string status)
     {
-        return status == "Approved" || status == "Rejected" || status == "Declined";
+        return status == "Approved" || status == "For ERP Posting" || status == "For FSG Validation" || status == "For FSG Approval" || status == "Rejected" || status == "Declined";
     }
 }

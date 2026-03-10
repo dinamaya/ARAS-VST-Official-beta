@@ -1,4 +1,4 @@
-﻿using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
+using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
 using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Models.SQLVIews;
@@ -40,7 +40,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                 string adjustmentTypeId = (await _adjustmentRepo.GetAdjustmentInfoByCode("OFR")).Id;
                 var requestId = await _requestRepo.CreateAsync(adjustmentTypeId, createdBy);
 
-                var transaction = new TransactionCreateDto(requestId, "Pending");
+                var transaction = new TransactionCreateDto(requestId, "For CNC Approval");
                 var transactId = await _transactionRepo.CreateAsync(transaction, createdBy);
 
                 foreach (var _data in data.Model)
@@ -89,7 +89,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 				IList<ARIAdjustmentCreateDto> adjustments = [];
 
-				var transaction = new TransactionCreateDto(requestId, "Resubmitted");
+				var transaction = new TransactionCreateDto(requestId, "For CNC Approval");
 				var transactId = await _transactionRepo.CreateAsync(transaction, modifiedBy);
 
 				// Deactivates the existing AR offset rows and invoices

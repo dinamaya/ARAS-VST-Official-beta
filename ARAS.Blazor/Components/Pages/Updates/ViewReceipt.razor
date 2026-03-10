@@ -1,4 +1,4 @@
-﻿@page "/submissions/receipt/{TypeCode}/{RequestId:long}"
+@page "/submissions/receipt/{TypeCode}/{RequestId:long}"
 @using ARAS.Blazor.App_Code.Globals
 @using ARAS.Blazor.Components.Shared.DataTables
 @using ARAS.Blazor.Models.Complex
@@ -168,7 +168,7 @@
 			role = await AuthService.GetRole();
 			isUpdatable = await RequestService.IsUpdatable(RequestId);
 			bool isApprovable = await RequestService.IsApprovable(RequestId);
-			isStatusChangeable = role == "Approver" && isApprovable;
+			isStatusChangeable = (string.Equals(role, "Approver", StringComparison.OrdinalIgnoreCase) || string.Equals(role, "CNC Approver", StringComparison.OrdinalIgnoreCase)) && isApprovable;
 			data = new();
 			invoice = await InvoiceService.GetDetails(details.Invoice);
 		}

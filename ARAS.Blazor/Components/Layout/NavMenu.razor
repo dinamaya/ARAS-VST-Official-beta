@@ -1,4 +1,4 @@
-﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
 
@@ -39,7 +39,7 @@
 				</RadzenPanelMenuItem>
 			</RadzenPanelMenuItem>
 		}
-		else if (accountDetails.IsInRole("Approver"))
+		else if (accountDetails.IsCncApprover())
 		{
 			<RadzenPanelMenuItem Text="My Approval Queue" Icon="assignment_turned_in" Style="border: none">
 				<MenuItem Text="Receipt" Route="/approvals/receipt" />

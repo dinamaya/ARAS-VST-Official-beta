@@ -1,4 +1,4 @@
-﻿using ARAS.Blazor.App_Code.Globals.Extensions;
+using ARAS.Blazor.App_Code.Globals.Extensions;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using ARAS.Main.SSMS.Api.Services.Interfaces;
@@ -10,7 +10,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 {
 	[Route("api/approve")]
 	[ApiController]
-	[Authorize(Roles = "Approver")]
+	[Authorize(Roles = "Approver,CNC Approver")]
 	public class ApprovalsController : ControllerBase
 	{
 		private readonly ILogger<ApprovalsController> _logger;

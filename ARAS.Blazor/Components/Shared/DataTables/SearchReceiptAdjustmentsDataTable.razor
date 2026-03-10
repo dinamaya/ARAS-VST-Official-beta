@@ -1,4 +1,4 @@
-﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Components.Shared.Skeletons
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Components.UI.Badges
@@ -136,7 +136,7 @@
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
-		filterSelection = ["All", "Pending", "Resubmitted"];
+		filterSelection = ["All", "For CNC Approval"];
 	}
 
 	private async Task OnSelect(ReceiptAdjustmentRowDto selectedRow)
@@ -171,8 +171,7 @@
 
 		filteredRows = status switch
 		{
-			"Pending" => Rows.Where(r => r.Status == "Pending"),
-			"Resubmitted" => Rows.Where(r => r.Status == "Resubmitted"),
+			"For CNC Approval" => Rows.Where(r => r.Status == "For CNC Approval" || r.Status == "Pending" || r.Status == "Resubmitted"),
 			_ => Rows
 		};
 

@@ -1,4 +1,4 @@
-﻿using ARAS.Blazor.App_Code.Globals.Extensions;
+using ARAS.Blazor.App_Code.Globals.Extensions;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -334,7 +334,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("approvals/receipt"), Authorize(Roles = "Approver")]
+		[HttpGet("approvals/receipt"), Authorize(Roles = "Approver,CNC Approver")]
 		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>> GetReceiptForApprovals(SearchRequestDto searchRequest)
 		{
 			var response = new ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>();
@@ -349,7 +349,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("approvals/invoice"), Authorize(Roles = "Approver")]
+		[HttpGet("approvals/invoice"), Authorize(Roles = "Approver,CNC Approver")]
 		public async Task<ResponseDto<IEnumerable<InvoiceAdjustmentRowDto>>> GetInvoiceForApprovals(SearchRequestDto searchRequest)
 		{
 			var response = new ResponseDto<IEnumerable<InvoiceAdjustmentRowDto>>();

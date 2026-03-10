@@ -39,7 +39,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		}
 
 		/// <summary>
-		/// Checks if the request is approvable and not yet validated
+		/// Checks if the request is in any approval stage
 		/// </summary>
 		/// <param name="requestId"></param>
 		/// <returns></returns>
@@ -47,7 +47,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			return await _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
-				(t.Status == "For CNC Approval" || t.Status == "Pending" || t.Status == "Resubmitted")
+				(t.Status == "For CNC Approval" || t.Status == "Pending" || t.Status == "Resubmitted" || t.Status == "For FSG Validation" || t.Status == "For FSG Approval")
 			);
 		}
 
@@ -224,11 +224,11 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                 .CountAsync();
         }
 
-        public async Task<IEnumerable<InvoiceAdjustmentRowDto>> GetInvoicedjustmentApprovals(SearchRequestDto data)
+        public async Task<IEnumerable<InvoiceAdjustmentRowDto>> GetInvoicedjustmentApprovals(SearchRequestDto data, string role)
 		{
 			data.Value = data.Value.ToUpper();
 
-			IQueryable<LatestInvoiceAdjustmentsV> query = GetInvoiceAdjustmentsForApprovals();
+			IQueryable<LatestInvoiceAdjustmentsV> query = GetInvoiceAdjustmentsForApprovals(role);
 			query = data.Category.ToUpper() switch
 			{
 				"INVOICE NUMBER" => GetByInvoiceNumber(query, data.Value),
@@ -261,11 +261,11 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			return await ToRequestAdjustmentRow(query);
 		}
 
-		public async Task<IEnumerable<ReceiptAdjustmentRowDto>> GetReceiptAdjustmentApprovals(SearchRequestDto data)
+		public async Task<IEnumerable<ReceiptAdjustmentRowDto>> GetReceiptAdjustmentApprovals(SearchRequestDto data, string role)
 		{
 			data.Value = data.Value.ToUpper();
 
-			IQueryable<LatestReceiptAdjustmentDetailsV> query = GetReceiptAdjustmentsForApprovals();
+			IQueryable<LatestReceiptAdjustmentDetailsV> query = GetReceiptAdjustmentsForApprovals(role);
             query = data.Category.ToUpper() switch
             {
                 "INVOICE NUMBER" => GetByInvoiceNumber(query, data.Value),
@@ -321,20 +321,101 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
         private static string ValidateFullName(string fName, string lName) =>
 			string.IsNullOrEmpty(lName) && string.IsNullOrEmpty(fName) ? string.Empty : lName + ", " + fName;
 
-		private IQueryable<LatestReceiptAdjustmentDetailsV> GetReceiptAdjustmentsForApprovals() =>
-			_context.VwLatestReceiptAdjustmentDetails.AsNoTracking()
-				.Where(t => (t.Status == "For CNC Approval" || t.Status == "Pending" || t.Status == "Resubmitted") && t.ApproverId == null);
+		private IQueryable<LatestReceiptAdjustmentDetailsV> GetReceiptAdjustmentsForApprovals(string role)
+		{
+			var statuses = GetApprovalQueueStatuses(role);
+			return _context.VwLatestReceiptAdjustmentDetails.AsNoTracking()
+				.Where(t => statuses.Contains(t.Status));
+		}
 
+		private IQueryable<LatestInvoiceAdjustmentsV> GetInvoiceAdjustmentsForApprovals(string role)
+		{
+			var statuses = GetApprovalQueueStatuses(role);
+			return _context.VwLatestInvoiceAdjustments.AsNoTracking()
+				.Where(t => statuses.Contains(t.Status));
+		}
 
-		private IQueryable<LatestInvoiceAdjustmentsV> GetInvoiceAdjustmentsForApprovals() =>
-			_context.VwLatestInvoiceAdjustments.AsNoTracking()
-				.Where(t => (t.Status == "For CNC Approval" || t.Status == "Pending" || t.Status == "Resubmitted") && t.ApproverId == null);
+		private static string[] GetApprovalQueueStatuses(string role)
+		{
+			if (IsCncApproverRole(role))
+				return ["For CNC Approval", "Pending", "Resubmitted"];
+
+			if (IsFsgValidatorRole(role))
+				return ["For FSG Validation"];
+
+			if (IsFsgApproverRole(role))
+				return ["For FSG Approval"];
+
+			throw new InvalidOperationException(Exceptions.INVALID_ROLE);
+		}
+
+		private static bool IsCncApproverRole(string role) =>
+			string.Equals(role, "Approver", StringComparison.OrdinalIgnoreCase) ||
+			string.Equals(role, "CNC Approver", StringComparison.OrdinalIgnoreCase);
+
+		private static bool IsFsgValidatorRole(string role) =>
+			string.Equals(role, "Validator", StringComparison.OrdinalIgnoreCase) ||
+			string.Equals(role, "FSG Validator", StringComparison.OrdinalIgnoreCase);
+
+		private static bool IsFsgApproverRole(string role) =>
+			string.Equals(role, "FSG Approver", StringComparison.OrdinalIgnoreCase);
+
+		private static string NormalizeWorkflowStatus(string status) => status switch
+		{
+			"Pending" => "For CNC Approval",
+			"Resubmitted" => "For CNC Approval",
+			"Approved" => "For ERP Posting",
+			_ => status
+		};
+
+		private async Task<string> GetLatestStatus(long requestId) =>
+			NormalizeWorkflowStatus(
+				await _context.VwAllAdjustmentRequestLatestStatus
+					.AsNoTracking()
+					.Where(t => t.RequestId == requestId)
+					.Select(t => t.Status)
+					.FirstOrDefaultAsync() ?? throw new InvalidOperationException(Exceptions.NOTFOUND_REQUEST));
+
+		public async Task<string> GetNextApprovalStatus(long requestId, string role)
+		{
+			string currentStatus = await GetLatestStatus(requestId);
+
+			return role switch
+			{
+				var _ when IsCncApproverRole(role) => currentStatus switch
+				{
+					"For CNC Approval" => "For FSG Validation",
+					"Declined" => throw new InvalidOperationException(Exceptions.ALREADY_DECLINED),
+					"Rejected" => throw new InvalidOperationException(Exceptions.ALREADY_REJECT),
+					"For FSG Validation" or "For FSG Approval" or "For ERP Posting" or "Posted" => throw new InvalidOperationException(Exceptions.ALREADY_APPROVED),
+					_ => throw new InvalidOperationException(Exceptions.INVALID_ROLE)
+				},
+				var _ when IsFsgValidatorRole(role) => currentStatus switch
+				{
+					"For FSG Validation" => "For FSG Approval",
+					"Declined" => throw new InvalidOperationException(Exceptions.ALREADY_DECLINED),
+					"Rejected" => throw new InvalidOperationException(Exceptions.ALREADY_REJECT),
+					
+					"For FSG Approval" or "For ERP Posting" or "Posted" => throw new InvalidOperationException(Exceptions.ALREADY_VALIDATED),
+					_ => throw new InvalidOperationException(Exceptions.INVALID_ROLE)
+				},
+				var _ when IsFsgApproverRole(role) => currentStatus switch
+				{
+					"For FSG Approval" => "For ERP Posting",
+					"Declined" => throw new InvalidOperationException(Exceptions.ALREADY_DECLINED),
+					"Rejected" => throw new InvalidOperationException(Exceptions.ALREADY_REJECT),
+					"For ERP Posting" or "Posted" => throw new InvalidOperationException(Exceptions.ALREADY_APPROVED),
+					_ => throw new InvalidOperationException(Exceptions.INVALID_ROLE)
+				},
+				_ => throw new InvalidOperationException(Exceptions.INVALID_ROLE)
+			};
+		}
 
 		private IQueryable<LatestInvoiceAdjustmentsV> GetInvoiceAdjustmentsSubmissions() =>
 			_context.VwLatestInvoiceAdjustments.AsNoTracking();
 
 		private IQueryable<LatestReceiptAdjustmentDetailsV> GetReceiptAdjustmentsSubmissions() =>
-	_context.VwLatestReceiptAdjustmentDetails.AsNoTracking();
+			_context.VwLatestReceiptAdjustmentDetails.AsNoTracking();
 
 		private IQueryable<LatestReceiptAdjustmentDetailsV> GetByInvoiceNumber(IQueryable<LatestReceiptAdjustmentDetailsV> query, string invoiceNumber) =>
 			query.Where(t => t.InvoiceNumber == invoiceNumber);
@@ -413,7 +494,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				CustomerName = q.CustomerName,
 				AdjustmentType = q.AdjustmentType,
 				InvoiceNumber = q.InvoiceNumber,
-				ReferencesCount = "0" // Placeholder as ReferencesCount is not available in LatestReceiptAdjustmentDetailsV
+				ReferencesCount = "0"
 			})
             .ToListAsync()).OrderByDescending(a => a.DateCreated);
 
@@ -435,15 +516,14 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			})
             .ToListAsync()).OrderByDescending(a => a.DateCreated);
 
-        public async Task Approve(long requestId, string modifiedBy)
+        public async Task Approve(long requestId, string modifiedBy, string role)
         {
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
 			try
 			{
-				bool isApprovable = await IsApprovable(requestId);
-				Guards.ThrowInvalidOperationIf(!isApprovable, Exceptions.ALREADY_APPROVED);
-				var transaction = new TransactionCreateDto(requestId, "For ERP Posting");
+				string nextStatus = await GetNextApprovalStatus(requestId, role);
+				var transaction = new TransactionCreateDto(requestId, nextStatus);
 
 				await _transactionRepo.CreateAsync(transaction, modifiedBy);
 				await dbTransaction.CommitAsync();

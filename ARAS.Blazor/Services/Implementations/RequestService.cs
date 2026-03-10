@@ -1,5 +1,6 @@
-﻿using ARAS.Blazor.App_Code.Globals;
+using ARAS.Blazor.App_Code.Globals;
 using ARAS.Blazor.App_Code.Globals.Enums;
+using ARAS.Blazor.App_Code.Globals.Extensions;
 using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Services.Interfaces;
 using ARAS.Main.Oracle.Api.Models.Dtos;
@@ -14,17 +15,20 @@ namespace ARAS.Blazor.Services.Implementations
 		private readonly IConfigService _configService;
 		private readonly INoteService _noteService;
 		private readonly IOracleStagingService _oracleStagingService;
+		private readonly IAuthService _authService;
 
-        public RequestService(IBaseService baseService, IConfigService configService, INoteService noteService, IOracleStagingService oracleStagingService)
+        public RequestService(IBaseService baseService, IConfigService configService, INoteService noteService, IOracleStagingService oracleStagingService, IAuthService authService)
         {
             _baseService = baseService;
             _configService = configService;
             _noteService = noteService;
             _oracleStagingService = oracleStagingService;
+            _authService = authService;
         }
 
         public async Task<bool> IsUpdatable(long requestId) => await IsOnStatus(requestId, "is-updatable");
         public async Task<bool> IsApprovable(long requestId) => await IsOnStatus(requestId, "is-approvable");
+		public async Task<bool> IsFinalApprover() => (await _authService.GetRole()).IsFsgApprover();
 		public async Task<bool> IsValidatable(long requestId) => await IsOnStatus(requestId, "is-validatable");
 		public async Task<bool> IsDeclined(long requestId) => await IsOnStatus(requestId, "is-declined");
 
@@ -206,7 +210,6 @@ namespace ARAS.Blazor.Services.Implementations
 
 		public async Task Create(IEnumerable<BaseReceiptAdjustmentCreateDto> row, IEnumerable<NoteRowDto> notes)
 		{
-
 			var createResult = await _baseService.SendAsync<IEnumerable<ReceiptAdjustmentCreateResponseDto>>(new RequestDto<IEnumerable<BaseReceiptAdjustmentCreateDto>>()
 			{
 				ApiType = ApiType.POST,
@@ -242,15 +245,16 @@ namespace ARAS.Blazor.Services.Implementations
 		public async Task ApproveReceiptAdjustmentRequests(IEnumerable<long> data)
 		{
 			await UpdateAdjustmentStatus(data, _configService.GetApprovalsUrl());
-			var postingData = await GetReceiptStagingDataByRequestId(data);
-			await _oracleStagingService.Create(postingData);
+			if (await IsFinalApprover())
+			{
+				var postingData = await GetReceiptStagingDataByRequestId(data);
+				await _oracleStagingService.Create(postingData);
+			}
 		}
 
 		public async Task ApproveInvoiceAdjustmentRequests(IEnumerable<long> data)
 		{
 			await UpdateAdjustmentStatus(data, _configService.GetApprovalsUrl());
-			//var postingData = await GetReceiptStagingDataByRequestId(data);
-			//await _oracleStagingService.Create(postingData);
 		}
 
 		public async Task RejectReceiptAdjustmentRequests(IEnumerable<long> data) => await UpdateAdjustmentStatus(data, _configService.GetRejectionsUrl());
@@ -259,7 +263,8 @@ namespace ARAS.Blazor.Services.Implementations
 		public async Task Approve(long requestId, IEnumerable<NoteRowDto> notes, IEnumerable<AdjustmentPostingDto> postingData)
 		{
 			await UpdateOneRequestStatus(requestId, _configService.GetApprovalsUrl(), "Approve", notes);
-			await _oracleStagingService.Create(postingData);
+			if (postingData != null && await IsFinalApprover())
+				await _oracleStagingService.Create(postingData);
 		}
 
 		public async Task Decline(long requestId, IEnumerable<NoteRowDto> notes) => await UpdateOneRequestStatus(requestId, _configService.GetDeclinesUrl(), "Decline", notes);

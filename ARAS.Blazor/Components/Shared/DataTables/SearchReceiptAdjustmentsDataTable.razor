@@ -136,7 +136,7 @@
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
-		filterSelection = ["All", "For CNC Approval"];
+		filterSelection = ["All", "For CNC Approval", "For FSG Validation", "For FSG Approval"];
 	}
 
 	private async Task OnSelect(ReceiptAdjustmentRowDto selectedRow)
@@ -172,6 +172,8 @@
 		filteredRows = status switch
 		{
 			"For CNC Approval" => Rows.Where(r => r.Status == "For CNC Approval" || r.Status == "Pending" || r.Status == "Resubmitted"),
+			"For FSG Validation" => Rows.Where(r => r.Status == "For FSG Validation"),
+			"For FSG Approval" => Rows.Where(r => r.Status == "For FSG Approval"),
 			_ => Rows
 		};
 

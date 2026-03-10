@@ -4,7 +4,6 @@ using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace ARAS.Main.SSMS.Api.Controllers
 {
@@ -334,13 +333,14 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("approvals/receipt"), Authorize(Roles = "Approver,CNC Approver")]
+		[HttpGet("approvals/receipt"), Authorize(Roles = "Approver,CNC Approver,Validator,FSG Validator,FSG Approver")]
 		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>> GetReceiptForApprovals(SearchRequestDto searchRequest)
 		{
 			var response = new ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>();
 			try
 			{
-				response.Result = await _requestRepo.GetReceiptAdjustmentApprovals(searchRequest);
+				var accountInfo = User.GetAccountBasicInfo();
+				response.Result = await _requestRepo.GetReceiptAdjustmentApprovals(searchRequest, accountInfo.Role);
 				return response;
 			}
 			catch (Exception ex)
@@ -349,13 +349,14 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("approvals/invoice"), Authorize(Roles = "Approver,CNC Approver")]
+		[HttpGet("approvals/invoice"), Authorize(Roles = "Approver,CNC Approver,Validator,FSG Validator,FSG Approver")]
 		public async Task<ResponseDto<IEnumerable<InvoiceAdjustmentRowDto>>> GetInvoiceForApprovals(SearchRequestDto searchRequest)
 		{
 			var response = new ResponseDto<IEnumerable<InvoiceAdjustmentRowDto>>();
 			try
 			{
-				response.Result = await _requestRepo.GetInvoicedjustmentApprovals(searchRequest);
+				var accountInfo = User.GetAccountBasicInfo();
+				response.Result = await _requestRepo.GetInvoicedjustmentApprovals(searchRequest, accountInfo.Role);
 				return response;
 			}
 			catch (Exception ex)

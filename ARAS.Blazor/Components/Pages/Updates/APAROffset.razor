@@ -326,7 +326,7 @@
 		inputHash = Utils.Security.ObjectHash(adjustments);
 
 		bool isApprovable = await RequestService.IsApprovable(RequestId);
-		isStatusChangeable = (string.Equals(role, "Approver", StringComparison.OrdinalIgnoreCase) || string.Equals(role, "CNC Approver", StringComparison.OrdinalIgnoreCase)) && isApprovable;
+		isStatusChangeable = role.IsApprovalActor() && isApprovable;
 		Notes = await NoteService.GetRows(RequestId);
 		StateHasChanged();
 		await apGrid.Reload();

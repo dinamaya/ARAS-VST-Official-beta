@@ -6,7 +6,7 @@
 @using ARAS.Blazor.Services.Interfaces
 @using Microsoft.AspNetCore.Authorization
 
-@attribute [Authorize(Roles = "Approver,CNC Approver")]
+@attribute [Authorize(Roles = "Approver,CNC Approver,Validator,FSG Validator,FSG Approver")]
 @inject IARInvoiceOffsettingService ARInvoiceOffsettingService
 @inject IRequestService RequestService
 @inject INoteService NoteService

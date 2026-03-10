@@ -1,4 +1,4 @@
-﻿using ARAS.Blazor.Models.DTOs;
+using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Repositories.Interfaces;
 using ARAS.Main.Oracle.Api.Models.Dtos;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -9,6 +9,7 @@ namespace ARAS.Blazor.Services.Interfaces
 	{
 		Task<bool> IsUpdatable(long requestId);
 		Task<bool> IsApprovable(long requestId);
+		Task<bool> IsFinalApprover();
 		Task<bool> IsValidatable(long requestId);
 		Task<bool> IsDeclined(long requestId);
         Task<int> GetPendingRequestCount();

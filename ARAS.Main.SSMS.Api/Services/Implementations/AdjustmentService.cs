@@ -22,7 +22,7 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
             _transactionRepo = transactionRepo;
         }
 
-        public async Task Approve(IEnumerable<long> requestIds, string createdBy)
+        public async Task Approve(IEnumerable<long> requestIds, string createdBy, string role)
 		{
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
@@ -33,9 +33,8 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 
 				foreach (var requestId in requestIds)
 				{
-					bool isApprovable = await _requestRepo.IsApprovable(requestId);
-					Guards.ThrowInvalidOperationIf(!isApprovable, Exceptions.ALREADY_APPROVED);
-					transactions.Add(new TransactionCreateDto(requestId, "For ERP Posting"));
+					string nextStatus = await _requestRepo.GetNextApprovalStatus(requestId, role);
+					transactions.Add(new TransactionCreateDto(requestId, nextStatus));
 				}
 
 				await _transactionRepo.CreateAsync(transactions, createdBy);

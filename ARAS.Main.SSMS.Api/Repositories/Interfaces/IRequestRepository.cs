@@ -1,4 +1,4 @@
-﻿using ARAS.Main.SSMS.Api.Models.Dtos;
+using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Models.Entities;
 
 namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
@@ -17,6 +17,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 		Task<bool> IsPostable (long requestId);
 
 		Task<string> GetRequestNumberById (long requestId);
+		Task<string> GetNextApprovalStatus(long requestId, string role);
 
 		Task<TransactionRequestRowDto> GetTransactionRequestByRequestId(long requestId);
 		Task<RequestUpdateEmailDetailsDto> GetForEmailDetailsById (long requestId);
@@ -26,8 +27,10 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
         Task<int> GetResubmittedRequestCount(string userId);
         Task<int> GetPostedRequestCount(string userId);
 		Task<int> GetRejectedRequestCount(string userId);
+		Task<IEnumerable<InvoiceAdjustmentRowDto>> GetInvoicedjustmentApprovals(SearchRequestDto data, string role);
+		Task<IEnumerable<ReceiptAdjustmentRowDto>> GetReceiptAdjustmentApprovals(SearchRequestDto data, string role);
 
-        Task Approve(long requestId, string modifiedBy);
+        Task Approve(long requestId, string modifiedBy, string role);
 		Task Decline(long requestId, string modifiedBy);
 		Task Reject(long requestId, string modifiedBy);
 		Task<string> InvoiceExistingAdjustments(string invoiceNumber, IEnumerable<string> adjustmentTypeIds);

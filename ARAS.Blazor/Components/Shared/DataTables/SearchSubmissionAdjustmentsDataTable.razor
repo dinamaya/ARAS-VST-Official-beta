@@ -106,7 +106,7 @@
 		await base.OnInitializedAsync();
 		filterSelection = ["All", "For ERP Posting", "Posted"];
 
-		if (!string.Equals(Role, "Approver", StringComparison.OrdinalIgnoreCase) && !string.Equals(Role, "CNC Approver", StringComparison.OrdinalIgnoreCase))
+		if (!Role.IsApprovalActor())
 			filterSelection = filterSelection.Union(["For CNC Approval", "For FSG Validation", "For FSG Approval", "Declined", "Rejected"]);
 	}
 

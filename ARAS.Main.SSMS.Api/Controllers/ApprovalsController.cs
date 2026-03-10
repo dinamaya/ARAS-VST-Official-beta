@@ -4,13 +4,12 @@ using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using ARAS.Main.SSMS.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace ARAS.Main.SSMS.Api.Controllers
 {
 	[Route("api/approve")]
 	[ApiController]
-	[Authorize(Roles = "Approver,CNC Approver")]
+	[Authorize(Roles = "Approver,CNC Approver,Validator,FSG Validator,FSG Approver")]
 	public class ApprovalsController : ControllerBase
 	{
 		private readonly ILogger<ApprovalsController> _logger;
@@ -32,8 +31,8 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			var response = new ResponseDto<string>();
 			try
 			{
-				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
-				await _adjustmentService.Approve(requestIds, accountId);
+				var account = User.GetAccountBasicInfo();
+				await _adjustmentService.Approve(requestIds, account.Id, account.Role);
 
 				response.Result = "Success";
 				response.Message = "Request has been successfully APPROVED";
@@ -52,8 +51,8 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			var response = new ResponseDto<string>();
 			try
 			{
-				string accountId = User.GetIdentityClaim(ClaimTypes.PrimarySid);
-				await _requestRepo.Approve(requestId, accountId);
+				var account = User.GetAccountBasicInfo();
+				await _requestRepo.Approve(requestId, account.Id, account.Role);
 
 				response.Result = "Success";
 				response.Message = "Request has been successfully APPROVED";

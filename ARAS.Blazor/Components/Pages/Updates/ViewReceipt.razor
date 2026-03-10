@@ -1,5 +1,6 @@
 @page "/submissions/receipt/{TypeCode}/{RequestId:long}"
 @using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Components.Shared.DataTables
 @using ARAS.Blazor.Models.Complex
 @using ARAS.Blazor.Models.DTOs
@@ -168,7 +169,7 @@
 			role = await AuthService.GetRole();
 			isUpdatable = await RequestService.IsUpdatable(RequestId);
 			bool isApprovable = await RequestService.IsApprovable(RequestId);
-			isStatusChangeable = (string.Equals(role, "Approver", StringComparison.OrdinalIgnoreCase) || string.Equals(role, "CNC Approver", StringComparison.OrdinalIgnoreCase)) && isApprovable;
+			isStatusChangeable = role.IsApprovalActor() && isApprovable;
 			data = new();
 			invoice = await InvoiceService.GetDetails(details.Invoice);
 		}
@@ -212,7 +213,7 @@
 		{
 			bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"APPROVE\" this request?", "Approve Request") ?? false;
 			if (!isConfirmed) return;
-			var stagingDetails = await RequestService.GetReceiptStagingDataByRequestId(RequestId);
+			var stagingDetails = await RequestService.IsFinalApprover() ? await RequestService.GetReceiptStagingDataByRequestId(RequestId) : null;
 			await RequestService.Approve(RequestId, details.Notes, stagingDetails);
 			RefreshPage();
 		}

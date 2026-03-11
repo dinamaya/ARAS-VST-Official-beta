@@ -1,4 +1,4 @@
-﻿using ARAS.Blazor.Models.DTOs;
+using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Services.Interfaces;
 using Microsoft.AspNetCore.Routing;
 using Newtonsoft.Json.Linq;
@@ -89,8 +89,8 @@ namespace ARAS.Blazor.Services.Implementations
 			.Get<IEnumerable<string>>()
 			.Prepend(defaultOption ?? "Select Search Category") ?? [];
 
-		public IEnumerable<string> GetApproverSearchInvoiceCategories(string? defaultOption = null) => _config
-			.GetSection("DropdownOptions:SearchCategories:Approver:Text")
+		public IEnumerable<string> GetApprovalSearchInvoiceCategories(string? defaultOption = null) => _config
+			.GetSection("DropdownOptions:SearchCategories:Approval:Text")
 			.Get<IEnumerable<string>>()
 			.Prepend(defaultOption ?? "Select Search Category") ?? [];
 

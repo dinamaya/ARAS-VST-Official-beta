@@ -1,4 +1,4 @@
-﻿@page "/submissions/invoice"
+@page "/submissions/invoice"
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Components.Shared.DataTables
 @using Microsoft.AspNetCore.Authorization
@@ -38,7 +38,7 @@
 	{
 		await base.OnInitializedAsync();
 		role = (await AuthService.GetRole()).ToLower();
-		textFields = (ConfigService.GetApproverSearchInvoiceCategories()).ToList();
+		textFields = (ConfigService.GetApprovalSearchInvoiceCategories()).ToList();
 
 		if (role.Equals("requestor"))
 			textFields.Remove("Requestor Name");

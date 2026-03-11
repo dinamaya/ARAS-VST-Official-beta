@@ -1,4 +1,4 @@
-﻿using ARAS.Blazor.Models.DTOs;
+using ARAS.Blazor.Models.DTOs;
 
 namespace ARAS.Blazor.Services.Interfaces
 {
@@ -30,7 +30,7 @@ namespace ARAS.Blazor.Services.Interfaces
 		string GetTokenName();
 		string GetTokenDomainName();
 		IEnumerable<string> GetRequstorSearchInvoiceCategories(string? defaultOption = null);
-		IEnumerable<string> GetApproverSearchInvoiceCategories(string? defaultOption = null);
+		IEnumerable<string> GetApprovalSearchInvoiceCategories(string? defaultOption = null);
 		IEnumerable<double> GetDiscountPercentages();
 
 		bool IsOnTestRequest();

@@ -333,7 +333,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("approvals/receipt"), Authorize(Roles = "Approver,CNC Approver,Validator,FSG Validator,FSG Approver")]
+		[HttpGet("approvals/receipt"), Authorize(Roles = "CNC Approver,FSG Validator,FSG Approver")]
 		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>> GetReceiptForApprovals(SearchRequestDto searchRequest)
 		{
 			var response = new ResponseDto<IEnumerable<ReceiptAdjustmentRowDto>>();
@@ -349,7 +349,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("approvals/invoice"), Authorize(Roles = "Approver,CNC Approver,Validator,FSG Validator,FSG Approver")]
+		[HttpGet("approvals/invoice"), Authorize(Roles = "CNC Approver,FSG Validator,FSG Approver")]
 		public async Task<ResponseDto<IEnumerable<InvoiceAdjustmentRowDto>>> GetInvoiceForApprovals(SearchRequestDto searchRequest)
 		{
 			var response = new ResponseDto<IEnumerable<InvoiceAdjustmentRowDto>>();

@@ -178,13 +178,14 @@
 	private Task OnFilter(string status)
 	{
 		currentFilterStat = status;
+		IEnumerable<InvoiceAdjustmentRowDto> source = Rows ?? [];
 
 		filteredRows = status switch
 		{
-			"For CNC Approval" => Rows.Where(r => r.Status == "For CNC Approval" || r.Status == "Pending" || r.Status == "Resubmitted"),
-			"For FSG Validation" => Rows.Where(r => r.Status == "For FSG Validation"),
-			"For FSG Approval" => Rows.Where(r => r.Status == "For FSG Approval"),
-			_ => Rows
+			"For CNC Approval" => source.Where(r => r.Status == "For CNC Approval"),
+			"For FSG Validation" => source.Where(r => r.Status == "For FSG Validation"),
+			"For FSG Approval" => source.Where(r => r.Status == "For FSG Approval"),
+			_ => source
 		};
 
 		selectedRequests.Clear();

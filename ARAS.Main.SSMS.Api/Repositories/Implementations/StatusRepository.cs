@@ -16,16 +16,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		public async Task<string> GetIdByName(string name) => 
 			await _context.Statuses
 			.AsNoTracking()
-			.Where(s => s.Name == NormalizeStatusName(name))
+			.Where(s => s.Name == name)
 			.Select(s => s.Id)
 			.FirstOrDefaultAsync();
-
-		private static string NormalizeStatusName(string? name) => name switch
-		{
-			"Pending" => "For CNC Approval",
-			"Resubmitted" => "For CNC Approval",
-			"Approved" => "For ERP Posting",
-			_ => name ?? string.Empty
-		};
 	}
 }

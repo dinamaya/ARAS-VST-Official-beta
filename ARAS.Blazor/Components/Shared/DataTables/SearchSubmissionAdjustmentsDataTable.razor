@@ -118,17 +118,18 @@
 	private Task OnFilter(string status)
 	{
 		currentFilterStat = status;
+		IEnumerable<ReceiptAdjustmentRowDto> source = Rows ?? [];
 
 		filteredRows = status switch
 		{
-			"For CNC Approval" => Rows.Where(r => r.Status == "For CNC Approval" || r.Status == "Pending" || r.Status == "Resubmitted"),
-			"For ERP Posting" => Rows.Where(r => r.Status == "For ERP Posting" || r.Status == "Approved"),
-			"For FSG Validation" => Rows.Where(r => r.Status == "For FSG Validation"),
-			"For FSG Approval" => Rows.Where(r => r.Status == "For FSG Approval"),
-			"Declined" => Rows.Where(r => r.Status == "Declined"),
-			"Rejected" => Rows.Where(r => r.Status == "Rejected"),
-			"Posted" => Rows.Where(r => r.Status == "Posted"),
-			_ => Rows
+			"For CNC Approval" => source.Where(r => r.Status == "For CNC Approval"),
+			"For ERP Posting" => source.Where(r => r.Status == "For ERP Posting"),
+			"For FSG Validation" => source.Where(r => r.Status == "For FSG Validation"),
+			"For FSG Approval" => source.Where(r => r.Status == "For FSG Approval"),
+			"Declined" => source.Where(r => r.Status == "Declined"),
+			"Rejected" => source.Where(r => r.Status == "Rejected"),
+			"Posted" => source.Where(r => r.Status == "Posted"),
+			_ => source
 		};
 
 		return Task.CompletedTask;

@@ -116,7 +116,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 			return history.Select((t, i) => new EmailTimelineDetailsDto
 			{
-				CreatorAction = (t.CreatorAction == "Pending" || t.CreatorAction == "Resubmitted" || t.CreatorAction == "For CNC Approval") ? (i > 1 ? "Updated by" : "Requested By") : t.CreatorAction + " by",
+				CreatorAction = t.CreatorAction == "For CNC Approval" ? (i > 1 ? "Updated by" : "Requested By") : t.CreatorAction + " by",
 				CreatorFullName = t.CreatorFullName,
 				Remarks = t.Remarks,
 				DateCreated = t.DateCreated,

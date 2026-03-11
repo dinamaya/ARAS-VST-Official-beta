@@ -5,7 +5,7 @@
 @using ARAS.Blazor.Components.Shared.DataTables;
 @using Microsoft.AspNetCore.Authorization
 
-@attribute [Authorize(Roles = "Approver,CNC Approver,Validator,FSG Validator,FSG Approver")]
+@attribute [Authorize(Roles = "CNC Approver,FSG Validator,FSG Approver")]
 
 @inherits ComponentBase
 @inject DialogService DialogService

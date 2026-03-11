@@ -9,7 +9,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 {
 	[Route("api/approve")]
 	[ApiController]
-	[Authorize(Roles = "Approver,CNC Approver,Validator,FSG Validator,FSG Approver")]
+	[Authorize(Roles = "CNC Approver,FSG Validator,FSG Approver")]
 	public class ApprovalsController : ControllerBase
 	{
 		private readonly ILogger<ApprovalsController> _logger;
@@ -101,8 +101,8 @@ namespace ARAS.Main.SSMS.Api.Controllers
 
 		private static string GetApprovalSuccessMessage(string role) => role switch
 		{
-			"Approver" or "CNC Approver" => "Request has been successfully approved and moved to FSG validation",
-			"Validator" or "FSG Validator" => "Request has been successfully validated and moved to FSG approval",
+			"CNC Approver" => "Request has been successfully approved and moved to FSG validation",
+			"FSG Validator" => "Request has been successfully validated and moved to FSG approval",
 			"FSG Approver" => "Request has been successfully approved and moved to ERP posting",
 			_ => "Request has been successfully processed"
 		};

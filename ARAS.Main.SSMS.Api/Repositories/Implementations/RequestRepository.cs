@@ -34,7 +34,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			return await _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
-				(t.Status == "For CNC Approval" || t.Status == "Pending" || t.Status == "Resubmitted" || t.Status == "Declined")
+				(t.Status == "For CNC Approval" || t.Status == "Declined")
 			);
 		}
 
@@ -47,7 +47,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			return await _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
-				(t.Status == "For CNC Approval" || t.Status == "Pending" || t.Status == "Resubmitted" || t.Status == "For FSG Validation" || t.Status == "For FSG Approval")
+				(t.Status == "For CNC Approval" || t.Status == "For FSG Validation" || t.Status == "For FSG Approval")
 			);
 		}
 
@@ -60,7 +60,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			var latest = await _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking().Where(t =>
 				t.RequestId == requestId &&
-				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "Approved" || t.Status == "For ERP Posting" || t.Status == "Posted")
+				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "For ERP Posting" || t.Status == "Posted")
 			).ToListAsync();
 
 			return latest.Count() > 0;
@@ -75,7 +75,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			return await _context.VwLatestReceiptAdjustmentDetails.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
-				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "Approved" || t.Status == "For ERP Posting" || t.Status == "Posted")
+				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "For ERP Posting" || t.Status == "Posted")
 			);
 		}
 
@@ -85,7 +85,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		/// <param name="requestId"></param>
 		/// <returns></returns>
 		public async Task<bool> IsPostable(long requestId) =>
-			await _context.VwLatestReceiptAdjustmentDetails.AsNoTracking().AnyAsync(t => t.RequestId == requestId && (t.Status == "For ERP Posting" || t.Status == "Approved"));
+			await _context.VwLatestReceiptAdjustmentDetails.AsNoTracking().AnyAsync(t => t.RequestId == requestId && t.Status == "For ERP Posting");
 
 		/// <summary>
 		/// Checks if the request is currently declined
@@ -160,7 +160,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                     v => v.RequestId,
                     r => r.Id,
                     (v, r) => new { v, r })
-                .Where(x => x.r.CreatedBy == userId && (x.v.Status == "For CNC Approval" || x.v.Status == "Pending" || x.v.Status == "Resubmitted"))
+                .Where(x => x.r.CreatedBy == userId && x.v.Status == "For CNC Approval")
                 .CountAsync();
         }
 
@@ -172,7 +172,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                     v => v.RequestId,
                     r => r.Id,
                     (v, r) => new { v, r })
-                .Where(x => x.r.CreatedBy == userId && (x.v.Status == "For ERP Posting" || x.v.Status == "Approved"))
+                .Where(x => x.r.CreatedBy == userId && x.v.Status == "For ERP Posting")
                 .CountAsync();
         }
 
@@ -196,7 +196,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                     v => v.RequestId,
                     r => r.Id,
                     (v, r) => new { v, r })
-                .Where(x => x.r.CreatedBy == userId && (x.v.Status == "For FSG Validation" || x.v.Status == "For FSG Approval" || x.v.Status == "Resubmitted"))
+                .Where(x => x.r.CreatedBy == userId && (x.v.Status == "For FSG Validation" || x.v.Status == "For FSG Approval"))
                 .CountAsync();
         }
 
@@ -338,7 +338,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		private static string[] GetApprovalQueueStatuses(string role)
 		{
 			if (IsCncApproverRole(role))
-				return ["For CNC Approval", "Pending", "Resubmitted"];
+				return ["For CNC Approval"];
 
 			if (IsFsgValidatorRole(role))
 				return ["For FSG Validation"];
@@ -350,23 +350,15 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		}
 
 		private static bool IsCncApproverRole(string role) =>
-			string.Equals(role, "Approver", StringComparison.OrdinalIgnoreCase) ||
 			string.Equals(role, "CNC Approver", StringComparison.OrdinalIgnoreCase);
 
 		private static bool IsFsgValidatorRole(string role) =>
-			string.Equals(role, "Validator", StringComparison.OrdinalIgnoreCase) ||
 			string.Equals(role, "FSG Validator", StringComparison.OrdinalIgnoreCase);
 
 		private static bool IsFsgApproverRole(string role) =>
 			string.Equals(role, "FSG Approver", StringComparison.OrdinalIgnoreCase);
 
-		private static string NormalizeWorkflowStatus(string status) => status switch
-		{
-			"Pending" => "For CNC Approval",
-			"Resubmitted" => "For CNC Approval",
-			"Approved" => "For ERP Posting",
-			_ => status
-		};
+		private static string NormalizeWorkflowStatus(string status) => status;
 
 		private async Task<string> GetLatestStatus(long requestId) =>
 			NormalizeWorkflowStatus(
@@ -438,9 +430,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			if (string.Equals(role, "Requestor", StringComparison.OrdinalIgnoreCase))
 				return query.Where(t => (t.RequestorFirstName + " " + t.RequestorLastName).ToUpper() == name);
 
-			if (string.Equals(role, "Validator", StringComparison.OrdinalIgnoreCase) ||
-				string.Equals(role, "Approver", StringComparison.OrdinalIgnoreCase) ||
-				string.Equals(role, "CNC Approver", StringComparison.OrdinalIgnoreCase) ||
+			if (string.Equals(role, "CNC Approver", StringComparison.OrdinalIgnoreCase) ||
 				string.Equals(role, "FSG Validator", StringComparison.OrdinalIgnoreCase) ||
 				string.Equals(role, "FSG Approver", StringComparison.OrdinalIgnoreCase))
 				return query;
@@ -470,9 +460,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			if (string.Equals(role, "Requestor", StringComparison.OrdinalIgnoreCase))
 				return query.Where(t => (t.RequestorFirstName + " " + t.RequestorLastName).ToUpper() == name);
 
-			if (string.Equals(role, "Validator", StringComparison.OrdinalIgnoreCase) ||
-				string.Equals(role, "Approver", StringComparison.OrdinalIgnoreCase) ||
-				string.Equals(role, "CNC Approver", StringComparison.OrdinalIgnoreCase) ||
+			if (string.Equals(role, "CNC Approver", StringComparison.OrdinalIgnoreCase) ||
 				string.Equals(role, "FSG Validator", StringComparison.OrdinalIgnoreCase) ||
 				string.Equals(role, "FSG Approver", StringComparison.OrdinalIgnoreCase))
 				return query;

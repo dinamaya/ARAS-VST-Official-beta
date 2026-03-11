@@ -10,14 +10,14 @@ namespace ARAS.Blazor.Repositories.Implementations
 		public EmailRepository(AuthDbContext context) => this.context = context;
 
 		public async Task<IEnumerable<string>> GetAll() => await context.EmailAccountsVs.AsNoTracking().Select(a => a.Email).ToListAsync() ?? [];
-		public async Task<IEnumerable<string>> GetApprovers() => await GetEmailsByRoles("APPROVER", "CNC APPROVER");
-		public async Task<IEnumerable<string>> GetValidators() => await GetEmailsByRoles("VALIDATOR", "FSG VALIDATOR");
+		public async Task<IEnumerable<string>> GetApprovers() => await GetEmailsByRoles("CNC APPROVER");
+		public async Task<IEnumerable<string>> GetValidators() => await GetEmailsByRoles("FSG VALIDATOR");
 		public async Task<IEnumerable<string>> GetRequestors() => await context.EmailAccountsVs.AsNoTracking().Where(a => a.NormalizedName == "REQUESTOR").Select(a => a.Email).ToListAsync() ?? [];
 
 		public async Task<IEnumerable<string>> GetNegateRecipients(string role) => role switch
 		{
-			"Approver" or "CNC Approver" => await GetEmailsByRoles("APPROVER", "CNC APPROVER", "REQUESTOR"),
-			"Validator" or "FSG Validator" => await GetEmailsByRoles("VALIDATOR", "FSG VALIDATOR", "REQUESTOR"),
+			"CNC Approver" => await GetEmailsByRoles("CNC APPROVER", "REQUESTOR"),
+			"FSG Validator" => await GetEmailsByRoles("FSG VALIDATOR", "REQUESTOR"),
 			"FSG Approver" => await GetEmailsByRoles("FSG APPROVER", "REQUESTOR"),
 			_ => await GetAll()
 		};
@@ -25,8 +25,8 @@ namespace ARAS.Blazor.Repositories.Implementations
 		public async Task<IEnumerable<string>> GetUpdateRecipients(string role) => role switch
 		{
 			"Requestor" => await GetApprovers(),
-			"Approver" or "CNC Approver" => await GetValidators(),
-			"Validator" or "FSG Validator" => await GetEmailsByRoles("FSG APPROVER"),
+			"CNC Approver" => await GetValidators(),
+			"FSG Validator" => await GetEmailsByRoles("FSG APPROVER"),
 			_ => await GetAll()
 		};
 

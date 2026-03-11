@@ -38,13 +38,10 @@
     }
 
     private static bool IsForCncApproval(string? status) =>
-        string.Equals(status, "For CNC Approval", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(status, "Pending", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(status, "Resubmitted", StringComparison.OrdinalIgnoreCase);
+        string.Equals(status, "For CNC Approval", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsForErpPosting(string? status) =>
-        string.Equals(status, "For ERP Posting", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(status, "Approved", StringComparison.OrdinalIgnoreCase);
+        string.Equals(status, "For ERP Posting", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsForFsgValidation(string? status) =>
         string.Equals(status, "For FSG Validation", StringComparison.OrdinalIgnoreCase);

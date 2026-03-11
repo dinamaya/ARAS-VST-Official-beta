@@ -11,13 +11,13 @@ namespace ARAS.Blazor.App_Code.Globals.Extensions
 			accountDetails.AccountRole.IsInRole(roleName);
 
 		public static bool IsCncApprover(this string roleName) =>
-			roleName.IsInRole("Approver") || roleName.IsInRole("CNC Approver");
+			roleName.IsInRole("CNC Approver");
 
 		public static bool IsCncApprover(this AccountDetailsDto accountDetails) =>
 			accountDetails.AccountRole.IsCncApprover();
 
 		public static bool IsFsgValidator(this string roleName) =>
-			roleName.IsInRole("Validator") || roleName.IsInRole("FSG Validator");
+			roleName.IsInRole("FSG Validator");
 
 		public static bool IsFsgValidator(this AccountDetailsDto accountDetails) =>
 			accountDetails.AccountRole.IsFsgValidator();

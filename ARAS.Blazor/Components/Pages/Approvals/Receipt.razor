@@ -1,4 +1,4 @@
-﻿@page "/approvals/receipt"
+@page "/approvals/receipt"
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Components.Shared.DataTables
 
@@ -32,7 +32,7 @@
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
-		textFields = ConfigService.GetApproverSearchInvoiceCategories();
+		textFields = ConfigService.GetApprovalSearchInvoiceCategories();
 		var adjustmentsTypes = await AdjustmentService.GetReceiptTypes();
 		dropdowns = new Dictionary<string, IEnumerable<string>>
 		{

@@ -1,4 +1,4 @@
-﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Components.Shared.Skeletons
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
@@ -52,10 +52,10 @@
 						</RadzenDataGridColumn>	
 						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Requestor)" Width="220px" Title="Requestor" />
 						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateRequested)" Width="220px" Title="Date Requested" />
-						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Approver)" Width="220px" Title="Approver" />
-						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateApproved)" Width="220px" Title="Date Approved" />
-						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Validator)" Width="220px" Title="Validator" />
-						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateValidated)" Width="220px" Title="Date Validated" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Approver)" Width="220px" Title="CNC Approver" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateApproved)" Width="220px" Title="CNC Approval Date" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Validator)" Width="220px" Title="FSG Validator" />
+						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateValidated)" Width="220px" Title="FSG Validation Date" />
 						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.Creator)" Width="220px" Title="Updated By" />
 						<RadzenDataGridColumn Property="@nameof(TransactionRequestRowDto.DateCreated)" Width="220px" Title="Date Updated" />
 					</Columns>

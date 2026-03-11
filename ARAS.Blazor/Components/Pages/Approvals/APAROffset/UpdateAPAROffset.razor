@@ -1,4 +1,4 @@
-﻿@* @page "/approvals/apar-offset/{RequestId:long}"
+@* @page "/approvals/apar-offset/{RequestId:long}"
 @using ARAS.Blazor.Components.Pages.Requests.APAROffset.Summaries
 @using ARAS.Blazor.Components.Shared.DataTables
 @using ARAS.Blazor.Components.Shared.Modals
@@ -7,7 +7,7 @@
 @using ARAS.Blazor.Services.Interfaces
 @using Microsoft.AspNetCore.Authorization
 
-@attribute [Authorize(Roles = "Approver")]
+@attribute [Authorize(Roles = "Approver,CNC Approver,Validator,FSG Validator,FSG Approver")]
 @inject IAPAROffsetService APAROffsetService
 @inject IRequestService RequestService
 @inject INoteService NoteService

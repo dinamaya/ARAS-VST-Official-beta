@@ -268,7 +268,7 @@ namespace ARAS.Blazor.Services.Implementations
 		}
 
 		public async Task Decline(long requestId, IEnumerable<NoteRowDto> notes) => await UpdateOneRequestStatus(requestId, _configService.GetDeclinesUrl(), "Decline", notes);
-		public async Task Reject(long requestId, IEnumerable<NoteRowDto> notes) => await UpdateOneRequestStatus(requestId, _configService.GetRejectionsUrl(), "Approve", notes);
+		public async Task Reject(long requestId, IEnumerable<NoteRowDto> notes) => await UpdateOneRequestStatus(requestId, _configService.GetRejectionsUrl(), "Reject", notes);
 
 		private async Task UpdateAdjustmentStatus(IEnumerable<long> data, string route)
 		{

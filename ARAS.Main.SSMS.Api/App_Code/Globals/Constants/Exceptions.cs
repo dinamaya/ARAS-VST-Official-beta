@@ -1,4 +1,4 @@
-﻿namespace ARAS.Main.SSMS.Api.App_Code.Globals.Constants
+namespace ARAS.Main.SSMS.Api.App_Code.Globals.Constants
 {
 	public static class Exceptions
 	{
@@ -9,9 +9,9 @@
 		public static string EMPTY_SMALLAMOUNT_ROWS = "There are no small amount adjustment rows for creation. Please check before submission or contact the administrator";
 		public static string EMPTY_SRAUTONET_ROWS = "There are no write-off: sales return auto net of cwt adjustment rows for creation. Please check before submission or contact the administrator";
 		
-		public static string INVALID_POSTED = "The current request has already been approved or doesn't exist. Please check before submission or contact the administrator";
-		public static string ALREADY_APPROVED = "The current request has already been approved. Please check before submission or contact the administrator";
-		public static string ALREADY_VALIDATED = "The current request has already been validated. Please check before submission or contact the administrator";
+		public static string INVALID_POSTED = "The current request is already for ERP posting, already posted, or doesn't exist. Please check before submission or contact the administrator";
+		public static string ALREADY_APPROVED = "The current request is already in a later approval stage. Please check before submission or contact the administrator";
+		public static string ALREADY_VALIDATED = "The current request has already completed FSG validation. Please check before submission or contact the administrator";
 		public static string ALREADY_DECLINED = "The current request has already been declined. Please check before submission or contact the administrator";
 		public static string ALREADY_REJECT = "The current request has already been rejected. Please check before submission or contact the administrator";
 		

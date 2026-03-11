@@ -1,4 +1,4 @@
-﻿using ARAS.Blazor.App_Code.Globals.Extensions;
+using ARAS.Blazor.App_Code.Globals.Extensions;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using ARAS.Main.SSMS.Api.Services.Interfaces;
@@ -53,7 +53,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 				await _requestRepo.Reject(requestId, accountId);
 
 				response.Result = "Success";
-				response.Message = "Request has been successfully APPROVED";
+				response.Message = "Request has been successfully REJECTED";
 				return response;
 			}
 			catch (Exception ex)

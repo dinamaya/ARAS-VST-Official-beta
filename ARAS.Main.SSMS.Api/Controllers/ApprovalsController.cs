@@ -35,7 +35,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 				await _adjustmentService.Approve(requestIds, account.Id, account.Role);
 
 				response.Result = "Success";
-				response.Message = "Request has been successfully APPROVED";
+				response.Message = GetApprovalSuccessMessage(account.Role);
 				return response;
 			}
 			catch (Exception ex)
@@ -55,7 +55,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 				await _requestRepo.Approve(requestId, account.Id, account.Role);
 
 				response.Result = "Success";
-				response.Message = "Request has been successfully APPROVED";
+				response.Message = GetApprovalSuccessMessage(account.Role);
 				return response;
 			}
 			catch (Exception ex)
@@ -98,5 +98,13 @@ namespace ARAS.Main.SSMS.Api.Controllers
                 return response.Failed(ex.Message);
             }
         }
+
+		private static string GetApprovalSuccessMessage(string role) => role switch
+		{
+			"Approver" or "CNC Approver" => "Request has been successfully approved and moved to FSG validation",
+			"Validator" or "FSG Validator" => "Request has been successfully validated and moved to FSG approval",
+			"FSG Approver" => "Request has been successfully approved and moved to ERP posting",
+			_ => "Request has been successfully processed"
+		};
     }
 }

@@ -106,6 +106,9 @@ namespace ARAS.Blazor.Services.Implementations
 					});
 				});
 
+			Guards.ThrowInvalidOperationIf(!response.IsSuccess, response.Message ?? "Failed to fetch the request");
+			Guards.ThrowNullReferenceIf(response.Result, "Failed to fetch the request details");
+
 			return response.Result;
 		}
 

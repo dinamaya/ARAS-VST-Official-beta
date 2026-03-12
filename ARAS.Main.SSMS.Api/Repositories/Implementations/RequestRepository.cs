@@ -300,7 +300,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 		public async Task<TransactionRequestRowDto> GetTransactionRequestByRequestId(long requestId)
 		{
-			return await _context.VwLatestReceiptAdjustmentDetails
+			var receiptRequest = await _context.VwLatestReceiptAdjustmentDetails
 				.AsNoTracking()
 				.Where(t => t.RequestId == requestId)
 				.Select(t => new TransactionRequestRowDto()
@@ -316,6 +316,28 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					Status = t.Status,
 				})
 				.FirstOrDefaultAsync();
+
+			if (receiptRequest is not null)
+				return receiptRequest;
+
+			var invoiceRequest = await _context.VwLatestInvoiceAdjustments
+				.AsNoTracking()
+				.Where(t => t.RequestId == requestId)
+				.Select(t => new TransactionRequestRowDto()
+				{
+					RequestId = t.RequestId,
+					RequestNumber = t.RequestId.ToString(),
+					Requestor = ValidateFullName(t.RequestorFirstName, t.RequestorLastName),
+					DateRequested = t.DateRequested.ToString(Formats.Date.DISPLAY_COMPLETE),
+
+					Approver = ValidateFullName(t.ApproverFirstName, t.ApproverLastName),
+					DateApproved = t.DateApproved.HasValue ? ((DateTime)t.DateApproved).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
+
+					Status = t.Status,
+				})
+				.FirstOrDefaultAsync();
+
+			return invoiceRequest ?? throw new InvalidOperationException(Exceptions.NOTFOUND_REQUEST);
 		}
 
         private static string ValidateFullName(string fName, string lName) =>

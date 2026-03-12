@@ -33,5 +33,17 @@ namespace ARAS.Blazor.App_Code.Globals.Extensions
 
 		public static bool IsApprovalActor(this AccountDetailsDto accountDetails) =>
 			accountDetails.AccountRole.IsApprovalActor();
+
+		public static bool CanUpdateApprovalStatus(this string roleName, string? status) =>
+			(roleName, status) switch
+			{
+				(var role, "For CNC Approval") when role.IsCncApprover() => true,
+				(var role, "For FSG Validation") when role.IsFsgValidator() => true,
+				(var role, "For FSG Approval") when role.IsFsgApprover() => true,
+				_ => false
+			};
+
+		public static bool CanUpdateApprovalStatus(this AccountDetailsDto accountDetails, string? status) =>
+			accountDetails.AccountRole.CanUpdateApprovalStatus(status);
 	}
 }

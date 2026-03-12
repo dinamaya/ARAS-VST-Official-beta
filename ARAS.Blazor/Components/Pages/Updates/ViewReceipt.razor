@@ -135,6 +135,7 @@
 	private bool isUpdatable;
 	private bool isStatusChangeable = false;
 	private string role;
+	private string requestStatus = string.Empty;
 	private string adjustmentName;
 	private bool isRequestUpdatable => isUpdatable && role == "Requestor";
 
@@ -167,9 +168,10 @@
 			await base.OnInitializedAsync();
 			details = await RequestService.GetReceiptDetails(RequestId);
 			role = await AuthService.GetRole();
+			var request = await RequestService.GetRequestDetails(RequestId);
+			requestStatus = request.Status;
 			isUpdatable = await RequestService.IsUpdatable(RequestId);
-			bool isApprovable = await RequestService.IsApprovable(RequestId);
-			isStatusChangeable = role.IsApprovalActor() && isApprovable;
+			isStatusChangeable = role.CanUpdateApprovalStatus(requestStatus);
 			data = new();
 			invoice = await InvoiceService.GetDetails(details.Invoice);
 		}

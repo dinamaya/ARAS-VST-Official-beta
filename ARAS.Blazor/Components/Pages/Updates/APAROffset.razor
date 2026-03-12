@@ -299,6 +299,7 @@
 	private bool isStatusChangeable = false;
 	private bool isRequestUpdatable => isUpdatable && role == "Requestor";
 	private string role;
+	private string requestStatus = string.Empty;
 	private string inputHash = string.Empty;
 
 	private double NetBalance => (APAdjustments?.Sum(a => a.InvoiceAmount) ?? 0) - (ARAdjustments?.Sum(a => a.Amount) ?? 0);
@@ -320,13 +321,14 @@
 		ARAdjustments = adjustments.ARGroup.ToList();
 		searchedInvoiceNumber = new InvoiceDetailsDto();
 		reasonCodes = await SearchOptionService.GetReasonCodes();
-		role = await AuthService.GetRole();
-		isReady = true;
-		isUpdatable = await RequestService.IsUpdatable(RequestId);
-		inputHash = Utils.Security.ObjectHash(adjustments);
+			role = await AuthService.GetRole();
+			var request = await RequestService.GetRequestDetails(RequestId);
+			requestStatus = request.Status;
+			isReady = true;
+			isUpdatable = await RequestService.IsUpdatable(RequestId);
+			inputHash = Utils.Security.ObjectHash(adjustments);
 
-		bool isApprovable = await RequestService.IsApprovable(RequestId);
-		isStatusChangeable = role.IsApprovalActor() && isApprovable;
+			isStatusChangeable = role.CanUpdateApprovalStatus(requestStatus);
 		Notes = await NoteService.GetRows(RequestId);
 		StateHasChanged();
 		await apGrid.Reload();

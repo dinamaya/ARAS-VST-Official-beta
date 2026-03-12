@@ -223,8 +223,8 @@
 	private bool isStatusChangeable = false;
 	private bool isRequestUpdatable => isUpdatable && role == "Requestor";
 	private string role;
-	private string inputHash = string.Empty;
-	// track newly added rows so we can remove them on cancel if they remain empty
+	private string requestStatus = string.Empty;
+	private string inputHash = string.Empty;	// track newly added rows so we can remove them on cancel if they remain empty
 	private HashSet<string> newlyAddedRowIds = new();
 
 	protected override async Task OnParametersSetAsync()
@@ -242,13 +242,14 @@
 		searchedInvoiceNumber = new InvoiceDetailsDto();
 
 		role = await AuthService.GetRole();
-		isReady = true;
-		isUpdatable = await RequestService.IsUpdatable(RequestId);
-		var hashedAdjustments = CNInvoice.Concat(ARInvoice);
-		inputHash = Utils.Security.ObjectHash(hashedAdjustments);
+			var request = await RequestService.GetRequestDetails(RequestId);
+			requestStatus = request.Status;
+			isReady = true;
+			isUpdatable = await RequestService.IsUpdatable(RequestId);
+			var hashedAdjustments = CNInvoice.Concat(ARInvoice);
+			inputHash = Utils.Security.ObjectHash(hashedAdjustments);
 
-		bool isApprovable = await RequestService.IsApprovable(RequestId);
-		isStatusChangeable = role.IsApprovalActor() && isApprovable;
+			isStatusChangeable = role.CanUpdateApprovalStatus(requestStatus);
 		Notes = await NoteService.GetRows(RequestId);
 		StateHasChanged();
 

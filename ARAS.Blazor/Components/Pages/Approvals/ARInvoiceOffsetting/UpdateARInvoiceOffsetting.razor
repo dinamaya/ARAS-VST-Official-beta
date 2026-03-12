@@ -1,4 +1,5 @@
 @page "/approvals/ar-invoice-offsetting/{RequestId:long}"
+@using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Components.Shared.DataTables
 @using ARAS.Blazor.Components.Shared.Modals
 @using ARAS.Blazor.Components.Pages.Requests.ARInvoiceOffsetting.Summaries
@@ -11,6 +12,7 @@
 @inject IRequestService RequestService
 @inject INoteService NoteService
 @inject DialogService DialogService
+@inject IAuthService AuthService
 @inject NavigationManager NavigationManager
 
 @inherits ComponentBase
@@ -52,8 +54,8 @@
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
-		isApprovable = await RequestService.IsApprovable(RequestId);
 		var request = await RequestService.GetRequestDetails(RequestId);
+		isApprovable = (await AuthService.GetRole()).CanUpdateApprovalStatus(request.Status);
 		// rows = await ARInvoiceOffsettingService.GetAdjustments(RequestId);
 		notes = await NoteService.GetRows(RequestId);
 

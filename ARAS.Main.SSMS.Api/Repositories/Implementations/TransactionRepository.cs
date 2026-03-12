@@ -63,6 +63,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			return await context.VwTransactionsHistory
 				.AsNoTracking()
 				.Where(t => t.RequestId == requestId)
+				.OrderBy(t => t.DateCreated)
+				.ThenBy(t => t.TransactionId)
 				.Select(t => new TransactionHistoryDto
 				{
 					TransactionId = t.TransactionId,
@@ -106,6 +108,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			var history = await context.VwTransactionsHistory
 				.AsNoTracking()
 				.Where(t => t.RequestId == requestId)
+				.OrderBy(t => t.DateCreated)
+				.ThenBy(t => t.TransactionId)
 				.Select(t => new EmailTimelineDetailsDto
 				{
 					CreatorAction = t.Status,

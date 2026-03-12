@@ -27,9 +27,9 @@
         string iconClass =
             IsRejected(Status) ? "ni-fat-remove fs-3 text-danger" :
             IsDeclined(Status) ? "ni-curved-next text-warning flip-y" :
-            IsForErpPosting(Status) ? "ni-like-2 text-primary" :
-            IsForFsgValidation(Status) ? "ni-check-bold text-secondary" :
-            IsForFsgApproval(Status) ? "ni-user-run text-info" :
+            IsForErpPosting(Status) ? "ni-send text-primary" :
+            IsForFsgValidation(Status) ? "ni-time-alarm text-info" :
+            IsForFsgApproval(Status) ? "ni-like-2 text-info" :
             IsForCncApproval(Status) ? "ni-bell-55 text-info" :
             "ni-check-bold text-success";
 

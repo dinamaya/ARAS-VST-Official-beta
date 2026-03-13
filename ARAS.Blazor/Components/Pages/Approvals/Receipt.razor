@@ -4,6 +4,7 @@
 
 @inject DialogService DialogService
 @inject IAdjustmentService AdjustmentService
+@inject IAuthService AuthService
 @inject IRequestService RequestService
 @inject IConfigService ConfigService
 
@@ -13,7 +14,7 @@
 	{
 		<MainSearchBar OnSearch="HandleSearch" TextFields="textFields" DropdownFields="dropdowns">
 			<ResultTemplate Context="isLoading">
-				<SearchReceiptAdjustmentsDataTable IsLoading="isLoading" Rows="rows" />
+				<SearchReceiptAdjustmentsDataTable IsLoading="isLoading" Rows="rows" Role="@role" />
 			</ResultTemplate>
 		</MainSearchBar>
 	}
@@ -24,6 +25,7 @@
 	private Dictionary<string, IEnumerable<string>> dropdowns { get; set; }
 	private IEnumerable<string> textFields { get; set; }
 	private IEnumerable<ReceiptAdjustmentRowDto> rows { get; set; }
+	private string role { get; set; } = string.Empty;
 
 	protected bool IsOnSearch { get; private set; }
 	protected bool IsLoading { get; private set; }
@@ -32,6 +34,7 @@
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
+		role = await AuthService.GetRole();
 		textFields = ConfigService.GetApprovalSearchInvoiceCategories();
 		var adjustmentsTypes = await AdjustmentService.GetReceiptTypes();
 		dropdowns = new Dictionary<string, IEnumerable<string>>

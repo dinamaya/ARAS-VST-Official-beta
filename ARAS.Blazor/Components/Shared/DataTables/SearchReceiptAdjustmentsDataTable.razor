@@ -16,12 +16,18 @@
 
 					<RadzenRow class="w-100">
 						<RadzenColumn Size="12" SizeMD="6">
-							<RadzenSelectBar 
-								@ref="selectBarFilter"
-								TValue="string"
-								Data="@filterSelection"
-								@bind-Value="currentFilterStat"
-								Change="@OnFilter" />
+							@if (showFilterTabs)
+							{
+								<RadzenSelectBar
+									TValue="string"
+									Data="@filterSelection"
+									@bind-Value="currentFilterStat"
+									Change="@OnFilter" />
+							}
+							else if (!string.IsNullOrWhiteSpace(currentFilterStat))
+							{
+								<div class="text-sm text-secondary pt-2">Showing: @currentFilterStat</div>
+							}
 						</RadzenColumn>
 
 						@if (selectedRequests.Any())
@@ -45,7 +51,7 @@
 			}
 			else
 			{
-				<RadzenDataGrid 
+				<RadzenDataGrid
 					@ref=dataGrid
 					@bind-Value=@selectedRequests
 					class="border-1 width:100%; overflow-x:auto;"
@@ -67,11 +73,11 @@
 						<RadzenDataGridColumn Frozen="true" Width="50px" Sortable="false" Filterable="false">
 							<HeaderTemplate>
 								<RadzenCheckBox TValue="bool?"
-												Value="@SelectAllState"
-												Change="@((val) => ToggleSelectAll(val))" />
+											Value="@SelectAllState"
+											Change="@((val) => ToggleSelectAll(val))" />
 							</HeaderTemplate>
 							<Template Context="row">
-								<RadzenCheckBox 
+								<RadzenCheckBox
 									TValue="bool"
 									Value="@selectedRequests.Contains(row)"
 									Change="@(checkedValue => ToggleRow(row))" />
@@ -107,9 +113,10 @@
 @code {
 	[Parameter] public EventCallback<ReceiptAdjustmentRowDto> Select { get; set; }
 	[Parameter] public IEnumerable<ReceiptAdjustmentRowDto> Rows { get; set; }
+	[Parameter] public string Role { get; set; } = string.Empty;
 	[Parameter] public bool IsLoading { get; set; }
 
-	private IEnumerable<ReceiptAdjustmentRowDto> filteredRows;
+	private IEnumerable<ReceiptAdjustmentRowDto> filteredRows = [];
 
 	private int FilteredCount => filteredRows.Count();
 
@@ -120,23 +127,27 @@
 	private IEnumerable<long> SelectedIds => selectedRequests.Select(r => r.RequestId);
 
 	private RadzenDataGrid<ReceiptAdjustmentRowDto> dataGrid;
-	private RadzenSelectBar<string> selectBarFilter;
 
 	private IList<ReceiptAdjustmentRowDto> selectedRequests = new List<ReceiptAdjustmentRowDto>();
-	private IEnumerable<string> filterSelection;
+	private IEnumerable<string> filterSelection = [];
 
-	private ReceiptAdjustmentRowDto selectedRow;
 	private string currentFilterStat = string.Empty;
+	private bool showFilterTabs => filterSelection.Count() > 1;
 
-	protected override async Task OnParametersSetAsync() {
+	protected override async Task OnParametersSetAsync()
+	{
 		filteredRows = Rows ?? [];
-		await OnFilter(string.Empty);
+		filterSelection = BuildFilterSelection();
+		currentFilterStat = filterSelection.FirstOrDefault() ?? string.Empty;
+		await OnFilter(currentFilterStat);
 	}
 
-	protected override async Task OnInitializedAsync()
+	private IEnumerable<string> BuildFilterSelection()
 	{
-		await base.OnInitializedAsync();
-		filterSelection = ["All", "For CNC Approval", "For FSG Validation", "For FSG Approval"];
+		string queueStatus = Role.GetApprovalQueueStatus();
+		return string.IsNullOrWhiteSpace(queueStatus)
+			? ["For CNC Approval", "For FSG Validation", "For FSG Approval"]
+			: [queueStatus];
 	}
 
 	private async Task OnSelect(ReceiptAdjustmentRowDto selectedRow)
@@ -161,7 +172,7 @@
 		else
 		{
 			foreach (var row in selectedRequests.ToList())
-				dataGrid.SelectRow(row); 
+				dataGrid.SelectRow(row);
 		}
 	}
 
@@ -185,7 +196,7 @@
 	private async Task OnApprove(MouseEventArgs args) => await OnStatusUpdate("APPROVE", "Approval", RequestService.ApproveReceiptAdjustmentRequests);
 
 	private async Task OnReject(MouseEventArgs args) => await OnStatusUpdate("REJECT", "Rejection", RequestService.RejectReceiptAdjustmentRequests);
-	
+
 	private async Task OnDecline(MouseEventArgs args) => await OnStatusUpdate("DECLINE", "Decline", RequestService.DeclineReceiptAdjustmentRequests);
 
 	private async Task OnStatusUpdate(string status, string stage, Func<IEnumerable<long>, Task> updateCallBack)
@@ -195,10 +206,9 @@
 			"Request " + stage
 		) ?? false;
 
-
 		if (!isConfirmed) return;
 
-        await updateCallBack.Invoke(SelectedIds);
+		await updateCallBack.Invoke(SelectedIds);
 
 		NavManager.NavigateTo(NavManager.Uri, true);
 	}

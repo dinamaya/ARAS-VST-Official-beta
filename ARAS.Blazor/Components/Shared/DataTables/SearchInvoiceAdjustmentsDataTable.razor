@@ -16,11 +16,18 @@
 
 					<RadzenRow class="w-100">
 						<RadzenColumn Size="12" SizeMD="6">
-							<RadzenSelectBar @ref="selectBarFilter"
-											 TValue="string"
-											 Data="@filterSelection"
-											 @bind-Value="currentFilterStat"
-											 Change="@OnFilter" />
+							@if (showFilterTabs)
+							{
+								<RadzenSelectBar
+									TValue="string"
+									Data="@filterSelection"
+									@bind-Value="currentFilterStat"
+									Change="@OnFilter" />
+							}
+							else if (!string.IsNullOrWhiteSpace(currentFilterStat))
+							{
+								<div class="text-sm text-secondary pt-2">Showing: @currentFilterStat</div>
+							}
 						</RadzenColumn>
 
 						@if (selectedRequests.Any())
@@ -65,13 +72,13 @@
 						<RadzenDataGridColumn Frozen="true" Width="50px" Sortable="false" Filterable="false">
 							<HeaderTemplate>
 								<RadzenCheckBox TValue="bool?"
-												Value="@SelectAllState"
-												Change="@((val) => ToggleSelectAll(val))" />
+											Value="@SelectAllState"
+											Change="@((val) => ToggleSelectAll(val))" />
 							</HeaderTemplate>
 							<Template Context="row">
 								<RadzenCheckBox TValue="bool"
-												Value="@selectedRequests.Contains(row)"
-												Change="@(checkedValue => ToggleRow(row))" />
+											Value="@selectedRequests.Contains(row)"
+											Change="@(checkedValue => ToggleRow(row))" />
 							</Template>
 						</RadzenDataGridColumn>
 						<RadzenDataGridColumn Title="Option" Sortable="false" Filterable="false" Width="160px" TextAlign="TextAlign.Center">
@@ -104,9 +111,10 @@
 @code {
 	[Parameter] public EventCallback<InvoiceAdjustmentRowDto> Select { get; set; }
 	[Parameter] public IEnumerable<InvoiceAdjustmentRowDto> Rows { get; set; }
+	[Parameter] public string Role { get; set; } = string.Empty;
 	[Parameter] public bool IsLoading { get; set; }
 
-	private IEnumerable<InvoiceAdjustmentRowDto> filteredRows;
+	private IEnumerable<InvoiceAdjustmentRowDto> filteredRows = [];
 
 	private int FilteredCount => filteredRows.Count();
 
@@ -117,24 +125,27 @@
 	private IEnumerable<long> SelectedIds => selectedRequests.Select(r => r.RequestId);
 
 	private RadzenDataGrid<InvoiceAdjustmentRowDto> dataGrid;
-	private RadzenSelectBar<string> selectBarFilter;
 
 	private IList<InvoiceAdjustmentRowDto> selectedRequests = new List<InvoiceAdjustmentRowDto>();
-	private IEnumerable<string> filterSelection;
+	private IEnumerable<string> filterSelection = [];
 
-	private InvoiceAdjustmentRowDto selectedRow;
 	private string currentFilterStat = string.Empty;
+	private bool showFilterTabs => filterSelection.Count() > 1;
 
 	protected override async Task OnParametersSetAsync()
 	{
 		filteredRows = Rows ?? [];
-		await OnFilter(string.Empty);
+		filterSelection = BuildFilterSelection();
+		currentFilterStat = filterSelection.FirstOrDefault() ?? string.Empty;
+		await OnFilter(currentFilterStat);
 	}
 
-	protected override async Task OnInitializedAsync()
+	private IEnumerable<string> BuildFilterSelection()
 	{
-		await base.OnInitializedAsync();
-		filterSelection = ["All", "For CNC Approval", "For FSG Validation", "For FSG Approval"];
+		string queueStatus = Role.GetApprovalQueueStatus();
+		return string.IsNullOrWhiteSpace(queueStatus)
+			? ["For CNC Approval", "For FSG Validation", "For FSG Approval"]
+			: [queueStatus];
 	}
 
 	private async Task OnSelect(InvoiceAdjustmentRowDto selectedRow)
@@ -204,7 +215,6 @@
 			$"Would you like to \"{status}\" {SelectedIds.Count()} request(s) at the same time?",
 			"Request " + stage
 		) ?? false;
-
 
 		if (!isConfirmed) return;
 

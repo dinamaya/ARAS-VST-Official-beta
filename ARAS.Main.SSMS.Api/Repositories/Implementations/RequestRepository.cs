@@ -389,6 +389,28 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					.Where(t => t.RequestId == requestId)
 					.Select(t => t.Status)
 					.FirstOrDefaultAsync() ?? throw new InvalidOperationException(Exceptions.NOTFOUND_REQUEST));
+		public async Task<string> GetResubmissionStatus(long requestId)
+		{
+			string currentStatus = await GetLatestStatus(requestId);
+			if (!string.Equals(currentStatus, "Declined", StringComparison.OrdinalIgnoreCase))
+				return "For CNC Approval";
+
+			string? declinedByRole = await _context.VwTransactionsHistory
+				.AsNoTracking()
+				.Where(t => t.RequestId == requestId && t.Status == "Declined")
+				.OrderByDescending(t => t.DateCreated)
+				.ThenByDescending(t => t.TransactionId)
+				.Select(t => t.AccountRole)
+				.FirstOrDefaultAsync();
+
+			return declinedByRole switch
+			{
+				var role when IsFsgApproverRole(role) => "For FSG Approval",
+				var role when IsFsgValidatorRole(role) => "For FSG Validation",
+				var role when IsCncApproverRole(role) => "For CNC Approval",
+				_ => "For CNC Approval"
+			};
+		}
 
 		public async Task<string> GetNextApprovalStatus(long requestId, string role)
 		{

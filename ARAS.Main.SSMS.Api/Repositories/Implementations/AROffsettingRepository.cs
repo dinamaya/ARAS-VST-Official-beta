@@ -89,7 +89,9 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 				IList<ARIAdjustmentCreateDto> adjustments = [];
 
-				var transaction = new TransactionCreateDto(requestId, "For CNC Approval");
+				string resubmissionStatus = await _requestRepo.GetResubmissionStatus(requestId);
+
+				var transaction = new TransactionCreateDto(requestId, resubmissionStatus);
 				var transactId = await _transactionRepo.CreateAsync(transaction, modifiedBy);
 
 				// Deactivates the existing AR offset rows and invoices

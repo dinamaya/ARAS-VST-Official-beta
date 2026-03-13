@@ -94,11 +94,9 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			{
 				var requestRefNo = await _requestRepo.GetRequestNumberById(requestId);
 				var adjustmentType = await _adjustmentRepo.GetAdjustmentInfoByCode(adjustmentTypeCode);
+				string resubmissionStatus = await _requestRepo.GetResubmissionStatus(requestId);
 
-				var prevTimeline = await _transactionRepo.GetHistoryByRequestId(requestId);
-				var prevCreatorRole = prevTimeline.LastOrDefault().AccountRole;
-
-				var transaction = new TransactionCreateDto(requestId, "For CNC Approval");
+				var transaction = new TransactionCreateDto(requestId, resubmissionStatus);
 				var transactId = await _transactionRepo.CreateAsync(transaction, modifiedBy);
 
 				if(adjustmentTypeCode.Equals("arr"))

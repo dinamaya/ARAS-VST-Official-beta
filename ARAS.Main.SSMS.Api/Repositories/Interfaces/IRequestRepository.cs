@@ -18,6 +18,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 
 		Task<string> GetRequestNumberById (long requestId);
 		Task<string> GetNextApprovalStatus(long requestId, string role);
+		Task<string> GetResubmissionStatus(long requestId);
 
 		Task<TransactionRequestRowDto> GetTransactionRequestByRequestId(long requestId);
 		Task<RequestUpdateEmailDetailsDto> GetForEmailDetailsById (long requestId);

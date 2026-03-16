@@ -1,4 +1,4 @@
-﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.App_Code.Globals
 @using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Components.UI
@@ -7,18 +7,11 @@
 @using ARAS.Blazor.Services.Interfaces
 @inherits ComponentBase
 @inject DialogService DialogService
-@inject IConfigService ConfigService
 
 <RadzenFieldset>
     <HeaderTemplate>
 		<RadzenStack class="h-100" Gap="1.7em" Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start">
 			<RadzenLabel Text="Cash Discount" class="fs-5" />
-			<RadzenSelectBar @bind-Value="discountType" TValue="int" Change="OnDiscountTypeChanged" Disabled="!isAdjustable">
-				<Items>
-					<RadzenSelectBarItem Text="Fixed" Value="1" />
-					<RadzenSelectBarItem Text="Custom" Value="2" />
-				</Items>
-			</RadzenSelectBar>
 		</RadzenStack>
     </HeaderTemplate>
     <ChildContent>
@@ -26,35 +19,16 @@
 			<RadzenColumn Size="12">
 				<RadzenRow class="w-100" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Stretch">
 					<RadzenColumn Size="12" SizeMD="5">
-						@if (discountType == 1)
-						{
-							<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
-								<RadzenRow>
-									<RadzenLabel Style="width: 100%;" Text="Select Discount Percentage" Component="dDPercentage" />
-								</RadzenRow>
-								<RadzenRow>
-									<RadzenDropDown TValue="double"
-													Change="@(val => OnPercentageChanged((double)val))"
-													Data=@percentages
-													class="w-100 mb-2"
-													Name="dDPercentage"
-													Disabled="!isAdjustable" />
-								</RadzenRow>
-							</RadzenStack>
-						}
-						else
-						{
-							<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
-								<RadzenFormField class="w-100" Text="@("Discount Percentage")" Variant="Variant.Outlined">
-									<RadzenNumeric class="w-100" TValue="double"
-												   Value="@DiscountPercentage"
-												   Change="@(val => OnPercentageChanged(val))"
-												   Max="100"
-												   Disabled="!isAdjustable" />
-
-								</RadzenFormField>
-							</RadzenStack>
-						}
+						<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+							<RadzenFormField class="w-100" Text="Discount Percentage" Variant="Variant.Outlined">
+								<RadzenNumeric class="w-100"
+									TValue="double"
+									Value="@DiscountPercentage"
+									Change="@(val => OnPercentageChanged(val))"
+									Max="100"
+									Disabled="!isAdjustable" />
+							</RadzenFormField>
+						</RadzenStack>
 					</RadzenColumn>
 
 					<RadzenColumn Size="12" SizeMD="1">
@@ -65,11 +39,12 @@
 
 					<RadzenColumn Size="12" SizeMD="6">
 						<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
-							<RadzenFormField Text="@("Discount Value")" Variant="Variant.Outlined">
-								<RadzenNumeric TValue="double" @bind-Value="@discountDecimal"
-											   Max="(decimal)InvoiceAmount"
-											   Change="(val) => OnDecimalChanged(val)"
-											   Disabled="(!isAdjustable) || discountType == 1" />
+							<RadzenFormField Text="Discount Value" Variant="Variant.Outlined">
+								<RadzenNumeric TValue="double"
+									@bind-Value="@discountDecimal"
+									Max="(decimal)InvoiceAmount"
+									Change="(val) => OnDecimalChanged(val)"
+									Disabled="!isAdjustable" />
 							</RadzenFormField>
 						</RadzenStack>
 					</RadzenColumn>
@@ -97,23 +72,17 @@
 	[Parameter] public EventCallback<AdjustmentEntry> AdjustmentAmountChanged { get; set; }
 	[Parameter] public string? InitialRemarks { get; set; }
 	[Parameter] public double InitialDiscount { get; set; } = 0d;
-	[Parameter] public int InitialDiscountType { get; set; } = 1;
 
-	private IEnumerable<double> percentages;
 	private IEnumerable<string> invoices = new List<string>();
 
 	private string remarks = string.Empty;
 	private double discountDecimal = 0;
 	private double DiscountPercentage => InvoiceAmount == 0 ? 0 : Math.Round((discountDecimal / InvoiceAmount) * 100, 2);
-	private int discountType = 1;
 	private bool isAdjustable = false;
-
 
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
-		percentages = ConfigService.GetDiscountPercentages();
-
 		Reset();
 	}
 
@@ -125,16 +94,8 @@
 
 	public void Reset()
 	{
-		discountType = InitialDiscountType;
-		remarks = InitialRemarks;
+		remarks = InitialRemarks ?? string.Empty;
 		discountDecimal = InitialDiscount;
-	}
-
-	private async Task OnDiscountTypeChanged(int typeId)
-	{
-		discountType = typeId;
-		discountDecimal = discountType == 1 ? 0 : InitialDiscount;
-		await InvokeAdjustmentChanged();
 	}
 
 	private async Task OnPercentageChanged(double val)
@@ -150,7 +111,6 @@
 	}
 
 	private async Task OnRemarksChanged(string val) => await InvokeAdjustmentChanged();
-
 
 	private async Task InvokeAdjustmentChanged()
 	{

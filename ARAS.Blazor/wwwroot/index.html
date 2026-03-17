@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IIS Setup Successful</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+        }
+        h1 {
+            color: #0056b3;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .success-icon {
+            font-size: 4em;
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #0056b3;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #004494;
+        }
+        .note {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 30px;
+            border-top: 1px solid #dee2e6;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">✓</div>
+        <h1>IIS Setup Successful!</h1>
+        <p>Congratulations! If you are seeing this page from an external connection, it means your Home Lab's IIS, Port Forwarding, and DNS for <strong>uat-aradjustment.aldin.dev</strong> are perfectly configured.</p>
+        <p>This is a temporary Mock Landing Page served from the ARAS.Blazor project.</p>
+
+        <div class="note">
+            <p><strong>To enable the real ARAS.Blazor application:</strong><br>
+            Delete or rename this file (<code>wwwroot/index.html</code>) and restart your IIS App Pool. The Blazor server will then take over the root route (<code>/</code>).</p>
+        </div>
+    </div>
+</body>
+</html>

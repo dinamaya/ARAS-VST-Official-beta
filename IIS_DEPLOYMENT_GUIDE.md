@@ -2,6 +2,14 @@
 
 This guide outlines the steps to deploy the 5 components of the AR Adjustment System to an internal UAT IIS Server under the single domain: `https://uat-aradjustment.vstecs.com.ph`.
 
+## Special Note for Home Lab Testing (`uat-aradjustment.aldin.dev`)
+If you are deploying this to a Home Lab to test IIS connectivity, a **Mock Landing Page** has been added to the `ARAS.Blazor` project.
+- When you navigate to your domain (`uat-aradjustment.aldin.dev`), you will immediately see a static "IIS Setup Successful" page instead of the complex Blazor application.
+- This allows you to verify your Port Forwarding, DNS, and IIS Bindings without worrying about backend databases (like Oracle) crashing the app.
+- **To remove the mock page and see the real Blazor app:** Delete `index.html` from the `wwwroot` folder in your published `ARAS.Blazor` directory.
+
+---
+
 ## Components Overview
 1. **ARAS.Blazor** (Frontend UI) - Hosted at the Root (`/`)
 2. **ARAS.Gateway** (Ocelot API Gateway) - Hosted as an IIS Application (e.g., `/gateway`)

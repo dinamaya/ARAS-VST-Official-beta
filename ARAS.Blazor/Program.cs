@@ -28,6 +28,9 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Serve index.html as a mock landing page if it exists in wwwroot before falling back to Blazor routing
+app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.UseRouting();

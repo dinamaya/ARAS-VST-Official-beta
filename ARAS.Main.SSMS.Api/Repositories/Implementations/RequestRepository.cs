@@ -187,6 +187,29 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                 .Where(x => x.r.CreatedBy == userId && x.v.Status == "Declined")
                 .CountAsync();
         }
+        public async Task<int> GetFsgValidationRequestCount(string userId)
+        {
+            return await _context.VwAllAdjustmentRequestLatestStatus
+                .AsNoTracking()
+                .Join(_context.Requests,
+                    v => v.RequestId,
+                    r => r.Id,
+                    (v, r) => new { v, r })
+                .Where(x => x.r.CreatedBy == userId && x.v.Status == "For FSG Validation")
+                .CountAsync();
+        }
+
+        public async Task<int> GetFsgApprovalRequestCount(string userId)
+        {
+            return await _context.VwAllAdjustmentRequestLatestStatus
+                .AsNoTracking()
+                .Join(_context.Requests,
+                    v => v.RequestId,
+                    r => r.Id,
+                    (v, r) => new { v, r })
+                .Where(x => x.r.CreatedBy == userId && x.v.Status == "For FSG Approval")
+                .CountAsync();
+        }
 
         public async Task<int> GetResubmittedRequestCount(string userId)
         {

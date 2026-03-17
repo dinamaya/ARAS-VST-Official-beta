@@ -61,6 +61,25 @@ namespace ARAS.Blazor.Services.Implementations
 
             return response.IsSuccess ? response.Result : 0;
         }
+        public async Task<int> GetFsgValidationRequestCount()
+        {
+            var response = await _baseService.SendAsync<int>(new RequestDto()
+            {
+                URL = _configService.GetRequestsUrl("count/fsg-validation"),
+            });
+
+            return response.IsSuccess ? response.Result : 0;
+        }
+
+        public async Task<int> GetFsgApprovalRequestCount()
+        {
+            var response = await _baseService.SendAsync<int>(new RequestDto()
+            {
+                URL = _configService.GetRequestsUrl("count/fsg-approval"),
+            });
+
+            return response.IsSuccess ? response.Result : 0;
+        }
 
         public async Task<int> GetResubmittedRequestCount()
         {

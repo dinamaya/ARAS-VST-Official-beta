@@ -15,6 +15,8 @@ namespace ARAS.Blazor.Services.Interfaces
         Task<int> GetPendingRequestCount();
         Task<int> GetApprovedRequestCount();
         Task<int> GetDeclinedRequestCount();
+        Task<int> GetFsgValidationRequestCount();
+        Task<int> GetFsgApprovalRequestCount();
         Task<int> GetResubmittedRequestCount();
         Task<int> GetPostedRequestCount();
         Task<int> GetRejectedRequestCount();

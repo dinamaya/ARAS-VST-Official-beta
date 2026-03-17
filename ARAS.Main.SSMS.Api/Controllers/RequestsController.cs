@@ -172,6 +172,39 @@ namespace ARAS.Main.SSMS.Api.Controllers
                 return response.Failed(ex.Message);
             }
         }
+        [HttpGet("count/fsg-validation"), Authorize]
+        public async Task<ResponseDto<int>> GetFsgValidationRequestCount()
+        {
+            var response = new ResponseDto<int>();
+            try
+            {
+                var accountInfo = User.GetAccountBasicInfo();
+                response.Result = await _requestRepo.GetFsgValidationRequestCount(accountInfo.Id);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return response.Failed(ex.Message);
+            }
+        }
+
+        [HttpGet("count/fsg-approval"), Authorize]
+        public async Task<ResponseDto<int>> GetFsgApprovalRequestCount()
+        {
+            var response = new ResponseDto<int>();
+            try
+            {
+                var accountInfo = User.GetAccountBasicInfo();
+                response.Result = await _requestRepo.GetFsgApprovalRequestCount(accountInfo.Id);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return response.Failed(ex.Message);
+            }
+        }
 
         [HttpGet("count/resubmitted"), Authorize]
         public async Task<ResponseDto<int>> GetResubmittedRequestCount()

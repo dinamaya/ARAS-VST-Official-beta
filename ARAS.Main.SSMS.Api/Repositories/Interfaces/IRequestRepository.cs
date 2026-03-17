@@ -25,6 +25,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
         Task<int> GetPendingRequestCount(string userId);
         Task<int> GetApprovedRequestCount(string userId);
         Task<int> GetDeclinedRequestCount(string userId);
+        Task<int> GetFsgValidationRequestCount(string userId);
+        Task<int> GetFsgApprovalRequestCount(string userId);
         Task<int> GetResubmittedRequestCount(string userId);
         Task<int> GetPostedRequestCount(string userId);
 		Task<int> GetRejectedRequestCount(string userId);

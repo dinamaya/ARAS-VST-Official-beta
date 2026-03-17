@@ -1,3 +1,4 @@
+@using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Services.Interfaces
 @using Microsoft.AspNetCore.Authorization
 @using ARAS.Blazor.Models.DTOs
@@ -229,12 +230,12 @@
             <div class="col-md-6 mt-md-0 mt-4">
                 <div class="card z-index-2">
                     <div class="card-header p-3 pb-0">
-                        <h6>Total Requests</h6>
+                        <h6>@requestChartTitle</h6>
                     </div>
                     <div class="card-body p-3">
                         <div class="chart">
                             <RadzenChart SeriesClick=@OnSeriesClick style="height: 400px">
-                                <RadzenBarSeries Data="@requestCount" CategoryProperty="Request" Title="Type" LineType="LineType.Dashed" ValueProperty="Count" Fill="#344767" Stroke="#344767">
+                                <RadzenBarSeries Data="@requestCount" CategoryProperty="Request" Title="Status" LineType="LineType.Dashed" ValueProperty="Count" Fill="#344767" Stroke="#344767">
                                     <RadzenSeriesDataLabels Visible="@showDataLabels" />
                                 </RadzenBarSeries>
                                 <RadzenValueAxis Formatter="@(value => ((double)value).ToString("0", CultureInfo.InvariantCulture))">
@@ -257,11 +258,14 @@
     private int pendingCount = 0;
     private int approvedCount = 0;
     private int declinedCount = 0;
+    private int validationCount = 0;
+    private int fsgApprovalCount = 0;
     private int resubmittedCount = 0;
     private int postedCount = 0;
     private int rejectedCount = 0;
     private string profileImageUrl = "/img/avatar.png";
-    //EventConsole console;
+    private string requestChartTitle = "My Request Status";
+    private IEnumerable<DataItem> requestCount = [];
     bool showDataLabels = false;
 
     protected override async Task OnInitializedAsync()
@@ -269,15 +273,18 @@
         accountDetails = await AuthService.GetAccountDetails();
         profileImageUrl = $"/api/auth/aad/photo?v={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
 
-            var result = await TransactionService.GetLatestTransactions();
-            latestTransactions = result?.ToList() ?? new List<TransactionHistoryDto>();
-            pendingCount = await RequestService.GetPendingRequestCount();
-            approvedCount = await RequestService.GetApprovedRequestCount();
-            declinedCount = await RequestService.GetDeclinedRequestCount();
-            resubmittedCount = await RequestService.GetResubmittedRequestCount();
-            postedCount = await RequestService.GetPostedRequestCount();
-            rejectedCount = await RequestService.GetRejectedRequestCount();
-        
+        var result = await TransactionService.GetLatestTransactions();
+        latestTransactions = result?.ToList() ?? new List<TransactionHistoryDto>();
+        pendingCount = await RequestService.GetPendingRequestCount();
+        approvedCount = await RequestService.GetApprovedRequestCount();
+        declinedCount = await RequestService.GetDeclinedRequestCount();
+        validationCount = await RequestService.GetFsgValidationRequestCount();
+        fsgApprovalCount = await RequestService.GetFsgApprovalRequestCount();
+        resubmittedCount = await RequestService.GetResubmittedRequestCount();
+        postedCount = await RequestService.GetPostedRequestCount();
+        rejectedCount = await RequestService.GetRejectedRequestCount();
+        requestCount = BuildRequestChartData();
+
         await base.OnInitializedAsync();
     }
 
@@ -292,38 +299,32 @@
         public double Count { get; set; }
     }
 
-    string FormatAsUSD(object value)
+    private IEnumerable<DataItem> BuildRequestChartData()
     {
-        return ((double)value).ToString("C0", CultureInfo.CreateSpecificCulture("en-US"));
-    }
+        if (accountDetails.IsInRole("Requestor"))
+        {
+            requestChartTitle = "My Open Requests";
+            return
+            [
+                new DataItem { Request = "Declined", Count = declinedCount },
+                new DataItem { Request = "For CNC Approval", Count = pendingCount },
+                new DataItem { Request = "For FSG Validation", Count = validationCount },
+                new DataItem { Request = "For FSG Approval", Count = fsgApprovalCount },
+                new DataItem { Request = "For ERP Posting", Count = approvedCount },
+            ];
+        }
 
-    DataItem[] requestCount = new DataItem[] {
-    new DataItem
-    {
-    Request = "Cash Discount",
-    Count = 12
-    },
-    new DataItem
-    {
-    Request = "Write-Off",
-    Count = 31
-    },
-    new DataItem
-    {
-    Request = "Bank Charge",
-    Count = 6
-    },
-    new DataItem
-    {
-    Request = "APAR",
-    Count = 19
-    },
-    new DataItem
-    {
-    Request = "AR Invoice",
-    Count = 22
-    },
-    };
+        return
+        [
+            new DataItem { Request = "For CNC Approval", Count = pendingCount },
+            new DataItem { Request = "For FSG Validation", Count = validationCount },
+            new DataItem { Request = "For FSG Approval", Count = fsgApprovalCount },
+            new DataItem { Request = "For ERP Posting", Count = approvedCount },
+            new DataItem { Request = "Declined", Count = declinedCount },
+            new DataItem { Request = "Posted", Count = postedCount },
+            new DataItem { Request = "Rejected", Count = rejectedCount },
+        ];
+    }
 
     private bool IsActionStatus(string status)
     {

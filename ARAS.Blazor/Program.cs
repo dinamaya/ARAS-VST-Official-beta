@@ -5,9 +5,6 @@ using Radzen;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Force Development environment so exact errors are shown in UAT
-builder.Environment.EnvironmentName = "Development";
-
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 

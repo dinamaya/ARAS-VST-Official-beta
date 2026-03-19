@@ -5,6 +5,9 @@ using Radzen;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Force Development environment so exact errors are shown in UAT
+builder.Environment.EnvironmentName = "Development";
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 
@@ -23,8 +26,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    // Temporarily showing exact errors in all environments (e.g. UAT)
-    app.UseDeveloperExceptionPage();
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
 }
 

@@ -23,7 +23,8 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    // Temporarily showing exact errors in all environments (e.g. UAT)
+    app.UseDeveloperExceptionPage();
     app.UseHsts();
 }
 

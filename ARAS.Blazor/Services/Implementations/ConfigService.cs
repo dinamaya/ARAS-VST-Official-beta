@@ -84,21 +84,24 @@ namespace ARAS.Blazor.Services.Implementations
 		public string GetFilesUrl(string route = null) =>
 			$"{_config.GetValue<string>("ApiConfig:external:MainApi:Files")}{route}";
 
-		public IEnumerable<string> GetRequstorSearchInvoiceCategories(string? defaultOption = null) => _config
-			.GetSection("DropdownOptions:SearchCategories:Requestor")
-			.Get<IEnumerable<string>>()
-			.Prepend(defaultOption ?? "Select Search Category") ?? [];
+        public IEnumerable<string> GetRequstorSearchInvoiceCategories(string? defaultOption = null)
+        {
+            var items = _config.GetSection("DropdownOptions:SearchCategories:Requestor").Get<IEnumerable<string>>() ?? Enumerable.Empty<string>();
+            return items.Prepend(defaultOption ?? "Select Search Category");
+        }
 
-		public IEnumerable<string> GetApprovalSearchInvoiceCategories(string? defaultOption = null) => _config
-			.GetSection("DropdownOptions:SearchCategories:Approval:Text")
-			.Get<IEnumerable<string>>()
-			.Prepend(defaultOption ?? "Select Search Category") ?? [];
+        public IEnumerable<string> GetApprovalSearchInvoiceCategories(string? defaultOption = null)
+        {
+            var items = _config.GetSection("DropdownOptions:SearchCategories:Approval:Text").Get<IEnumerable<string>>() ?? Enumerable.Empty<string>();
+            return items.Prepend(defaultOption ?? "Select Search Category");
+        }
 
-		public IEnumerable<double> GetDiscountPercentages() => _config
-			.GetSection("DropdownOptions:DiscountPercentages")
-			.Get<IEnumerable<double>>()
-			.Prepend(0) ?? [];
+        public IEnumerable<double> GetDiscountPercentages()
+        {
+            var items = _config.GetSection("DropdownOptions:DiscountPercentages").Get<IEnumerable<double>>() ?? Enumerable.Empty<double>();
+            return items.Prepend(0);
+        }
 
-		public bool IsOnTestRequest() => _config.GetValue<bool>("TestConfig:OnTestRequest");
+        public bool IsOnTestRequest() => _config.GetValue<bool>("TestConfig:OnTestRequest");
 	}
 }

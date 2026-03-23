@@ -57,17 +57,17 @@ namespace ARAS.Main.Oracle.Api.Controllers
 			}
 			catch (DbUpdateException ex)
 			{
-				_logger.LogError(Exceptions.ADJUSTMENT_POSTED);
+				_logger.LogError(ex, "Oracle staging failed with a database update error. {ErrorMessage}", ex.InnerException?.Message ?? ex.Message);
 				return _response.Failed(Exceptions.ADJUSTMENT_POSTED);
 			}
 			catch (OracleException ex)
 			{
-				_logger.LogError(Exceptions.CANT_CONNECT);
+				_logger.LogError(ex, "Oracle staging failed with an Oracle exception. {ErrorMessage}", ex.Message);
 				return _response.Failed(Exceptions.CANT_CONNECT);
 			}
 			catch (Exception ex)
 			{
-				_logger.LogError(ex.Message);
+				_logger.LogError(ex, "Oracle staging failed with an unexpected exception. {ErrorMessage}", ex.Message);
 				return _response.Failed(ex.Message);
 			}
 		}

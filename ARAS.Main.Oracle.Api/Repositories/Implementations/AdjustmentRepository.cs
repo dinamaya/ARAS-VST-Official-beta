@@ -188,8 +188,50 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			if (!list.Any())
 				return;
 
-			await efContext.AdjustmentsStaging.AddRangeAsync(list);
-			await efContext.SaveChangesAsync();
+			const string sql = @"
+				INSERT INTO APPS.XXMSI_AR_ADJ_STG
+				(
+					HEADER_ID,
+					CUSTOMER_TRX_ID,
+					INVOICE_NUMBER,
+					AMOUNT,
+					CREATED_FROM,
+					GL_DATE,
+					TYPE,
+					PAYMENT_SCHEDULE_ID,
+					APPLY_DATE,
+					RECEIVABLES_TRX_ID,
+					REASON_CODE,
+					COMMENTS,
+					ACCOUNT_NAME,
+					ACCOUNT_NUMBER,
+					STG_FLAG,
+					INT_FLAG,
+					INV_FLAG
+				)
+				VALUES
+				(
+					:HeaderId,
+					:CustomerTrxId,
+					:InvoiceNumber,
+					:Amount,
+					:CreatedFrom,
+					:GlDate,
+					:Type,
+					:PaymentScheduleId,
+					:ApplyDate,
+					:ReceivablesTrxId,
+					:ReasonCode,
+					:Comments,
+					:AccountName,
+					:AccountNumber,
+					:StgFlag,
+					:IntFlag,
+					:InvFlag
+				)";
+
+			var insertConn = await oracleConnection.OpenWithoutPolicyAsync();
+			await insertConn.ExecuteAsync(sql, list, commandTimeout: 120);
 		}
 
 		public async Task<IEnumerable<PostedResponseDto>> GetPosted(IEnumerable<long> adjustmentIds)

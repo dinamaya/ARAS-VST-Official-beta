@@ -8,6 +8,7 @@ namespace ARAS.Main.Oracle.Api.Models.Entities
 	public class ARAdjustmentsStaging
 	{
 		[Key]
+		[DatabaseGenerated(DatabaseGeneratedOption.None)]
 		[Column("HEADER_ID")]
 		public long HeaderId { get; set; }
 

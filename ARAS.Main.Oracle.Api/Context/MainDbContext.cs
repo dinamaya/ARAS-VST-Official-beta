@@ -14,6 +14,11 @@ namespace ARAS.Main.Oracle.Api.Context
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
+			modelBuilder.Entity<ARAdjustmentsStaging>(entity =>
+			{
+				entity.Property(e => e.HeaderId).ValueGeneratedNever();
+			});
+
 			modelBuilder.Entity<ReasonCode>()
 				.HasKey(e => new { e.LookupType, e.LookupCode });
 			

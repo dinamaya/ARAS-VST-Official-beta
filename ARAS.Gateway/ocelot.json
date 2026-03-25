@@ -53,7 +53,7 @@
 			"UpstreamHttpMethod": [ "GET", "POST" ]
 		},
 
-		// Main API : "https://localhost:3004"
+		// Main API : "https://localhost:3003"
 		{
 			"DownstreamPathTemplate": "/api/adjustments/{everything}",
 			"DownstreamScheme": "https",

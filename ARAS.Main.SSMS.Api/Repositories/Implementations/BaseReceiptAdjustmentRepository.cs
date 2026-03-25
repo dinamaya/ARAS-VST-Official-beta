@@ -149,12 +149,14 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		public async Task<ReceiptAdjustmentUpdateResponseDto> GetDetailsById(long requestId)
 		{
 			var adjustment = await _context.Adjustments
+				.Where(a => a.RequestId == requestId && a.IsActive)
 				.Select(a => new
 				{
 					a.RequestId,
 					a.AdjustmentAmount,
 					a.Remarks,
-				}).FirstOrDefaultAsync(a => a.RequestId == requestId);
+				}).FirstOrDefaultAsync()
+				?? throw new InvalidOperationException("Failed to fetch the active adjustment details.");
 			var invoice = await _context.VwReceiptAdjustments.Where(a => a.RequestId == requestId)
 				.Select(a => new InvoiceDetailsRequestDto
 				{

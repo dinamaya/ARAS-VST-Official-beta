@@ -10,6 +10,7 @@
 					<RadzenNumeric class="w-100"
 								   TValue="double"
 								   @bind-value="adjustmentAmount"
+								   Immediate="true"
 								   Change="OnAdjustmentChanged"
 								   Min="0"
 								   Disabled="!IsAdjustable" />
@@ -18,7 +19,7 @@
 
 			<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
 				<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
-					<RadzenTextArea @bind-Value="remarks" Change="OnAdjustmentChanged" Rows="3" Disabled="!IsAdjustable" />
+					<RadzenTextArea @bind-Value="remarks" Immediate="true" Change="OnAdjustmentChanged" Rows="3" Disabled="!IsAdjustable" />
 				</RadzenFormField>
 			</RadzenStack>
 		</RadzenStack>

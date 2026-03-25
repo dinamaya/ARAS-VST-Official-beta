@@ -23,8 +23,8 @@
 							<RadzenFormField class="w-100" Text="Discount Percentage" Variant="Variant.Outlined">
 								<RadzenNumeric class="w-100"
 									TValue="double"
-									Value="@DiscountPercentage"
-									Change="@(val => OnPercentageChanged(val))"
+									@bind-Value="DiscountPercentageValue"
+									Immediate="true"
 									Max="100"
 									Disabled="!isAdjustable" />
 							</RadzenFormField>
@@ -41,9 +41,9 @@
 						<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
 							<RadzenFormField Text="Discount Value" Variant="Variant.Outlined">
 								<RadzenNumeric TValue="double"
-									@bind-Value="@discountDecimal"
+									@bind-Value="DiscountDecimalValue"
+									Immediate="true"
 									Max="(decimal)InvoiceAmount"
-									Change="(val) => OnDecimalChanged(val)"
 									Disabled="!isAdjustable" />
 							</RadzenFormField>
 						</RadzenStack>
@@ -55,9 +55,9 @@
 		<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
 			<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
 				<RadzenTextArea 
-					@bind-Value="remarks" 
+					@bind-Value="RemarksValue" 
+					Immediate="true"
 					Rows="@RemarksRowCount" 
-					Change="OnRemarksChanged"
 					Disabled="!isAdjustable" />
 			</RadzenFormField>
 		</RadzenStack>
@@ -77,8 +77,9 @@
 
 	private string remarks = string.Empty;
 	private double discountDecimal = 0;
-	private double DiscountPercentage => InvoiceAmount == 0 ? 0 : Math.Round((discountDecimal / InvoiceAmount) * 100, 2);
+	private double discountPercentage = 0;
 	private bool isAdjustable = false;
+	private bool isSyncingDiscounts;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -94,23 +95,75 @@
 
 	public void Reset()
 	{
+		isSyncingDiscounts = true;
 		remarks = InitialRemarks ?? string.Empty;
 		discountDecimal = InitialDiscount;
+		discountPercentage = InvoiceAmount == 0 ? 0 : Math.Round((discountDecimal / InvoiceAmount) * 100, 2);
+		isSyncingDiscounts = false;
 	}
 
-	private async Task OnPercentageChanged(double val)
+	private async Task SynchronizeFromPercentageAsync()
 	{
-		discountDecimal = Math.Round((val / 100) * InvoiceAmount, 2);
+		if (isSyncingDiscounts)
+			return;
+
+		isSyncingDiscounts = true;
+		discountDecimal = Math.Round((discountPercentage / 100) * InvoiceAmount, 2);
+		isSyncingDiscounts = false;
 		await InvokeAdjustmentChanged();
 	}
 
-	private async Task OnDecimalChanged(double val)
+	private async Task SynchronizeFromDecimalAsync()
 	{
-		discountDecimal = val;
+		if (isSyncingDiscounts)
+			return;
+
+		isSyncingDiscounts = true;
+		discountPercentage = InvoiceAmount == 0 ? 0 : Math.Round((discountDecimal / InvoiceAmount) * 100, 2);
+		isSyncingDiscounts = false;
 		await InvokeAdjustmentChanged();
 	}
 
-	private async Task OnRemarksChanged(string val) => await InvokeAdjustmentChanged();
+	private async Task SynchronizeRemarksAsync() => await InvokeAdjustmentChanged();
+
+	private string RemarksValue
+	{
+		get => remarks;
+		set
+		{
+			if (remarks == value)
+				return;
+
+			remarks = value;
+			_ = SynchronizeRemarksAsync();
+		}
+	}
+
+	private double DiscountPercentageValue
+	{
+		get => discountPercentage;
+		set
+		{
+			if (Math.Abs(discountPercentage - value) < 0.0001)
+				return;
+
+			discountPercentage = value;
+			_ = SynchronizeFromPercentageAsync();
+		}
+	}
+
+	private double DiscountDecimalValue
+	{
+		get => discountDecimal;
+		set
+		{
+			if (Math.Abs(discountDecimal - value) < 0.0001)
+				return;
+
+			discountDecimal = value;
+			_ = SynchronizeFromDecimalAsync();
+		}
+	}
 
 	private async Task InvokeAdjustmentChanged()
 	{

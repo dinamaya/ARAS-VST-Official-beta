@@ -26,6 +26,14 @@
 	{
 		<RadzenRow>
 			@code { [Parameter, SupplyParameterFromQuery(Name = "q")] public string? QueryAction { get; set; } }
+			@if (!string.IsNullOrWhiteSpace(details.ApiMarker))
+			{
+				<RadzenColumn Size="12">
+					<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Flat" AlertStyle="AlertStyle.Info" Size="AlertSize.Medium">
+						SSMS API marker: @details.ApiMarker
+					</RadzenAlert>
+				</RadzenColumn>
+			}
 			@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
 			{
 				<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>

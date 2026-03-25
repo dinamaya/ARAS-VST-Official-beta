@@ -51,4 +51,11 @@
 			Remarks = remarks
 		});
 	}
+
+	public AdjustmentEntry GetCurrentEntry() => new()
+	{
+		Name = AdjustmentName,
+		Amount = adjustmentAmount,
+		Remarks = remarks
+	};
 }

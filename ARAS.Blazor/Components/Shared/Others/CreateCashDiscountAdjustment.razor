@@ -121,4 +121,11 @@
 			Remarks = remarks
 		});
 	}
+
+	public AdjustmentEntry GetCurrentEntry() => new()
+	{
+		Name = "Cash Discount",
+		Amount = discountDecimal,
+		Remarks = remarks
+	};
 }

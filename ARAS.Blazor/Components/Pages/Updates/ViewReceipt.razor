@@ -55,6 +55,7 @@
 							@if(TypeCode == "cdr")
 							{
 								<CreateCashDiscountAdjustment 
+									@ref="cashDiscountAdjustment"
 									AdjustmentAmountChanged="HandleAdjustment"
 									InitialRemarks="@details.Remarks"
 									InitialDiscount="@details.AdjustmentAmount"
@@ -65,6 +66,7 @@
 							else
 							{
 								<BaseReceiptAdjustment 
+									@ref="baseReceiptAdjustment"
 									AdjustmentName="@adjustmentName" 
 									IsAdjustable="true" 
 									InitialRemarks="@details.Remarks"
@@ -126,6 +128,8 @@
 	private ReceiptAdjustmentUpdateResponseDto details;
 	private InvoiceDetailsDto invoice;
 	private ReceiptAdjustmentUpdateRequestDto data;
+	private BaseReceiptAdjustment? baseReceiptAdjustment;
+	private CreateCashDiscountAdjustment? cashDiscountAdjustment;
 
 	private bool isOnSearch;
 	private bool isLoading;
@@ -196,6 +200,8 @@
 
 			if (!isConfirmed) return;
 
+			SynchronizeAdjustmentInput();
+
 			if (isRequestUpdatable)
 			{
 				string newHash = Utils.Security.ObjectHash(data);
@@ -213,6 +219,19 @@
 
 	private void HandleAdjustment(AdjustmentEntry entry)
 	{
+		data.AdjustmentAmount = entry.Amount;
+		data.Remarks = entry.Remarks;
+	}
+
+	private void SynchronizeAdjustmentInput()
+	{
+		AdjustmentEntry? entry = TypeCode == "cdr"
+			? cashDiscountAdjustment?.GetCurrentEntry()
+			: baseReceiptAdjustment?.GetCurrentEntry();
+
+		if (entry is null)
+			return;
+
 		data.AdjustmentAmount = entry.Amount;
 		data.Remarks = entry.Remarks;
 	}

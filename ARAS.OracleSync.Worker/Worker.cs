@@ -25,74 +25,95 @@ namespace ARAS.OracleSync.Worker
 		{
 			while (!stoppingToken.IsCancellationRequested)
 			{
-                // Fetch all adjustments in staging table that already has 3 True Flags
-                // Fetch all adjustments in Validated adjustments in Main table
-                // Update the Status of those adjustments to Posted
-
-                var approvedAdjustments = (await _baseService.SendAsync<IEnumerable<ApprovedAdjustmentSyncDto>>(new()
-                {
-                    URL = _config.GetApprovalsUrl("sync")
-                })).Result;
-
-                if (approvedAdjustments == null || !approvedAdjustments.Any())
-                {
-                    await Task.Delay(_config.GetRefreshTime(), stoppingToken);
-                    continue;
-                }
-
-                var approvedHeaderIds = approvedAdjustments.Select(x => x.HeaderId).Distinct().ToList();
-
-                _logger.LogInformation(JsonConvert.SerializeObject(approvedHeaderIds));
-
-                var postedAdjustmentIds = (await _baseService.SendAsync<IEnumerable<PostedResponseDto>>(new()
+				try
 				{
-					URL = _config.GetOracleAdjustmentsApiUrl("stage/posted"),
-                    Data = approvedHeaderIds,
-                    ApiType = App_Code.Enums.ApiType.POST
-				})).Result;
+	                _logger.LogInformation("Worker polling cycle started.");
 
-				var postedIds = postedAdjustmentIds.Select(x => x.HeaderId);
-                var unPostedIds = approvedHeaderIds.Except(postedIds).ToList();
+	                // Fetch all adjustments in staging table that already has 3 True Flags
+	                // Fetch all adjustments in Validated adjustments in Main table
+	                // Update the Status of those adjustments to Posted
 
-                _logger.LogInformation(JsonConvert.SerializeObject(postedIds));
-
-				if(unPostedIds.Any())
-				{
-					var fetchUnpostedDetailsResponse = await _baseService.SendAsync<IEnumerable<AdjustmentPostingDto>>(new RequestDto<IEnumerable<long>>()
+	                var approvedResponse = await _baseService.SendAsync<IEnumerable<ApprovedAdjustmentSyncDto>>(new()
 					{
-						URL = _config.GetSSMSAdjustmentsApiUrl($"stage/receipt/adjustments"),
-						Data = unPostedIds,
-						ApiType = ApiType.POST
+						URL = _config.GetApprovalsUrl("sync")
 					});
 
-					if(!fetchUnpostedDetailsResponse.IsSuccess) continue;
+	                var approvedAdjustments = approvedResponse.Result?.ToList() ?? [];
+	                _logger.LogInformation("Approved adjustments for sync: {Count}", approvedAdjustments.Count);
 
-					var newlyPostedAdjustmentIds = await _baseService.SendAsync<string>(new RequestDto<IEnumerable<AdjustmentPostingDto>>()
+	                if (!approvedAdjustments.Any())
 					{
-						URL = _config.GetOracleAdjustmentsApiUrl("stage"),
-						Data = fetchUnpostedDetailsResponse.Result,
-						ApiType = ApiType.POST
+	                    await Task.Delay(_config.GetRefreshTime(), stoppingToken);
+	                    continue;
+	                }
+
+	                var approvedHeaderIds = approvedAdjustments.Select(x => x.HeaderId).Distinct().ToList();
+	                _logger.LogInformation("Approved header IDs: {HeaderIds}", JsonConvert.SerializeObject(approvedHeaderIds));
+
+	                var postedResponse = await _baseService.SendAsync<IEnumerable<PostedResponseDto>>(new()
+					{
+						URL = _config.GetOracleAdjustmentsApiUrl("stage/posted"),
+	                    Data = approvedHeaderIds,
+	                    ApiType = App_Code.Enums.ApiType.POST
 					});
+
+					var postedAdjustmentIds = postedResponse.Result?.ToList() ?? [];
+					var postedIds = postedAdjustmentIds.Select(x => x.HeaderId).ToList();
+	                var unPostedIds = approvedHeaderIds.Except(postedIds).ToList();
+
+	                _logger.LogInformation("Posted header IDs returned by Oracle: {HeaderIds}", JsonConvert.SerializeObject(postedIds));
+	                _logger.LogInformation("Unposted header IDs to restage: {HeaderIds}", JsonConvert.SerializeObject(unPostedIds));
+
+					if(unPostedIds.Any())
+					{
+						var fetchUnpostedDetailsResponse = await _baseService.SendAsync<IEnumerable<AdjustmentPostingDto>>(new RequestDto<IEnumerable<long>>()
+						{
+							URL = _config.GetSSMSAdjustmentsApiUrl($"stage/receipt/adjustments"),
+							Data = unPostedIds,
+							ApiType = ApiType.POST
+						});
+
+						if(!fetchUnpostedDetailsResponse.IsSuccess)
+						{
+							_logger.LogWarning("Failed to fetch staging details for unposted header IDs.");
+							await Task.Delay(_config.GetRefreshTime(), stoppingToken);
+							continue;
+						}
+
+						var newlyPostedAdjustmentIds = await _baseService.SendAsync<string>(new RequestDto<IEnumerable<AdjustmentPostingDto>>()
+						{
+							URL = _config.GetOracleAdjustmentsApiUrl("stage"),
+							Data = fetchUnpostedDetailsResponse.Result,
+							ApiType = ApiType.POST
+						});
+
+						_logger.LogInformation("Restage response: {Result}", JsonConvert.SerializeObject(newlyPostedAdjustmentIds.Result));
+					}
+
+					if (postedAdjustmentIds.Any())
+					{
+	                    var postedHeaderSet = postedIds.ToHashSet();
+	                    var postedRequestIds = approvedAdjustments
+	                        .Where(x => postedHeaderSet.Contains(x.HeaderId))
+	                        .Select(x => x.RequestId)
+	                        .Distinct()
+	                        .ToList();
+
+	                    _logger.LogInformation("Request IDs to mark as Posted: {RequestIds}", JsonConvert.SerializeObject(postedRequestIds));
+
+	                    var statusPosted = await _baseService.SendAsync<string>(new RequestDto<IEnumerable<long>>()
+						{
+	                        URL = _config.GetSSMSAdjustmentsApiUrl("stage/requests"),
+	                        Data = postedRequestIds,
+	                        ApiType = ApiType.POST
+						});
+						_logger.LogInformation("Posted status update response: {Result}", JsonConvert.SerializeObject(statusPosted.Result));
+					}
 				}
-
-				if (postedAdjustmentIds != null && postedAdjustmentIds.Any())
+				catch (Exception ex)
 				{
-                    var postedHeaderSet = postedIds.ToHashSet();
-                    var postedRequestIds = approvedAdjustments
-                        .Where(x => postedHeaderSet.Contains(x.HeaderId))
-                        .Select(x => x.RequestId)
-                        .Distinct()
-                        .ToList();
-
-                    var statusPosted = await _baseService.SendAsync<string>(new RequestDto<IEnumerable<long>>()
-					{
-                        URL = _config.GetSSMSAdjustmentsApiUrl("stage/requests"),
-                        Data = postedRequestIds,
-                        ApiType = ApiType.POST
-					});
-					_logger.LogInformation(JsonConvert.SerializeObject(statusPosted.Result));
+					_logger.LogError(ex, "Worker polling cycle failed.");
 				}
-
 				await Task.Delay(_config.GetRefreshTime(), stoppingToken);
 			}
 		}

@@ -243,18 +243,10 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			string sql = @"
 				SELECT 
 					stg.HEADER_ID HeaderId,
-					rta.NAME AdjustmentActivityName
+					CAST(NULL AS VARCHAR2(240)) AdjustmentActivityName
 				FROM 
-					APPS.XXMSI_AR_ADJ_STG stg, 
-					(
-						SELECT   DISTINCT
-							RECEIVABLES_TRX_ID Id,
-							NAME Name
-						FROM   ar_receivables_trx_all
-						WHERE   TYPE = 'ADJUST'
-					) rta
-				WHERE   
-					stg.RECEIVABLES_TRX_ID = rta.Id AND 
+					APPS.XXMSI_AR_ADJ_STG stg
+				WHERE
 					stg.STG_FLAG = '1' AND 
 					stg.INT_FLAG = '1' AND 
 					stg.INV_FLAG = '1'";

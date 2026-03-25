@@ -249,8 +249,7 @@ namespace ARAS.Blazor.Services.Implementations
 
 		public async Task Update(bool isUpdatable, long requestId, ReceiptAdjustmentUpdateRequestDto row, IEnumerable<NoteRowDto> notes)
 		{
-			bool isInputValid = row.AdjustmentAmount != 0 || !string.IsNullOrEmpty(row.Remarks);
-			if (isUpdatable && isInputValid)
+			if (isUpdatable)
 			{
 				var createResult = await _baseService.SendAsync<long>(new RequestDto<ReceiptAdjustmentUpdateRequestDto>()
 				{

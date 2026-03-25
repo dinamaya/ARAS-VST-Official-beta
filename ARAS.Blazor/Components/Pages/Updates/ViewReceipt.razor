@@ -136,6 +136,7 @@
 	private string role;
 	private string requestStatus = string.Empty;
 	private string adjustmentName;
+	private string inputHash = string.Empty;
 	private bool isRequestUpdatable => isUpdatable && role == "Requestor";
 
 	protected override async Task OnParametersSetAsync()
@@ -171,7 +172,12 @@
 			requestStatus = request.Status;
 			isUpdatable = await RequestService.IsUpdatable(RequestId);
 			isStatusChangeable = role.CanUpdateApprovalStatus(requestStatus);
-			data = new();
+			data = new ReceiptAdjustmentUpdateRequestDto
+			{
+				AdjustmentAmount = details.AdjustmentAmount,
+				Remarks = details.Remarks
+			};
+			inputHash = Utils.Security.ObjectHash(data);
 			invoice = await InvoiceService.GetDetails(details.Invoice);
 		}
 		catch(Exception ex)
@@ -189,6 +195,12 @@
 			bool isConfirmed = await DialogService.Confirm("Are you sure you want to submit the changes of the current request?", "Update Submit Confirmation") ?? false;
 
 			if (!isConfirmed) return;
+
+			if (isRequestUpdatable)
+			{
+				string newHash = Utils.Security.ObjectHash(data);
+				Guards.ThrowInvalidOperationIf(newHash.Equals(inputHash), "No changes detected in the current request.");
+			}
 
 			await RequestService.Update(isRequestUpdatable, RequestId, data, details.Notes);
 			RefreshPage();

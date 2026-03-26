@@ -59,6 +59,9 @@
 			{
 				<RadzenColumn Size="12" SizeLG="8">
 					<CardStandard HeaderIcon="edit" HeaderText="Update Adjustment">
+						<HeaderActions>
+							<RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Submit" class="btn-primary" Icon="send" Click="OnSubmit" />
+						</HeaderActions>
 						<BodyTtemplate>
 							@if(TypeCode == "cdr")
 							{
@@ -117,14 +120,6 @@
 				<AttachmentsDatatable Notes="@details.Notes" ShowOtherColumns=true />
 			</RadzenColumn>
 		</RadzenRow>
-
-		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-			<RadzenRow>
-				<RadzenColumn>
-					<RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Submit" class="btn-primary" Icon="send" Click="OnSubmit" />
-				</RadzenColumn>
-			</RadzenRow>
-		</RadzenStack>
 	}
 </RadzenStack>
 

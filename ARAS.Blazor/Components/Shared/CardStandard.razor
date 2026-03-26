@@ -1,6 +1,6 @@
 ﻿<div class="p-0 w-100 card @ContainerClass" style="@ContainerStyle">
 	<div class="card-header shadow-lg @HeaderClass">
-		<RadzenRow>
+		<RadzenRow class="align-items-center" Gap="0.75rem">
 			<RadzenColumn Size="12" SizeMD="6" SizeLG="8">
 				@if (string.IsNullOrEmpty(HeaderIcon))
 				{
@@ -20,6 +20,14 @@
 					</div>
 				}
 			</RadzenColumn>
+			@if (HeaderActions != null)
+			{
+				<RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+					<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+						@HeaderActions
+					</RadzenStack>
+				</RadzenColumn>
+			}
 		</RadzenRow>
 	</div>
 	<div class="card-body overflow-auto overflow-x-hidden @BodyClass">
@@ -37,6 +45,7 @@
 @code{
     [Parameter] public string HeaderText { get; set; } = "Card Header";
     [Parameter] public string HeaderIcon { get; set; }
+    [Parameter] public RenderFragment? HeaderActions { get; set; }
     [Parameter] public RenderFragment BodyTtemplate { get; set; }
     [Parameter] public RenderFragment? FooterTtemplate { get; set; }
     [Parameter] public string? ContainerClass { get; set; }

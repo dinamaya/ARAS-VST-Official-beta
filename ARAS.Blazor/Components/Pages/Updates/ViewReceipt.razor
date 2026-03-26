@@ -89,8 +89,15 @@
 								<h4 class="mb-3">Other Information</h4>
 								<RadzenRow Gap="1em" class="border-0 p-3 border-radius-md bg-gray-100">
 									<RadzenColumn Size="12" SizeXL="6" SizeXS="12">
-										<div class="mb-2 text-sm">Discount Percentage: <div class="text-dark font-weight-bold ms-2">@(invoice.InvoiceAmount == 0 ? 0 : Math.Round((details.AdjustmentAmount / invoice.InvoiceAmount) * 100, 2)) %</div></div>
-										<div class="mb-2 text-sm">Discount Value: <div class="text-dark font-weight-bold ms-2">@details.AdjustmentAmount</div></div>
+										@if (TypeCode == "cdr")
+										{
+											<div class="mb-2 text-sm">Discount Percentage: <div class="text-dark font-weight-bold ms-2">@(invoice.InvoiceAmount == 0 ? 0 : Math.Round((details.AdjustmentAmount / invoice.InvoiceAmount) * 100, 2)) %</div></div>
+											<div class="mb-2 text-sm">Discount Value: <div class="text-dark font-weight-bold ms-2">@details.AdjustmentAmount</div></div>
+										}
+										else
+										{
+											<div class="mb-2 text-sm">Adjustment Amount: <div class="text-dark font-weight-bold ms-2">@details.AdjustmentAmount</div></div>
+										}
 									</RadzenColumn>
 									<RadzenColumn Size="12" SizeXL="6" SizeXS="12">
 										<div class="mb-2 text-sm">Remarks: </div>

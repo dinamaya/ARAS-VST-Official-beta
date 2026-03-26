@@ -174,7 +174,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			{
 				AdjustmentAmount = adjustment.AdjustmentAmount,
 				Remarks = adjustment.Remarks,
-				ApiMarker = $"receipt-api-marker-2026-03-25-b1 | {Environment.MachineName}",
 				Invoice = invoice,
 				TransactionHistories = transactionHistories,
 				Notes = notes

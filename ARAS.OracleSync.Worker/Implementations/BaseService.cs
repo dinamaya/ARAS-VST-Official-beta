@@ -33,7 +33,6 @@ namespace ARAS.OracleSync.Worker.Implementations
 			{
 				HttpClient client = _httpClientFactory.CreateClient("vstecs-aras-client");
 				HttpRequestMessage message = new();
-				ResponseDto<TResult> responseDto = new();
 
 				message.Headers.Add("Accept", "application/json");
 
@@ -61,38 +60,26 @@ namespace ARAS.OracleSync.Worker.Implementations
 				
 				apiResponse = await client.SendAsync(message);
 
-				switch (apiResponse.StatusCode)
+				if (!apiResponse.IsSuccessStatusCode)
 				{
-					case HttpStatusCode.NotFound:
-						await Notify(requestDto, apiResponse, "Not Found");
-						return new() { IsSuccess = false, Message = "Not Found" };
+					var messageText = apiResponse.StatusCode switch
+					{
+						HttpStatusCode.NotFound => "Not Found",
+						HttpStatusCode.Forbidden => "Access Denied",
+						HttpStatusCode.Unauthorized => "Unauthorized",
+						HttpStatusCode.InternalServerError => "Internal Server Error! Please check logs for more info.",
+						HttpStatusCode.BadRequest => "Bad Request",
+						_ => $"HTTP {(int)apiResponse.StatusCode} {apiResponse.ReasonPhrase}"
+					};
 
-					case HttpStatusCode.Forbidden:
-						await Notify(requestDto, apiResponse, "Access Denied", false);
-						return new() { IsSuccess = false, Message = "Access Denied" };
-
-					case HttpStatusCode.Unauthorized:
-						await Notify(requestDto, apiResponse, "Unauthorized", false);
-						return new() { IsSuccess = false, Message = "Unauthorized" };
-
-					case HttpStatusCode.InternalServerError:
-						await Notify(requestDto, apiResponse, "Internal Server Error", false);
-						return new() { IsSuccess = false, Message = "Internal Server Error! Please check logs for more info." };
-
-					case HttpStatusCode.BadRequest:
-						{
-							await Notify(requestDto, apiResponse, "Bad Request", false);
-							return new() { IsSuccess = false, Message = "Bad Request" };
-						}
-
-					default:
-						var contentType = apiResponse.Content.Headers.ContentType?.MediaType;
-
-						var apiContent = await apiResponse.Content.ReadAsStringAsync();
-						var contentResponse = JsonConvert.DeserializeObject<ResponseDto<TResult>>(apiContent) ?? throw new Exception("Error while connecting to the server please check the internet connection");
-
-						return contentResponse;
+					await Notify(requestDto, apiResponse, messageText, false);
+					return new() { IsSuccess = false, Message = messageText };
 				}
+
+				var apiContent = await apiResponse.Content.ReadAsStringAsync();
+				var contentResponse = JsonConvert.DeserializeObject<ResponseDto<TResult>>(apiContent) ?? throw new Exception("Error while connecting to the server please check the internet connection");
+
+				return contentResponse;
 			}
 			catch (Exception ex)
 			{

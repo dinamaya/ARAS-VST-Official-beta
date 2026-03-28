@@ -57,6 +57,13 @@ namespace ARAS.OracleSync.Worker
 	                    ApiType = App_Code.Enums.ApiType.POST
 					});
 
+					if (!postedResponse.IsSuccess)
+					{
+						_logger.LogWarning("Failed to fetch posted header IDs from Oracle. Response: {Message}", postedResponse.Message);
+						await Task.Delay(_config.GetRefreshTime(), stoppingToken);
+						continue;
+					}
+
 					var postedAdjustmentIds = postedResponse.Result?.ToList() ?? [];
 					var postedIds = postedAdjustmentIds.Select(x => x.HeaderId).ToList();
 	                var unPostedIds = approvedHeaderIds.Except(postedIds).ToList();
@@ -87,6 +94,13 @@ namespace ARAS.OracleSync.Worker
 							ApiType = ApiType.POST
 						});
 
+						if (!newlyPostedAdjustmentIds.IsSuccess)
+						{
+							_logger.LogWarning("Failed to restage unposted header IDs. Response: {Message}", newlyPostedAdjustmentIds.Message);
+							await Task.Delay(_config.GetRefreshTime(), stoppingToken);
+							continue;
+						}
+
 						_logger.LogInformation("Restage response: {Result}", JsonConvert.SerializeObject(newlyPostedAdjustmentIds.Result));
 					}
 
@@ -107,6 +121,14 @@ namespace ARAS.OracleSync.Worker
 	                        Data = postedRequestIds,
 	                        ApiType = ApiType.POST
 						});
+
+						if (!statusPosted.IsSuccess)
+						{
+							_logger.LogWarning("Failed to update posted request statuses. Response: {Message}", statusPosted.Message);
+							await Task.Delay(_config.GetRefreshTime(), stoppingToken);
+							continue;
+						}
+
 						_logger.LogInformation("Posted status update response: {Result}", JsonConvert.SerializeObject(statusPosted.Result));
 					}
 				}

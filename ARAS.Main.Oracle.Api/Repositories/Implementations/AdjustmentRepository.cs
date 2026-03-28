@@ -236,23 +236,33 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 		public async Task<IEnumerable<PostedResponseDto>> GetPosted(IEnumerable<long> adjustmentIds)
         {
-			if (!adjustmentIds.Any()) return [];
+			var headerIds = adjustmentIds.Distinct().ToList();
+			if (!headerIds.Any()) return [];
 
 			var conn = await oracleConnection.OpenWithoutPolicyAsync();
+			var parameters = new DynamicParameters();
+			var headerPredicates = new List<string>();
 
-			string sql = @"
-				SELECT 
+			for (int i = 0; i < headerIds.Count; i++)
+			{
+				var parameterName = $"headerId{i}";
+				headerPredicates.Add($"stg.HEADER_ID = :{parameterName}");
+				parameters.Add(parameterName, headerIds[i]);
+			}
+
+			string sql = $@"
+				SELECT
 					stg.HEADER_ID HeaderId,
 					CAST(NULL AS VARCHAR2(240)) AdjustmentActivityName
-				FROM 
+				FROM
 					APPS.XXMSI_AR_ADJ_STG stg
 				WHERE
-					stg.STG_FLAG = '1' AND 
-					stg.INT_FLAG = '1' AND 
+					({string.Join(" OR ", headerPredicates)}) AND
+					stg.STG_FLAG = '1' AND
+					stg.INT_FLAG = '1' AND
 					stg.INV_FLAG = '1'";
 
-			var result = await conn.QueryAsync<PostedResponseDto>(sql,commandTimeout: 120) ?? throw new Exception(Exceptions.INVALID_RECEIVABLE_ACTIVITY);
-			return result.Join(adjustmentIds, r => r.HeaderId, id => id, (r, id) => r);
+			return (await conn.QueryAsync<PostedResponseDto>(sql, parameters, commandTimeout: 120)).ToList();
 		}
     }
 }

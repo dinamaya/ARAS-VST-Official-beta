@@ -1,7 +1,8 @@
 @ARAS.Main.Oracle.Api_HostAddress = https://localhost:3004
 @gateway = https://localhost:3000
-@headerId = 69000000035
-@requestId = 69
+@oracle = https://localhost:3004
+@headerId = 50000000016
+@requestId = 50
 
 ###
 
@@ -60,15 +61,14 @@ GET {{ARAS.Main.Oracle.Api_HostAddress}}/api/adjustment/stage
 
 
 
-
 ### Worker source: approved adjustments waiting for sync
 GET {{gateway}}/approve/sync
 
 ### Oracle posted check: returns header IDs whose flags are all 1
-POST {{gateway}}/erp/adjustment/stage/posted
+POST {{oracle}}/api/adjustment/stage/posted
 Content-Type: application/json
 
-[{{headerId}}]
+[77000000042]
 
 ### Main DB final status update: marks request as Posted
 POST {{gateway}}/adjust/stage/requests

@@ -68,7 +68,7 @@ GET {{gateway}}/approve/sync
 POST {{oracle}}/api/adjustment/stage/posted
 Content-Type: application/json
 
-[77000000042]
+[50000000016]
 
 ### Main DB final status update: marks request as Posted
 POST {{gateway}}/adjust/stage/requests

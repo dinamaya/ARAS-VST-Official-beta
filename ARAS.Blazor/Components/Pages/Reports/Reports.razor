@@ -1,50 +1,250 @@
-﻿@page "/reports/all-reports"
+@page "/reports/all-reports"
+@using ARAS.Blazor.Components.Shared.Skeletons
+@using ARAS.Blazor.Components.UI.Badges
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize]
+
+@inject IAdjustmentService AdjustmentService
 @inject IReportService ReportService
+@inject NavigationManager NavigationManager
 
-<h3>Latest Requests</h3>
+<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+    <div class="card card-body blur shadow-blur mx-4 mt-4 overflow-hidden">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <h4 class="mb-1">Reports</h4>
+                <p class="text-sm mb-0">Run a filtered report, review request activity, and export the current result to Excel.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <RadzenButton Text="Reset" Icon="restart_alt" Variant="Variant.Outlined" Click="@ResetFiltersAsync" />
+                <RadzenButton Text="Export Excel" Icon="download" ButtonStyle="ButtonStyle.Success" Disabled="@(isLoading || !HasRows)" Click="@ExportAsync" />
+            </div>
+        </div>
+    </div>
 
-@if (isLoading)
-{
-	<p>Loading...</p>
-}
-else if (!string.IsNullOrEmpty(error))
-{
-	<div class="alert alert-danger">@error</div>
-}
-else
-{
-	<RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" AllowSorting="true"
-					PageSize="20" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
-					Data="@rows" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single">
-		<Columns>
-			<RadzenDataGridColumn Property="RequestNumber" Title="Request Number" Width="200px" />
-			<RadzenDataGridColumn Property="AdjustmentTypeCode" Title="Adjustment Type" Width="200px" />
-			<RadzenDataGridColumn Property="DateRequested" Title="Date Requested" Width="200px" FormatString="{0:yyyy-MM-dd}" />
-			<RadzenDataGridColumn Property="Status" Title="Status" Width="180px" />
-		</Columns>
-	</RadzenDataGrid>
-}
+    <div class="row mx-4">
+        <div class="col-xl-2 col-sm-6 mb-xl-0 mb-4">
+            <div class="card"><div class="card-body p-3"><p class="text-sm mb-1 font-weight-bold">Total Requests</p><h5 class="mb-0">@TotalRequests</h5></div></div>
+        </div>
+        <div class="col-xl-2 col-sm-6 mb-xl-0 mb-4">
+            <div class="card"><div class="card-body p-3"><p class="text-sm mb-1 font-weight-bold">Posted</p><h5 class="mb-0">@PostedCount</h5></div></div>
+        </div>
+        <div class="col-xl-2 col-sm-6 mb-xl-0 mb-4">
+            <div class="card"><div class="card-body p-3"><p class="text-sm mb-1 font-weight-bold">Pending</p><h5 class="mb-0">@PendingCount</h5></div></div>
+        </div>
+        <div class="col-xl-2 col-sm-6 mb-xl-0 mb-4">
+            <div class="card"><div class="card-body p-3"><p class="text-sm mb-1 font-weight-bold">Declined</p><h5 class="mb-0">@DeclinedCount</h5></div></div>
+        </div>
+        <div class="col-xl-2 col-sm-6 mb-xl-0 mb-4">
+            <div class="card"><div class="card-body p-3"><p class="text-sm mb-1 font-weight-bold">Rejected</p><h5 class="mb-0">@RejectedCount</h5></div></div>
+        </div>
+        <div class="col-xl-2 col-sm-6 mb-xl-0 mb-4">
+            <div class="card"><div class="card-body p-3"><p class="text-sm mb-1 font-weight-bold">Total Amount</p><h5 class="mb-0">@TotalAmount.ToString("N2")</h5></div></div>
+        </div>
+    </div>
+
+    <div class="mx-4 card">
+        <div class="card-body p-3">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <RadzenLabel Text="Report Type" />
+                    <RadzenDropDown TValue="string" Data="@reportTypes" @bind-Value="filters.ReportType" Style="width:100%" />
+                </div>
+                <div class="col-md-2">
+                    <RadzenLabel Text="Date From" />
+                    <RadzenDatePicker TValue="DateOnly" @bind-Value="filters.StartDate" Style="width:100%" />
+                </div>
+                <div class="col-md-2">
+                    <RadzenLabel Text="Date To" />
+                    <RadzenDatePicker TValue="DateOnly" @bind-Value="filters.EndDate" Style="width:100%" />
+                </div>
+                <div class="col-md-2">
+                    <RadzenLabel Text="Status" />
+                    <RadzenDropDown TValue="string" Data="@statusOptions" @bind-Value="selectedStatus" Style="width:100%" />
+                </div>
+                <div class="col-md-3">
+                    <RadzenLabel Text="Adjustment Type" />
+                    <RadzenDropDown TValue="string" Data="@adjustmentTypeOptions" @bind-Value="selectedAdjustmentType" Style="width:100%" />
+                </div>
+
+                <div class="col-md-4">
+                    <RadzenLabel Text="Customer" />
+                    <RadzenTextBox @bind-Value="filters.CustomerName" Placeholder="Search customer name" Style="width:100%" />
+                </div>
+                <div class="col-md-4">
+                    <RadzenLabel Text="Requestor" />
+                    <RadzenTextBox @bind-Value="filters.RequestorName" Placeholder="Search requestor name" Style="width:100%" />
+                </div>
+                <div class="col-md-4 d-flex align-items-end justify-content-md-end gap-2">
+                    <RadzenButton Text="Run Report" Icon="search" Click="@LoadReportsAsync" Disabled="@isLoading" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mx-4 card blur shadow-blur">
+        <div class="card-body overflow-auto overflow-x-hidden">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Report Results</h5>
+                <span class="text-sm text-muted">@rows.Count record(s)</span>
+            </div>
+
+            @if (isLoading)
+            {
+                <DatatableSkeleton RowCount="6" ColumnCount="8" />
+            }
+            else if (!string.IsNullOrWhiteSpace(error))
+            {
+                <RadzenAlert AlertStyle="AlertStyle.Danger" Variant="Variant.Filled" AllowClose="true">
+                    @error
+                </RadzenAlert>
+            }
+            else
+            {
+                @if (!HasRows)
+                {
+                    <div class="py-5 text-center">
+                        <h6 class="mb-2">No report data found for the selected filters.</h6>
+                        <p class="text-sm mb-0 text-muted">Try widening the date range, clearing the customer or requestor filter, or switching the report type back to `All Requests`.</p>
+                    </div>
+                }
+                else
+                {
+                    <RadzenDataGrid TItem="ReportsDto"
+                                    Data="@rows"
+                                    AllowFiltering="true"
+                                    AllowColumnResize="true"
+                                    AllowSorting="true"
+                                    AllowPaging="true"
+                                    FilterMode="FilterMode.Advanced"
+                                    PageSize="20"
+                                    ShowPagingSummary="true"
+                                    PagerHorizontalAlign="HorizontalAlign.Left"
+                                    LogicalFilterOperator="LogicalFilterOperator.Or">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="ReportsDto" Title="Option" Sortable="false" Filterable="false" Width="130px" TextAlign="TextAlign.Center">
+                                <Template Context="row">
+                                    <RadzenButton Text="View" Icon="search" Variant="Variant.Outlined" ButtonStyle="ButtonStyle.Primary" Click="@(args => OpenRequest(row))" />
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.RequestNumber)" Title="Request No" Width="140px" />
+                            <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.Category)" Title="Category" Width="130px" />
+                            <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.CustomerName)" Title="Customer" Width="240px" />
+                            <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.InvoiceNumber)" Title="Invoice No" Width="170px" />
+                            <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.AdjustmentType)" Title="Adjustment Type" Width="240px" />
+                            <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.Requestor)" Title="Requestor" Width="200px" />
+                            <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.Approver)" Title="Approver" Width="200px" />
+                            <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.Status)" Title="Status" Width="170px">
+                                <Template Context="row">
+                                    <StatusBadge Status="@row.Status" Style="font-size: 12px;" />
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.DateRequested)" Title="Date Requested" Width="170px" FormatString="{0:yyyy-MM-dd}" />
+                            <RadzenDataGridColumn TItem="ReportsDto" Title="Date Approved" Width="170px">
+                                <Template Context="row">
+                                    @(row.DateApproved.HasValue ? row.DateApproved.Value.ToString("yyyy-MM-dd") : "-")
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.DateUpdated)" Title="Date Updated" Width="170px" FormatString="{0:yyyy-MM-dd}" />
+                            <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.UpdatedBy)" Title="Updated By" Width="200px" />
+                            <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.Amount)" Title="Amount" Width="140px" FormatString="{0:N2}" TextAlign="TextAlign.Right" />
+                        </Columns>
+                    </RadzenDataGrid>
+                }
+            }
+        </div>
+    </div>
+</RadzenStack>
+
 @code {
-	private IEnumerable<ReportsDto> rows = Array.Empty<ReportsDto>();
-	private bool isLoading;
-	private string error = string.Empty;
+    private readonly List<string> reportTypes = ["All Requests", "Posted Adjustments", "Pending Requests", "Declined / Rejected"];
+    private readonly List<string> statusOptions = ["All Statuses", "For CNC Approval", "For FSG Validation", "For FSG Approval", "For ERP Posting", "Posted", "Declined", "Rejected"];
+    private static readonly HashSet<string> pendingStatuses =
+    [
+        "For CNC Approval",
+        "For FSG Validation",
+        "For FSG Approval",
+        "For ERP Posting"
+    ];
 
-	protected override async Task OnInitializedAsync()
-	{
-		isLoading = true;
-		try
-		{
-			rows = await ReportService.GetLatestRequestsAsync();
-		}
-		catch (Exception ex)
-		{
-			error = $"Failed to load report: {ex.Message}";
-		}
-		finally
-		{
-			isLoading = false;
-		}
-	}
+    private ReportFiltersDto filters = new();
+    private List<ReportsDto> rows = [];
+    private IList<string> adjustmentTypeOptions = ["All Adjustment Types"];
+    private bool isLoading;
+    private string error = string.Empty;
+    private string selectedStatus = "All Statuses";
+    private string selectedAdjustmentType = "All Adjustment Types";
+
+    private int TotalRequests => rows.Count;
+    private int PostedCount => rows.Count(x => x.Status == "Posted");
+    private int PendingCount => rows.Count(x => pendingStatuses.Contains(x.Status));
+    private int DeclinedCount => rows.Count(x => x.Status == "Declined");
+    private int RejectedCount => rows.Count(x => x.Status == "Rejected");
+    private double TotalAmount => rows.Sum(x => x.Amount);
+    private bool HasRows => rows.Count != 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var adjustmentTypes = await AdjustmentService.GetAdjustmentTypes();
+        adjustmentTypeOptions = ["All Adjustment Types", .. adjustmentTypes.OrderBy(x => x)];
+        await LoadReportsAsync();
+    }
+
+    private async Task LoadReportsAsync()
+    {
+        isLoading = true;
+        error = string.Empty;
+        rows = [];
+
+        try
+        {
+            NormalizeFilters();
+            rows = [.. await ReportService.GetReportsAsync(filters)];
+        }
+        catch (Exception ex)
+        {
+            error = $"Failed to load reports: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task ResetFiltersAsync()
+    {
+        filters = new ReportFiltersDto();
+        selectedStatus = "All Statuses";
+        selectedAdjustmentType = "All Adjustment Types";
+        await LoadReportsAsync();
+    }
+
+    private async Task ExportAsync()
+    {
+        NormalizeFilters();
+        await ReportService.ExportExcelAsync(rows, filters);
+    }
+
+    private void OpenRequest(ReportsDto row)
+    {
+        var baseRoute = string.Equals(row.Category, "Receipt", StringComparison.OrdinalIgnoreCase)
+            ? "/submissions/receipt"
+            : "/submissions/invoice";
+
+        NavigationManager.NavigateTo($"{baseRoute}/{row.AdjustmentTypeCode}/{row.RequestId}");
+    }
+
+    private void NormalizeFilters()
+    {
+        if (filters.EndDate < filters.StartDate)
+            filters.EndDate = filters.StartDate;
+
+        filters.Status = selectedStatus == "All Statuses" ? string.Empty : selectedStatus;
+        filters.AdjustmentType = selectedAdjustmentType == "All Adjustment Types" ? string.Empty : selectedAdjustmentType;
+        filters.CustomerName = filters.CustomerName?.Trim() ?? string.Empty;
+        filters.RequestorName = filters.RequestorName?.Trim() ?? string.Empty;
+    }
 }

@@ -28,10 +28,9 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
         Task<int> GetFsgValidationRequestCount(string userId);
         Task<int> GetFsgApprovalRequestCount(string userId);
         Task<int> GetResubmittedRequestCount(string userId);
-        Task<int> GetPostedRequestCount(string userId);
+		Task<int> GetPostedRequestCount(string userId);
 		Task<int> GetRejectedRequestCount(string userId);
-		Task<IEnumerable<InvoiceAdjustmentRowDto>> GetInvoicedjustmentApprovals(SearchRequestDto data, string role);
-		Task<IEnumerable<ReceiptAdjustmentRowDto>> GetReceiptAdjustmentApprovals(SearchRequestDto data, string role);
+		Task<IEnumerable<ReportsDto>> GetReports(ReportFiltersDto filters, string role, string fullName);
 
         Task Approve(long requestId, string modifiedBy, string role);
 		Task Decline(long requestId, string modifiedBy);

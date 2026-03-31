@@ -257,6 +257,23 @@ namespace ARAS.Main.SSMS.Api.Controllers
             }
         }
 
+        [HttpGet("reports"), Authorize]
+        public async Task<ResponseDto<IEnumerable<ReportsDto>>> GetReports([FromQuery] ReportFiltersDto filters)
+        {
+            var response = new ResponseDto<IEnumerable<ReportsDto>>();
+            try
+            {
+                var accountInfo = User.GetAccountBasicInfo();
+                response.Result = await _requestRepo.GetReports(filters, accountInfo.Role, accountInfo.FullName);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return response.Failed(ex.Message);
+            }
+        }
+
         [HttpPost("receipt"), Authorize(Roles = "Requestor")]
 		public async Task<ResponseDto<IEnumerable<ReceiptAdjustmentCreateResponseDto>>> CreateReceiptAdjusmentRequest([FromBody] IEnumerable<BaseReceiptAdjustmentCreateDto> data)
 		{

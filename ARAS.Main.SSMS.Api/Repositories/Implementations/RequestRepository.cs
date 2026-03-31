@@ -5,10 +5,7 @@ using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Models.Entities;
 using ARAS.Main.SSMS.Api.Models.Views;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json.Linq;
-using System.Runtime.InteropServices;
 
 namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 {
@@ -16,6 +13,29 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 	{
 		private readonly MainDbContext _context;
 		private readonly ITransactionRepository _transactionRepo;
+
+        private sealed class ReportQueryRow
+        {
+            public long RequestId { get; set; }
+            public string Category { get; set; } = string.Empty;
+            public string AdjustmentTypeCode { get; set; } = string.Empty;
+            public string AdjustmentType { get; set; } = string.Empty;
+            public string CustomerName { get; set; } = string.Empty;
+            public string InvoiceNumber { get; set; } = string.Empty;
+            public string RequestorId { get; set; } = string.Empty;
+            public string RequestorSearchName { get; set; } = string.Empty;
+            public string RequestorFirstName { get; set; } = string.Empty;
+            public string RequestorLastName { get; set; } = string.Empty;
+            public string ApproverFirstName { get; set; } = string.Empty;
+            public string ApproverLastName { get; set; } = string.Empty;
+            public string UpdaterFirstName { get; set; } = string.Empty;
+            public string UpdaterLastName { get; set; } = string.Empty;
+            public DateTime DateRequested { get; set; }
+            public DateTime? DateApproved { get; set; }
+            public DateTime DateUpdated { get; set; }
+            public string Status { get; set; } = string.Empty;
+            public double Amount { get; set; }
+        }
 
         public RequestRepository(MainDbContext context, ITransactionRepository transactionRepo)
         {
@@ -247,6 +267,129 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                 .CountAsync();
         }
 
+        public async Task<IEnumerable<ReportsDto>> GetReports(ReportFiltersDto filters, string role, string fullName)
+        {
+            var receiptAmounts = _context.VwReceiptAdjustments
+                .AsNoTracking()
+                .GroupBy(x => x.RequestId)
+                .Select(x => new
+                {
+                    RequestId = x.Key,
+                    Amount = x.Sum(y => y.AdjustmentAmount)
+                });
+
+            var invoiceAmounts = _context.VwAradjustmentsVw
+                .AsNoTracking()
+                .GroupBy(x => x.RequestId)
+                .Select(x => new
+                {
+                    RequestId = x.Key,
+                    Amount = x.Sum(y => y.Amount)
+                });
+
+            var receiptQuery =
+                from detail in _context.VwLatestReceiptAdjustmentDetails.AsNoTracking()
+                select new ReportQueryRow
+                {
+                    RequestId = detail.RequestId,
+                    Category = "Receipt",
+                    AdjustmentTypeCode = detail.AdjustmentTypeCode,
+                    AdjustmentType = detail.AdjustmentType,
+                    CustomerName = detail.CustomerName,
+                    InvoiceNumber = detail.InvoiceNumber,
+                    RequestorId = detail.RequestorId,
+                    RequestorSearchName = ((detail.RequestorFirstName ?? string.Empty) + " " + (detail.RequestorLastName ?? string.Empty)).Trim(),
+                    RequestorFirstName = detail.RequestorFirstName ?? string.Empty,
+                    RequestorLastName = detail.RequestorLastName ?? string.Empty,
+                    ApproverFirstName = detail.ApproverFirstName ?? string.Empty,
+                    ApproverLastName = detail.ApproverLastName ?? string.Empty,
+                    UpdaterFirstName = detail.UpdaterFirstName ?? string.Empty,
+                    UpdaterLastName = detail.UpdaterLastName ?? string.Empty,
+                    DateRequested = detail.DateRequested,
+                    DateApproved = detail.DateApproved,
+                    DateUpdated = detail.DateCreated,
+                    Status = detail.Status,
+                    Amount = receiptAmounts
+                        .Where(x => x.RequestId == detail.RequestId)
+                        .Select(x => (double?)x.Amount)
+                        .FirstOrDefault() ?? 0d
+                };
+
+            var invoiceQuery =
+                from detail in _context.VwLatestInvoiceAdjustments.AsNoTracking()
+                select new ReportQueryRow
+                {
+                    RequestId = detail.RequestId,
+                    Category = "Invoice",
+                    AdjustmentTypeCode = detail.AdjustmentTypeCode,
+                    AdjustmentType = detail.AdjustmentType,
+                    CustomerName = detail.CustomerName,
+                    InvoiceNumber = detail.InvoiceNumber,
+                    RequestorId = detail.RequestorId,
+                    RequestorSearchName = ((detail.RequestorFirstName ?? string.Empty) + " " + (detail.RequestorLastName ?? string.Empty)).Trim(),
+                    RequestorFirstName = detail.RequestorFirstName ?? string.Empty,
+                    RequestorLastName = detail.RequestorLastName ?? string.Empty,
+                    ApproverFirstName = detail.ApproverFirstName ?? string.Empty,
+                    ApproverLastName = detail.ApproverLastName ?? string.Empty,
+                    UpdaterFirstName = detail.UpdaterFirstName ?? string.Empty,
+                    UpdaterLastName = detail.UpdaterLastName ?? string.Empty,
+                    DateRequested = detail.DateRequested,
+                    DateApproved = detail.DateApproved,
+                    DateUpdated = detail.DateCreated,
+                    Status = detail.Status,
+                    Amount = invoiceAmounts
+                        .Where(x => x.RequestId == detail.RequestId)
+                        .Select(x => (double?)x.Amount)
+                        .FirstOrDefault() ?? 0d
+                };
+
+            receiptQuery = ApplyReportFilters(receiptQuery, filters, role, fullName);
+            invoiceQuery = ApplyReportFilters(invoiceQuery, filters, role, fullName);
+
+            var receiptRows = await receiptQuery.ToListAsync();
+            var invoiceRows = await invoiceQuery.ToListAsync();
+            var rows = receiptRows
+                .Concat(invoiceRows)
+                .OrderByDescending(x => x.DateRequested)
+                .ThenByDescending(x => x.RequestId)
+                .ToList();
+
+            return rows.Select(ToReportDto);
+        }
+
+        private static IQueryable<ReportQueryRow> ApplyReportFilters(IQueryable<ReportQueryRow> query, ReportFiltersDto filters, string role, string fullName)
+        {
+            query = FilterReportByRole(query, role, fullName);
+            query = FilterReportByType(query, filters.ReportType);
+            query = FilterReportByDateRange(query, filters.StartDate.ToDateTime(TimeOnly.MinValue), filters.EndDate.ToDateTime(TimeOnly.MaxValue));
+            query = FilterReportByStatus(query, filters.Status);
+            query = FilterReportByAdjustmentType(query, filters.AdjustmentType);
+            query = FilterReportByCustomer(query, filters.CustomerName);
+            query = FilterReportByRequestor(query, filters.RequestorName);
+            return query;
+        }
+
+        private static ReportsDto ToReportDto(ReportQueryRow row) => new()
+        {
+            RequestId = row.RequestId,
+            RequestNumber = row.RequestId.ToString(),
+            Category = row.Category,
+            AdjustmentTypeCode = row.AdjustmentTypeCode.ToLower(),
+            AdjustmentType = row.AdjustmentType,
+            CustomerName = row.CustomerName,
+            InvoiceNumber = row.InvoiceNumber,
+            RequestorId = row.RequestorId,
+            RequestorSearchName = row.RequestorSearchName,
+            Requestor = ValidateFullName(row.RequestorFirstName, row.RequestorLastName),
+            Approver = ValidateFullName(row.ApproverFirstName, row.ApproverLastName),
+            UpdatedBy = row.Status == "Posted" ? "SYSTEM" : ValidateFullName(row.UpdaterFirstName, row.UpdaterLastName),
+            DateRequested = row.DateRequested,
+            DateApproved = row.DateApproved,
+            DateUpdated = row.DateUpdated,
+            Status = row.Status,
+            Amount = row.Amount
+        };
+
         public async Task<IEnumerable<InvoiceAdjustmentRowDto>> GetInvoicedjustmentApprovals(SearchRequestDto data, string role)
 		{
 			data.Value = data.Value.ToUpper();
@@ -365,6 +508,66 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
         private static string ValidateFullName(string fName, string lName) =>
 			string.IsNullOrEmpty(lName) && string.IsNullOrEmpty(fName) ? string.Empty : lName + ", " + fName;
+
+        private static IQueryable<ReportQueryRow> FilterReportByType(IQueryable<ReportQueryRow> query, string reportType)
+        {
+            return reportType switch
+            {
+                "Posted Adjustments" => query.Where(x => x.Status == "Posted"),
+                "Pending Requests" => query.Where(x => x.Status == "For CNC Approval" || x.Status == "For FSG Validation" || x.Status == "For FSG Approval" || x.Status == "For ERP Posting"),
+                "Declined / Rejected" => query.Where(x => x.Status == "Declined" || x.Status == "Rejected"),
+                _ => query
+            };
+        }
+
+        private static IQueryable<ReportQueryRow> FilterReportByDateRange(IQueryable<ReportQueryRow> query, DateTime start, DateTime end) =>
+            query.Where(x => x.DateRequested >= start && x.DateRequested <= end);
+
+        private static IQueryable<ReportQueryRow> FilterReportByStatus(IQueryable<ReportQueryRow> query, string status)
+        {
+            if (string.IsNullOrWhiteSpace(status))
+                return query;
+
+            return query.Where(x => x.Status == status);
+        }
+
+        private static IQueryable<ReportQueryRow> FilterReportByAdjustmentType(IQueryable<ReportQueryRow> query, string adjustmentType)
+        {
+            if (string.IsNullOrWhiteSpace(adjustmentType))
+                return query;
+
+            var normalized = adjustmentType.ToUpper();
+            return query.Where(x => x.AdjustmentType.ToUpper() == normalized);
+        }
+
+        private static IQueryable<ReportQueryRow> FilterReportByCustomer(IQueryable<ReportQueryRow> query, string customerName)
+        {
+            if (string.IsNullOrWhiteSpace(customerName))
+                return query;
+
+            var normalized = customerName.ToUpper();
+            return query.Where(x => x.CustomerName.ToUpper().Contains(normalized));
+        }
+
+        private static IQueryable<ReportQueryRow> FilterReportByRequestor(IQueryable<ReportQueryRow> query, string requestorName)
+        {
+            if (string.IsNullOrWhiteSpace(requestorName))
+                return query;
+
+            var normalized = requestorName.Trim().ToUpper();
+            return query.Where(x => x.RequestorSearchName.Trim().ToUpper().Contains(normalized));
+        }
+
+        private static IQueryable<ReportQueryRow> FilterReportByRole(IQueryable<ReportQueryRow> query, string role, string fullName)
+        {
+            if (string.Equals(role, "Requestor", StringComparison.OrdinalIgnoreCase))
+            {
+                var normalized = (fullName ?? string.Empty).Trim().ToUpper();
+                return query.Where(x => x.RequestorSearchName.Trim().ToUpper() == normalized);
+            }
+
+            return query;
+        }
 
 		private IQueryable<LatestReceiptAdjustmentDetailsV> GetReceiptAdjustmentsForApprovals(string role)
 		{

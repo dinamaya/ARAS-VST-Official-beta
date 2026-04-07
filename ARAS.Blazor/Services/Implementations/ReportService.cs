@@ -73,6 +73,7 @@ namespace ARAS.Blazor.Services.Implementations
                 WriteZipEntry(archive, "_rels/.rels", BuildRootRelationshipsXml());
                 WriteZipEntry(archive, "xl/workbook.xml", BuildWorkbookXml());
                 WriteZipEntry(archive, "xl/_rels/workbook.xml.rels", BuildWorkbookRelationshipsXml());
+                WriteZipEntry(archive, "xl/styles.xml", BuildStylesXml());
                 WriteZipEntry(archive, "xl/worksheets/sheet1.xml", BuildWorksheetXml(rows, filters));
             }
 
@@ -94,6 +95,7 @@ namespace ARAS.Blazor.Services.Implementations
               <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml" />
               <Default Extension="xml" ContentType="application/xml" />
               <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml" />
+              <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml" />
               <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml" />
             </Types>
             """;
@@ -122,7 +124,47 @@ namespace ARAS.Blazor.Services.Implementations
             <?xml version="1.0" encoding="utf-8"?>
             <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
               <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml" />
+              <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml" />
             </Relationships>
+            """;
+
+        private static string BuildStylesXml() =>
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+              <fonts count="1">
+                <font>
+                  <sz val="11" />
+                  <name val="Calibri" />
+                </font>
+              </fonts>
+              <fills count="2">
+                <fill><patternFill patternType="none" /></fill>
+                <fill><patternFill patternType="gray125" /></fill>
+              </fills>
+              <borders count="2">
+                <border>
+                  <left /><right /><top /><bottom /><diagonal />
+                </border>
+                <border>
+                  <left style="thin"><color auto="1" /></left>
+                  <right style="thin"><color auto="1" /></right>
+                  <top style="thin"><color auto="1" /></top>
+                  <bottom style="thin"><color auto="1" /></bottom>
+                  <diagonal />
+                </border>
+              </borders>
+              <cellStyleXfs count="1">
+                <xf numFmtId="0" fontId="0" fillId="0" borderId="0" />
+              </cellStyleXfs>
+              <cellXfs count="2">
+                <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" />
+                <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" />
+              </cellXfs>
+              <cellStyles count="1">
+                <cellStyle name="Normal" xfId="0" builtinId="0" />
+              </cellStyles>
+            </styleSheet>
             """;
 
         private static string BuildWorksheetXml(IEnumerable<ReportsDto> rows, ReportFiltersDto filters)
@@ -138,6 +180,12 @@ namespace ARAS.Blazor.Services.Implementations
             {
                 writer.WriteStartDocument();
                 writer.WriteStartElement("worksheet", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
+                writer.WriteStartElement("sheetViews");
+                writer.WriteStartElement("sheetView");
+                writer.WriteAttributeString("workbookViewId", "0");
+                writer.WriteAttributeString("showGridLines", "1");
+                writer.WriteEndElement();
+                writer.WriteEndElement();
                 writer.WriteStartElement("sheetData");
 
                 var rowIndex = 1u;
@@ -147,7 +195,7 @@ namespace ARAS.Blazor.Services.Implementations
                 WriteRow(writer, rowIndex++, ["Adjustment Type", string.IsNullOrWhiteSpace(filters.AdjustmentType) ? "All Adjustment Types" : filters.AdjustmentType]);
                 WriteRow(writer, rowIndex++, ["Customer", string.IsNullOrWhiteSpace(filters.CustomerName) ? "All Customers" : filters.CustomerName]);
                 WriteRow(writer, rowIndex++, ["Requestor", string.IsNullOrWhiteSpace(filters.RequestorName) ? "All Requestors" : filters.RequestorName]);
-                WriteRow(writer, rowIndex++);
+                WriteEmptyRow(writer, rowIndex++);
 
                 WriteRow(writer, rowIndex++, [
                     "Request No",
@@ -206,7 +254,7 @@ namespace ARAS.Blazor.Services.Implementations
             writer.WriteEndElement();
         }
 
-        private static void WriteRow(XmlWriter writer, uint rowIndex)
+        private static void WriteEmptyRow(XmlWriter writer, uint rowIndex)
         {
             writer.WriteStartElement("row");
             writer.WriteAttributeString("r", rowIndex.ToString());
@@ -217,6 +265,7 @@ namespace ARAS.Blazor.Services.Implementations
         {
             writer.WriteStartElement("c");
             writer.WriteAttributeString("r", $"{GetColumnName(columnIndex)}{rowIndex}");
+            writer.WriteAttributeString("s", "1");
 
             switch (value)
             {

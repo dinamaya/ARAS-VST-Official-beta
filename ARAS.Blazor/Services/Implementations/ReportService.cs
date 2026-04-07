@@ -3,6 +3,8 @@ using ARAS.Blazor.Services.Interfaces;
 using Microsoft.JSInterop;
 using System.Net;
 using System.Text;
+using System.IO.Compression;
+using System.Xml;
 
 namespace ARAS.Blazor.Services.Implementations
 {
@@ -34,9 +36,8 @@ namespace ARAS.Blazor.Services.Implementations
 
         public async Task ExportExcelAsync(IEnumerable<ReportsDto> rows, ReportFiltersDto filters)
         {
-            var content = BuildExcelCompatibleHtml(rows, filters);
-            var bytes = Encoding.UTF8.GetBytes(content);
-            var fileName = $"reports-{SanitizeFileName(filters.ReportType)}-{DateTime.Now:yyyyMMddHHmmss}.xls";
+            var bytes = BuildExcelWorkbook(rows, filters);
+            var fileName = $"reports-{SanitizeFileName(filters.ReportType)}-{DateTime.Now:yyyyMMddHHmmss}.xlsx";
             await _jsRuntime.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(bytes));
         }
 
@@ -63,58 +64,191 @@ namespace ARAS.Blazor.Services.Implementations
                 : $"{_configService.GetRequestsUrl("reports")}?{queryString}";
         }
 
-        private static string BuildExcelCompatibleHtml(IEnumerable<ReportsDto> rows, ReportFiltersDto filters)
+        private static byte[] BuildExcelWorkbook(IEnumerable<ReportsDto> rows, ReportFiltersDto filters)
         {
-            var builder = new StringBuilder();
-
-            builder.AppendLine("<html><head><meta charset=\"utf-8\" /></head><body>");
-            builder.AppendLine("<table border=\"1\">");
-            builder.AppendLine($"<tr><td><strong>Report Type</strong></td><td>{Encode(filters.ReportType)}</td></tr>");
-            builder.AppendLine($"<tr><td><strong>Date Range</strong></td><td>{filters.StartDate:yyyy-MM-dd} to {filters.EndDate:yyyy-MM-dd}</td></tr>");
-            builder.AppendLine($"<tr><td><strong>Status</strong></td><td>{Encode(string.IsNullOrWhiteSpace(filters.Status) ? "All Statuses" : filters.Status)}</td></tr>");
-            builder.AppendLine($"<tr><td><strong>Adjustment Type</strong></td><td>{Encode(string.IsNullOrWhiteSpace(filters.AdjustmentType) ? "All Adjustment Types" : filters.AdjustmentType)}</td></tr>");
-            builder.AppendLine($"<tr><td><strong>Customer</strong></td><td>{Encode(string.IsNullOrWhiteSpace(filters.CustomerName) ? "All Customers" : filters.CustomerName)}</td></tr>");
-            builder.AppendLine($"<tr><td><strong>Requestor</strong></td><td>{Encode(string.IsNullOrWhiteSpace(filters.RequestorName) ? "All Requestors" : filters.RequestorName)}</td></tr>");
-            builder.AppendLine("</table><br />");
-
-            builder.AppendLine("<table border=\"1\">");
-            builder.AppendLine("<tr>");
-            builder.AppendLine("<th>Request No</th>");
-            builder.AppendLine("<th>Category</th>");
-            builder.AppendLine("<th>Customer</th>");
-            builder.AppendLine("<th>Invoice No</th>");
-            builder.AppendLine("<th>Adjustment Type</th>");
-            builder.AppendLine("<th>Requestor</th>");
-            builder.AppendLine("<th>Approver</th>");
-            builder.AppendLine("<th>Status</th>");
-            builder.AppendLine("<th>Date Requested</th>");
-            builder.AppendLine("<th>Date Approved</th>");
-            builder.AppendLine("<th>Date Updated</th>");
-            builder.AppendLine("<th>Updated By</th>");
-            builder.AppendLine("<th>Amount</th>");
-            builder.AppendLine("</tr>");
-
-            foreach (var row in rows)
+            using var stream = new MemoryStream();
+            using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
             {
-                builder.AppendLine("<tr>");
-                builder.AppendLine($"<td>{Encode(row.RequestNumber)}</td>");
-                builder.AppendLine($"<td>{Encode(row.Category)}</td>");
-                builder.AppendLine($"<td>{Encode(row.CustomerName)}</td>");
-                builder.AppendLine($"<td>{Encode(row.InvoiceNumber)}</td>");
-                builder.AppendLine($"<td>{Encode(row.AdjustmentType)}</td>");
-                builder.AppendLine($"<td>{Encode(row.Requestor)}</td>");
-                builder.AppendLine($"<td>{Encode(row.Approver)}</td>");
-                builder.AppendLine($"<td>{Encode(row.Status)}</td>");
-                builder.AppendLine($"<td>{row.DateRequested:yyyy-MM-dd HH:mm}</td>");
-                builder.AppendLine($"<td>{(row.DateApproved.HasValue ? row.DateApproved.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty)}</td>");
-                builder.AppendLine($"<td>{row.DateUpdated:yyyy-MM-dd HH:mm}</td>");
-                builder.AppendLine($"<td>{Encode(row.UpdatedBy)}</td>");
-                builder.AppendLine($"<td>{row.Amount:N2}</td>");
-                builder.AppendLine("</tr>");
+                WriteZipEntry(archive, "[Content_Types].xml", BuildContentTypesXml());
+                WriteZipEntry(archive, "_rels/.rels", BuildRootRelationshipsXml());
+                WriteZipEntry(archive, "xl/workbook.xml", BuildWorkbookXml());
+                WriteZipEntry(archive, "xl/_rels/workbook.xml.rels", BuildWorkbookRelationshipsXml());
+                WriteZipEntry(archive, "xl/worksheets/sheet1.xml", BuildWorksheetXml(rows, filters));
             }
 
-            builder.AppendLine("</table></body></html>");
-            return builder.ToString();
+            return stream.ToArray();
+        }
+
+        private static void WriteZipEntry(ZipArchive archive, string entryName, string content)
+        {
+            var entry = archive.CreateEntry(entryName, CompressionLevel.Fastest);
+            using var entryStream = entry.Open();
+            using var writer = new StreamWriter(entryStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            writer.Write(content);
+        }
+
+        private static string BuildContentTypesXml() =>
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+              <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml" />
+              <Default Extension="xml" ContentType="application/xml" />
+              <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml" />
+              <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml" />
+            </Types>
+            """;
+
+        private static string BuildRootRelationshipsXml() =>
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+              <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml" />
+            </Relationships>
+            """;
+
+        private static string BuildWorkbookXml() =>
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+                      xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+              <sheets>
+                <sheet name="Reports" sheetId="1" r:id="rId1" />
+              </sheets>
+            </workbook>
+            """;
+
+        private static string BuildWorkbookRelationshipsXml() =>
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+              <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml" />
+            </Relationships>
+            """;
+
+        private static string BuildWorksheetXml(IEnumerable<ReportsDto> rows, ReportFiltersDto filters)
+        {
+            using var stream = new MemoryStream();
+            var settings = new XmlWriterSettings
+            {
+                Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+                OmitXmlDeclaration = false
+            };
+
+            using (var writer = XmlWriter.Create(stream, settings))
+            {
+                writer.WriteStartDocument();
+                writer.WriteStartElement("worksheet", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
+                writer.WriteStartElement("sheetData");
+
+                var rowIndex = 1u;
+                WriteRow(writer, rowIndex++, ["Report Type", filters.ReportType]);
+                WriteRow(writer, rowIndex++, ["Date Range", $"{filters.StartDate:yyyy-MM-dd} to {filters.EndDate:yyyy-MM-dd}"]);
+                WriteRow(writer, rowIndex++, ["Status", string.IsNullOrWhiteSpace(filters.Status) ? "All Statuses" : filters.Status]);
+                WriteRow(writer, rowIndex++, ["Adjustment Type", string.IsNullOrWhiteSpace(filters.AdjustmentType) ? "All Adjustment Types" : filters.AdjustmentType]);
+                WriteRow(writer, rowIndex++, ["Customer", string.IsNullOrWhiteSpace(filters.CustomerName) ? "All Customers" : filters.CustomerName]);
+                WriteRow(writer, rowIndex++, ["Requestor", string.IsNullOrWhiteSpace(filters.RequestorName) ? "All Requestors" : filters.RequestorName]);
+                WriteRow(writer, rowIndex++);
+
+                WriteRow(writer, rowIndex++, [
+                    "Request No",
+                    "Category",
+                    "Customer",
+                    "Invoice No",
+                    "Adjustment Type",
+                    "Requestor",
+                    "Approver",
+                    "Status",
+                    "Date Requested",
+                    "Date Approved",
+                    "Date Updated",
+                    "Updated By",
+                    "Amount"
+                ]);
+
+                foreach (var row in rows)
+                {
+                    WriteRow(writer, rowIndex++, [
+                        row.RequestNumber,
+                        row.Category,
+                        row.CustomerName,
+                        row.InvoiceNumber,
+                        row.AdjustmentType,
+                        row.Requestor,
+                        row.Approver,
+                        row.Status,
+                        row.DateRequested.ToString("yyyy-MM-dd HH:mm"),
+                        row.DateApproved?.ToString("yyyy-MM-dd HH:mm") ?? string.Empty,
+                        row.DateUpdated.ToString("yyyy-MM-dd HH:mm"),
+                        row.UpdatedBy,
+                        row.Amount
+                    ]);
+                }
+
+                writer.WriteEndElement();
+                writer.WriteEndElement();
+                writer.WriteEndDocument();
+            }
+
+            return Encoding.UTF8.GetString(stream.ToArray());
+        }
+
+        private static void WriteRow(XmlWriter writer, uint rowIndex, IEnumerable<object?> values)
+        {
+            writer.WriteStartElement("row");
+            writer.WriteAttributeString("r", rowIndex.ToString());
+
+            var columnIndex = 1;
+            foreach (var value in values)
+            {
+                WriteCell(writer, columnIndex++, rowIndex, value);
+            }
+
+            writer.WriteEndElement();
+        }
+
+        private static void WriteRow(XmlWriter writer, uint rowIndex)
+        {
+            writer.WriteStartElement("row");
+            writer.WriteAttributeString("r", rowIndex.ToString());
+            writer.WriteEndElement();
+        }
+
+        private static void WriteCell(XmlWriter writer, int columnIndex, uint rowIndex, object? value)
+        {
+            writer.WriteStartElement("c");
+            writer.WriteAttributeString("r", $"{GetColumnName(columnIndex)}{rowIndex}");
+
+            switch (value)
+            {
+                case null:
+                    break;
+                case byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal:
+                    writer.WriteElementString("v", Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture));
+                    break;
+                default:
+                    writer.WriteAttributeString("t", "inlineStr");
+                    writer.WriteStartElement("is");
+                    writer.WriteElementString("t", value.ToString() ?? string.Empty);
+                    writer.WriteEndElement();
+                    break;
+            }
+
+            writer.WriteEndElement();
+        }
+
+        private static string GetColumnName(int columnIndex)
+        {
+            var dividend = columnIndex;
+            var columnName = string.Empty;
+
+            while (dividend > 0)
+            {
+                var modulo = (dividend - 1) % 26;
+                columnName = Convert.ToChar('A' + modulo) + columnName;
+                dividend = (dividend - modulo) / 26;
+            }
+
+            return columnName;
         }
 
         private static string SanitizeFileName(string value)

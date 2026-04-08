@@ -98,7 +98,7 @@
 	@if (isValueEmpty)
 	{
 		<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Warning" Size="AlertSize.Medium" AllowClose=true>
-			Please provide 3 or more character(s) in the search value field
+			Please provide a request number or at least 3 character(s) in the search value field
 		</RadzenAlert>
 	}
 	</RadzenRow>
@@ -136,7 +136,7 @@
 	[Parameter, SupplyParameterFromQuery(Name = "token")] public string? Token { get; set; }
 	private bool isOnSearch { get; set; }
 	private bool isLoading { get; set; }
-	private bool isValueEmpty => Value != null && (searchRequest.Value == string.Empty || searchRequest.Value.Length < 3);
+	private bool isValueEmpty => Value != null && !HasValidSearchValue();
 	private string? _lastToken;
 
 	private SearchRequestDto searchRequest;
@@ -195,7 +195,7 @@
 		await Task.Delay(10);
 		try
 		{
-			if (searchRequest.Value.Length < 3) return;
+			if (!HasValidSearchValue()) return;
 
 			if (isLoading)
 			{
@@ -269,5 +269,15 @@
 	{
 		bool isDropdown = DropdownFields?.ContainsKey(key) ?? false;
 		searchRequest.Value = isDropdown ? DropdownFields?.GetValueOrDefault(key).FirstOrDefault() : string.Empty;
+	}
+
+	private bool HasValidSearchValue()
+	{
+		if (string.IsNullOrWhiteSpace(searchRequest.Value))
+			return false;
+
+		return string.Equals(searchRequest.Category, "Request Number", StringComparison.OrdinalIgnoreCase)
+			? true
+			: searchRequest.Value.Length >= 3;
 	}
 }

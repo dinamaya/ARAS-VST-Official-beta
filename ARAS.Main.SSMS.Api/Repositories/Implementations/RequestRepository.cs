@@ -397,6 +397,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			IQueryable<LatestInvoiceAdjustmentsV> query = GetInvoiceAdjustmentsForApprovals(role);
 			query = data.Category.ToUpper() switch
 			{
+				"REQUEST NUMBER" => GetByRequestNumber(query, data.Value),
 				"INVOICE NUMBER" => GetByInvoiceNumber(query, data.Value),
 				"CUSTOMER NAME" => GetByCustomerName(query, data.Value),
 				"ADJUSTMENT TYPE" => GetByAdjustmentType(query, data.Value),
@@ -415,6 +416,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			IQueryable<LatestInvoiceAdjustmentsV> query = GetInvoiceAdjustmentsSubmissions();
 			query = data.Category.ToUpper() switch
 			{
+				"REQUEST NUMBER" => GetByRequestNumber(query, data.Value),
 				"INVOICE NUMBER" => GetByInvoiceNumber(query, data.Value),
 				"CUSTOMER NAME" => GetByCustomerName(query, data.Value),
 				"ADJUSTMENT TYPE" => GetByAdjustmentType(query, data.Value),
@@ -434,6 +436,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			IQueryable<LatestReceiptAdjustmentDetailsV> query = GetReceiptAdjustmentsForApprovals(role);
             query = data.Category.ToUpper() switch
             {
+                "REQUEST NUMBER" => GetByRequestNumber(query, data.Value),
                 "INVOICE NUMBER" => GetByInvoiceNumber(query, data.Value),
                 "CUSTOMER NAME" => GetByCustomerName(query, data.Value),
                 "ADJUSTMENT TYPE" => GetByAdjustmentType(query, data.Value),
@@ -452,6 +455,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			IQueryable<LatestReceiptAdjustmentDetailsV> query = GetReceiptAdjustmentsSubmissions();
 			query = data.Category.ToUpper() switch
 			{
+				"REQUEST NUMBER" => GetByRequestNumber(query, data.Value),
 				"INVOICE NUMBER" => GetByInvoiceNumber(query, data.Value),
 				"CUSTOMER NAME" => GetByCustomerName(query, data.Value),
 				"ADJUSTMENT TYPE" => GetByAdjustmentType(query, data.Value),
@@ -682,6 +686,11 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		private IQueryable<LatestReceiptAdjustmentDetailsV> GetByInvoiceNumber(IQueryable<LatestReceiptAdjustmentDetailsV> query, string invoiceNumber) =>
 			query.Where(t => t.InvoiceNumber == invoiceNumber);
 
+		private IQueryable<LatestReceiptAdjustmentDetailsV> GetByRequestNumber(IQueryable<LatestReceiptAdjustmentDetailsV> query, string requestNumber) =>
+			long.TryParse(requestNumber, out var requestId)
+				? query.Where(t => t.RequestId == requestId)
+				: query.Where(_ => false);
+
 		private IQueryable<LatestReceiptAdjustmentDetailsV> GetByCustomerName(IQueryable<LatestReceiptAdjustmentDetailsV> query, string customerName) =>
 			query.Where(t => t.CustomerName == customerName);
 
@@ -711,6 +720,11 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 		private IQueryable<LatestInvoiceAdjustmentsV> GetByInvoiceNumber(IQueryable<LatestInvoiceAdjustmentsV> query, string invoiceNumber) =>
 			query.Where(t => t.InvoiceNumber == invoiceNumber);
+
+		private IQueryable<LatestInvoiceAdjustmentsV> GetByRequestNumber(IQueryable<LatestInvoiceAdjustmentsV> query, string requestNumber) =>
+			long.TryParse(requestNumber, out var requestId)
+				? query.Where(t => t.RequestId == requestId)
+				: query.Where(_ => false);
 
 		private IQueryable<LatestInvoiceAdjustmentsV> GetByCustomerName(IQueryable<LatestInvoiceAdjustmentsV> query, string customerName) =>
 			query.Where(t => t.CustomerName == customerName);

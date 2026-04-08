@@ -136,18 +136,12 @@
                             <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.InvoiceNumber)" Title="Invoice No" Width="170px" />
                             <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.AdjustmentType)" Title="Adjustment Type" Width="240px" />
                             <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.Requestor)" Title="Requestor" Width="200px" />
-                            <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.Approver)" Title="Approver" Width="200px" />
                             <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.Status)" Title="Status" Width="170px">
                                 <Template Context="row">
                                     <StatusBadge Status="@row.Status" Style="font-size: 12px;" />
                                 </Template>
                             </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.DateRequested)" Title="Date Requested" Width="170px" FormatString="{0:yyyy-MM-dd}" />
-                            <RadzenDataGridColumn TItem="ReportsDto" Title="Date Approved" Width="170px">
-                                <Template Context="row">
-                                    @(row.DateApproved.HasValue ? row.DateApproved.Value.ToString("yyyy-MM-dd") : "-")
-                                </Template>
-                            </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.DateUpdated)" Title="Date Updated" Width="170px" FormatString="{0:yyyy-MM-dd}" />
                             <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.UpdatedBy)" Title="Updated By" Width="200px" />
                             <RadzenDataGridColumn TItem="ReportsDto" Property="@nameof(ReportsDto.Amount)" Title="Amount" Width="140px" FormatString="{0:N2}" TextAlign="TextAlign.Right" />

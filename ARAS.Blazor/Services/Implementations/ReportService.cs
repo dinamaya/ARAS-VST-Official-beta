@@ -42,7 +42,7 @@ namespace ARAS.Blazor.Services.Implementations
             ArgumentNullException.ThrowIfNull(filters);
 
             var bytes = BuildExcelWorkbook(rows, filters);
-            var fileName = $"reports-{SanitizeFileName(filters.ReportType)}-{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+            var fileName = $"reports-{SanitizeFileName(filters.ReportType)}-{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx";
             await _jsRuntime.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(bytes));
         }
 

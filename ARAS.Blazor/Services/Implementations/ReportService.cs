@@ -23,6 +23,8 @@ namespace ARAS.Blazor.Services.Implementations
 
         public async Task<IEnumerable<ReportsDto>> GetReportsAsync(ReportFiltersDto filters)
         {
+            ArgumentNullException.ThrowIfNull(filters);
+
             var response = await _baseService.SendAsync<IEnumerable<ReportsDto>>(new RequestDto()
             {
                 URL = BuildUrl(filters)

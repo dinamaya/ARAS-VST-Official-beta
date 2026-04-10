@@ -1,7 +1,6 @@
 using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Services.Interfaces;
 using Microsoft.JSInterop;
-using System.Net;
 using System.Text;
 using System.IO.Compression;
 using System.Xml;
@@ -317,7 +316,5 @@ namespace ARAS.Blazor.Services.Implementations
                 .Replace(' ', '-')
                 .ToLowerInvariant();
         }
-
-        private static string Encode(string? value) => WebUtility.HtmlEncode(value ?? string.Empty);
     }
 }

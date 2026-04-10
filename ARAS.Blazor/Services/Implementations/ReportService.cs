@@ -38,6 +38,9 @@ namespace ARAS.Blazor.Services.Implementations
 
         public async Task ExportExcelAsync(IEnumerable<ReportsDto> rows, ReportFiltersDto filters)
         {
+            ArgumentNullException.ThrowIfNull(rows);
+            ArgumentNullException.ThrowIfNull(filters);
+
             var bytes = BuildExcelWorkbook(rows, filters);
             var fileName = $"reports-{SanitizeFileName(filters.ReportType)}-{DateTime.Now:yyyyMMddHHmmss}.xlsx";
             await _jsRuntime.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(bytes));
@@ -304,6 +307,9 @@ namespace ARAS.Blazor.Services.Implementations
 
         private static string SanitizeFileName(string value)
         {
+            if (string.IsNullOrWhiteSpace(value))
+                return "report";
+
             var invalidChars = Path.GetInvalidFileNameChars();
             return new string(value
                 .Select(ch => invalidChars.Contains(ch) ? '-' : ch)

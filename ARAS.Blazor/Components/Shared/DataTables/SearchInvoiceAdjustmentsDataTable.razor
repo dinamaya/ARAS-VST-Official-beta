@@ -163,7 +163,7 @@
 				break;
 		}
 
-		NavManager.NavigateTo($"/submissions/invoice/{code}/{selectedRow.RequestId}");
+		NavManager.NavigateTo($"/approvals/invoice/{code}/{selectedRow.RequestId}");
 	}
 
 	private void ToggleRow(InvoiceAdjustmentRowDto row) => dataGrid.SelectRow(row);

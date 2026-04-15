@@ -37,6 +37,13 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
             public double Amount { get; set; }
         }
 
+        private sealed class QueueStatusRow
+        {
+            public long RequestId { get; set; }
+            public DateTime DateCreated { get; set; }
+            public string Status { get; set; } = string.Empty;
+        }
+
         public RequestRepository(MainDbContext context, ITransactionRepository transactionRepo)
         {
             _context = context;
@@ -265,6 +272,33 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                     (v, r) => new { v, r })
                 .Where(x => x.r.CreatedBy == userId && x.v.Status == "Rejected")
                 .CountAsync();
+        }
+
+        public async Task<ApproverQueueHealthDto> GetApproverQueueHealth(string userId, string role, int lookbackDays = 30, int overdueAfterDays = 2)
+        {
+            string queueStatus = GetApprovalQueueStatus(role);
+            string approvedStatus = GetApprovedStatusForRole(role);
+
+            DateTime now = DateTime.Now;
+            DateTime actionsSince = now.AddDays(-lookbackDays);
+            DateTime overdueBefore = now.AddDays(-overdueAfterDays);
+
+            IQueryable<QueueStatusRow> allCurrentQueueItems = GetCurrentQueueItems();
+            IQueryable<QueueStatusRow> myCurrentQueueItems = allCurrentQueueItems.Where(x => x.Status == queueStatus);
+            IQueryable<TransactionsHistoryV> myRecentActions = GetRecentRoleActions(userId, role, actionsSince);
+
+            return new ApproverQueueHealthDto
+            {
+                QueueStatus = queueStatus,
+                LookbackDays = lookbackDays,
+                SlaDays = overdueAfterDays,
+                PendingInMyQueue = await myCurrentQueueItems.CountAsync(),
+                ApprovedByMe = await myRecentActions.Where(x => x.Status == approvedStatus).CountAsync(),
+                DeclinedByMe = await myRecentActions.Where(x => x.Status == "Declined").CountAsync(),
+                RejectedByMe = await myRecentActions.Where(x => x.Status == "Rejected").CountAsync(),
+                OverdueInMyQueue = await myCurrentQueueItems.Where(x => x.DateCreated < overdueBefore).CountAsync(),
+                ErpPostingCount = await allCurrentQueueItems.Where(x => x.Status == "For ERP Posting").CountAsync()
+            };
         }
 
         public async Task<IEnumerable<ReportsDto>> GetReports(ReportFiltersDto filters, string role, string fullName)
@@ -573,6 +607,30 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
             return query;
         }
 
+        private IQueryable<QueueStatusRow> GetCurrentQueueItems() =>
+            _context.VwLatestReceiptAdjustmentDetails
+                .AsNoTracking()
+                .Select(x => new QueueStatusRow
+                {
+                    RequestId = x.RequestId,
+                    DateCreated = x.DateCreated,
+                    Status = x.Status
+                })
+                .Concat(
+                    _context.VwLatestInvoiceAdjustments
+                        .AsNoTracking()
+                        .Select(x => new QueueStatusRow
+                        {
+                            RequestId = x.RequestId,
+                            DateCreated = x.DateCreated,
+                            Status = x.Status
+                        }));
+
+        private IQueryable<TransactionsHistoryV> GetRecentRoleActions(string userId, string role, DateTime actionsSince) =>
+            _context.VwTransactionsHistory
+                .AsNoTracking()
+                .Where(x => x.CreatedBy == userId && x.AccountRole == role && x.DateCreated >= actionsSince);
+
 		private IQueryable<LatestReceiptAdjustmentDetailsV> GetReceiptAdjustmentsForApprovals(string role)
 		{
 			var statuses = GetApprovalQueueStatuses(role);
@@ -600,6 +658,18 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 			throw new InvalidOperationException(Exceptions.INVALID_ROLE);
 		}
+
+        private static string GetApprovalQueueStatus(string role) =>
+            GetApprovalQueueStatuses(role).Single();
+
+        private static string GetApprovedStatusForRole(string role) =>
+            role switch
+            {
+                var currentRole when IsCncApproverRole(currentRole) => "For FSG Validation",
+                var currentRole when IsFsgValidatorRole(currentRole) => "For FSG Approval",
+                var currentRole when IsFsgApproverRole(currentRole) => "For ERP Posting",
+                _ => throw new InvalidOperationException(Exceptions.INVALID_ROLE)
+            };
 
 		private static bool IsCncApproverRole(string role) =>
 			string.Equals(role, "CNC Approver", StringComparison.OrdinalIgnoreCase);

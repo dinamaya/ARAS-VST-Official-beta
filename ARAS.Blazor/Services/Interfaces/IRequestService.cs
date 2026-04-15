@@ -20,6 +20,7 @@ namespace ARAS.Blazor.Services.Interfaces
         Task<int> GetResubmittedRequestCount();
         Task<int> GetPostedRequestCount();
         Task<int> GetRejectedRequestCount();
+        Task<ApproverQueueHealthDto> GetApproverQueueHealth();
 
         Task<TransactionRequestRowDto> GetRequestDetails(long requestId);
 		Task<ReceiptAdjustmentUpdateResponseDto> GetReceiptDetails(long requestId);

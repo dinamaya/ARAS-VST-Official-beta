@@ -8,6 +8,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 	{
 		Task<IEnumerable<TransactionHistoryDto>> GetHistoryByRequestId(long requestId);
 		Task<IEnumerable<EmailTimelineDetailsDto>> GetEmailHistoryByRequestId(long requestId);
-        Task<IEnumerable<TransactionHistoryDto>> GetLatestTransactions(string requestorId, int count);
+        Task<IEnumerable<TransactionHistoryDto>> GetLatestTransactions(string userId, string role, int count);
     }
 }

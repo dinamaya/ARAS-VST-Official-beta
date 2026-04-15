@@ -40,134 +40,30 @@
 
     <RadzenStack>
         <div class="row mx-4">
-            <div class="col-xl-2 col-sm-6 mb-xl-0 mb-4">
-                <div class="card">
-                    <div class="card-body p-3">
-                        <div class="row">
-                            <div class="col-8">
-                                <div class="numbers">
-                                    <p class="text-sm mb-0 text-capitalize font-weight-bold">For CNC Approval</p>
-                                    <h5 class="font-weight-bolder mb-0">
-                                        @pendingCount
-                                    </h5>
+            @foreach (var card in dashboardCards)
+            {
+                <div class="col-xl-2 col-sm-6 mb-4">
+                    <div class="card">
+                        <div class="card-body p-3">
+                            <div class="row">
+                                <div class="col-8">
+                                    <div class="numbers">
+                                        <p class="text-sm mb-0 text-capitalize font-weight-bold">@card.Title</p>
+                                        <h5 class="font-weight-bolder mb-0">
+                                            @card.Count
+                                        </h5>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-4 text-end">
-                                <div class="icon icon-shape bg-gradient-dark shadow text-center border-radius-md">
-                                    <div>
-                                        <i class="ni ni-active-40 text-lg opacity-10" aria-hidden="true"></i>
+                                <div class="col-4 text-end">
+                                    <div class="icon icon-shape bg-gradient-dark shadow text-center border-radius-md">
+                                        <i class="@card.IconClass text-lg opacity-10" aria-hidden="true"></i>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-xl-2 col-sm-6 mb-xl-0 mb-4">
-                <div class="card">
-                    <div class="card-body p-3">
-                        <div class="row">
-                            <div class="col-8">
-                                <div class="numbers">
-                                    <p class="text-sm mb-0 text-capitalize font-weight-bold">For ERP Posting</p>
-                                    <h5 class="font-weight-bolder mb-0">
-                                        @approvedCount
-                                    </h5>
-                                </div>
-                            </div>
-                            <div class="col-4 text-end">
-                                <div class="icon icon-shape bg-gradient-dark shadow text-center border-radius-md">
-                                    <i class="ni ni-like-2 text-lg opacity-10" aria-hidden="true"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-2 col-sm-6 mb-xl-0 mb-4">
-                <div class="card">
-                    <div class="card-body p-3">
-                        <div class="row">
-                            <div class="col-8">
-                                <div class="numbers">
-                                    <p class="text-sm mb-0 text-capitalize font-weight-bold">Declined</p>
-                                    <h5 class="font-weight-bolder mb-0">
-                                        @declinedCount
-                                    </h5>
-                                </div>
-                            </div>
-                            <div class="col-4 text-end">
-                                <div class="icon icon-shape bg-gradient-dark shadow text-center border-radius-md">
-                                    <i class="ni ni-bold-down text-lg opacity-10" aria-hidden="true"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-2 col-sm-6 mb-xl-0 mb-4">
-                <div class="card">
-                    <div class="card-body p-3">
-                        <div class="row">
-                            <div class="col-8">
-                                <div class="numbers">
-                                    <p class="text-sm mb-0 text-capitalize font-weight-bold">FSG Validation / Approval</p>
-                                    <h5 class="font-weight-bolder mb-0">
-                                        @resubmittedCount
-                                    </h5>
-                                </div>
-                            </div>
-                            <div class="col-4 text-end">
-                                <div class="icon icon-shape bg-gradient-dark shadow text-center border-radius-md">
-                                    <i class="ni ni-user-run text-lg opacity-10" aria-hidden="true"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-2 col-sm-6 mb-xl-0 mb-4">
-                <div class="card">
-                    <div class="card-body p-3">
-                        <div class="row">
-                            <div class="col-8">
-                                <div class="numbers">
-                                    <p class="text-sm mb-0 text-capitalize font-weight-bold">Posted</p>
-                                    <h5 class="font-weight-bolder mb-0">
-                                        @postedCount
-                                    </h5>
-                                </div>
-                            </div>
-                            <div class="col-4 text-end">
-                                <div class="icon icon-shape bg-gradient-dark shadow text-center border-radius-md">
-                                    <i class="ni ni-check-bold text-lg opacity-10" aria-hidden="true"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-2 col-sm-6">
-                <div class="card">
-                    <div class="card-body p-3">
-                        <div class="row">
-                            <div class="col-8">
-                                <div class="numbers">
-                                    <p class="text-sm mb-0 text-capitalize font-weight-bold">Rejected</p>
-                                    <h5 class="font-weight-bolder mb-0">
-                                        @rejectedCount
-                                    </h5>
-                                </div>
-                            </div>
-                            <div class="col-4 text-end">
-                                <div class="icon icon-shape bg-gradient-dark shadow text-center border-radius-md">
-                                    <i class="ni ni-fat-remove text-lg opacity-10" aria-hidden="true"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            }
         </div>
 
     </RadzenStack>
@@ -263,6 +159,8 @@
     private int resubmittedCount = 0;
     private int postedCount = 0;
     private int rejectedCount = 0;
+    private ApproverQueueHealthDto approvalQueueHealth = new();
+    private IEnumerable<DashboardCard> dashboardCards = [];
     private string profileImageUrl = "/img/avatar.png";
     private string requestChartTitle = "My Request Status";
     private IEnumerable<DataItem> requestCount = [];
@@ -275,14 +173,23 @@
 
         var result = await TransactionService.GetLatestTransactions();
         latestTransactions = result?.ToList() ?? new List<TransactionHistoryDto>();
-        pendingCount = await RequestService.GetPendingRequestCount();
-        approvedCount = await RequestService.GetApprovedRequestCount();
-        declinedCount = await RequestService.GetDeclinedRequestCount();
-        validationCount = await RequestService.GetFsgValidationRequestCount();
-        fsgApprovalCount = await RequestService.GetFsgApprovalRequestCount();
-        resubmittedCount = await RequestService.GetResubmittedRequestCount();
-        postedCount = await RequestService.GetPostedRequestCount();
-        rejectedCount = await RequestService.GetRejectedRequestCount();
+        if (accountDetails.IsApprovalActor())
+        {
+            approvalQueueHealth = await RequestService.GetApproverQueueHealth();
+        }
+        else
+        {
+            pendingCount = await RequestService.GetPendingRequestCount();
+            approvedCount = await RequestService.GetApprovedRequestCount();
+            declinedCount = await RequestService.GetDeclinedRequestCount();
+            validationCount = await RequestService.GetFsgValidationRequestCount();
+            fsgApprovalCount = await RequestService.GetFsgApprovalRequestCount();
+            resubmittedCount = await RequestService.GetResubmittedRequestCount();
+            postedCount = await RequestService.GetPostedRequestCount();
+            rejectedCount = await RequestService.GetRejectedRequestCount();
+        }
+
+        dashboardCards = BuildDashboardCards();
         requestCount = BuildRequestChartData();
 
         await base.OnInitializedAsync();
@@ -299,8 +206,54 @@
         public double Count { get; set; }
     }
 
+    class DashboardCard
+    {
+        public string Title { get; set; } = string.Empty;
+        public int Count { get; set; }
+        public string IconClass { get; set; } = string.Empty;
+    }
+
+    private IEnumerable<DashboardCard> BuildDashboardCards()
+    {
+        if (accountDetails.IsApprovalActor())
+        {
+            return
+            [
+                new DashboardCard { Title = approvalQueueHealth.QueueStatus, Count = approvalQueueHealth.PendingInMyQueue, IconClass = "ni ni-active-40" },
+                new DashboardCard { Title = "Approved by Me", Count = approvalQueueHealth.ApprovedByMe, IconClass = "ni ni-like-2" },
+                new DashboardCard { Title = "Declined by Me", Count = approvalQueueHealth.DeclinedByMe, IconClass = "ni ni-bold-down" },
+                new DashboardCard { Title = "Rejected by Me", Count = approvalQueueHealth.RejectedByMe, IconClass = "ni ni-fat-remove" },
+                new DashboardCard { Title = "Overdue in My Queue", Count = approvalQueueHealth.OverdueInMyQueue, IconClass = "ni ni-time-alarm" },
+                new DashboardCard { Title = "For ERP Posting", Count = approvalQueueHealth.ErpPostingCount, IconClass = "ni ni-check-bold" },
+            ];
+        }
+
+        return
+        [
+            new DashboardCard { Title = "For CNC Approval", Count = pendingCount, IconClass = "ni ni-active-40" },
+            new DashboardCard { Title = "For ERP Posting", Count = approvedCount, IconClass = "ni ni-like-2" },
+            new DashboardCard { Title = "Declined", Count = declinedCount, IconClass = "ni ni-bold-down" },
+            new DashboardCard { Title = "FSG Validation / Approval", Count = resubmittedCount, IconClass = "ni ni-user-run" },
+            new DashboardCard { Title = "Posted", Count = postedCount, IconClass = "ni ni-check-bold" },
+            new DashboardCard { Title = "Rejected", Count = rejectedCount, IconClass = "ni ni-fat-remove" },
+        ];
+    }
+
     private IEnumerable<DataItem> BuildRequestChartData()
     {
+        if (accountDetails.IsApprovalActor())
+        {
+            requestChartTitle = $"My Approval Queue Health (Last {approvalQueueHealth.LookbackDays} Days)";
+            return
+            [
+                new DataItem { Request = "Pending in My Queue", Count = approvalQueueHealth.PendingInMyQueue },
+                new DataItem { Request = "Approved by Me", Count = approvalQueueHealth.ApprovedByMe },
+                new DataItem { Request = "Declined by Me", Count = approvalQueueHealth.DeclinedByMe },
+                new DataItem { Request = "Rejected by Me", Count = approvalQueueHealth.RejectedByMe },
+                new DataItem { Request = "Overdue in My Queue", Count = approvalQueueHealth.OverdueInMyQueue },
+            ];
+        }
+
         if (accountDetails.IsInRole("Requestor"))
         {
             requestChartTitle = "My Open Requests";

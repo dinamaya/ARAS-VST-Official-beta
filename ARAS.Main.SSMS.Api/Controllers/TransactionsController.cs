@@ -45,7 +45,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
             try
             {
                 var accountInfo = User.GetAccountBasicInfo();
-                response.Result = await _transactionRepo.GetLatestTransactions(accountInfo.Id, 6);
+                response.Result = await _transactionRepo.GetLatestTransactions(accountInfo.Id, accountInfo.Role, 6);
                 response.Message = "Successfully fetched latest transactions";
                 return response;
             }

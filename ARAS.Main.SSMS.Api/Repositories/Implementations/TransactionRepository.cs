@@ -10,6 +10,19 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 {
 	public class TransactionRepository(MainDbContext context, IStatusRepository statusRepo) : ITransactionRepository
 	{
+        private sealed class LatestQueueTransactionRow
+        {
+            public long TransactionId { get; set; }
+            public long RequestId { get; set; }
+            public string Creator { get; set; } = string.Empty;
+            public DateTime DateCreated { get; set; }
+            public string Description { get; set; } = string.Empty;
+            public string AttachmentName { get; set; } = string.Empty;
+            public string Status { get; set; } = string.Empty;
+            public string AccountRole { get; set; } = string.Empty;
+            public string Activity { get; set; } = string.Empty;
+        }
+
 		public async Task<long> CreateAsync(TransactionCreateDto data, string createdBy)
 		{
 			string statusId = await statusRepo.GetIdByName(data.StatusName);
@@ -78,32 +91,31 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		}
 
 
-        public async Task<IEnumerable<TransactionHistoryDto>> GetLatestTransactions(string requestorId, int count)
+        public async Task<IEnumerable<TransactionHistoryDto>> GetLatestTransactions(string userId, string role, int count)
         {
-            return await context.VwTransactionsHistory
-                .AsNoTracking()
-                .Join(context.Requests,
-                      t => t.RequestId,
-                      r => r.Id,
-                      (t, r) => new { t, r })
-                .Where(x => x.r.CreatedBy == requestorId)
-                .OrderByDescending(x => x.t.DateCreated)
+            IQueryable<LatestQueueTransactionRow> query = IsApprovalRole(role)
+                ? GetLatestTransactionsForApprover(role)
+                : GetLatestTransactionsForRequestor(userId);
+
+            return await query
+                .OrderByDescending(x => x.DateCreated)
                 .Take(count)
                 .Select(x => new TransactionHistoryDto
                 {
-                    TransactionId = x.t.TransactionId,
-                    RequestNumber = x.t.RequestId.ToString(),
-                    Creator = x.t.LastName + ", " + x.t.FirstName,
-                    DateCreated = x.t.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
-                    Description = x.t.Description,
-                    AttachmentName = x.t.AttachmentName,
-                    Status = x.t.Status,
-                    AccountRole = x.t.AccountRole,
-					Activity = x.t.Activity
-                }).ToListAsync();
+                    TransactionId = x.TransactionId,
+                    RequestNumber = x.RequestId.ToString(),
+                    Creator = x.Creator,
+                    DateCreated = x.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
+                    Description = x.Description,
+                    AttachmentName = x.AttachmentName,
+                    Status = x.Status,
+                    AccountRole = x.AccountRole,
+                    Activity = x.Activity
+                })
+                .ToListAsync();
         }
 
-        public async Task<IEnumerable<EmailTimelineDetailsDto>> GetEmailHistoryByRequestId(long requestId)
+		public async Task<IEnumerable<EmailTimelineDetailsDto>> GetEmailHistoryByRequestId(long requestId)
 		{
 			var history = await context.VwTransactionsHistory
 				.AsNoTracking()
@@ -126,5 +138,80 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				DateCreated = t.DateCreated,
 			}).ToList();
 		}
+
+        private IQueryable<LatestQueueTransactionRow> GetLatestTransactionsForRequestor(string userId) =>
+            context.VwTransactionsHistory
+                .AsNoTracking()
+                .Join(context.Requests,
+                    t => t.RequestId,
+                    r => r.Id,
+                    (t, r) => new { t, r })
+                .Where(x => x.r.CreatedBy == userId)
+                .Select(x => new LatestQueueTransactionRow
+                {
+                    TransactionId = x.t.TransactionId,
+                    RequestId = x.t.RequestId,
+                    Creator = x.t.LastName + ", " + x.t.FirstName,
+                    DateCreated = x.t.DateCreated,
+                    Description = x.t.Description,
+                    AttachmentName = x.t.AttachmentName,
+                    Status = x.t.Status,
+                    AccountRole = x.t.AccountRole,
+                    Activity = x.t.Activity
+                });
+
+        private IQueryable<LatestQueueTransactionRow> GetLatestTransactionsForApprover(string role)
+        {
+            string queueStatus = GetApprovalQueueStatus(role);
+
+            IQueryable<LatestQueueTransactionRow> queueRows =
+                context.VwLatestReceiptAdjustmentDetails
+                    .AsNoTracking()
+                    .Where(x => x.Status == queueStatus)
+                    .Select(x => new LatestQueueTransactionRow
+                    {
+                        TransactionId = x.TransactionId,
+                        RequestId = x.RequestId,
+                        Creator = (x.UpdaterLastName ?? string.Empty) + ", " + (x.UpdaterFirstName ?? string.Empty),
+                        DateCreated = x.DateCreated,
+                        Description = string.Empty,
+                        AttachmentName = string.Empty,
+                        Status = x.Status,
+                        AccountRole = role,
+                        Activity = x.AdjustmentType
+                    })
+                    .Concat(
+                        context.VwLatestInvoiceAdjustments
+                            .AsNoTracking()
+                            .Where(x => x.Status == queueStatus)
+                            .Select(x => new LatestQueueTransactionRow
+                            {
+                                TransactionId = x.TransactionId,
+                                RequestId = x.RequestId,
+                                Creator = (x.UpdaterLastName ?? string.Empty) + ", " + (x.UpdaterFirstName ?? string.Empty),
+                                DateCreated = x.DateCreated,
+                                Description = string.Empty,
+                                AttachmentName = string.Empty,
+                                Status = x.Status,
+                                AccountRole = role,
+                                Activity = x.AdjustmentType
+                            }));
+
+            return queueRows;
+        }
+
+        private static bool IsApprovalRole(string role) =>
+            string.Equals(role, "CNC Approver", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(role, "FSG Validator", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(role, "FSG Approver", StringComparison.OrdinalIgnoreCase);
+
+        private static string GetApprovalQueueStatus(string role) =>
+            role switch
+            {
+                var currentRole when string.Equals(currentRole, "CNC Approver", StringComparison.OrdinalIgnoreCase) => "For CNC Approval",
+                var currentRole when string.Equals(currentRole, "FSG Validator", StringComparison.OrdinalIgnoreCase) => "For FSG Validation",
+                var currentRole when string.Equals(currentRole, "FSG Approver", StringComparison.OrdinalIgnoreCase) => "For FSG Approval",
+                _ => throw new InvalidOperationException(Exceptions.INVALID_ROLE)
+            };
     }
 }

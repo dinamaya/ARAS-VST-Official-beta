@@ -27,9 +27,10 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
         Task<int> GetDeclinedRequestCount(string userId);
         Task<int> GetFsgValidationRequestCount(string userId);
         Task<int> GetFsgApprovalRequestCount(string userId);
-        Task<int> GetResubmittedRequestCount(string userId);
+		Task<int> GetResubmittedRequestCount(string userId);
 		Task<int> GetPostedRequestCount(string userId);
 		Task<int> GetRejectedRequestCount(string userId);
+		Task<ApproverQueueHealthDto> GetApproverQueueHealth(string userId, string role, int lookbackDays = 30, int overdueAfterDays = 2);
 		Task<IEnumerable<ReportsDto>> GetReports(ReportFiltersDto filters, string role, string fullName);
 
         Task Approve(long requestId, string modifiedBy, string role);

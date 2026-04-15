@@ -111,6 +111,18 @@ namespace ARAS.Blazor.Services.Implementations
             return response.IsSuccess ? response.Result : 0;
         }
 
+        public async Task<ApproverQueueHealthDto> GetApproverQueueHealth()
+        {
+            var response = await _baseService.SendAsync<ApproverQueueHealthDto>(new RequestDto()
+            {
+                URL = _configService.GetRequestsUrl("dashboard/approver-queue-health"),
+            });
+
+            return response.IsSuccess && response.Result is not null
+                ? response.Result
+                : new ApproverQueueHealthDto();
+        }
+
         public async Task<TransactionRequestRowDto> GetRequestDetails(long requestId)
 		{
 			var response = await _baseService.SendAsync<TransactionRequestRowDto>(new RequestDto()

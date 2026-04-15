@@ -257,6 +257,23 @@ namespace ARAS.Main.SSMS.Api.Controllers
             }
         }
 
+        [HttpGet("dashboard/approver-queue-health"), Authorize(Roles = "CNC Approver,FSG Validator,FSG Approver")]
+        public async Task<ResponseDto<ApproverQueueHealthDto>> GetApproverQueueHealth()
+        {
+            var response = new ResponseDto<ApproverQueueHealthDto>();
+            try
+            {
+                var accountInfo = User.GetAccountBasicInfo();
+                response.Result = await _requestRepo.GetApproverQueueHealth(accountInfo.Id, accountInfo.Role);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return response.Failed(ex.Message);
+            }
+        }
+
         [HttpGet("reports"), Authorize]
         public async Task<ResponseDto<IEnumerable<ReportsDto>>> GetReports([FromQuery] ReportFiltersDto filters)
         {

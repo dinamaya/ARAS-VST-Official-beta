@@ -13,16 +13,18 @@
 			<RadzenRow class="pb-3">
 				<RadzenColumn Size="12">
 					<h3 class="mb-4">Search Result</h3>
-
-					<RadzenRow class="w-100">
-						<RadzenColumn Size="12" SizeMD="6">
-							<RadzenSelectBar @ref="selectBarFilter"
-											 TValue="string"
-											 Data="@filterSelection"
-											 @bind-Value="currentFilterStat"
-											 Change="@OnFilter" />
-						</RadzenColumn>
-					</RadzenRow>
+				</RadzenColumn>
+			</RadzenRow>
+			<RadzenRow class="w-100">
+				<RadzenColumn Size="12">
+					<div class="request-history-filter-tabs-container">
+						<RadzenSelectBar @ref="selectBarFilter"
+										 TValue="string"
+										 Data="@filterSelection"
+										 @bind-Value="currentFilterStat"
+										 Change="@OnFilter"
+										 class="w-100 request-history-filter-tabs" />
+					</div>
 				</RadzenColumn>
 			</RadzenRow>
 			@if (IsLoading)

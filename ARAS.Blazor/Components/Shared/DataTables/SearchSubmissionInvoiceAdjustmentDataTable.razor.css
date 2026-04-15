@@ -1,0 +1,12 @@
+.request-history-filter-tabs-container {
+	overflow-x: auto;
+	padding-bottom: 0.25rem;
+}
+
+::deep .request-history-filter-tabs {
+	min-width: max-content;
+}
+
+::deep .request-history-filter-tabs .rz-button {
+	white-space: nowrap;
+}

@@ -366,3 +366,4 @@ FodyWeavers.xsd
 /ARAS.Auth.Api/Migrations/
 /ARAS.Auth.Api/Migrations/AuthDbContextModelSnapshot.cs
 /ARAS.Blazor/Migrations
+/.dotnet-cli/.dotnet

@@ -6,8 +6,10 @@ using ARAS.Blazor.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
+using System.Net;
 using System.Security.Claims;
 namespace ARAS.Auth.Api.Controllers
 {
@@ -18,12 +20,14 @@ namespace ARAS.Auth.Api.Controllers
 		private readonly IAuthRepository _authRepo;
 		private readonly IConfigService _config;
 		private readonly ILogger<AuthController> _logger;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-		public AuthController(IAuthRepository authRepo, IConfigService conifg, ILogger<AuthController> logger, IConfigService configService)
+		public AuthController(IAuthRepository authRepo, IConfigService conifg, ILogger<AuthController> logger, IHttpClientFactory httpClientFactory)
 		{
 			_authRepo = authRepo;
 			_config = conifg;
 			_logger = logger;
+            _httpClientFactory = httpClientFactory;
 		}
 
 		[HttpGet("aad/login")]
@@ -91,30 +95,54 @@ namespace ARAS.Auth.Api.Controllers
 			return Redirect(Utils.Security.DecodeString(url));
 		}
 
-        [HttpGet("aad/photo")]
+        [HttpGet("aad/photo"), Authorize]
         public async Task<IActionResult> GetProfilePhoto()
         {
             try
             {
                 var accessToken = await HttpContext.GetTokenAsync("access_token");
                 if (string.IsNullOrWhiteSpace(accessToken))
-                    return NotFound();
+                {
+                    ApplyNoStoreHeaders();
+                    _logger.LogWarning("Profile photo request is missing a Microsoft Graph access token.");
+                    return StatusCode((int)HttpStatusCode.ServiceUnavailable);
+                }
 
-                using var httpClient = new HttpClient();
+                using var httpClient = _httpClientFactory.CreateClient("MicrosoftGraph");
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-                using var response = await httpClient.GetAsync("https://graph.microsoft.com/v1.0/me/photo/$value");
-                if (!response.IsSuccessStatusCode)
+                using var response = await httpClient.GetAsync("me/photo/$value", HttpCompletionOption.ResponseHeadersRead, HttpContext.RequestAborted);
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    ApplyNoStoreHeaders();
                     return NotFound();
+                }
+
+                if (response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden)
+                {
+                    ApplyNoStoreHeaders();
+                    _logger.LogWarning("Microsoft Graph denied access to the profile photo endpoint with status code {StatusCode}.", response.StatusCode);
+                    return StatusCode((int)response.StatusCode);
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    ApplyNoStoreHeaders();
+                    _logger.LogWarning("Microsoft Graph returned status code {StatusCode} while loading profile photo.", response.StatusCode);
+                    return StatusCode((int)HttpStatusCode.BadGateway);
+                }
 
                 var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
                 var imageBytes = await response.Content.ReadAsByteArrayAsync();
+                Response.Headers.CacheControl = "private, max-age=300";
+                Response.Headers.Vary = "Cookie";
                 return File(imageBytes, contentType);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Unable to load profile photo from Microsoft Graph.");
-                return NotFound();
+                ApplyNoStoreHeaders();
+                return StatusCode((int)HttpStatusCode.BadGateway);
             }
         }
 
@@ -160,5 +188,11 @@ namespace ARAS.Auth.Api.Controllers
 			var redirectUrl = Utils.Security.DecodeString(url) ?? "";
 			return Redirect(redirectUrl);
 		}
+
+        private void ApplyNoStoreHeaders()
+        {
+            Response.Headers.CacheControl = "private, no-store";
+            Response.Headers.Vary = "Cookie";
+        }
 	}
 }

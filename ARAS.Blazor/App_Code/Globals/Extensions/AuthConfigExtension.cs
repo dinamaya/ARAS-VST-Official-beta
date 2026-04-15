@@ -110,6 +110,12 @@ namespace ARAS.Blazor.App_Code.Globals.Extensions
 				}
 			});
 
+			services.AddHttpClient("MicrosoftGraph", client =>
+			{
+				client.BaseAddress = new Uri("https://graph.microsoft.com/v1.0/");
+				client.Timeout = TimeSpan.FromSeconds(10);
+			});
+
 			services.AddAuthorization(options =>
 			{
 				options.FallbackPolicy = new AuthorizationPolicyBuilder()

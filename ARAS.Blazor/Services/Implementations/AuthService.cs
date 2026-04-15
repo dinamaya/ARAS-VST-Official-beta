@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace ARAS.Blazor.Services.Implementations
 {
@@ -58,12 +60,21 @@ namespace ARAS.Blazor.Services.Implementations
 				return null;
 
 			string role = user.GetClaim(ClaimTypes.Role) ?? "Unassigned";
+			string photoCacheSource =
+				user.GetClaim("oid")
+				?? user.GetClaim("http://schemas.microsoft.com/identity/claims/objectidentifier")
+				?? user.GetClaim(ClaimTypes.PrimarySid)
+				?? user.GetClaim(ClaimTypes.Email)
+				?? user.GetClaim(ClaimTypes.Name)
+				?? string.Empty;
+
 			return new AccountDetailsDto()
 			{
 				FullName = user.GetClaim(JwtRegisteredClaimNames.GivenName) + " " + user.GetClaim(JwtRegisteredClaimNames.FamilyName),
 				AccountRole = role == "Ops" ? "Admin" : role,
 				GroupCode = user.GetClaim(ClaimTypes.GroupSid) ?? string.Empty,
-				Email = user.GetClaim(ClaimTypes.Email) ?? string.Empty
+				Email = user.GetClaim(ClaimTypes.Email) ?? string.Empty,
+				PhotoCacheKey = BuildPhotoCacheKey(photoCacheSource)
 			};
 		}
 
@@ -81,6 +92,14 @@ namespace ARAS.Blazor.Services.Implementations
 			_authStateLazy = new Lazy<Task<AuthenticationState>>(
 				() => _authStateProvider.GetAuthenticationStateAsync()
 			);
+		}
+
+		private static string BuildPhotoCacheKey(string value)
+		{
+			if (string.IsNullOrWhiteSpace(value))
+				return string.Empty;
+
+			return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
 		}
 
 		public async Task<bool> IsAccountSecurityHashValid()

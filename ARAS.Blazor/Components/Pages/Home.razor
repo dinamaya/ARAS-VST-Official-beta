@@ -169,7 +169,9 @@
     protected override async Task OnInitializedAsync()
     {
         accountDetails = await AuthService.GetAccountDetails();
-        profileImageUrl = $"/api/auth/aad/photo?v={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+        profileImageUrl = string.IsNullOrWhiteSpace(accountDetails?.PhotoCacheKey)
+            ? "/img/avatar.png"
+            : $"/api/auth/aad/photo?ck={accountDetails.PhotoCacheKey}";
 
         var result = await TransactionService.GetLatestTransactions();
         latestTransactions = result?.ToList() ?? new List<TransactionHistoryDto>();

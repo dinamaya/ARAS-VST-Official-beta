@@ -83,14 +83,12 @@
 	[Parameter] public bool IsLoading { get; set; }
 
 	private IEnumerable<InvoiceAdjustmentRowDto> filteredRows;
-
 	private int FilteredCount => filteredRows.Count();
 
 	private RadzenDataGrid<InvoiceAdjustmentRowDto> dataGrid;
 	private RadzenSelectBar<string> selectBarFilter;
 
 	private IEnumerable<string> filterSelection;
-
 	private InvoiceAdjustmentRowDto selectedRow;
 	private string currentFilterStat = "All";
 
@@ -103,7 +101,10 @@
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
-		filterSelection = ["All", "For ERP Posting", "Posted", "For CNC Approval", "For FSG Validation", "For FSG Approval", "Declined", "Rejected"];
+		filterSelection = ["All", "For ERP Posting", "Posted"];
+
+		if (!Role.IsApprovalActor())
+			filterSelection = filterSelection.Union(["For CNC Approval", "For FSG Validation", "For FSG Approval", "Declined", "Rejected"]);
 	}
 
 	private async Task OnSelect(InvoiceAdjustmentRowDto selectedRow)

@@ -95,8 +95,16 @@
 
 		<ReceiptAttachmentsDatatable @ref="receiptAttachments" SelectedAdjustmentTypes="selectedAdjustmentTypes" Notes="Notes" IsDownloadable=false />
 		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-			<button class="btn btn-primary mt-2" @onclick="OnSubmit">
-				Submit
+			<button class="btn btn-primary mt-2" @onclick="OnSubmit" disabled="@(isSubmitting || isSubmitConfirmationOpen)">
+				@if (isSubmitting)
+				{
+					<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+					<span>Submitting...</span>
+				}
+				else
+				{
+					<span>Submit</span>
+				}
 			</button>
 		</RadzenStack>
 	}
@@ -111,6 +119,8 @@
 	private double RemainingBalance = 0d;
 	private double TotalAdjustmentAmount = 0d;
 	private bool isReady = false;
+	private bool isSubmitting = false;
+	private bool isSubmitConfirmationOpen = false;
 	private ReceiptAttachmentsDatatable receiptAttachments;
 	protected override async Task OnInitializedAsync()
 	{
@@ -178,14 +188,23 @@
 
 	protected override async Task OnSubmit()
 	{
+		if (isSubmitting || isSubmitConfirmationOpen)
+			return;
+
 		try
 		{
 			await base.OnSubmit();
-			var x = selectedAdjustmentTypes;
 
+			isSubmitConfirmationOpen = true;
+			StateHasChanged();
 			bool isConfirmed = await DialogService.Confirm("Would you like to submit the following \"Receipt Adjustment(s)\"?", "Create Receipt Adjustment(s)") ?? false;
 
 			if (!isConfirmed) return;
+
+			isSubmitConfirmationOpen = false;
+			isSubmitting = true;
+			StateHasChanged();
+
 			IList<BaseReceiptAdjustmentCreateDto> requests = new List<BaseReceiptAdjustmentCreateDto>();
 
 			Guards.ThrowInvalidOperationIf(SearchedInvoice.InvoiceBalance <= 0, "Cannot apply adjustment(s) because the current invoice is non adjustable due to the invoice balance is less than or equals to 0");
@@ -206,6 +225,12 @@
 		catch (Exception ex)
 		{
 			await DialogService.Alert(ex.Message, "Request Submission Failed");
+		}
+		finally
+		{
+			isSubmitConfirmationOpen = false;
+			isSubmitting = false;
+			StateHasChanged();
 		}
 	}
 }

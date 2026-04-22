@@ -2,16 +2,26 @@
 
 <span>
 	<button class="btn @Class @ButtonClass" @onclick="HandleClick" style="@Style" disabled="@(!isClickable)">
-		@if (ChildContent == null)
+		@if (!isClickable)
 		{
-			if(!string.IsNullOrEmpty(DisabledTitle) && !isClickable)
+			<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+
+			if (!string.IsNullOrEmpty(DisabledTitle))
 			{
 				@DisabledTitle
 			}
-			else
+			else if (ChildContent == null)
 			{
 				@Title
 			}
+			else
+			{
+				@ChildContent
+			}
+		}
+		else if (ChildContent == null)
+		{
+			@Title
 		}
 		else
 		{

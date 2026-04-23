@@ -20,7 +20,7 @@
 @inject IAuthService AuthService
 @inject IARInvoiceOffsettingService ARInvoiceOffsettingService
 
-<h2>AR Invoice Offsetting</h2>
+<h2>Invoice Offsetting</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 	<SearchInvoiceDetails OnSelectInvoice="OpenAdd" />
@@ -34,7 +34,7 @@
 	<RadzenRow Gap="1.5rem">
 		<RadzenColumn Size="6">
 			<div class="text-center pb-3">
-				<h3 class="pb-0 mb-0">AR GROUP</h3>
+				<h3 class="pb-0 mb-0">INVOICES</h3>
 			</div>
 			<div class="py-4 px-3 w-100 card">
 				<RadzenDataGrid @ref="arGrid"
@@ -83,7 +83,7 @@
 		</RadzenColumn>
 		<RadzenColumn Size="6">
 			<div class="text-center pb-3">
-				<h3 class="pb-0 mb-0">CN / SI GROUP</h3>
+				<h3 class="pb-0 mb-0">CN / SI</h3>
 			</div>
 
 			<div class="py-4 px-3 w-100 card">

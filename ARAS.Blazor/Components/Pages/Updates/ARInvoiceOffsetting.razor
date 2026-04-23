@@ -173,7 +173,7 @@
 			}
 
 			var arTotal = ARInvoice.Sum(a => a.InvoiceBalance);
-			var cnTotal = Math.Round(CNInvoice.Sum(a => a.InvoiceAmount), 2);
+			var cnTotal = Math.Round(CNInvoice.Sum(a => a.InvoiceBalance), 2);
 
 			Guards.ThrowInvalidOperationIf((arTotal != cnTotal), "AR and CN/Sales Invoice amounts must balance.");
 			await SubmitRequest();
@@ -269,7 +269,7 @@
 		}
 		else
 		{
-			return (row.InvoiceAmount == 0.0);
+			return (row.InvoiceBalance == 0.0);
 		}
 	}
 

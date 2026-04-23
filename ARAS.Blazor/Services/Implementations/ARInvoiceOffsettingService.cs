@@ -38,7 +38,7 @@ namespace ARAS.Blazor.Services.Implementations
 
 			var cnRequests = cnRows.Select(r => new ARInvoiceOffsettingCreateDto()
 			{
-				InvoiceAmount = r.InvoiceAmount,
+				InvoiceAmount = r.InvoiceBalance,
 				InvoiceDate = DateTime.Parse(r.InvoiceDate),
 				InvoiceNumber = r.InvoiceNumber,
 				CustomerName = r.CustomerName,
@@ -86,7 +86,7 @@ namespace ARAS.Blazor.Services.Implementations
 
 		private static void NormalizeInvoiceBalances(IEnumerable<ARInvoiceOffsettingRowDto> rows)
 		{
-			foreach (var row in rows.Where(r => string.Equals(r.Type, "AR", StringComparison.OrdinalIgnoreCase)))
+			foreach (var row in rows)
 			{
 				if (row.InvoiceBalance == 0d && row.InvoiceAmount != 0d)
 					row.InvoiceBalance = row.InvoiceAmount;

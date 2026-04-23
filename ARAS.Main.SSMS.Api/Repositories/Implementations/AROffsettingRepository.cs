@@ -149,7 +149,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				Id = a.CreatorId.ToString(),
 				AdjustmentActivity = a.AdjustmentType,
 				InvoiceAmount = a.InvoiceAmount,
-				InvoiceBalance = a.InvoiceType == "AR" ? a.InvoiceAmount : 0d,
+				InvoiceBalance = a.InvoiceAmount,
 				InvoiceDate = a.InvoiceDate.ToString(Formats.Date.DISPLAY),
 				InvoiceNumber = a.InvoiceNumber,
 				CustomerName = a.CustomerName,

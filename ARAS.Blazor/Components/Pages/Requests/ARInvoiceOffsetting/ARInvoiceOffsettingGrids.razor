@@ -77,7 +77,7 @@
 						</Template>
 
 						<FooterTemplate>
-							<b>Total Amount:</b>
+							<b>Total Invoice Balance:</b>
 						</FooterTemplate>
 
 						<EditTemplate Context="data">
@@ -91,25 +91,25 @@
 						</Template>
 					</RadzenDataGridColumn>
 
-					<RadzenDataGridColumn TItem="ARInvoiceOffsettingRowDto" Property="Amount" Title="Amount">
+					<RadzenDataGridColumn TItem="ARInvoiceOffsettingRowDto" Property="@nameof(ARInvoiceOffsettingRowDto.InvoiceBalance)" Title="Invoice Balance">
 						<Template Context="data">
-							@data.InvoiceAmount.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+							@data.InvoiceBalance.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
 						</Template>
 						<EditTemplate Context="data">
 							<div style="position: relative; z-index: 1;">
-								<RadzenNumeric @bind-Value="data.InvoiceAmount"
-											   Name="@($"Amount_{data.Id}")"
+								<RadzenNumeric @bind-Value="data.InvoiceBalance"
+											   Name="@($"InvoiceBalance_{data.Id}")"
 											   Style="width:100%"
 											   Step="0.01" />
 							</div>
 
-							<RadzenRequiredValidator Component="@($"Amount_{data.Id}")"
-													 Text="Amount is required"
+							<RadzenRequiredValidator Component="@($"InvoiceBalance_{data.Id}")"
+													 Text="Invoice Balance is required"
 													 Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
 						</EditTemplate>
 
 						<FooterTemplate>
-							<b>@CNInvoice.Sum(a => a.InvoiceAmount).ToString("C2", new System.Globalization.CultureInfo("en-PH"))</b>
+							<b>@CNInvoice.Sum(a => a.InvoiceBalance).ToString("C2", new System.Globalization.CultureInfo("en-PH"))</b>
 						</FooterTemplate>
 					</RadzenDataGridColumn>
 

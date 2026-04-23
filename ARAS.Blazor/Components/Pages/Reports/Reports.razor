@@ -67,7 +67,7 @@
                 </div>
                 <div class="col-md-3">
                     <RadzenLabel Text="Adjustment Type" />
-                    <RadzenDropDown TValue="string" Data="@adjustmentTypeOptions" @bind-Value="selectedAdjustmentType" Style="width:100%" />
+                    <RadzenDropDown TValue="string" Data="@adjustmentTypeOptions" TextProperty="@nameof(DropdownOptionDto.Label)" ValueProperty="@nameof(DropdownOptionDto.Value)" @bind-Value="selectedAdjustmentType" Style="width:100%" />
                 </div>
 
                 <div class="col-md-4">
@@ -166,7 +166,10 @@
 
     private ReportFiltersDto filters = new();
     private List<ReportsDto> rows = [];
-    private IList<string> adjustmentTypeOptions = ["All Adjustment Types"];
+    private IList<DropdownOptionDto> adjustmentTypeOptions =
+    [
+        new() { Label = "All Adjustment Types", Value = "All Adjustment Types" }
+    ];
     private bool isLoading;
     private string error = string.Empty;
     private string selectedStatus = "All Statuses";
@@ -183,9 +186,22 @@
     protected override async Task OnInitializedAsync()
     {
         var adjustmentTypes = await AdjustmentService.GetAdjustmentTypes();
-        adjustmentTypeOptions = ["All Adjustment Types", .. adjustmentTypes.OrderBy(x => x)];
+        adjustmentTypeOptions =
+        [
+            new() { Label = "All Adjustment Types", Value = "All Adjustment Types" },
+            .. adjustmentTypes
+                .OrderBy(GetAdjustmentTypeLabel)
+                .Select(x => new DropdownOptionDto
+                {
+                    Label = GetAdjustmentTypeLabel(x),
+                    Value = x
+                })
+        ];
         await LoadReportsAsync();
     }
+
+    private static string GetAdjustmentTypeLabel(string adjustmentType) =>
+        adjustmentType == "AR Invoice Offsetting" ? "Invoice Offsetting" : adjustmentType;
 
     private async Task LoadReportsAsync()
     {

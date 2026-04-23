@@ -54,7 +54,7 @@
 		<RadzenRow Gap="1.5rem">
 			<RadzenColumn Size="6">
 				<div class="text-center pb-3">
-					<h3 class="pb-0 mb-0">AR GROUP</h3>
+					<h3 class="pb-0 mb-0">INVOICES</h3>
 				</div>
 				<div class="py-4 px-3 w-100 card">
 					<RadzenDataGrid @ref="arGrid"
@@ -72,7 +72,7 @@
 						<Columns>
 							<RadzenDataGridColumn Property="@nameof(ARInvoiceOffsettingRowDto.InvoiceNumber)" Title="Invoice No.">
 								<FooterTemplate>
-									<b>Total Amount:</b>
+									<b>Total Invoice Balance:</b>
 								</FooterTemplate>
 							</RadzenDataGridColumn>
 
@@ -82,12 +82,12 @@
 								</Template>
 							</RadzenDataGridColumn>
 
-							<RadzenDataGridColumn Property="@nameof(ARInvoiceOffsettingRowDto.InvoiceAmount)" Title="Amount">
+							<RadzenDataGridColumn Property="@nameof(ARInvoiceOffsettingRowDto.InvoiceBalance)" Title="Invoice Balance">
 								<Template Context="data">
-									@data.InvoiceAmount.ToPhp()
+									@data.InvoiceBalance.ToPhp()
 								</Template>
 								<FooterTemplate>
-									<b>@ARInvoice?.Sum(a => a.InvoiceAmount).ToPhp()</b>
+									<b>@ARInvoice?.Sum(a => a.InvoiceBalance).ToPhp()</b>
 								</FooterTemplate>
 							</RadzenDataGridColumn>
 
@@ -293,7 +293,7 @@
 				return;
 			}
 
-			var arTotal = ARInvoice.Sum(a => a.InvoiceAmount);
+			var arTotal = ARInvoice.Sum(a => a.InvoiceBalance);
 			var cnTotal = Math.Round(CNInvoice.Sum(a => a.InvoiceAmount), 2);
 
 			Guards.ThrowInvalidOperationIf((arTotal != cnTotal), "AR and CN/Sales Invoice amounts must balance.");

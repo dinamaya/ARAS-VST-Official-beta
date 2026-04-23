@@ -79,7 +79,18 @@ namespace ARAS.Blazor.Services.Implementations
 					});
 				}
 			);
-			return arResponse.Result;
+			var rows = arResponse.Result?.ToList() ?? [];
+			NormalizeInvoiceBalances(rows);
+			return rows;
+		}
+
+		private static void NormalizeInvoiceBalances(IEnumerable<ARInvoiceOffsettingRowDto> rows)
+		{
+			foreach (var row in rows.Where(r => string.Equals(r.Type, "AR", StringComparison.OrdinalIgnoreCase)))
+			{
+				if (row.InvoiceBalance == 0d && row.InvoiceAmount != 0d)
+					row.InvoiceBalance = row.InvoiceAmount;
+			}
 		}
 
         public async Task Update(bool isUpdatable, long requestId, IEnumerable<ARInvoiceOffsettingRowDto> arRows, IEnumerable<ARInvoiceOffsettingRowDto> cnRows, IEnumerable<NoteRowDto> notes)

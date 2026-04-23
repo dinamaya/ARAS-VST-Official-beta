@@ -28,7 +28,7 @@ namespace ARAS.Blazor.Services.Implementations
 		{
 			var arRequests = arRows.Select(r => new ARInvoiceOffsettingCreateDto()
 			{
-				InvoiceAmount = r.InvoiceAmount,
+				InvoiceAmount = r.InvoiceBalance,
 				InvoiceDate = DateTime.Parse(r.InvoiceDate),
 				InvoiceNumber = r.InvoiceNumber,
 				CustomerName = r.CustomerName,

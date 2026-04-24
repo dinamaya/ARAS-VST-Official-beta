@@ -124,8 +124,14 @@
 				return;
 			}
 
+			if (!ValidateCNRows(out message))
+			{
+				await DialogService.Alert(message, "Validation Failed");
+				return;
+			}
+
 			var arTotal = ARInvoice.Sum(a => a.InvoiceBalance);
-			var cnTotal = Math.Round(CNInvoice.Sum(a => a.InvoiceBalance), 2);
+			var cnTotal = Math.Round(CNInvoice.Sum(a => a.AdjustedAmount), 2);
 
 			Guards.ThrowInvalidOperationIf((arTotal != cnTotal), "AR and CN/Sales Invoice amounts must balance.");
 
@@ -219,7 +225,7 @@
 		}
 		else
 		{
-			return (row.InvoiceBalance == 0.0);
+			return (row.InvoiceBalance == 0.0 && row.AdjustedAmount == 0.0);
 		}
 	}
 
@@ -238,6 +244,40 @@
 			if (ar == null)
 			{
 				message = "AR Group contains an invalid row.";
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private bool ValidateCNRows(out string message)
+	{
+		message = string.Empty;
+
+		if (CNInvoice == null || !CNInvoice.Any())
+		{
+			message = "CN/SI Group has no rows.";
+			return false;
+		}
+
+		foreach (var cn in CNInvoice)
+		{
+			if (cn == null)
+			{
+				message = "CN/SI Group contains an invalid row.";
+				return false;
+			}
+
+			if (cn.AdjustedAmount == 0)
+			{
+				message = $"CN/SI Group: Adjusted Amount must not be 0.00 for '{cn.InvoiceNumber ?? "unknown"}'.";
+				return false;
+			}
+
+			if (Math.Round(cn.AdjustedAmount, 2) != cn.AdjustedAmount)
+			{
+				message = $"CN/SI Group: Adjusted Amount must use at most 2 decimal places for '{cn.InvoiceNumber ?? "unknown"}'.";
 				return false;
 			}
 		}

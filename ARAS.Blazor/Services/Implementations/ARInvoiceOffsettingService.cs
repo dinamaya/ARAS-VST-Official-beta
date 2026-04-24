@@ -29,6 +29,7 @@ namespace ARAS.Blazor.Services.Implementations
 			var arRequests = arRows.Select(r => new ARInvoiceOffsettingCreateDto()
 			{
 				InvoiceAmount = r.InvoiceBalance,
+				AdjustedAmount = r.InvoiceBalance,
 				InvoiceDate = DateTime.Parse(r.InvoiceDate),
 				InvoiceNumber = r.InvoiceNumber,
 				CustomerName = r.CustomerName,
@@ -39,6 +40,7 @@ namespace ARAS.Blazor.Services.Implementations
 			var cnRequests = cnRows.Select(r => new ARInvoiceOffsettingCreateDto()
 			{
 				InvoiceAmount = r.InvoiceBalance,
+				AdjustedAmount = r.AdjustedAmount,
 				InvoiceDate = DateTime.Parse(r.InvoiceDate),
 				InvoiceNumber = r.InvoiceNumber,
 				CustomerName = r.CustomerName,
@@ -90,6 +92,9 @@ namespace ARAS.Blazor.Services.Implementations
 			{
 				if (row.InvoiceBalance == 0d && row.InvoiceAmount != 0d)
 					row.InvoiceBalance = row.InvoiceAmount;
+
+				if (row.AdjustedAmount == 0d && row.InvoiceBalance != 0d)
+					row.AdjustedAmount = row.InvoiceBalance;
 			}
 		}
 

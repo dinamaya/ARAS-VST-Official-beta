@@ -9,6 +9,7 @@ namespace ARAS.Blazor.Models.DTOs
         public string AdjustmentActivity { get; set; } = string.Empty;
         public double InvoiceAmount { get; set; } = 1_000.00d;
         public double InvoiceBalance { get; set; }
+        public double AdjustedAmount { get; set; }
         public string InvoiceDate { get; set; } = string.Empty;
         public string InvoiceNumber { get; set; } = string.Empty;
         public string CustomerName { get; set; } = string.Empty;
@@ -22,6 +23,7 @@ namespace ARAS.Blazor.Models.DTOs
             Id = Utils.Security.GenerateExtendedGuid("ARIO", 1);
             InvoiceAmount = details.InvoiceAmount;
             InvoiceBalance = details.InvoiceBalance;
+            AdjustedAmount = details.InvoiceBalance;
             InvoiceNumber = details.InvoiceNumber;
             InvoiceDate = details.InvoiceDate.ToString("dd MMM yyyy");
             CustomerName = details.CustomerName;

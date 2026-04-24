@@ -61,7 +61,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                     {
                         RequestId = requestId,
                         InvoiceNumber = result.invoice,
-                        AdjustmentAmount = result.model.InvoiceAmount,
+                        AdjustmentAmount = result.model.AdjustedAmount,
                         Type = result.model.Type
                     });
 
@@ -125,7 +125,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					{
 						RequestId = requestId,
 						InvoiceNumber = result.invoice,
-						AdjustmentAmount = result.model.InvoiceAmount,
+						AdjustmentAmount = result.model.AdjustedAmount,
 						Type = result.model.Type
 					});
 
@@ -143,19 +143,23 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 		public async Task<IEnumerable<ARInvoiceOffsettingRowDto>> GetAdjustmentsByRequestId(long requestId)
 		{
-			return await _context.VwAradjustmentsVw.Where(a => a.RequestId == requestId).Select(a =>
-			new ARInvoiceOffsettingRowDto()
-			{
-				Id = a.CreatorId.ToString(),
-				AdjustmentActivity = a.AdjustmentType,
-				InvoiceAmount = a.InvoiceAmount,
-				InvoiceBalance = a.InvoiceAmount,
-				InvoiceDate = a.InvoiceDate.ToString(Formats.Date.DISPLAY),
-				InvoiceNumber = a.InvoiceNumber,
-				CustomerName = a.CustomerName,
-				CustomerNumber = a.CustomerNumber,
-				Type = a.InvoiceType
-			}).ToListAsync();
+			return await (
+				from ar in _context.AROffsets.AsNoTracking()
+				join invoice in _context.Invoices.AsNoTracking() on ar.InvoiceId equals invoice.Id
+				where ar.RequestId == requestId && ar.IsActive && invoice.IsActive
+				select new ARInvoiceOffsettingRowDto()
+				{
+					Id = ar.Id.ToString(),
+					AdjustmentActivity = "AR Invoice Offsetting",
+					InvoiceAmount = invoice.InvoiceAmount,
+					InvoiceBalance = invoice.InvoiceAmount,
+					AdjustedAmount = ar.Amount,
+					InvoiceDate = invoice.InvoiceDate.ToString(Formats.Date.DISPLAY),
+					InvoiceNumber = invoice.InvoiceNumber,
+					CustomerName = invoice.CustomerName,
+					CustomerNumber = invoice.CustomerNumber,
+					Type = ar.Type
+				}).ToListAsync();
 		}
 
         public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingData(long requestId)

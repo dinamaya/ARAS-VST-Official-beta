@@ -16,11 +16,8 @@
 			Close
 		</button>
 		<div class="d-flex gap-2 ms-auto">
-			<button @onclick="OnAddAR" class="btn btn-outline-primary">
-				Add to AR
-			</button>
-			<button @onclick="OnAddCN" class="btn btn-outline-primary">
-				Add to CN/Sales
+			<button @onclick="OnAddInvoice" class="btn btn-outline-primary" title="Positive amount goes to INVOICE. Negative amount goes to CN/SI.">
+				ADD INVOICE
 			</button>
 		</div>
 	</RadzenStack>
@@ -49,7 +46,7 @@
 
 	}
 
-	private async Task OnAddAR()
+	private async Task OnAddInvoice()
 	{
 		try
 		{
@@ -57,50 +54,42 @@
 
 			Guards.ThrowInvalidOperationIf(isInvoiceAdded, $"Invoice Number {InvoiceDetails.InvoiceNumber} has already been added");
 
-			if (ARRows.Any())
+			if (InvoiceDetails.InvoiceBalance == 0d)
 			{
-				var firstInvoice = ARRows.First();
-				if (firstInvoice.CustomerNumber != InvoiceDetails.CustomerNumber)
-				{
-					throw new InvalidOperationException("All invoices must belong to the same customer.");
-				}
+				throw new InvalidOperationException("Invoice balance must not be 0.00.");
 			}
 
-			var row = new ARInvoiceOffsettingRowDto(InvoiceDetails);
-
-			ARRows.Add(row);
-
-			await ARGrid.Reload();
-			DialogService.Close(true);
-		}
-		catch (Exception ex)
-		{
-			await DialogService.Alert(Exceptions.GetMessage(ex), "Add Adjustment Failed");
-		}
-	}
-
-	private async Task OnAddCN()
-	{
-		try
-		{
-			bool isInvoiceAdded = CNRows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber) || ARRows.Any(i => i.InvoiceNumber == InvoiceDetails.InvoiceNumber);
-
-			Guards.ThrowInvalidOperationIf(isInvoiceAdded, $"Invoice Number {InvoiceDetails.InvoiceNumber} has already been added");
-
-			if (CNRows.Any())
+			if (InvoiceDetails.InvoiceBalance > 0)
 			{
-				var firstInvoice = CNRows.First();
-				if (firstInvoice.CustomerNumber != InvoiceDetails.CustomerNumber)
+				if (ARRows.Any())
 				{
-					throw new InvalidOperationException("All invoices must belong to the same customer.");
+					var firstInvoice = ARRows.First();
+					if (firstInvoice.CustomerNumber != InvoiceDetails.CustomerNumber)
+					{
+						throw new InvalidOperationException("All invoices must belong to the same customer.");
+					}
 				}
+
+				var row = new ARInvoiceOffsettingRowDto(InvoiceDetails);
+				ARRows.Add(row);
+				await ARGrid.Reload();
+			}
+			else
+			{
+				if (CNRows.Any())
+				{
+					var firstInvoice = CNRows.First();
+					if (firstInvoice.CustomerNumber != InvoiceDetails.CustomerNumber)
+					{
+						throw new InvalidOperationException("All invoices must belong to the same customer.");
+					}
+				}
+
+				var row = new ARInvoiceOffsettingRowDto(InvoiceDetails);
+				CNRows.Add(row);
+				await CNGrid.Reload();
 			}
 
-			var row = new ARInvoiceOffsettingRowDto(InvoiceDetails);
-
-			CNRows.Add(row);
-
-			await CNGrid.Reload();
 			DialogService.Close(true);
 		}
 		catch (Exception ex)

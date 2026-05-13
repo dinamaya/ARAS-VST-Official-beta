@@ -8,6 +8,9 @@ using Dapper;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using System.DirectoryServices.Protocols;
+using System.Net.Http.Json;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 {
@@ -17,13 +20,30 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
         private readonly IOracleConnectionFactory oracleConnection;
         private readonly IConfigurationService _config;
 
-        public InvoiceRepository(MainDbContext efContext, IOracleConnectionFactory oracleConnection, IConfigurationService config)
+        // -------------------------------------------------------------------------
+        // Oracle Fusion Migration:
+        // HttpClient is injected and configured via the named client "OracleFusionApi".
+        // This replaces the direct Oracle EBS database connection for invoice lookups.
+        // -------------------------------------------------------------------------
+        private readonly HttpClient _fusionHttpClient;
+
+        public InvoiceRepository(
+            MainDbContext efContext,
+            IOracleConnectionFactory oracleConnection,
+            IConfigurationService config,
+            IHttpClientFactory httpClientFactory)
         {
             this.efContext = efContext;
             this.oracleConnection = oracleConnection;
             _config = config;
+            _fusionHttpClient = httpClientFactory.CreateClient("OracleFusionApi");
         }
 
+        // =========================================================================
+        // GetInvoiceDetails — MIGRATED TO ORACLE FUSION (Integration Hub REST API)
+        // Previously: Direct SQL query against Oracle EBS AR schema (ra_customer_trx_all, etc.)
+        // Now: HTTP GET /fin/api/masterdata/financials/invoice-details
+        // =========================================================================
         public async Task<IEnumerable<InvoiceDetailsDto>> GetInvoiceDetails(SearchRequestDto searchRequest)
         {
             searchRequest.Category = searchRequest.Category.Trim();
@@ -32,6 +52,9 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             DateTime min = searchRequest.StartDate.ToDateTime(TimeOnly.MinValue);
             DateTime max = searchRequest.EndDate.ToDateTime(TimeOnly.MaxValue);
 
+            // -----------------------------------------------------------------
+            // Test/mock data path — unchanged from EBS version
+            // -----------------------------------------------------------------
             if (_config.IsOntest())
             {
                 var list = Enumerable.Range(1, 100)
@@ -53,50 +76,116 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                     return list.Where(l => l.InvoiceNumber == searchRequest.Value);
 
                 throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
-
             }
-            await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
 
-            var sql = @"
-                  SELECT   apsa.amount_due_original InvoiceAmount,
-                           apsa.amount_due_remaining InvoiceBalance,
-                           rct.trx_date InvoiceDate,
-                           rct.trx_number InvoiceNumber,
-                           hca.account_name CustomerName,
-                           hca.account_number CustomerNumber,
-                           'AR' DataSource,
-                           CASE
-                              WHEN apsa.amount_due_remaining = 0 THEN 'CLOSED'
-                              ELSE 'OPEN'
-                           END
-                              AS InvoiceStatus
-                    FROM   ra_customer_trx_all rct,
-                           ra_cust_trx_types_all ctt,
-                           hz_cust_accounts hca,
-                           ar_payment_schedules_all apsa
-                   WHERE       rct.cust_trx_type_id = ctt.cust_trx_type_id
-                           AND rct.bill_to_customer_id = hca.cust_account_id
-                           AND rct.customer_trx_id = apsa.customer_trx_id
-                           AND TRIM (hca.account_name) = NVL (UPPER (:custname), hca.account_name)
-                           AND TRIM (rct.trx_number) = NVL (UPPER (:trxno), rct.trx_number)
-                ORDER BY   rct.trx_date DESC, rct.trx_number
-				                ";
+            // -----------------------------------------------------------------
+            // [ORACLE EBS — RETIRED] Direct DB query via ODP.NET + Dapper
+            // Kept for documentation and rollback reference.
+            // Tables used: ra_customer_trx_all, ra_cust_trx_types_all,
+            //              hz_cust_accounts, ar_payment_schedules_all
+            // -----------------------------------------------------------------
+            //
+            // await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
+            //
+            // var sql = @"
+            //       SELECT   apsa.amount_due_original InvoiceAmount,
+            //                apsa.amount_due_remaining InvoiceBalance,
+            //                rct.trx_date InvoiceDate,
+            //                rct.trx_number InvoiceNumber,
+            //                hca.account_name CustomerName,
+            //                hca.account_number CustomerNumber,
+            //                'AR' DataSource,
+            //                CASE
+            //                   WHEN apsa.amount_due_remaining = 0 THEN 'CLOSED'
+            //                   ELSE 'OPEN'
+            //                END AS InvoiceStatus
+            //         FROM   ra_customer_trx_all rct,
+            //                ra_cust_trx_types_all ctt,
+            //                hz_cust_accounts hca,
+            //                ar_payment_schedules_all apsa
+            //        WHERE       rct.cust_trx_type_id = ctt.cust_trx_type_id
+            //                AND rct.bill_to_customer_id = hca.cust_account_id
+            //                AND rct.customer_trx_id = apsa.customer_trx_id
+            //                AND TRIM (hca.account_name) = NVL (UPPER (:custname), hca.account_name)
+            //                AND TRIM (rct.trx_number) = NVL (UPPER (:trxno), rct.trx_number)
+            //     ORDER BY   rct.trx_date DESC, rct.trx_number";
+            //
+            // dynamic param = new
+            // {
+            //     trxno = searchRequest.Category == "Invoice Number" ? searchRequest.Value : null,
+            //     custname = searchRequest.Category == "Customer Name" ? searchRequest.Value : null
+            // };
+            //
+            // var result = await conn.QueryAsync<InvoiceDetailsDto>(
+            //     sql,
+            //     (object)param,
+            //     commandTimeout: 120
+            // ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+            //
+            // return result
+            //     .Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max)
+            //     .DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
+            // -----------------------------------------------------------------
 
-            dynamic param = new
+            // -----------------------------------------------------------------
+            // [ORACLE FUSION] — Integration Hub REST API
+            // Endpoint: GET /fin/api/masterdata/financials/invoice-details
+            // Headers:  client-id, x-api-key (configured in Program.cs via IHttpClientFactory)
+            // -----------------------------------------------------------------
+            var customerName = searchRequest.Category == "Customer Name" ? searchRequest.Value : null;
+            var invoiceNumber = searchRequest.Category == "Invoice Number" ? searchRequest.Value : null;
+
+            var queryParams = new List<string>();
+            if (!string.IsNullOrEmpty(customerName))
+                queryParams.Add($"customerName={Uri.EscapeDataString(customerName)}");
+            if (!string.IsNullOrEmpty(invoiceNumber))
+                queryParams.Add($"invoiceNumber={Uri.EscapeDataString(invoiceNumber)}");
+
+            var requestUri = "/fin/api/masterdata/financials/invoice-details"
+                + (queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty);
+
+            var response = await _fusionHttpClient.GetAsync(requestUri);
+            response.EnsureSuccessStatusCode();
+
+            // ---------------------------------------------------------------
+            // Oracle Fusion API envelope:
+            // { "statusCode": 200, "message": "Success", "apiResponse": [...] }
+            // "invoiceAmmount" is a known typo in the API — handled via
+            // [JsonPropertyName] on FusionInvoiceDetailsResponse.
+            // "invoiceAmmount" and "invoiceBalance" are nullable in the response.
+            // ---------------------------------------------------------------
+            var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+            var envelope = await response.Content.ReadFromJsonAsync<FusionInvoiceApiEnvelope>(jsonOptions)
+                ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+
+            var fusionResult = envelope.ApiResponse
+                ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+
+            // Map Fusion response to the shared InvoiceDetailsDto
+            // Null amounts default to 0 to keep compatibility with existing UI logic
+            var mapped = fusionResult.Select(f => new InvoiceDetailsDto
             {
-                trxno = searchRequest.Category == "Invoice Number" ? searchRequest.Value : null,
-                custname = searchRequest.Category == "Customer Name" ? searchRequest.Value : null
-            };
+                Id = f.InvoiceNumber,
+                InvoiceNumber = f.InvoiceNumber,
+                InvoiceAmount = f.InvoiceAmount ?? 0,
+                InvoiceBalance = f.InvoiceBalance ?? 0,
+                InvoiceDate = f.InvoiceDate,
+                CustomerName = f.CustomerName,
+                CustomerNumber = f.CustomerNumber,
+                DataSource = f.DataSource ?? "AR"
+            });
 
-            var result = await conn.QueryAsync<InvoiceDetailsDto>(
-                sql,
-                (object)param,
-                commandTimeout: 120
-            ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
-
-            return result.Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max).DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
+            return mapped
+                .Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max)
+                .DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
         }
 
+        // =========================================================================
+        // GetAPInvoiceDetails — ORACLE EBS (Not yet migrated to Oracle Fusion)
+        // Pending: Oracle Fusion AP invoice endpoint from Admin.
+        // Tables used: ap_invoices_all, po_vendors
+        // =========================================================================
         public async Task<IEnumerable<InvoiceDetailsDto>> GetAPInvoiceDetails(SearchRequestDto searchRequest)
         {
             searchRequest.Category = searchRequest.Category.Trim();
@@ -126,10 +215,11 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                     return list.Where(l => l.InvoiceNumber == searchRequest.Value);
 
                 throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
-
             }
             await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
 
+            // [ORACLE EBS] — AP Invoices query
+            // TODO: Replace with Oracle Fusion AP invoice endpoint when provided by Admin.
             var sql = @"
 				SELECT
 					apa.invoice_num InvoiceNumber,
@@ -165,11 +255,18 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             return result.Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max).DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
         }
 
+        // =========================================================================
+        // GetAPInvoiceNo — ORACLE EBS (Not yet migrated to Oracle Fusion)
+        // Pending: Oracle Fusion AP invoice by number endpoint from Admin.
+        // Tables used: ap_invoices_all, po_vendors
+        // =========================================================================
         public async Task<InvoiceAPDetailsDto> GetAPInvoiceNo(string invoiceNo)
         {
             await using var conn = await oracleConnection.OpenWithoutPolicyAsync();
             invoiceNo = invoiceNo.Trim();
 
+            // [ORACLE EBS] — AP Invoice by number query
+            // TODO: Replace with Oracle Fusion endpoint when provided by Admin.
             var sql = @"
 					SELECT    apa.invoice_num AS InvoiceNumber,
 							  apa.amount_paid AS InvoiceAmount,
@@ -189,6 +286,11 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
         }
 
+        // =========================================================================
+        // GetSRAutoNetCNDetails — ORACLE EBS (Not yet migrated to Oracle Fusion)
+        // Pending: Oracle Fusion Credit Note endpoint from Admin.
+        // Tables used: ra_customer_trx_all, ra_customer_trx_lines_all, zx_lines
+        // =========================================================================
         public async Task<IEnumerable<SearchCNDetailsRowDto>> GetSRAutoNetCNDetails(string invoiceNumber)
         {
             invoiceNumber = invoiceNumber.Trim();
@@ -208,6 +310,8 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
             await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
 
+            // [ORACLE EBS] — Credit Note details via AR + Tax schema
+            // TODO: Replace with Oracle Fusion Credit Note endpoint when provided by Admin.
             var sql = @"
 					SELECT   
 						rcta.trx_number cn_ref,
@@ -236,6 +340,12 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             return result.DistinctBy(r => new { r.CNRef });
         }
 
+        // =========================================================================
+        // GetCnInvoiceDetails — ORACLE EBS (Not yet migrated to Oracle Fusion)
+        // Pending: Oracle Fusion CN invoice endpoint from Admin.
+        // Tables used: ra_customer_trx_all, ra_customer_trx_lines_all,
+        //              hz_cust_accounts, ra_cust_trx_types_all
+        // =========================================================================
         public async Task<IEnumerable<InvoiceDetailsDto>> GetCnInvoiceDetails(string invoiceNo)
         {
             invoiceNo = invoiceNo.Trim();
@@ -254,6 +364,8 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
             await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
 
+            // [ORACLE EBS] — CN Invoice details via AR schema
+            // TODO: Replace with Oracle Fusion endpoint when provided by Admin.
             var sql = @"
 					    SELECT   
 							rcta.trx_number InvoiceNumber,
@@ -284,6 +396,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 						ORDER BY
 							rcta.trx_number
 				";
+
             var result = await conn.QueryAsync<InvoiceDetailsDto>(
                 sql,
                 new { trxno = $"{invoiceNo}" },
@@ -293,6 +406,12 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             return result;
         }
 
+        // =========================================================================
+        // GetOneInvoiceDetails — ORACLE EBS (Not yet migrated to Oracle Fusion)
+        // Pending: Oracle Fusion single-invoice lookup endpoint from Admin.
+        // Tables used: ra_customer_trx_all, ra_cust_trx_types_all,
+        //              hz_cust_accounts, ar_payment_schedules_all
+        // =========================================================================
         public async Task<InvoiceDetailsDto> GetOneInvoiceDetails(InvoiceDetailsRequestDto invoice)
         {
             if (_config.IsOntest())
@@ -312,6 +431,8 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             }
             await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
 
+            // [ORACLE EBS] — Single AR Invoice lookup
+            // TODO: Replace with Oracle Fusion endpoint when provided by Admin.
             var sql = @"
 				 SELECT   apsa.amount_due_original InvoiceAmount,
 						   apsa.amount_due_remaining InvoiceBalance,
@@ -353,10 +474,18 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             return result.DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate }).FirstOrDefault();
         }
 
+        // =========================================================================
+        // GetCustomerTrxIdByInvoiceDetails — ORACLE EBS (Not yet migrated to Oracle Fusion)
+        // Pending: Oracle Fusion transaction ID lookup endpoint from Admin.
+        // Tables used: ra_customer_trx_all, ra_cust_trx_types_all,
+        //              hz_cust_accounts, ar_payment_schedules_all
+        // =========================================================================
         public async Task<string> GetCustomerTrxIdByInvoiceDetails(CustomerInvoiceRequestDto invoiceDetails)
         {
             var conn = await oracleConnection.OpenWithoutPolicyAsync();
 
+            // [ORACLE EBS] — Customer transaction ID lookup
+            // TODO: Replace with Oracle Fusion endpoint when provided by Admin.
             var sql = @"
 				SELECT
 					rct.customer_trx_id
@@ -392,9 +521,10 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             return result;
         }
 
-
         public async Task<string> GetCustomerTrxIdByInvoiceDetails(OracleConnection oracleConnection, CustomerInvoiceRequestDto invoiceDetails)
         {
+            // [ORACLE EBS] — Customer transaction ID lookup (overload with explicit connection)
+            // TODO: Replace with Oracle Fusion endpoint when provided by Admin.
             var sql = @"
 				SELECT
 					rct.customer_trx_id

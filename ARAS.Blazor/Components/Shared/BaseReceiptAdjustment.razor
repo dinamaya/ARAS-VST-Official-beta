@@ -1,6 +1,6 @@
 ﻿@using ARAS.Blazor.Models.Complex
 <RadzenFieldset>
-    <HeaderTemplate>
+	<HeaderTemplate>
 		<RadzenLabel Text="@AdjustmentName" class="fs-5" />
 	</HeaderTemplate>
 	<ChildContent>
@@ -13,24 +13,25 @@
 								   Immediate="true"
 								   Change="OnAdjustmentChanged"
 								   Min="0"
-								   Disabled="!IsAdjustable" />
+								   Disabled="@(!IsAdjustable || IsDisabled)" />
 				</RadzenFormField>
 			</RadzenRow>
 
 			<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
 				<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
-					<RadzenTextArea @bind-Value="remarks" Immediate="true" Change="OnAdjustmentChanged" Rows="3" Disabled="!IsAdjustable" />
+					<RadzenTextArea @bind-Value="remarks" Immediate="true" Change="OnAdjustmentChanged" Rows="3" Disabled="@(!IsAdjustable || IsDisabled)" />
 				</RadzenFormField>
 			</RadzenStack>
 		</RadzenStack>
 	</ChildContent>
 </RadzenFieldset>
 
-@code{
+@code {
 	[Parameter] public EventCallback<AdjustmentEntry> AdjustmentAmountChanged { get; set; }
 	[Parameter] public string? TextBoxLabel { get; set; } = "Adjustment Amount";
 	[Parameter] public string AdjustmentName { get; set; }
 	[Parameter] public bool IsAdjustable { get; set; }
+	[Parameter] public bool IsDisabled { get; set; }
 	[Parameter] public string? InitialRemarks { get; set; }
 	[Parameter] public double InitialAdjustment { get; set; } = 0d;
 
@@ -39,9 +40,9 @@
 
 	protected async override Task OnInitializedAsync()
 	{
-        adjustmentAmount = InitialAdjustment;
-        remarks = InitialRemarks;
-    }
+		adjustmentAmount = InitialAdjustment;
+		remarks = InitialRemarks;
+	}
 
 	private async Task OnAdjustmentChanged()
 	{

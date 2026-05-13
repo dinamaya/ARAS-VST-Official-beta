@@ -11,23 +11,23 @@
 
 <CardStandard HeaderText="Create Adjustment" HeaderIcon="create">
 	<BodyTtemplate>
-		<RadzenRow Gap="3em" >
+		<RadzenRow Gap="3em">
 			@if (SelectedAdjustmentTypes.Contains("Cash Discount"))
 			{
 				<RadzenColumn Size="12">
-					<CreateCashDiscountAdjustment InvoiceAmount="InvoiceDetails.InvoiceAmount" InvoiceBalance="InvoiceDetails.InvoiceBalance" AdjustmentAmountChanged="OnAdjustmentAmountChanged" />
+					<CreateCashDiscountAdjustment IsDisabled="@IsDisabled" InvoiceAmount="InvoiceDetails.InvoiceAmount" InvoiceBalance="InvoiceDetails.InvoiceBalance" AdjustmentAmountChanged="OnAdjustmentAmountChanged" />
 				</RadzenColumn>
 			}
 			@if (SelectedAdjustmentTypes.Contains("Bank Charges"))
 			{
 				<RadzenColumn Size="12">
-					<BaseReceiptAdjustment AdjustmentName="Bank Charges" IsAdjustable="isAdjustable" AdjustmentAmountChanged="OnAdjustmentAmountChanged" />
+					<BaseReceiptAdjustment IsDisabled="@IsDisabled" AdjustmentName="Bank Charges" IsAdjustable="isAdjustable" AdjustmentAmountChanged="OnAdjustmentAmountChanged" />
 				</RadzenColumn>
 			}
 			@if (SelectedAdjustmentTypes.Contains("Write-Off: Small Amount"))
 			{
 				<RadzenColumn Size="12">
-					<BaseReceiptAdjustment AdjustmentName="Write-Off: Small Amount" IsAdjustable="isAdjustable" AdjustmentAmountChanged="OnAdjustmentAmountChanged" />
+					<BaseReceiptAdjustment IsDisabled="@IsDisabled" AdjustmentName="Write-Off: Small Amount" IsAdjustable="isAdjustable" AdjustmentAmountChanged="OnAdjustmentAmountChanged" />
 				</RadzenColumn>
 			}
 		</RadzenRow>
@@ -38,6 +38,7 @@
 	[Parameter] public EventCallback<AdjustmentEntry> AdjustmentAmountChanged { get; set; }
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
 	[Parameter] public IEnumerable<string> SelectedAdjustmentTypes { get; set; }
+	[Parameter] public bool IsDisabled { get; set; }
 
 	private IEnumerable<string> invoices = new List<string>();
 

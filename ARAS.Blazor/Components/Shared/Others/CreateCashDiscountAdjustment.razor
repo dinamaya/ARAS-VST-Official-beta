@@ -9,12 +9,12 @@
 @inject DialogService DialogService
 
 <RadzenFieldset>
-    <HeaderTemplate>
+	<HeaderTemplate>
 		<RadzenStack class="h-100" Gap="1.7em" Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start">
 			<RadzenLabel Text="Cash Discount" class="fs-5" />
 		</RadzenStack>
-    </HeaderTemplate>
-    <ChildContent>
+	</HeaderTemplate>
+	<ChildContent>
 		<RadzenRow Gap="1em" JustifyContent="JustifyContent.Start">
 			<RadzenColumn Size="12">
 				<RadzenRow class="w-100" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Stretch">
@@ -22,11 +22,11 @@
 						<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
 							<RadzenFormField class="w-100" Text="Discount Percentage" Variant="Variant.Outlined">
 								<RadzenNumeric class="w-100"
-									TValue="double"
-									@bind-Value="DiscountPercentageValue"
-									Immediate="true"
-									Max="100"
-									Disabled="!isAdjustable" />
+											   TValue="double"
+											   @bind-Value="DiscountPercentageValue"
+											   Immediate="true"
+											   Max="100"
+											   Disabled="@(!isAdjustable || IsDisabled)" />
 							</RadzenFormField>
 						</RadzenStack>
 					</RadzenColumn>
@@ -41,10 +41,10 @@
 						<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
 							<RadzenFormField Text="Discount Value" Variant="Variant.Outlined">
 								<RadzenNumeric TValue="double"
-									@bind-Value="DiscountDecimalValue"
-									Immediate="true"
-									Max="(decimal)InvoiceAmount"
-									Disabled="!isAdjustable" />
+											   @bind-Value="DiscountDecimalValue"
+											   Immediate="true"
+											   Max="(decimal)InvoiceAmount"
+											   Disabled="@(!isAdjustable || IsDisabled)" />
 							</RadzenFormField>
 						</RadzenStack>
 					</RadzenColumn>
@@ -54,11 +54,10 @@
 
 		<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
 			<RadzenFormField Text="Remarks" Variant="@Variant.Outlined" Max>
-				<RadzenTextArea 
-					@bind-Value="RemarksValue" 
-					Immediate="true"
-					Rows="@RemarksRowCount" 
-					Disabled="!isAdjustable" />
+				<RadzenTextArea @bind-Value="RemarksValue"
+								Immediate="true"
+								Rows="@RemarksRowCount"
+								Disabled="@(!isAdjustable || IsDisabled)" />
 			</RadzenFormField>
 		</RadzenStack>
 	</ChildContent>
@@ -72,6 +71,7 @@
 	[Parameter] public EventCallback<AdjustmentEntry> AdjustmentAmountChanged { get; set; }
 	[Parameter] public string? InitialRemarks { get; set; }
 	[Parameter] public double InitialDiscount { get; set; } = 0d;
+	[Parameter] public bool IsDisabled { get; set; }
 
 	private IEnumerable<string> invoices = new List<string>();
 

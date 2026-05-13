@@ -11,121 +11,126 @@ using System.DirectoryServices.Protocols;
 
 namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 {
-	public class InvoiceRepository : IInvoiceRepository
-	{
-		private readonly MainDbContext efContext;
-		private readonly IOracleConnectionFactory oracleConnection;
-		private readonly IConfigurationService _config;
+    public class InvoiceRepository : IInvoiceRepository
+    {
+        private readonly MainDbContext efContext;
+        private readonly IOracleConnectionFactory oracleConnection;
+        private readonly IConfigurationService _config;
 
-		public InvoiceRepository(MainDbContext efContext, IOracleConnectionFactory oracleConnection, IConfigurationService config)
-		{
-			this.efContext = efContext;
-			this.oracleConnection = oracleConnection;
-			_config = config;
-		}
+        public InvoiceRepository(MainDbContext efContext, IOracleConnectionFactory oracleConnection, IConfigurationService config)
+        {
+            this.efContext = efContext;
+            this.oracleConnection = oracleConnection;
+            _config = config;
+        }
 
-		public async Task<IEnumerable<InvoiceDetailsDto>> GetInvoiceDetails(SearchRequestDto searchRequest)
-		{
-			searchRequest.Category = searchRequest.Category.Trim();
-			searchRequest.Value = searchRequest.Value.Trim();
+        public async Task<IEnumerable<InvoiceDetailsDto>> GetInvoiceDetails(SearchRequestDto searchRequest)
+        {
+            searchRequest.Category = searchRequest.Category.Trim();
+            searchRequest.Value = searchRequest.Value.Trim();
 
-			DateTime min = searchRequest.StartDate.ToDateTime(TimeOnly.MinValue);
-			DateTime max = searchRequest.EndDate.ToDateTime(TimeOnly.MaxValue);
-			
-			if (_config.IsOntest())
-			{
-				var list = Enumerable.Range(1, 100)
-					.Select(i => new InvoiceDetailsDto
-					{
-						Id = $"INV-{i:000}",
-						InvoiceNumber = $"5{i:00000}",
-						InvoiceAmount = 10000 + (i * 50),
-						InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
-						CustomerName = $"Customer {i}",
-						CustomerNumber = $"CUST-{1000 + i}",
-						DataSource = "AR",
-						InvoiceBalance = i % 5 == 0 ? 0 : i *100
-					});
+            DateTime min = searchRequest.StartDate.ToDateTime(TimeOnly.MinValue);
+            DateTime max = searchRequest.EndDate.ToDateTime(TimeOnly.MaxValue);
 
-				if(searchRequest.Category == "Customer Name")
-					return list.Where(l => l.CustomerName == searchRequest.Value);
-				if (searchRequest.Category == "Invoice Number")
-					return list.Where(l => l.InvoiceNumber == searchRequest.Value);
+            if (_config.IsOntest())
+            {
+                var list = Enumerable.Range(1, 100)
+                    .Select(i => new InvoiceDetailsDto
+                    {
+                        Id = $"INV-{i:000}",
+                        InvoiceNumber = $"5{i:00000}",
+                        InvoiceAmount = 10000 + (i * 50),
+                        InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
+                        CustomerName = $"Customer {i}",
+                        CustomerNumber = $"CUST-{1000 + i}",
+                        DataSource = "AR",
+                        InvoiceBalance = i % 5 == 0 ? 0 : i * 100
+                    });
 
-				throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
+                if (searchRequest.Category == "Customer Name")
+                    return list.Where(l => l.CustomerName == searchRequest.Value);
+                if (searchRequest.Category == "Invoice Number")
+                    return list.Where(l => l.InvoiceNumber == searchRequest.Value);
 
-			}
-			await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
+                throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
 
-			var sql = @"
-				 SELECT   apsa.amount_due_original InvoiceAmount,
-						   apsa.amount_due_remaining InvoiceBalance,
-						   rct.trx_date InvoiceDate,
-						   rct.trx_number InvoiceNumber,
-						   hca.account_name CustomerName,
-						   hca.account_number CustomerNumber,
-						   'AR' DataSource
-					FROM   ra_customer_trx_all rct,
-						   ra_cust_trx_types_all ctt,
-						   hz_cust_accounts hca,
-						   ar_payment_schedules_all apsa
-				   WHERE       rct.cust_trx_type_id = ctt.cust_trx_type_id
-						   AND rct.bill_to_customer_id = hca.cust_account_id
-						   AND rct.customer_trx_id = apsa.customer_trx_id
-						   AND TRIM(hca.account_name) = NVL(UPPER(:custname), hca.account_name)
-						   AND TRIM(rct.trx_number) = NVL(UPPER(:trxno), rct.trx_number)
-				ORDER BY   rct.trx_date DESC, rct.trx_number
-				";
+            }
+            await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
 
-			dynamic param = new
-			{
-				trxno = searchRequest.Category == "Invoice Number" ? searchRequest.Value : null,
-				custname = searchRequest.Category == "Customer Name" ? searchRequest.Value : null
-			};
+            var sql = @"
+                  SELECT   apsa.amount_due_original InvoiceAmount,
+                           apsa.amount_due_remaining InvoiceBalance,
+                           rct.trx_date InvoiceDate,
+                           rct.trx_number InvoiceNumber,
+                           hca.account_name CustomerName,
+                           hca.account_number CustomerNumber,
+                           'AR' DataSource,
+                           CASE
+                              WHEN apsa.amount_due_remaining = 0 THEN 'CLOSED'
+                              ELSE 'OPEN'
+                           END
+                              AS InvoiceStatus
+                    FROM   ra_customer_trx_all rct,
+                           ra_cust_trx_types_all ctt,
+                           hz_cust_accounts hca,
+                           ar_payment_schedules_all apsa
+                   WHERE       rct.cust_trx_type_id = ctt.cust_trx_type_id
+                           AND rct.bill_to_customer_id = hca.cust_account_id
+                           AND rct.customer_trx_id = apsa.customer_trx_id
+                           AND TRIM (hca.account_name) = NVL (UPPER (:custname), hca.account_name)
+                           AND TRIM (rct.trx_number) = NVL (UPPER (:trxno), rct.trx_number)
+                ORDER BY   rct.trx_date DESC, rct.trx_number
+				                ";
 
-			var result = await conn.QueryAsync<InvoiceDetailsDto>(
-				sql,
-				(object) param,
-				commandTimeout: 120
-			) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+            dynamic param = new
+            {
+                trxno = searchRequest.Category == "Invoice Number" ? searchRequest.Value : null,
+                custname = searchRequest.Category == "Customer Name" ? searchRequest.Value : null
+            };
 
-			return result.Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max).DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
-		}
+            var result = await conn.QueryAsync<InvoiceDetailsDto>(
+                sql,
+                (object)param,
+                commandTimeout: 120
+            ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
 
-		public async Task<IEnumerable<InvoiceDetailsDto>> GetAPInvoiceDetails(SearchRequestDto searchRequest)
-		{
-			searchRequest.Category = searchRequest.Category.Trim();
-			searchRequest.Value = searchRequest.Value.Trim();
+            return result.Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max).DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
+        }
 
-			DateTime min = searchRequest.StartDate.ToDateTime(TimeOnly.MinValue);
-			DateTime max = searchRequest.EndDate.ToDateTime(TimeOnly.MaxValue);
-			
-			if (_config.IsOntest())
-			{
-				var list = Enumerable.Range(1, 100)
-					.Select(i => new InvoiceDetailsDto
-					{
-						Id = $"INV-{i:000}",
-						InvoiceNumber = $"7{i:00000}",
-						InvoiceAmount = 10000 + (i * 50),
-						InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
-						CustomerName = $"Customer {i}",
-						CustomerNumber = $"CUST-{1000 + i}",
-						DataSource = "AP",
-						InvoiceBalance = i % 5 == 0 ? 0 : i *100
-					});
+        public async Task<IEnumerable<InvoiceDetailsDto>> GetAPInvoiceDetails(SearchRequestDto searchRequest)
+        {
+            searchRequest.Category = searchRequest.Category.Trim();
+            searchRequest.Value = searchRequest.Value.Trim();
 
-				if(searchRequest.Category == "Customer Name")
-					return list.Where(l => l.CustomerName == searchRequest.Value);
-				if (searchRequest.Category == "Invoice Number")
-					return list.Where(l => l.InvoiceNumber == searchRequest.Value);
+            DateTime min = searchRequest.StartDate.ToDateTime(TimeOnly.MinValue);
+            DateTime max = searchRequest.EndDate.ToDateTime(TimeOnly.MaxValue);
 
-				throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
+            if (_config.IsOntest())
+            {
+                var list = Enumerable.Range(1, 100)
+                    .Select(i => new InvoiceDetailsDto
+                    {
+                        Id = $"INV-{i:000}",
+                        InvoiceNumber = $"7{i:00000}",
+                        InvoiceAmount = 10000 + (i * 50),
+                        InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
+                        CustomerName = $"Customer {i}",
+                        CustomerNumber = $"CUST-{1000 + i}",
+                        DataSource = "AP",
+                        InvoiceBalance = i % 5 == 0 ? 0 : i * 100
+                    });
 
-			}
-			await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
+                if (searchRequest.Category == "Customer Name")
+                    return list.Where(l => l.CustomerName == searchRequest.Value);
+                if (searchRequest.Category == "Invoice Number")
+                    return list.Where(l => l.InvoiceNumber == searchRequest.Value);
 
-			var sql = @"
+                throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
+
+            }
+            await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
+
+            var sql = @"
 				SELECT
 					apa.invoice_num InvoiceNumber,
 					apa.amount_paid InvoiceAmount,
@@ -145,20 +150,20 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 					invoice_num
 				";
 
-			dynamic param = new
-			{
-				trxno = searchRequest.Category == "Invoice Number" ? searchRequest.Value : null,
-				custname = searchRequest.Category == "Customer Name" ? searchRequest.Value : null
-			};
+            dynamic param = new
+            {
+                trxno = searchRequest.Category == "Invoice Number" ? searchRequest.Value : null,
+                custname = searchRequest.Category == "Customer Name" ? searchRequest.Value : null
+            };
 
-			var result = await conn.QueryAsync<InvoiceDetailsDto>(
-				sql,
-				(object) param,
-				commandTimeout: 120
-			) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+            var result = await conn.QueryAsync<InvoiceDetailsDto>(
+                sql,
+                (object)param,
+                commandTimeout: 120
+            ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
 
-			return result.Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max).DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
-		}
+            return result.Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max).DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
+        }
 
         public async Task<InvoiceAPDetailsDto> GetAPInvoiceNo(string invoiceNo)
         {
@@ -184,26 +189,26 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
         }
 
-		public async Task<IEnumerable<SearchCNDetailsRowDto>> GetSRAutoNetCNDetails(string invoiceNumber)
-		{
-			invoiceNumber = invoiceNumber.Trim();
+        public async Task<IEnumerable<SearchCNDetailsRowDto>> GetSRAutoNetCNDetails(string invoiceNumber)
+        {
+            invoiceNumber = invoiceNumber.Trim();
 
-			if (_config.IsOntest())
-				return Enumerable.Range(1, 100)
-					.Select(i => new SearchCNDetailsRowDto
-					{
-						Id = $"CN-{i:000}",
-						CNRef = $"7{i:00000}",
-						CNAmt = 10000 + (i * 50),
-						WT = 500 + (i * 5),
-						InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
-						CustomerName = $"Customer {i}",
-						CustomerNumber = $"CUST-{1000 + i}"
-					}).Where(c => c.CNRef.Equals(invoiceNumber));
+            if (_config.IsOntest())
+                return Enumerable.Range(1, 100)
+                    .Select(i => new SearchCNDetailsRowDto
+                    {
+                        Id = $"CN-{i:000}",
+                        CNRef = $"7{i:00000}",
+                        CNAmt = 10000 + (i * 50),
+                        WT = 500 + (i * 5),
+                        InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
+                        CustomerName = $"Customer {i}",
+                        CustomerNumber = $"CUST-{1000 + i}"
+                    }).Where(c => c.CNRef.Equals(invoiceNumber));
 
-			await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
+            await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
 
-			var sql = @"
+            var sql = @"
 					SELECT   
 						rcta.trx_number cn_ref,
 						SUM (rctla.gross_extended_amount) cn_amount,
@@ -221,35 +226,35 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 					GROUP BY   rcta.trx_number
 					ORDER BY   rcta.trx_number
 				";
-			
-			var result = await conn.QueryAsync<SearchCNDetailsRowDto>(
-				sql,
-				new { trxno = $"{invoiceNumber}" },
-				commandTimeout: 120
-			) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
 
-			return result.DistinctBy(r => new { r.CNRef });
-		}
+            var result = await conn.QueryAsync<SearchCNDetailsRowDto>(
+                sql,
+                new { trxno = $"{invoiceNumber}" },
+                commandTimeout: 120
+            ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
 
-		public async Task<IEnumerable<InvoiceDetailsDto>> GetCnInvoiceDetails(string invoiceNo)
-		{
-			invoiceNo = invoiceNo.Trim();
+            return result.DistinctBy(r => new { r.CNRef });
+        }
 
-			if (_config.IsOntest())
-				return Enumerable.Range(1, 100)
-					.Select(i => new InvoiceDetailsDto
-					{
-						Id = $"INV-{i:000}",
-						InvoiceNumber = $"5{i:00000}",
-						InvoiceAmount = 10000 + (i * 50),
-						InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
-						CustomerName = $"Customer {i}",
-						CustomerNumber = $"CUST-{1000 + i}"
-					}).Where(c => c.InvoiceNumber.Equals(invoiceNo));
+        public async Task<IEnumerable<InvoiceDetailsDto>> GetCnInvoiceDetails(string invoiceNo)
+        {
+            invoiceNo = invoiceNo.Trim();
 
-			await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
+            if (_config.IsOntest())
+                return Enumerable.Range(1, 100)
+                    .Select(i => new InvoiceDetailsDto
+                    {
+                        Id = $"INV-{i:000}",
+                        InvoiceNumber = $"5{i:00000}",
+                        InvoiceAmount = 10000 + (i * 50),
+                        InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
+                        CustomerName = $"Customer {i}",
+                        CustomerNumber = $"CUST-{1000 + i}"
+                    }).Where(c => c.InvoiceNumber.Equals(invoiceNo));
 
-			var sql = @"
+            await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
+
+            var sql = @"
 					    SELECT   
 							rcta.trx_number InvoiceNumber,
 							SUM (rctla.gross_extended_amount) InvoiceAmount,
@@ -279,35 +284,35 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 						ORDER BY
 							rcta.trx_number
 				";
-			var result = await conn.QueryAsync<InvoiceDetailsDto>(
-				sql,
-				new { trxno = $"{invoiceNo}" },
-				commandTimeout: 120
-			) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+            var result = await conn.QueryAsync<InvoiceDetailsDto>(
+                sql,
+                new { trxno = $"{invoiceNo}" },
+                commandTimeout: 120
+            ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
 
-			return result;
-		}
+            return result;
+        }
 
         public async Task<InvoiceDetailsDto> GetOneInvoiceDetails(InvoiceDetailsRequestDto invoice)
         {
-			if(_config.IsOntest())
-			{
-				return Enumerable.Range(1, 5)
-					.Select(i => new InvoiceDetailsDto
-					{
-						Id = $"INV-{i:000}",
-						InvoiceNumber = $"5{i:00000}",
-						InvoiceAmount = 10000 + (i * 50),
-						InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
-						CustomerName = $"Customer {i}",
-						CustomerNumber = $"CUST-{1000 + i}",
-						DataSource = "AR",
-						InvoiceBalance = i % 5 == 0 ? 0 : i * 100
-					}).FirstOrDefault() ?? throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
-			}
-			await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
+            if (_config.IsOntest())
+            {
+                return Enumerable.Range(1, 5)
+                    .Select(i => new InvoiceDetailsDto
+                    {
+                        Id = $"INV-{i:000}",
+                        InvoiceNumber = $"5{i:00000}",
+                        InvoiceAmount = 10000 + (i * 50),
+                        InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
+                        CustomerName = $"Customer {i}",
+                        CustomerNumber = $"CUST-{1000 + i}",
+                        DataSource = "AR",
+                        InvoiceBalance = i % 5 == 0 ? 0 : i * 100
+                    }).FirstOrDefault() ?? throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
+            }
+            await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
 
-			var sql = @"
+            var sql = @"
 				 SELECT   apsa.amount_due_original InvoiceAmount,
 						   apsa.amount_due_remaining InvoiceBalance,
 						   rct.trx_date InvoiceDate,
@@ -330,29 +335,29 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 					ORDER BY   rct.trx_date DESC, rct.trx_number
 				";
 
-			dynamic param = new
-			{
-				invnumb = invoice.InvoiceNumber,
-				invamnt = invoice.InvoiceAmount,
-				invdate = invoice.InvoiceDate.ToDateTime(TimeOnly.MinValue),
-				custname = invoice.CustomerName,
-				custnumb = invoice.CustomerNumber,
-			};
+            dynamic param = new
+            {
+                invnumb = invoice.InvoiceNumber,
+                invamnt = invoice.InvoiceAmount,
+                invdate = invoice.InvoiceDate.ToDateTime(TimeOnly.MinValue),
+                custname = invoice.CustomerName,
+                custnumb = invoice.CustomerNumber,
+            };
 
-			var result = await conn.QueryAsync<InvoiceDetailsDto>(
-				sql,
-				(object)param,
-				commandTimeout: 120
-			) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+            var result = await conn.QueryAsync<InvoiceDetailsDto>(
+                sql,
+                (object)param,
+                commandTimeout: 120
+            ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
 
-			return result.DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate }).FirstOrDefault();
-		}
+            return result.DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate }).FirstOrDefault();
+        }
 
-		public async Task<string> GetCustomerTrxIdByInvoiceDetails(CustomerInvoiceRequestDto invoiceDetails)
-		{
-			var conn = await oracleConnection.OpenWithoutPolicyAsync();
+        public async Task<string> GetCustomerTrxIdByInvoiceDetails(CustomerInvoiceRequestDto invoiceDetails)
+        {
+            var conn = await oracleConnection.OpenWithoutPolicyAsync();
 
-			var sql = @"
+            var sql = @"
 				SELECT
 					rct.customer_trx_id
 				FROM
@@ -370,27 +375,27 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 					AND TRIM(hca.account_name) = UPPER(:custname)
 					AND hca.account_number = :custnumb";
 
-			dynamic param = new
-			{
-				invnumb = invoiceDetails.InvoiceNumber,
-				invdate = invoiceDetails.InvoiceDate.ToDateTime(TimeOnly.MinValue),
-				custname = invoiceDetails.CustomerName,
-				custnumb = invoiceDetails.CustomerNumber,
-			};
+            dynamic param = new
+            {
+                invnumb = invoiceDetails.InvoiceNumber,
+                invdate = invoiceDetails.InvoiceDate.ToDateTime(TimeOnly.MinValue),
+                custname = invoiceDetails.CustomerName,
+                custnumb = invoiceDetails.CustomerNumber,
+            };
 
-			var result = await conn.QueryFirstAsync<string>(
-				sql,
-				(object)param,
-				commandTimeout: 120
-			) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+            var result = await conn.QueryFirstAsync<string>(
+                sql,
+                (object)param,
+                commandTimeout: 120
+            ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
 
-			return result;
-		}
+            return result;
+        }
 
 
-		public async Task<string> GetCustomerTrxIdByInvoiceDetails(OracleConnection oracleConnection, CustomerInvoiceRequestDto invoiceDetails)
-		{
-			var sql = @"
+        public async Task<string> GetCustomerTrxIdByInvoiceDetails(OracleConnection oracleConnection, CustomerInvoiceRequestDto invoiceDetails)
+        {
+            var sql = @"
 				SELECT
 					rct.customer_trx_id
 				FROM
@@ -408,21 +413,21 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 					AND TRIM(hca.account_name) = UPPER(:custname)
 					AND hca.account_number = :custnumb";
 
-			dynamic param = new
-			{
-				invnumb = invoiceDetails.InvoiceNumber,
-				invdate = invoiceDetails.InvoiceDate.ToDateTime(TimeOnly.MinValue),
-				custname = invoiceDetails.CustomerName,
-				custnumb = invoiceDetails.CustomerNumber,
-			};
+            dynamic param = new
+            {
+                invnumb = invoiceDetails.InvoiceNumber,
+                invdate = invoiceDetails.InvoiceDate.ToDateTime(TimeOnly.MinValue),
+                custname = invoiceDetails.CustomerName,
+                custnumb = invoiceDetails.CustomerNumber,
+            };
 
-			var result = await oracleConnection.QueryFirstOrDefaultAsync<string>(
-				sql,
-				(object)param,
-				commandTimeout: 120
-			) ?? throw new InvalidOperationException(Exceptions.INVALID_CUSTOMER_TRX_ID);
+            var result = await oracleConnection.QueryFirstOrDefaultAsync<string>(
+                sql,
+                (object)param,
+                commandTimeout: 120
+            ) ?? throw new InvalidOperationException(Exceptions.INVALID_CUSTOMER_TRX_ID);
 
-			return result;
-		}
-	}
+            return result;
+        }
+    }
 }

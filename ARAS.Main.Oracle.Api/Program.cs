@@ -46,6 +46,20 @@ builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
 builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<IAdjustmentRepository, AdjustmentRepository>();
 
+// -------------------------------------------------------------------------
+// Oracle Fusion Integration Hub — Named HttpClient
+// Replaces Oracle EBS direct database access for AR invoice lookups.
+// Configuration source: appsettings.json > OracleFusionApi
+// -------------------------------------------------------------------------
+builder.Services.AddHttpClient("OracleFusionApi", client =>
+{
+    var fusionConfig = builder.Configuration.GetSection("OracleFusionApi");
+    client.BaseAddress = new Uri(fusionConfig["BaseUrl"]!);
+    client.DefaultRequestHeaders.Add("client-id", fusionConfig["ClientId"]);
+    client.DefaultRequestHeaders.Add("x-api-key", fusionConfig["ApiKey"]);
+    client.Timeout = TimeSpan.FromSeconds(120);
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -18,16 +18,11 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
 
     /// <summary>
     /// Represents a single invoice item from the Oracle Fusion Integration Hub API.
-    /// NOTE: The API has a typo — "invoiceAmmount" (double 'm').
-    ///       JsonPropertyName is used to map it correctly without breaking our model.
-    /// NOTE: invoiceAmmount and invoiceBalance are nullable in the API response.
+    /// NOTE: invoiceAmount and invoiceBalance are nullable in the API response.
     /// </summary>
     public class FusionInvoiceDetailsResponse
     {
-        // API returns "invoiceAmmount" (typo with double 'm') — mapped explicitly
-        [JsonPropertyName("invoiceAmmount")]
         public double? InvoiceAmount { get; set; }
-
         public double? InvoiceBalance { get; set; }
         public DateTime InvoiceDate { get; set; }
         public string InvoiceNumber { get; set; }

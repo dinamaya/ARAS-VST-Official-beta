@@ -6,8 +6,6 @@ using ARAS.Main.Oracle.Api.Repositories.Interfaces;
 using ARAS.Main.Oracle.Api.Services.Interfaces;
 using Dapper;
 using Oracle.ManagedDataAccess.Client;
-using System.Data;
-using System.DirectoryServices.Protocols;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;

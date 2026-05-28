@@ -1,9 +1,6 @@
 ﻿using ARAS.Main.Oracle.Api.App_Code.Globals.Constants;
 using ARAS.Main.Oracle.Api.Models.Dtos;
 using ARAS.Main.Oracle.Api.Repositories.Interfaces;
-using ARAS.Main.Oracle.Api.Services.Interfaces;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
 
@@ -15,23 +12,20 @@ namespace ARAS.Main.Oracle.Api.Controllers
 	{
 		private readonly ILogger<InvoiceController> _logger;
 		private readonly IInvoiceRepository _invoiceRepo;
-		private readonly IConfigurationService _configService;
 
-        public InvoiceController(ILogger<InvoiceController> logger, IInvoiceRepository invoiceRepo, IConfigurationService configService)
-        {
-            _logger = logger;
-            _invoiceRepo = invoiceRepo;
-            _configService = configService;
-        }
+		public InvoiceController(ILogger<InvoiceController> logger, IInvoiceRepository invoiceRepo)
+		{
+			_logger = logger;
+			_invoiceRepo = invoiceRepo;
+		}
 
-		[HttpGet("one")]
-		public async Task<ResponseDto<InvoiceDetailsDto>> GetOneInvoiceDetails([FromBody] InvoiceDetailsRequestDto data)
+		[HttpGet("/api/single/invoice/details")]
+		public async Task<ResponseDto<InvoiceDetailsDto>> GetOneInvoiceDetails([FromQuery] InvoiceDetailsRequestDto data)
 		{
 			ResponseDto<InvoiceDetailsDto> _response = new();
 			try
 			{
 				_response.Result = await _invoiceRepo.GetOneInvoiceDetails(data);
-
 				return _response;
 			}
 			catch (OracleException ex)
@@ -53,7 +47,6 @@ namespace ARAS.Main.Oracle.Api.Controllers
 			try
 			{
 				_response.Result = await _invoiceRepo.GetInvoiceDetails(searchRequest);
-
 				return _response;
 			}
 			catch (OracleException ex)
@@ -75,7 +68,6 @@ namespace ARAS.Main.Oracle.Api.Controllers
 			try
 			{
 				_response.Result = await _invoiceRepo.GetAPInvoiceDetails(searchRequest);
-
 				return _response;
 			}
 			catch (OracleException ex)
@@ -97,7 +89,6 @@ namespace ARAS.Main.Oracle.Api.Controllers
 			try
 			{
 				_response.Result = await _invoiceRepo.GetCnInvoiceDetails(invoiceNo);
-
 				return _response;
 			}
 			catch (OracleException ex)
@@ -119,7 +110,6 @@ namespace ARAS.Main.Oracle.Api.Controllers
 			try
 			{
 				_response.Result = await _invoiceRepo.GetSRAutoNetCNDetails(invoiceNo);
-
 				return _response;
 			}
 			catch (OracleException ex)
@@ -135,7 +125,7 @@ namespace ARAS.Main.Oracle.Api.Controllers
 		}
 
 		[HttpGet("customer-trx-id")]
-		public async Task<ResponseDto<string>> GetCustomerTrxId([FromBody] CustomerInvoiceRequestDto data)
+		public async Task<ResponseDto<string>> GetCustomerTrxId([FromQuery] CustomerInvoiceRequestDto data)
 		{
 			ResponseDto<string> _response = new();
 			try

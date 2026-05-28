@@ -20,7 +20,7 @@ namespace ARAS.Blazor.Services.Implementations
 		{
 			var response = await _baseService.SendAsync<InvoiceDetailsDto>(new RequestDto<InvoiceDetailsRequestDto>()
 			{
-				URL = _configService.GetOracleInvoiceApiUrl("one"),
+				URL = _configService.GetOracleSingleInvoiceApiUrl(),  // ← was: GetOracleInvoiceApiUrl("one")
 				Data = request
 			});
 

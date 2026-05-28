@@ -40,9 +40,10 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
         }
 
         // =========================================================================
-        // GetInvoiceDetails — MIGRATED TO ORACLE FUSION (Integration Hub REST API)
-        // Previously: Direct SQL query against Oracle EBS AR schema (ra_customer_trx_all, etc.)
-        // Now: HTTP GET /fin/api/masterdata/financials/invoice-details
+        // GetInvoiceDetails — MIGRATED TO ORACLE FUSION (ARAS API)
+        // Previously: /fin/api/masterdata/financials/invoice-details
+        // Now:        GET /aras/api/invoice/details?trxNumber&customerName
+        // BaseUrl:    https://data-model-gateway-uat.msi-ecs.com.ph
         // =========================================================================
         public async Task<IEnumerable<InvoiceDetailsDto>> GetInvoiceDetails(SearchRequestDto searchRequest)
         {
@@ -52,9 +53,6 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             DateTime min = searchRequest.StartDate.ToDateTime(TimeOnly.MinValue);
             DateTime max = searchRequest.EndDate.ToDateTime(TimeOnly.MaxValue);
 
-            // -----------------------------------------------------------------
-            // Test/mock data path — unchanged from EBS version
-            // -----------------------------------------------------------------
             if (_config.IsOntest())
             {
                 var list = Enumerable.Range(1, 100)
@@ -79,81 +77,25 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             }
 
             // -----------------------------------------------------------------
-            // [ORACLE EBS — RETIRED] Direct DB query via ODP.NET + Dapper
-            // Kept for documentation and rollback reference.
-            // Tables used: ra_customer_trx_all, ra_cust_trx_types_all,
-            //              hz_cust_accounts, ar_payment_schedules_all
+            // [ARAS API] — GET /aras/api/invoice/details
+            // Query params: trxNumber (Invoice Number), customerName (Customer Name)
+            // Headers: client-id, x-api-key (configured in Program.cs)
             // -----------------------------------------------------------------
-            //
-            // await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
-            //
-            // var sql = @"
-            //       SELECT   apsa.amount_due_original InvoiceAmount,
-            //                apsa.amount_due_remaining InvoiceBalance,
-            //                rct.trx_date InvoiceDate,
-            //                rct.trx_number InvoiceNumber,
-            //                hca.account_name CustomerName,
-            //                hca.account_number CustomerNumber,
-            //                'AR' DataSource,
-            //                CASE
-            //                   WHEN apsa.amount_due_remaining = 0 THEN 'CLOSED'
-            //                   ELSE 'OPEN'
-            //                END AS InvoiceStatus
-            //         FROM   ra_customer_trx_all rct,
-            //                ra_cust_trx_types_all ctt,
-            //                hz_cust_accounts hca,
-            //                ar_payment_schedules_all apsa
-            //        WHERE       rct.cust_trx_type_id = ctt.cust_trx_type_id
-            //                AND rct.bill_to_customer_id = hca.cust_account_id
-            //                AND rct.customer_trx_id = apsa.customer_trx_id
-            //                AND TRIM (hca.account_name) = NVL (UPPER (:custname), hca.account_name)
-            //                AND TRIM (rct.trx_number) = NVL (UPPER (:trxno), rct.trx_number)
-            //     ORDER BY   rct.trx_date DESC, rct.trx_number";
-            //
-            // dynamic param = new
-            // {
-            //     trxno = searchRequest.Category == "Invoice Number" ? searchRequest.Value : null,
-            //     custname = searchRequest.Category == "Customer Name" ? searchRequest.Value : null
-            // };
-            //
-            // var result = await conn.QueryAsync<InvoiceDetailsDto>(
-            //     sql,
-            //     (object)param,
-            //     commandTimeout: 120
-            // ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
-            //
-            // return result
-            //     .Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max)
-            //     .DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
-            // -----------------------------------------------------------------
-
-            // -----------------------------------------------------------------
-            // [ORACLE FUSION] — Integration Hub REST API
-            // Endpoint: GET /fin/api/masterdata/financials/invoice-details
-            // Headers:  client-id, x-api-key (configured in Program.cs via IHttpClientFactory)
-            // -----------------------------------------------------------------
-            var customerName = searchRequest.Category == "Customer Name" ? searchRequest.Value : null;
-            var invoiceNumber = searchRequest.Category == "Invoice Number" ? searchRequest.Value : null;
+            var trxNumber   = searchRequest.Category == "Invoice Number" ? searchRequest.Value : null;
+            var customerName = searchRequest.Category == "Customer Name"  ? searchRequest.Value : null;
 
             var queryParams = new List<string>();
+            if (!string.IsNullOrEmpty(trxNumber))
+                queryParams.Add($"trxNumber={Uri.EscapeDataString(trxNumber)}");
             if (!string.IsNullOrEmpty(customerName))
                 queryParams.Add($"customerName={Uri.EscapeDataString(customerName)}");
-            if (!string.IsNullOrEmpty(invoiceNumber))
-                queryParams.Add($"invoiceNumber={Uri.EscapeDataString(invoiceNumber)}");
 
-            var requestUri = "/fin/api/masterdata/financials/invoice-details"
+            var requestUri = "/aras/api/invoice/details"
                 + (queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty);
 
             var response = await _fusionHttpClient.GetAsync(requestUri);
             response.EnsureSuccessStatusCode();
 
-            // ---------------------------------------------------------------
-            // Oracle Fusion API envelope:
-            // { "statusCode": 200, "message": "Success", "apiResponse": [...] }
-            // "invoiceAmmount" is a known typo in the API — handled via
-            // [JsonPropertyName] on FusionInvoiceDetailsResponse.
-            // "invoiceAmmount" and "invoiceBalance" are nullable in the response.
-            // ---------------------------------------------------------------
             var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
             var envelope = await response.Content.ReadFromJsonAsync<FusionInvoiceApiEnvelope>(jsonOptions)
@@ -162,8 +104,6 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             var fusionResult = envelope.ApiResponse
                 ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
 
-            // Map Fusion response to the shared InvoiceDetailsDto
-            // Null amounts default to 0 to keep compatibility with existing UI logic
             var mapped = fusionResult.Select(f => new InvoiceDetailsDto
             {
                 Id = f.InvoiceNumber,
@@ -471,7 +411,15 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                 commandTimeout: 120
             ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
 
-            return result.DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate }).FirstOrDefault();
+            // ---------------------------------------------------------------
+            // FIXED: Use FirstOrDefault with a null-check throw instead of
+            // silently returning null, so the controller catches it properly
+            // and wraps it in a Failed ResponseDto with a meaningful message.
+            // ---------------------------------------------------------------
+            return result
+                .DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate })
+                .FirstOrDefault()
+                ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
         }
 
         // =========================================================================

@@ -27,7 +27,9 @@ namespace ARAS.Blazor.Services.Implementations
 
 		public string GetOracleInvoiceApiUrl(string route = null) =>
 			$"{_config.GetValue<string>("ApiConfig:external:OracleApi:Invoice")}{route}";
-		
+
+		public string GetOracleSingleInvoiceApiUrl() =>
+			_config.GetValue<string>("ApiConfig:external:OracleApi:SingleInvoice");
 
 		public string GetOracleAdjustmentApiUrl(string route = null) =>
 			$"{_config.GetValue<string>("ApiConfig:external:OracleApi:Adjustments")}{route}";

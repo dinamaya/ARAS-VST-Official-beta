@@ -10,13 +10,14 @@ namespace ARAS.Blazor.Services.Interfaces
 		string GetOpsUrl(string route = null);
 
 		string GetOracleInvoiceApiUrl(string route = null);
+		string GetOracleSingleInvoiceApiUrl();
 		string GetOracleAdjustmentApiUrl(string route = null);
 
 		string GetAdjustmentsUrl(string route = null);
 		string GetApprovalsUrl(string route = null);
 		string GetCashDiscountsUrl(string route = null);
-        string GetARInvoiceOffsettingUrl(string route = null);
-        string GetAPAROffsetsUrl(string route = null);
+		string GetARInvoiceOffsettingUrl(string route = null);
+		string GetAPAROffsetsUrl(string route = null);
 		string GetBankChargesUrl(string route = null);
 		string GetDeclinesUrl(string route = null);
 		string GetRejectionsUrl(string route = null);

@@ -1,4 +1,4 @@
-﻿@using ARAS.Blazor.Components.Shared
+@using ARAS.Blazor.Components.Shared
 @using ARAS.Blazor.Components.Shared.DataTables
 @using ARAS.Blazor.Models.DTOs
 
@@ -36,11 +36,9 @@
 
 	private async Task HandleSearch(SearchRequestDto request)
 	{
-		results = await InvoiceService.GetDetailsList(request);
-		if (selectedSource == "AR")
-			results = await InvoiceService.GetDetailsList(request);
-		else
-			results = await InvoiceService.GetAPDetailsList(request);
+		results = selectedSource == "AR"
+			? await InvoiceService.GetDetailsList(request)
+			: await InvoiceService.GetAPDetailsList(request);
 	}
 
 	protected async Task OnSelectChanged(InvoiceDetailsDto invoiceDetails)

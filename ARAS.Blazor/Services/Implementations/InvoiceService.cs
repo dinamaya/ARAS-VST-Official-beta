@@ -16,12 +16,32 @@ namespace ARAS.Blazor.Services.Implementations
 			_configService = configService;
 		}
 
+		// -------------------------------------------------------------------------
+		// FIXED: Single-invoice lookup endpoint uses [FromQuery] on the API side.
+		// Sending params as JSON body resulted in 400 Bad Request because the
+		// required query string params were missing.
+		// Now builds the query string and uses RequestDto (no Data property).
+		// -------------------------------------------------------------------------
 		public async Task<InvoiceDetailsDto> GetDetails(InvoiceDetailsRequestDto request)
 		{
-			var response = await _baseService.SendAsync<InvoiceDetailsDto>(new RequestDto<InvoiceDetailsRequestDto>()
+			var queryParams = new List<string>();
+
+			if (!string.IsNullOrEmpty(request.InvoiceNumber))
+				queryParams.Add($"invoiceNumber={Uri.EscapeDataString(request.InvoiceNumber)}");
+			if (!string.IsNullOrEmpty(request.CustomerName))
+				queryParams.Add($"customerName={Uri.EscapeDataString(request.CustomerName)}");
+			if (!string.IsNullOrEmpty(request.CustomerNumber))
+				queryParams.Add($"customerNumber={Uri.EscapeDataString(request.CustomerNumber)}");
+
+			queryParams.Add($"invoiceDate={Uri.EscapeDataString(request.InvoiceDate.ToString("yyyy-MM-dd"))}");
+			queryParams.Add($"invoiceAmount={request.InvoiceAmount}");
+
+			var url = _configService.GetOracleSingleInvoiceApiUrl()
+				+ "?" + string.Join("&", queryParams);
+
+			var response = await _baseService.SendAsync<InvoiceDetailsDto>(new RequestDto()
 			{
-				URL = _configService.GetOracleSingleInvoiceApiUrl(),  // ← was: GetOracleInvoiceApiUrl("one")
-				Data = request
+				URL = url
 			});
 
 			Guards.ThrowNullReferenceIf(response?.Result, response.Message);
@@ -52,16 +72,16 @@ namespace ARAS.Blazor.Services.Implementations
 			return response.Result;
 		}
 
-        public async Task<InvoiceAPDetailsDto> GetAPDetails(string invoiceNumber)
-        {
-            var response = await _baseService.SendAsync<InvoiceAPDetailsDto>(new RequestDto()
-            {
-                URL = _configService.GetOracleInvoiceApiUrl($"ap/no/{invoiceNumber}"),
-            });
+		public async Task<InvoiceAPDetailsDto> GetAPDetails(string invoiceNumber)
+		{
+			var response = await _baseService.SendAsync<InvoiceAPDetailsDto>(new RequestDto()
+			{
+				URL = _configService.GetOracleInvoiceApiUrl($"ap/no/{invoiceNumber}"),
+			});
 
-            Guards.ThrowNullReferenceIf(response?.Result, response.Message);
-            return response.Result;
-        }
+			Guards.ThrowNullReferenceIf(response?.Result, response.Message);
+			return response.Result;
+		}
 
 		public async Task<IEnumerable<SearchCNDetailsRowDto>> GetSRAutoNetCNDetails(string invoiceNumber)
 		{
@@ -84,5 +104,5 @@ namespace ARAS.Blazor.Services.Implementations
 			Guards.ThrowNullReferenceIf(response?.Result, response.Message);
 			return response.Result;
 		}
-    }
+	}
 }

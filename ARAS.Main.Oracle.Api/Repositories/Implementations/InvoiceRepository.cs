@@ -1,4 +1,4 @@
-﻿using ARAS.Main.Oracle.Api.App_Code.Globals.Constants;
+using ARAS.Main.Oracle.Api.App_Code.Globals.Constants;
 using ARAS.Main.Oracle.Api.Context;
 using ARAS.Main.Oracle.Api.Factories.Interfaces;
 using ARAS.Main.Oracle.Api.Models.Dtos;
@@ -25,7 +25,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
         // -------------------------------------------------------------------------
         private readonly HttpClient _fusionHttpClient;
 
-        public InvoiceRepository(
+		public InvoiceRepository(
             MainDbContext efContext,
             IOracleConnectionFactory oracleConnection,
             IConfigurationService config,
@@ -35,6 +35,33 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             this.oracleConnection = oracleConnection;
             _config = config;
             _fusionHttpClient = httpClientFactory.CreateClient("OracleFusionApi");
+        }
+
+        private async Task<IEnumerable<InvoiceDetailsDto>> GetFusionApInvoiceDetailsAsync(string invoiceNumber)
+        {
+            invoiceNumber = invoiceNumber.Trim();
+
+            var response = await _fusionHttpClient.GetAsync($"/aras/api/ap/invoice/details?trxNumber={Uri.EscapeDataString(invoiceNumber)}");
+            response.EnsureSuccessStatusCode();
+
+            var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var envelope = await response.Content.ReadFromJsonAsync<FusionInvoiceApiEnvelope>(jsonOptions)
+                ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+
+            var fusionResult = envelope.ApiResponse
+                ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+
+            return fusionResult.Select(f => new InvoiceDetailsDto
+            {
+                Id = f.InvoiceNumber,
+                InvoiceNumber = f.InvoiceNumber,
+                InvoiceAmount = f.InvoiceAmount ?? 0,
+                InvoiceDate = f.InvoiceDate,
+                CustomerName = f.CustomerName,
+                CustomerNumber = f.CustomerNumber,
+                DataSource = f.DataSource ?? "AP",
+                InvoiceBalance = f.InvoiceBalance ?? 0
+            });
         }
 
         // =========================================================================
@@ -120,9 +147,9 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
         }
 
         // =========================================================================
-        // GetAPInvoiceDetails — ORACLE EBS (Not yet migrated to Oracle Fusion)
-        // Pending: Oracle Fusion AP invoice endpoint from Admin.
-        // Tables used: ap_invoices_all, po_vendors
+        // GetAPInvoiceDetails — AP Fusion lookup for invoice-number searches.
+        // Customer-name searches remain on the legacy Oracle path until Fusion
+        // exposes an equivalent contract.
         // =========================================================================
         public async Task<IEnumerable<InvoiceDetailsDto>> GetAPInvoiceDetails(SearchRequestDto searchRequest)
         {
@@ -154,10 +181,16 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
                 throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
             }
+            if (searchRequest.Category == "Invoice Number")
+            {
+                var fusionResult = await GetFusionApInvoiceDetailsAsync(searchRequest.Value);
+                return fusionResult
+                    .Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max)
+                    .DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
+            }
+
             await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
 
-            // [ORACLE EBS] — AP Invoices query
-            // TODO: Replace with Oracle Fusion AP invoice endpoint when provided by Admin.
             var sql = @"
 				SELECT
 					apa.invoice_num InvoiceNumber,
@@ -200,28 +233,20 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
         // =========================================================================
         public async Task<InvoiceAPDetailsDto> GetAPInvoiceNo(string invoiceNo)
         {
-            await using var conn = await oracleConnection.OpenWithoutPolicyAsync();
-            invoiceNo = invoiceNo.Trim();
+            var fusionResult = (await GetFusionApInvoiceDetailsAsync(invoiceNo)).ToList();
 
-            // [ORACLE EBS] — AP Invoice by number query
-            // TODO: Replace with Oracle Fusion endpoint when provided by Admin.
-            var sql = @"
-					SELECT    apa.invoice_num AS InvoiceNumber,
-							  apa.amount_paid AS InvoiceAmount,
-							  apa.invoice_date AS InvoiceDate,
-							  pv.vendor_name AS CustomerName,
-							  pv.vendor_id AS CustomerNumber
-					FROM      ap_invoices_all apa,
-							  po_vendors pv
-					WHERE     apa.vendor_id = pv.vendor_id AND TRIM(apa.invoice_num) = UPPER(:trxno)
-					ORDER BY  apa.invoice_date DESC, apa.invoice_num
-				";
-
-            return await conn.QueryFirstOrDefaultAsync<InvoiceAPDetailsDto>(
-                sql,
-                new { trxno = $"{invoiceNo}" },
-                commandTimeout: 120
-            ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+            return fusionResult
+                .Select(r => new InvoiceAPDetailsDto
+                {
+                    Id = r.Id,
+                    InvoiceAmount = r.InvoiceAmount,
+                    InvoiceDate = r.InvoiceDate,
+                    InvoiceNumber = r.InvoiceNumber,
+                    CustomerName = r.CustomerName,
+                    CustomerNumber = r.CustomerNumber
+                })
+                .FirstOrDefault()
+                ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
         }
 
         // =========================================================================

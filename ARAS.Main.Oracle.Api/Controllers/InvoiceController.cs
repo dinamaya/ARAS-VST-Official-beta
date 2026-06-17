@@ -41,7 +41,7 @@ namespace ARAS.Main.Oracle.Api.Controllers
 		}
 
 		[HttpGet]
-		public async Task<ResponseDto<IEnumerable<InvoiceDetailsDto>>> GetInvoiceDetails(SearchRequestDto searchRequest)
+		public async Task<ResponseDto<IEnumerable<InvoiceDetailsDto>>> GetInvoiceDetails([FromQuery] SearchRequestDto searchRequest)
 		{
 			ResponseDto<IEnumerable<InvoiceDetailsDto>> _response = new();
 			try
@@ -62,12 +62,33 @@ namespace ARAS.Main.Oracle.Api.Controllers
 		}
 
 		[HttpGet("ap")]
-		public async Task<ResponseDto<IEnumerable<InvoiceDetailsDto>>> GetAPInvoiceDetails(SearchRequestDto searchRequest)
+		public async Task<ResponseDto<IEnumerable<InvoiceDetailsDto>>> GetAPInvoiceDetails([FromQuery] SearchRequestDto searchRequest)
 		{
 			ResponseDto<IEnumerable<InvoiceDetailsDto>> _response = new();
 			try
 			{
 				_response.Result = await _invoiceRepo.GetAPInvoiceDetails(searchRequest);
+				return _response;
+			}
+			catch (OracleException ex)
+			{
+				_logger.LogError(Exceptions.CANT_CONNECT);
+				return _response.Failed(Exceptions.CANT_CONNECT);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return _response.Failed(ex.Message);
+			}
+		}
+
+		[HttpGet("ap/no/{invoiceNo}")]
+		public async Task<ResponseDto<InvoiceAPDetailsDto>> GetAPInvoiceNo(string invoiceNo)
+		{
+			ResponseDto<InvoiceAPDetailsDto> _response = new();
+			try
+			{
+				_response.Result = await _invoiceRepo.GetAPInvoiceNo(invoiceNo);
 				return _response;
 			}
 			catch (OracleException ex)

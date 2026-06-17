@@ -155,11 +155,23 @@ namespace ARAS.Blazor.Services.Implementations
 							return new() { IsSuccess = false, Message = "Bad Request" };
 						}
 
-					default:
+				default:
 						var contentType = apiResponse.Content.Headers.ContentType?.MediaType;
+						var dispositionType = apiResponse.Content.Headers.ContentDisposition?.DispositionType;
 
 						if (contentType != null && !contentType.Contains("application/json", StringComparison.OrdinalIgnoreCase))
-							return await DownloadMedia<TResult>(apiResponse);
+						{
+							if (string.Equals(dispositionType, "attachment", StringComparison.OrdinalIgnoreCase))
+								return await DownloadMedia<TResult>(apiResponse);
+
+							var body = await apiResponse.Content.ReadAsStringAsync();
+							var fallbackMessage = string.IsNullOrWhiteSpace(body)
+								? $"{apiResponse.StatusCode} {apiResponse.ReasonPhrase}"
+								: body.Trim();
+
+							await Notify(requestDto, apiResponse, "Unexpected response", false);
+							return new() { IsSuccess = false, Message = fallbackMessage };
+						}
 
 						var apiContent = await apiResponse.Content.ReadAsStringAsync();
 						var contentResponse = JsonConvert.DeserializeObject<ResponseDto<TResult>>(apiContent) ?? throw new Exception("Error while connecting to the server please check the internet connection");

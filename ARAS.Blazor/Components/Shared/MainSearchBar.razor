@@ -225,8 +225,8 @@
 
 		param.Add("c", searchRequest.Category);
 		param.Add("v", searchRequest.Value);
-		param.Add("sd", searchRequest.StartDate.ToString());
-		param.Add("ed", searchRequest.EndDate.ToString());
+		param.Add("sd", searchRequest.StartDate.ToString("yyyy-MM-dd"));
+		param.Add("ed", searchRequest.EndDate.ToString("yyyy-MM-dd"));
 		param.Add("token", token);
 		
 		Nav.NavigateTo(Nav.GetUriWithQueryParameters(QueryService.GetCurrentUrl(false), param));

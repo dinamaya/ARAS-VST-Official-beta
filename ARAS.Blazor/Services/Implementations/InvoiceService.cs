@@ -62,10 +62,20 @@ namespace ARAS.Blazor.Services.Implementations
 
 		public async Task<IEnumerable<InvoiceDetailsDto>> GetAPDetailsList(SearchRequestDto searchRequest)
 		{
-			var response = await _baseService.SendAsync<IEnumerable<InvoiceDetailsDto>>(new RequestDto<SearchRequestDto>()
+			var queryParams = new List<string>();
+
+			if (!string.IsNullOrWhiteSpace(searchRequest.Category))
+				queryParams.Add($"category={Uri.EscapeDataString(searchRequest.Category)}");
+			if (!string.IsNullOrWhiteSpace(searchRequest.Value))
+				queryParams.Add($"value={Uri.EscapeDataString(searchRequest.Value)}");
+
+			queryParams.Add($"startDate={Uri.EscapeDataString(searchRequest.StartDate.ToString("yyyy-MM-dd"))}");
+			queryParams.Add($"endDate={Uri.EscapeDataString(searchRequest.EndDate.ToString("yyyy-MM-dd"))}");
+
+			var response = await _baseService.SendAsync<IEnumerable<InvoiceDetailsDto>>(new RequestDto()
 			{
-				URL = _configService.GetOracleInvoiceApiUrl("ap"),
-				Data = searchRequest
+				URL = _configService.GetOracleInvoiceApiUrl("ap")
+					+ "?" + string.Join("&", queryParams)
 			});
 
 			Guards.ThrowNullReferenceIf(response?.Result, response.Message);

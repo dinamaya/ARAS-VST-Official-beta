@@ -37,11 +37,20 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             _fusionHttpClient = httpClientFactory.CreateClient("OracleFusionApi");
         }
 
-        private async Task<IEnumerable<InvoiceDetailsDto>> GetFusionApInvoiceDetailsAsync(string invoiceNumber)
+        private async Task<IEnumerable<InvoiceDetailsDto>> GetFusionApInvoiceDetailsAsync(string? invoiceNumber = null, string? customerName = null)
         {
-            invoiceNumber = invoiceNumber.Trim();
+            var queryParams = new List<string>();
 
-            var response = await _fusionHttpClient.GetAsync($"/aras/api/ap/invoice/details?trxNumber={Uri.EscapeDataString(invoiceNumber)}");
+            if (!string.IsNullOrWhiteSpace(invoiceNumber))
+                queryParams.Add($"trxNumber={Uri.EscapeDataString(invoiceNumber.Trim())}");
+
+            if (!string.IsNullOrWhiteSpace(customerName))
+                queryParams.Add($"customerName={Uri.EscapeDataString(customerName.Trim())}");
+
+            var requestUri = "/aras/api/ap/invoice/details"
+                + (queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty);
+
+            var response = await _fusionHttpClient.GetAsync(requestUri);
             response.EnsureSuccessStatusCode();
 
             var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
@@ -181,49 +190,17 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
                 throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
             }
-            if (searchRequest.Category == "Invoice Number")
-            {
-                var fusionResult = await GetFusionApInvoiceDetailsAsync(searchRequest.Value);
-                return fusionResult
-                    .Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max)
-                    .DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
-            }
+            if (searchRequest.Category != "Invoice Number" && searchRequest.Category != "Customer Name")
+                throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
 
-            await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
+            var fusionResult = await GetFusionApInvoiceDetailsAsync(
+                searchRequest.Category == "Invoice Number" ? searchRequest.Value : null,
+                searchRequest.Category == "Customer Name" ? searchRequest.Value : null
+            );
 
-            var sql = @"
-				SELECT
-					apa.invoice_num InvoiceNumber,
-					apa.amount_paid InvoiceAmount,
-					apa.invoice_date InvoiceDate,
-					pv.vendor_name CustomerName,
-					pv.vendor_id CustomerNumber,
-					'AP' DataSource
-				FROM
-					ap_invoices_all apa, 
-					po_vendors pv
-				WHERE
-					apa.vendor_id = pv.vendor_id 
-					AND TRIM(invoice_num) = NVL(UPPER(:trxno), invoice_num)
-					AND TRIM(pv.vendor_name) = NVL(UPPER(:custname), pv.vendor_name)
-				ORDER BY
-					apa.invoice_date DESC, 
-					invoice_num
-				";
-
-            dynamic param = new
-            {
-                trxno = searchRequest.Category == "Invoice Number" ? searchRequest.Value : null,
-                custname = searchRequest.Category == "Customer Name" ? searchRequest.Value : null
-            };
-
-            var result = await conn.QueryAsync<InvoiceDetailsDto>(
-                sql,
-                (object)param,
-                commandTimeout: 120
-            ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
-
-            return result.Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max).DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
+            return fusionResult
+                .Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max)
+                .DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
         }
 
         // =========================================================================

@@ -823,14 +823,16 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		}
 
 		private async Task<IEnumerable<InvoiceAdjustmentRowDto>> ToRequestAdjustmentRow(IQueryable<LatestInvoiceAdjustmentsV> query) =>
-			(await query.Select(q => new InvoiceAdjustmentRowDto()
+		(await query
+			.OrderByDescending(q => q.DateCreated)
+			.Select(q => new InvoiceAdjustmentRowDto()
 			{
 				RequestId = q.RequestId,
 				Requestor = ValidateFullName(q.RequestorFirstName, q.RequestorLastName),
 				DateRequested = q.DateRequested.ToString(Formats.Date.DISPLAY_COMPLETE),
 				Approver = ValidateFullName(q.ApproverFirstName, q.ApproverLastName),
 				DateApproved = q.DateApproved.HasValue ? ((DateTime)q.DateApproved).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
-				Creator =  q.Status == "Posted" ? "SYSTEM" : ValidateFullName(q.UpdaterFirstName, q.UpdaterLastName),
+				Creator = q.Status == "Posted" ? "SYSTEM" : ValidateFullName(q.UpdaterFirstName, q.UpdaterLastName),
 				DateCreated = q.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
 				Status = q.Status,
 				CustomerName = q.CustomerName,
@@ -838,17 +840,19 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				InvoiceNumber = q.InvoiceNumber,
 				ReferencesCount = "0"
 			})
-            .ToListAsync()).OrderByDescending(a => a.DateCreated);
+			.ToListAsync());
 
 		private async Task<IEnumerable<ReceiptAdjustmentRowDto>> ToRequestAdjustmentRow(IQueryable<LatestReceiptAdjustmentDetailsV> query) =>
-			(await query.Select(q => new ReceiptAdjustmentRowDto()
+		(await query
+			.OrderByDescending(q => q.DateCreated)
+			.Select(q => new ReceiptAdjustmentRowDto()
 			{
 				RequestId = q.RequestId,
 				Requestor = ValidateFullName(q.RequestorFirstName, q.RequestorLastName),
 				DateRequested = q.DateRequested.ToString(Formats.Date.DISPLAY_COMPLETE),
 				Approver = ValidateFullName(q.ApproverFirstName, q.ApproverLastName),
 				DateApproved = q.DateApproved.HasValue ? ((DateTime)q.DateApproved).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
-				Creator =  q.Status == "Posted" ? "SYSTEM" : ValidateFullName(q.UpdaterFirstName, q.UpdaterLastName),
+				Creator = q.Status == "Posted" ? "SYSTEM" : ValidateFullName(q.UpdaterFirstName, q.UpdaterLastName),
 				DateCreated = q.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
 				Status = q.Status,
 				CustomerName = q.CustomerName,
@@ -856,7 +860,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				AdjustmentType = q.AdjustmentType,
 				AdjustmentTypeCode = q.AdjustmentTypeCode.ToLower()
 			})
-            .ToListAsync()).OrderByDescending(a => a.DateCreated);
+			.ToListAsync());
 
         public async Task Approve(long requestId, string modifiedBy, string role)
         {

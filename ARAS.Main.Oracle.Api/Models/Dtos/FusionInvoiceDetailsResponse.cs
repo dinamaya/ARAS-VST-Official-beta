@@ -12,7 +12,7 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
         public string Message { get; set; }
 
         // ---------------------------------------------------------------
-        // FIXED: Was "ApiResponse" — actual JSON key from ARAS API is "data"
+        // FIXED: Was "ApiResponse" â€” actual JSON key from ARAS API is "data"
         // ---------------------------------------------------------------
         [JsonPropertyName("data")]
         public IEnumerable<FusionInvoiceDetailsResponse> ApiResponse { get; set; }
@@ -20,7 +20,7 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
 
     /// <summary>
     /// Represents a single invoice item from the ARAS API response.
-    /// NOTE: All field names in the JSON are UPPER_CASE — mapped via [JsonPropertyName].
+    /// NOTE: All field names in the JSON are UPPER_CASE â€” mapped via [JsonPropertyName].
     /// </summary>
     public class FusionInvoiceDetailsResponse
     {
@@ -47,5 +47,8 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
 
         [JsonPropertyName("INVOICESTATUS")]
         public string InvoiceStatus { get; set; }
+
+        [JsonPropertyName("CUSTOMERTRXID")]
+        public long? CustomerTrxId { get; set; }
     }
 }

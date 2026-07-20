@@ -1,4 +1,4 @@
-﻿namespace ARAS.OracleSync.Worker.Models.DTOs
+namespace ARAS.OracleSync.Worker.Models.DTOs
 {
 	public record AdjustmentPostingDto
 	{
@@ -14,5 +14,6 @@
 		public string Remarks { get; set; }
 		public string CustomerName { get; set; }
 		public string CustomerNumber { get; set; }
+       public long? CustomerTrxId { get; set; }
 	}
 }

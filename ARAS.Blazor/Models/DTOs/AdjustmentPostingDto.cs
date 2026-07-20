@@ -1,4 +1,4 @@
-﻿namespace ARAS.Main.Oracle.Api.Models.Dtos
+namespace ARAS.Main.Oracle.Api.Models.Dtos
 {
 	public record AdjustmentPostingDto
 	{
@@ -14,5 +14,6 @@
 		public string Remarks { get; set; }
 		public string CustomerName { get; set; }
 		public string CustomerNumber { get; set; }
+       public long? CustomerTrxId { get; set; }
 	}
 }

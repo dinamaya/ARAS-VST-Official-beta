@@ -1,4 +1,4 @@
-﻿namespace ARAS.Blazor.Models.DTOs
+namespace ARAS.Blazor.Models.DTOs
 {
 	public class InvoiceDetailsDto
 	{
@@ -10,5 +10,6 @@
 		public string CustomerNumber { get; set; }
 		public double InvoiceBalance { get; set; }
 		public string DataSource { get; set; }
+       public long? CustomerTrxId { get; set; }
 	}
 }

@@ -1,4 +1,4 @@
-﻿namespace ARAS.Main.Oracle.Api.Models.Dtos
+namespace ARAS.Main.Oracle.Api.Models.Dtos
 {
 	public record AdjustmentPostingDto
 	{
@@ -17,5 +17,6 @@
 		public string Remarks { get; set; } // Comments
 		public string CustomerName { get; set; } // Account Name
 		public string CustomerNumber { get; set; } // Account Number
+       public long? CustomerTrxId { get; set; } // Fusion Customer Transaction ID
 	}
 }

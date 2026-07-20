@@ -69,7 +69,8 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                 CustomerName = f.CustomerName,
                 CustomerNumber = f.CustomerNumber,
                 DataSource = f.DataSource ?? "AP",
-                InvoiceBalance = f.InvoiceBalance ?? 0
+                InvoiceBalance = f.InvoiceBalance ?? 0,
+                CustomerTrxId = f.CustomerTrxId
             });
         }
 
@@ -147,7 +148,8 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                 InvoiceDate = f.InvoiceDate,
                 CustomerName = f.CustomerName,
                 CustomerNumber = f.CustomerNumber,
-                DataSource = f.DataSource ?? "AR"
+                DataSource = f.DataSource ?? "AR",
+                CustomerTrxId = f.CustomerTrxId
             });
 
             return mapped

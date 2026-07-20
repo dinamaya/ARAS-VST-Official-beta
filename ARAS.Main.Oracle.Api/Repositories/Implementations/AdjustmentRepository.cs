@@ -84,13 +84,14 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			foreach(var item in data)
 			{
 				var receivableActivity = await GetReceivableActivityByName(conn, item.AdjustmentActivity);
-				string customerTrxId = await invoiceRepo.GetCustomerTrxIdByInvoiceDetails(conn, new()
-				{
-					InvoiceNumber = item.InvoiceNumber,
-					InvoiceDate = DateOnly.FromDateTime(item.InvoiceDate),
-					CustomerName = item.CustomerName,
-					CustomerNumber = item.CustomerNumber,
-				});
+               string customerTrxId = item.CustomerTrxId?.ToString()
+					?? await invoiceRepo.GetCustomerTrxIdByInvoiceDetails(conn, new()
+					{
+						InvoiceNumber = item.InvoiceNumber,
+						InvoiceDate = DateOnly.FromDateTime(item.InvoiceDate),
+						CustomerName = item.CustomerName,
+						CustomerNumber = item.CustomerNumber,
+					});
 				
 				list.Add(new AdjustmentCreateStagingRow {
 					ReceivableActivityId = receivableActivity.Id,

@@ -188,6 +188,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				{
                     HeaderId = StagingHeaderIdHelper.Generate(a.RequestId, a.AdjustmentId),
                     InvoiceNumber = a.InvoiceNumber,
+					CustomerTrxId = a.CustomerTrxId,
 					AdjustmentAmount = a.AdjustmentAmount,
 					InvoiceDate = a.InvoiceDate,
 					PaymentScheduleId = null,
@@ -209,6 +210,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                    HeaderId = StagingHeaderIdHelper.Generate(a.RequestId, a.AdjustmentId),
                    AdjustmentId = a.AdjustmentId,
                    InvoiceNumber = a.InvoiceNumber,
+				   CustomerTrxId = a.CustomerTrxId,
 				   AdjustmentAmount = a.AdjustmentAmount,
 				   InvoiceDate = a.InvoiceDate,
 				   PaymentScheduleId = null,
@@ -229,6 +231,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				{
                     HeaderId = StagingHeaderIdHelper.Generate(a.RequestId, a.AdjustmentId),
                     InvoiceNumber = a.InvoiceNumber,
+					CustomerTrxId = a.CustomerTrxId,
 					AdjustmentAmount = a.AdjustmentAmount,
 					InvoiceDate = a.InvoiceDate,
 					PaymentScheduleId = null,
@@ -266,6 +269,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                     HeaderId = StagingHeaderIdHelper.Generate(a.RequestId, a.AdjustmentId),
                     AdjustmentId = a.AdjustmentId,
 					InvoiceNumber = a.InvoiceNumber,
+					CustomerTrxId = a.CustomerTrxId,
 					AdjustmentAmount = a.AdjustmentAmount,
 					InvoiceDate = a.InvoiceDate,
 					PaymentScheduleId = null,

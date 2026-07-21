@@ -10,6 +10,7 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 		public string InvoiceNumber { get; set; }
 		public string CustomerName { get; set; }
 		public string CustomerNumber { get; set; }
+		public long? CustomerTrxId { get; set; }
 		public string Remarks { get; set; }
 	}
 }

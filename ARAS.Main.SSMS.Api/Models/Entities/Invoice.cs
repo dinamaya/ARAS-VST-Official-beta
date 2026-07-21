@@ -1,4 +1,4 @@
-﻿using ARAS.Main.SSMS.Api.Models.Abstracts;
+using ARAS.Main.SSMS.Api.Models.Abstracts;
 using ARAS.Main.SSMS.Api.Models.Interfaces;
 using System.ComponentModel.DataAnnotations;
 
@@ -13,6 +13,8 @@ namespace ARAS.Main.SSMS.Api.Models.Entities
 
 		public string CustomerNumber { get; set; }
 		public string CustomerName { get; set; }
+
+		public long? CustomerTrxId { get; set; }
 
 		public string CreatedBy { get; set; }
 		public DateTime DateCreated { get; set; }

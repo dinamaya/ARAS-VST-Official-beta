@@ -26,6 +26,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                 InvoiceDate = data.InvoiceDate,
                 CustomerName = data.CustomerName,
                 CustomerNumber = data.CustomerNumber,
+                CustomerTrxId = data.CustomerTrxId,
 
                 DateCreated = date,
                 DateModified = date,
@@ -55,6 +56,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					InvoiceDate = _data.InvoiceDate,
 					CustomerName = _data.CustomerName,
 					CustomerNumber = _data.CustomerNumber,
+					CustomerTrxId = _data.CustomerTrxId,
 
 					DateCreated = date,
 					DateModified = date,
@@ -109,6 +111,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			invoice.InvoiceDate = data.InvoiceDate;
 			invoice.CustomerName = data.CustomerName;
 			invoice.CustomerNumber = data.CustomerNumber;
+			invoice.CustomerTrxId = data.CustomerTrxId;
 
 			invoice.DateCreated = date;
 			invoice.DateModified = date;

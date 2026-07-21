@@ -170,6 +170,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			 {
 				 AdjustmentId = a.AdjustmentId,
 				 InvoiceNumber = a.InvoiceNumber,
+				 CustomerTrxId = a.CustomerTrxId,
 				 AdjustmentAmount = a.AdjustmentAmount,
 				 InvoiceDate = a.InvoiceDate,
 				 PaymentScheduleId = null,

@@ -13,6 +13,8 @@ public partial class StagingRequestAdjustmentV
 
 	public string InvoiceNumber { get; set; } = null!;
 
+	public long? CustomerTrxId { get; set; }
+
 	public double AdjustmentAmount { get; set; }
 
 	public DateTime InvoiceDate { get; set; }

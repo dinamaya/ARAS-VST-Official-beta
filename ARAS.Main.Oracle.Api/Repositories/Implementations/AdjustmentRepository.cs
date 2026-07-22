@@ -9,7 +9,10 @@ using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Oracle.ManagedDataAccess.Client;
 using System.Collections.Generic;
-using System.Numerics;
+using System.IO.Compression;
+using System.Net.Http.Headers;
+using System.Security;
+using System.Text;
 
 namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 {
@@ -20,14 +23,16 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 		private readonly IInvoiceRepository invoiceRepo;
 		private readonly IConfigurationService _config;
 		private readonly ILogger<IAdjustmentRepository> _logger;
+		private readonly HttpClient _httpClient;
 
-        public AdjustmentRepository(MainDbContext efContext, IOracleConnectionFactory oracleConnection, IConfigurationService config, ILogger<IAdjustmentRepository> logger, IInvoiceRepository invoiceRepo)
+        public AdjustmentRepository(MainDbContext efContext, IOracleConnectionFactory oracleConnection, IConfigurationService config, ILogger<IAdjustmentRepository> logger, IInvoiceRepository invoiceRepo, IHttpClientFactory httpClientFactory)
         {
             this.efContext = efContext;
             this.oracleConnection = oracleConnection;
             _config = config;
             _logger = logger;
             this.invoiceRepo = invoiceRepo;
+			_httpClient = httpClientFactory.CreateClient();
         }
 
         public async Task<IEnumerable<string>> GetReasonCodes()
@@ -78,30 +83,111 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 		public async Task Create(IEnumerable<AdjustmentPostingDto> data)
 		{
-			var conn = await oracleConnection.OpenWithoutPolicyAsync();
-			var list = new List<AdjustmentCreateStagingRow>();
+			var rows = data
+				.GroupBy(item => item.HeaderId)
+				.Select(group => group.First())
+				.ToList();
 
-			foreach(var item in data)
+			foreach(var item in rows)
 			{
-				var receivableActivity = await GetReceivableActivityByName(conn, item.AdjustmentActivity);
-               string customerTrxId = item.CustomerTrxId?.ToString()
-					?? await invoiceRepo.GetCustomerTrxIdByInvoiceDetails(conn, new()
-					{
-						InvoiceNumber = item.InvoiceNumber,
-						InvoiceDate = DateOnly.FromDateTime(item.InvoiceDate),
-						CustomerName = item.CustomerName,
-						CustomerNumber = item.CustomerNumber,
-					});
-				
-				list.Add(new AdjustmentCreateStagingRow {
-					ReceivableActivityId = receivableActivity.Id,
-					CustomerTrxId = customerTrxId,
-					AdjustmentsDetails = item
-				});
-			}
+				if (item.CustomerTrxId is null)
+					throw new InvalidOperationException($"CustomerTrxId is required for Fusion adjustment posting. Invoice: {item.InvoiceNumber}");
 
-			await CreateStageRow(list);
+				await CreateFusionAdjustment(item);
+			}
 		}
+
+		private async Task CreateFusionAdjustment(AdjustmentPostingDto item)
+		{
+			using var request = new HttpRequestMessage(HttpMethod.Post, _config.GetFusionAdjustmentEndpoint());
+			request.Headers.Authorization = CreateBasicAuthenticationHeader();
+			request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/xml"));
+			request.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("identity"));
+			request.Headers.TryAddWithoutValidation("SOAPAction", $"\"{_config.GetFusionAdjustmentSoapAction()}\"");
+			request.Content = new StringContent(CreateFusionAdjustmentEnvelope(item), Encoding.UTF8, "text/xml");
+
+			var response = await _httpClient.SendAsync(request);
+			var content = await ReadResponseContent(response);
+
+			if (!response.IsSuccessStatusCode)
+			{
+				_logger.LogError("Fusion adjustment posting failed. StatusCode: {StatusCode}. Response: {Response}", response.StatusCode, content);
+				throw new InvalidOperationException($"Fusion adjustment posting failed. StatusCode: {(int)response.StatusCode}. Response: {content}");
+			}
+		}
+
+		private static async Task<string> ReadResponseContent(HttpResponseMessage response)
+		{
+			var bytes = await response.Content.ReadAsByteArrayAsync();
+			var encoding = response.Content.Headers.ContentEncoding.FirstOrDefault();
+
+			if (string.Equals(encoding, "gzip", StringComparison.OrdinalIgnoreCase))
+				return await Decompress(bytes, stream => new GZipStream(stream, CompressionMode.Decompress));
+
+			if (string.Equals(encoding, "deflate", StringComparison.OrdinalIgnoreCase))
+				return await Decompress(bytes, stream => new DeflateStream(stream, CompressionMode.Decompress));
+
+			if (string.Equals(encoding, "br", StringComparison.OrdinalIgnoreCase))
+				return await Decompress(bytes, stream => new BrotliStream(stream, CompressionMode.Decompress));
+
+			return Encoding.UTF8.GetString(bytes);
+		}
+
+		private static async Task<string> Decompress(byte[] bytes, Func<Stream, Stream> createStream)
+		{
+			await using var compressed = new MemoryStream(bytes);
+			await using var decompressed = createStream(compressed);
+			using var reader = new StreamReader(decompressed, Encoding.UTF8);
+
+			return await reader.ReadToEndAsync();
+		}
+
+		private AuthenticationHeaderValue CreateBasicAuthenticationHeader()
+		{
+			var credentials = $"{_config.GetFusionAdjustmentUsername()}:{_config.GetFusionAdjustmentPassword()}";
+			var bytes = Encoding.UTF8.GetBytes(credentials);
+
+			return new AuthenticationHeaderValue("Basic", Convert.ToBase64String(bytes));
+		}
+
+		private string CreateFusionAdjustmentEnvelope(AdjustmentPostingDto item)
+		{
+			var applyDate = item.DateApplied.ToString("yyyy-MM-dd");
+			var glDate = item.DateApplied.ToString("yyyy-MM-dd");
+			var amount = Convert.ToDecimal(item.AdjustmentAmount).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+			var receivablesTrxId = _config.GetFusionAdjustmentReceivablesTrxId(item.AdjustmentActivity);
+			var paymentScheduleId = item.PaymentScheduleId ?? _config.GetFusionAdjustmentDefaultPaymentScheduleId();
+
+			return $@"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/""
+                  xmlns:typ=""http://xmlns.oracle.com/apps/financials/receivables/transactions/adjustments/adjustmentService/types/""
+                  xmlns:rec=""http://xmlns.oracle.com/apps/financials/receivables/transactions/adjustments/adjustmentService/"">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <typ:createAdjustment>
+      <typ:adjustment>
+        <rec:CustomerTrxId>{item.CustomerTrxId}</rec:CustomerTrxId>
+        {CreateOptionalPaymentScheduleId(paymentScheduleId)}
+        <rec:Amount>{amount}</rec:Amount>
+        <rec:ApplyDate>{applyDate}</rec:ApplyDate>
+        <rec:GlDate>{glDate}</rec:GlDate>
+        <rec:ReasonCode>{EscapeXml(item.ReasonCode)}</rec:ReasonCode>
+        <rec:TransactionAdjustmentType>LINE</rec:TransactionAdjustmentType>
+        <rec:ReceivablesTrxId>{receivablesTrxId}</rec:ReceivablesTrxId>
+        <rec:CodeCombinationId>{_config.GetFusionAdjustmentCodeCombinationId()}</rec:CodeCombinationId>
+        <rec:SetOfBooksId>{_config.GetFusionAdjustmentSetOfBooksId()}</rec:SetOfBooksId>
+        <rec:OrgId>{_config.GetFusionAdjustmentOrgId()}</rec:OrgId>
+        <rec:Comments>{EscapeXml(item.Remarks)}</rec:Comments>
+        <rec:AdjustmentType>M</rec:AdjustmentType>
+      </typ:adjustment>
+    </typ:createAdjustment>
+  </soapenv:Body>
+</soapenv:Envelope>";
+		}
+
+		private static string CreateOptionalPaymentScheduleId(long? paymentScheduleId) =>
+			paymentScheduleId.HasValue ? $"<rec:PaymentScheduleId>{paymentScheduleId.Value}</rec:PaymentScheduleId>" : string.Empty;
+
+		private static string EscapeXml(string? value) => SecurityElement.Escape(value ?? string.Empty) ?? string.Empty;
 
         public async Task<ReceivablesActivityDto> GetReceivableActivityByName(string adjustmentActivity)
         {

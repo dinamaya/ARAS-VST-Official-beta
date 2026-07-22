@@ -50,5 +50,8 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
 
         [JsonPropertyName("CUSTOMERTRXID")]
         public long? CustomerTrxId { get; set; }
+
+        [JsonPropertyName("PAYMENTSCHEDULEID")]
+        public long? PaymentScheduleId { get; set; }
     }
 }

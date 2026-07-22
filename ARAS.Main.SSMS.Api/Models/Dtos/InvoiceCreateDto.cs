@@ -11,10 +11,11 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 		public string CustomerNumber { get; set; }
 		public string CustomerName { get; set; }
 		public long? CustomerTrxId { get; set; }
+		public long? PaymentScheduleId { get; set; }
 
 		public InvoiceCreateDto() { }
 
-		public InvoiceCreateDto(string invoiceNumber, double invoiceAmount, DateTime invoiceDate, string customerNumber, string customerName, long? customerTrxId = null)
+		public InvoiceCreateDto(string invoiceNumber, double invoiceAmount, DateTime invoiceDate, string customerNumber, string customerName, long? customerTrxId = null, long? paymentScheduleId = null)
 		{
 			InvoiceNumber = invoiceNumber;
 			InvoiceAmount = invoiceAmount;
@@ -22,6 +23,7 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 			CustomerNumber = customerNumber;
 			CustomerName = customerName;
 			CustomerTrxId = customerTrxId;
+			PaymentScheduleId = paymentScheduleId;
 		}
 
 
@@ -33,6 +35,7 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 			CustomerNumber = model.CustomerNumber;
 			CustomerName = model.CustomerName;
 			CustomerTrxId = model.CustomerTrxId;
+			PaymentScheduleId = model.PaymentScheduleId;
 		}
 
 		public InvoiceCreateDto(BaseReceiptAdjustmentCreateDto model)
@@ -43,6 +46,7 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 			CustomerNumber = model.CustomerNumber;
 			CustomerName = model.CustomerName;
 			CustomerTrxId = model.CustomerTrxId;
+			PaymentScheduleId = model.PaymentScheduleId;
 		}
 	}
 }

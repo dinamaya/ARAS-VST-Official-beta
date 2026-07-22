@@ -10,7 +10,7 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
 		//public string CreatedFrom { get; set; } Default to ADJUSTMENT API
 
 		public DateTime InvoiceDate { get; set; } // GL Date
-		public int? PaymentScheduleId { get; set; } = null;
+		public long? PaymentScheduleId { get; set; } = null;
 		public DateTime DateApplied { get; set; } // Date Approved / Created 
 		public string AdjustmentActivity { get; set; }	// Map to Receivables TRX ID
 		public string ReasonCode { get; set; }

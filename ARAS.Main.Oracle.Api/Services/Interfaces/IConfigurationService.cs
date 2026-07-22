@@ -6,5 +6,14 @@ namespace ARAS.Main.Oracle.Api.Services.Interfaces
 	{
 		IEnumerable<string> GetReasonCodes();
 		bool IsOntest();
+		string GetFusionAdjustmentEndpoint();
+		string GetFusionAdjustmentUsername();
+		string GetFusionAdjustmentPassword();
+		string GetFusionAdjustmentSoapAction();
+		long GetFusionAdjustmentOrgId();
+		long GetFusionAdjustmentSetOfBooksId();
+		long GetFusionAdjustmentCodeCombinationId();
+		long? GetFusionAdjustmentDefaultPaymentScheduleId();
+		long GetFusionAdjustmentReceivablesTrxId(string activityName);
 	}
 }

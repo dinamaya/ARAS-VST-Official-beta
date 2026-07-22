@@ -7,5 +7,56 @@ namespace ARAS.Main.Oracle.Api.Services.Implementations
 	{
 		public IEnumerable<string> GetReasonCodes() => config.GetSection("DropdownOptions:ReasonCodes").Get<IEnumerable<string>>();
 		public bool IsOntest() => config.GetValue<bool>("TestConfig:OnTest");
+		public string GetFusionAdjustmentEndpoint() => GetRequiredValue("OracleFusionAdjustmentService:Endpoint");
+		public string GetFusionAdjustmentUsername() => GetRequiredValue("OracleFusionAdjustmentService:Username");
+		public string GetFusionAdjustmentPassword() => GetRequiredValue("OracleFusionAdjustmentService:Password");
+		public string GetFusionAdjustmentSoapAction() => GetRequiredValue("OracleFusionAdjustmentService:SoapAction");
+		public long GetFusionAdjustmentOrgId() => GetRequiredLong("OracleFusionAdjustmentService:OrgId");
+		public long GetFusionAdjustmentSetOfBooksId() => GetRequiredLong("OracleFusionAdjustmentService:SetOfBooksId");
+		public long GetFusionAdjustmentCodeCombinationId() => GetRequiredLong("OracleFusionAdjustmentService:CodeCombinationId");
+		public long? GetFusionAdjustmentDefaultPaymentScheduleId() => GetOptionalLong("OracleFusionAdjustmentService:DefaultPaymentScheduleId");
+
+		public long GetFusionAdjustmentReceivablesTrxId(string activityName)
+		{
+			var section = config.GetSection("OracleFusionAdjustmentService:ReceivablesTrxIds");
+			var value = section.GetChildren()
+				.FirstOrDefault(item => string.Equals(item.Key, activityName, StringComparison.OrdinalIgnoreCase))
+				?.Value;
+
+			if (long.TryParse(value, out var id))
+				return id;
+
+			throw new InvalidOperationException($"ReceivablesTrxId is not configured for adjustment activity '{activityName}'.");
+		}
+
+		private string GetRequiredValue(string key)
+		{
+			var value = config[key];
+			if (!string.IsNullOrWhiteSpace(value))
+				return value;
+
+			throw new InvalidOperationException($"Missing configuration value: {key}");
+		}
+
+		private long GetRequiredLong(string key)
+		{
+			var value = GetRequiredValue(key);
+			if (long.TryParse(value, out var result))
+				return result;
+
+			throw new InvalidOperationException($"Invalid numeric configuration value: {key}");
+		}
+
+		private long? GetOptionalLong(string key)
+		{
+			var value = config[key];
+			if (string.IsNullOrWhiteSpace(value))
+				return null;
+
+			if (long.TryParse(value, out var result))
+				return result;
+
+			throw new InvalidOperationException($"Invalid numeric configuration value: {key}");
+		}
 	}
 }

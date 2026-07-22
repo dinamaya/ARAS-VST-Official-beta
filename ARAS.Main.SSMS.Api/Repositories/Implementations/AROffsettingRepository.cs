@@ -173,7 +173,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				 CustomerTrxId = a.CustomerTrxId,
 				 AdjustmentAmount = a.AdjustmentAmount,
 				 InvoiceDate = a.InvoiceDate,
-				 PaymentScheduleId = null,
+				 PaymentScheduleId = a.PaymentScheduleId,
 				 DateApplied = DateTime.Now,
 				 AdjustmentActivity = a.Activity,
 				 ReasonCode = a.ReasonCode,

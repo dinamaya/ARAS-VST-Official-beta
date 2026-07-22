@@ -12,6 +12,7 @@ namespace ARAS.Blazor.Models.DTOs
 		public string CustomerName { get; set; }
 		public string CustomerNumber { get; set; }
 		public long? CustomerTrxId { get; set; }
+		public long? PaymentScheduleId { get; set; }
 		public string Remarks { get; set; }
 
 		public BaseReceiptAdjustmentCreateDto() { }
@@ -25,6 +26,7 @@ namespace ARAS.Blazor.Models.DTOs
 			CustomerName = invoiceDetails.CustomerName;
 			CustomerNumber = invoiceDetails.CustomerNumber;
 			CustomerTrxId = invoiceDetails.CustomerTrxId;
+			PaymentScheduleId = invoiceDetails.PaymentScheduleId;
 			Remarks = adjumentEntry.Remarks;
 		}
 	}

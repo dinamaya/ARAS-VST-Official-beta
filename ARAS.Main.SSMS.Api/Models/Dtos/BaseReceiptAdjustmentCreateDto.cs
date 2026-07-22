@@ -11,6 +11,7 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 		public string CustomerName { get; set; }
 		public string CustomerNumber { get; set; }
 		public long? CustomerTrxId { get; set; }
+		public long? PaymentScheduleId { get; set; }
 		public string Remarks { get; set; }
 	}
 }

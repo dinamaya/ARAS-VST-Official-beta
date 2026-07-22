@@ -10,6 +10,7 @@ namespace ARAS.Blazor.Models.DTOs
 		public string CustomerNumber { get; set; }
 		public double InvoiceBalance { get; set; }
 		public string DataSource { get; set; }
-       public long? CustomerTrxId { get; set; }
+		public long? CustomerTrxId { get; set; }
+		public long? PaymentScheduleId { get; set; }
 	}
 }

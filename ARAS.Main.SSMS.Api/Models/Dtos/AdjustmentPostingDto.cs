@@ -7,7 +7,7 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 		public string InvoiceNumber { get; set; }
 		public double AdjustmentAmount { get; set; }
 		public DateTime InvoiceDate { get; set; }
-		public int? PaymentScheduleId { get; set; } = null;
+		public long? PaymentScheduleId { get; set; } = null;
 		public DateTime DateApplied { get; set; }
 		public string AdjustmentActivity { get; set; }
 		public string ReasonCode { get; set; }

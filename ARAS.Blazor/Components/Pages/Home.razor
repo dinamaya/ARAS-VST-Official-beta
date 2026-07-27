@@ -1,4 +1,4 @@
-@using ARAS.Blazor.App_Code.Globals.Extensions
+ï»¿@using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Services.Interfaces
 @using Microsoft.AspNetCore.Authorization
 @using ARAS.Blazor.Models.DTOs
@@ -75,7 +75,7 @@
                     <div class="card-header pb-0 p-3">
                         <div class="row">
                             <div class="col-md-6">
-                                <h6 class="mb-0">My Approval Queue — Action Required</h6>
+                                <h6 class="mb-0">My Approval Queue ï¿½ Action Required</h6>
                             </div>
                         </div>
                     </div>
@@ -226,14 +226,14 @@
                 new DashboardCard { Title = "Declined by Me", Count = approvalQueueHealth.DeclinedByMe, IconClass = "ni ni-bold-down" },
                 new DashboardCard { Title = "Rejected by Me", Count = approvalQueueHealth.RejectedByMe, IconClass = "ni ni-fat-remove" },
                 new DashboardCard { Title = "Overdue in My Queue", Count = approvalQueueHealth.OverdueInMyQueue, IconClass = "ni ni-time-alarm" },
-                new DashboardCard { Title = "For ERP Posting", Count = approvalQueueHealth.ErpPostingCount, IconClass = "ni ni-check-bold" },
+                new DashboardCard { Title = "Posted", Count = approvalQueueHealth.ErpPostingCount, IconClass = "ni ni-check-bold" },
             ];
         }
 
         return
         [
             new DashboardCard { Title = "For CNC Approval", Count = pendingCount, IconClass = "ni ni-active-40" },
-            new DashboardCard { Title = "For ERP Posting", Count = approvedCount, IconClass = "ni ni-like-2" },
+            new DashboardCard { Title = "Posted", Count = approvedCount, IconClass = "ni ni-like-2" },
             new DashboardCard { Title = "Declined", Count = declinedCount, IconClass = "ni ni-bold-down" },
             new DashboardCard { Title = "FSG Validation / Approval", Count = resubmittedCount, IconClass = "ni ni-user-run" },
             new DashboardCard { Title = "Posted", Count = postedCount, IconClass = "ni ni-check-bold" },
@@ -265,7 +265,7 @@
                 new DataItem { Request = "For CNC Approval", Count = pendingCount },
                 new DataItem { Request = "For FSG Validation", Count = validationCount },
                 new DataItem { Request = "For FSG Approval", Count = fsgApprovalCount },
-                new DataItem { Request = "For ERP Posting", Count = approvedCount },
+                new DataItem { Request = "Posted", Count = approvedCount },
             ];
         }
 
@@ -274,7 +274,7 @@
             new DataItem { Request = "For CNC Approval", Count = pendingCount },
             new DataItem { Request = "For FSG Validation", Count = validationCount },
             new DataItem { Request = "For FSG Approval", Count = fsgApprovalCount },
-            new DataItem { Request = "For ERP Posting", Count = approvedCount },
+            new DataItem { Request = "Posted", Count = approvedCount },
             new DataItem { Request = "Declined", Count = declinedCount },
             new DataItem { Request = "Posted", Count = postedCount },
             new DataItem { Request = "Rejected", Count = rejectedCount },
@@ -283,6 +283,6 @@
 
     private bool IsActionStatus(string status)
     {
-        return status == "For ERP Posting" || status == "For FSG Validation" || status == "For FSG Approval" || status == "Rejected" || status == "Declined";
+        return status == "For ERP Posting" || status == "Posted" || status == "For FSG Validation" || status == "For FSG Approval" || status == "Rejected" || status == "Declined";
     }
 }

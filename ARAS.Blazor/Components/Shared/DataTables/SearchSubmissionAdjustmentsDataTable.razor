@@ -104,7 +104,7 @@
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
-		filterSelection = ["All", "For ERP Posting", "Posted"];
+		filterSelection = ["All", "Posted"];
 
 		if (!Role.IsApprovalActor())
 			filterSelection = filterSelection.Union(["For CNC Approval", "For FSG Validation", "For FSG Approval", "Declined", "Rejected"]);
@@ -123,12 +123,11 @@
 		filteredRows = status switch
 		{
 			"For CNC Approval" => source.Where(r => r.Status == "For CNC Approval"),
-			"For ERP Posting" => source.Where(r => r.Status == "For ERP Posting"),
 			"For FSG Validation" => source.Where(r => r.Status == "For FSG Validation"),
 			"For FSG Approval" => source.Where(r => r.Status == "For FSG Approval"),
 			"Declined" => source.Where(r => r.Status == "Declined"),
 			"Rejected" => source.Where(r => r.Status == "Rejected"),
-			"Posted" => source.Where(r => r.Status == "Posted"),
+			"Posted" => source.Where(r => r.Status == "Posted" || r.Status == "For ERP Posting"),
 			_ => source
 		};
 

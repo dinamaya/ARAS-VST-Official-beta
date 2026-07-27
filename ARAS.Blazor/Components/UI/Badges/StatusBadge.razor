@@ -18,7 +18,7 @@
         badgeStyle =
             IsRejected(Status) ? "bg-gradient-danger" :
             IsDeclined(Status) ? "bg-gradient-warning" :
-            IsForErpPosting(Status) ? "bg-gradient-primary" :
+            IsCompleted(Status) ? "bg-gradient-primary" :
             IsForFsgValidation(Status) ? "bg-gradient-secondary" :
             IsForFsgApproval(Status) ? "bg-gradient-info" :
             IsForCncApproval(Status) ? "border bg-light text-dark" :
@@ -27,7 +27,7 @@
         string iconClass =
             IsRejected(Status) ? "ni-fat-remove fs-3 text-danger" :
             IsDeclined(Status) ? "ni-curved-next text-warning flip-y" :
-            IsForErpPosting(Status) ? "ni-send text-primary" :
+            IsCompleted(Status) ? "ni-send text-primary" :
             IsForFsgValidation(Status) ? "ni-time-alarm text-info" :
             IsForFsgApproval(Status) ? "ni-like-2 text-info" :
             IsForCncApproval(Status) ? "ni-bell-55 text-info" :
@@ -40,7 +40,8 @@
     private static bool IsForCncApproval(string? status) =>
         string.Equals(status, "For CNC Approval", StringComparison.OrdinalIgnoreCase);
 
-    private static bool IsForErpPosting(string? status) =>
+    private static bool IsCompleted(string? status) =>
+        string.Equals(status, "Posted", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(status, "For ERP Posting", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsForFsgValidation(string? status) =>

@@ -138,6 +138,22 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
+		[HttpGet("stage/invoice/{requestId:long}")]
+		public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetInvoiceAdjustmentStagingData(long requestId)
+		{
+			var response = new ResponseDto<IEnumerable<AdjustmentPostingDto>>();
+			try
+			{
+				response.Result = await _arOffsetRepo.GetStagingData(requestId);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
 		[HttpGet("stage/receipt/{requestId:long}")]
 		public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetReceiptAdjustmentStagingData(long requestId)
 		{
@@ -210,6 +226,26 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			{
 				await _adjustmentService.Post(adjustmentId, "SYSTEM");
 				response.Result = "Request Status Posted";
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
+
+		[HttpPost("stage/invoice")]
+		public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetInvoiceAdjustmentStagingData([FromBody] IEnumerable<long> requestIds)
+		{
+			var response = new ResponseDto<IEnumerable<AdjustmentPostingDto>>();
+			try
+			{
+				var stagingRows = new List<AdjustmentPostingDto>();
+				foreach (var requestId in requestIds.Distinct())
+					stagingRows.AddRange(await _arOffsetRepo.GetStagingData(requestId));
+
+				response.Result = stagingRows;
 				return response;
 			}
 			catch (Exception ex)

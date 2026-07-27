@@ -155,13 +155,13 @@
 
 @code {
     private readonly List<string> reportTypes = ["All Requests", "Posted Adjustments", "Pending Requests", "Declined / Rejected"];
-    private readonly List<string> statusOptions = ["All Statuses", "For CNC Approval", "For FSG Validation", "For FSG Approval", "For ERP Posting", "Posted", "Declined", "Rejected"];
+    private readonly List<string> statusOptions = ["All Statuses", "For CNC Approval", "For FSG Validation", "For FSG Approval", "Posted", "Declined", "Rejected"];
     private static readonly HashSet<string> pendingStatuses =
     [
         "For CNC Approval",
         "For FSG Validation",
         "For FSG Approval",
-        "For ERP Posting"
+        "Posted"
     ];
 
     private ReportFiltersDto filters = new();
@@ -176,7 +176,7 @@
     private string selectedAdjustmentType = "All Adjustment Types";
 
     private int TotalRequests => rows.Count;
-    private int PostedCount => rows.Count(x => x.Status == "Posted");
+    private int PostedCount => rows.Count(x => x.Status == "Posted" || x.Status == "For ERP Posting");
     private int PendingCount => rows.Count(x => pendingStatuses.Contains(x.Status));
     private int DeclinedCount => rows.Count(x => x.Status == "Declined");
     private int RejectedCount => rows.Count(x => x.Status == "Rejected");

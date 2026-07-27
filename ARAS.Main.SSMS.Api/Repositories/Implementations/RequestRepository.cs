@@ -14,6 +14,10 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		private readonly MainDbContext _context;
 		private readonly ITransactionRepository _transactionRepo;
 
+        private static bool IsCompletedStatus(string status) =>
+            string.Equals(status, "Posted", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, "For ERP Posting", StringComparison.OrdinalIgnoreCase);
+
         private sealed class ReportQueryRow
         {
             public long RequestId { get; set; }
@@ -87,7 +91,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			var latest = await _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking().Where(t =>
 				t.RequestId == requestId &&
-				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "For ERP Posting" || t.Status == "Posted")
+				!(t.Status == "Rejected" || t.Status == "Declined" || IsCompletedStatus(t.Status))
 			).ToListAsync();
 
 			return latest.Count() > 0;
@@ -102,7 +106,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			return await _context.VwLatestReceiptAdjustmentDetails.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
-				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "For ERP Posting" || t.Status == "Posted")
+				!(t.Status == "Rejected" || t.Status == "Declined" || IsCompletedStatus(t.Status))
 			);
 		}
 
@@ -112,7 +116,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		/// <param name="requestId"></param>
 		/// <returns></returns>
 		public async Task<bool> IsPostable(long requestId) =>
-			await _context.VwLatestReceiptAdjustmentDetails.AsNoTracking().AnyAsync(t => t.RequestId == requestId && t.Status == "For ERP Posting");
+			await _context.VwLatestReceiptAdjustmentDetails.AsNoTracking().AnyAsync(t => t.RequestId == requestId && IsCompletedStatus(t.Status));
 
 		/// <summary>
 		/// Checks if the request is currently declined
@@ -191,7 +195,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                 .CountAsync();
         }
 
-        public async Task<int> GetApprovedRequestCount(string userId)
+		public async Task<int> GetApprovedRequestCount(string userId)
         {
             return await _context.VwAllAdjustmentRequestLatestStatus
                 .AsNoTracking()
@@ -199,7 +203,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                     v => v.RequestId,
                     r => r.Id,
                     (v, r) => new { v, r })
-                .Where(x => x.r.CreatedBy == userId && x.v.Status == "For ERP Posting")
+                .Where(x => x.r.CreatedBy == userId && IsCompletedStatus(x.v.Status))
                 .CountAsync();
         }
 
@@ -258,7 +262,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                     v => v.RequestId,
                     r => r.Id,
                     (v, r) => new { v, r })
-                .Where(x => x.r.CreatedBy == userId && x.v.Status == "Posted")
+                .Where(x => x.r.CreatedBy == userId && IsCompletedStatus(x.v.Status))
                 .CountAsync();
         }
 
@@ -297,7 +301,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                 DeclinedByMe = await myRecentActions.Where(x => x.Status == "Declined").CountAsync(),
                 RejectedByMe = await myRecentActions.Where(x => x.Status == "Rejected").CountAsync(),
                 OverdueInMyQueue = await myCurrentQueueItems.Where(x => x.DateCreated < overdueBefore).CountAsync(),
-                ErpPostingCount = await allCurrentQueueItems.Where(x => x.Status == "For ERP Posting").CountAsync()
+                ErpPostingCount = await allCurrentQueueItems.Where(x => IsCompletedStatus(x.Status)).CountAsync()
             };
         }
 
@@ -416,7 +420,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
             RequestorSearchName = row.RequestorSearchName,
             Requestor = ValidateFullName(row.RequestorFirstName, row.RequestorLastName),
             Approver = ValidateFullName(row.ApproverFirstName, row.ApproverLastName),
-            UpdatedBy = row.Status == "Posted" ? "SYSTEM" : ValidateFullName(row.UpdaterFirstName, row.UpdaterLastName),
+            UpdatedBy = IsCompletedStatus(row.Status) ? "SYSTEM" : ValidateFullName(row.UpdaterFirstName, row.UpdaterLastName),
             DateRequested = row.DateRequested,
             DateApproved = row.DateApproved,
             DateUpdated = row.DateUpdated,
@@ -551,8 +555,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
         {
             return reportType switch
             {
-                "Posted Adjustments" => query.Where(x => x.Status == "Posted"),
-                "Pending Requests" => query.Where(x => x.Status == "For CNC Approval" || x.Status == "For FSG Validation" || x.Status == "For FSG Approval" || x.Status == "For ERP Posting"),
+                "Posted Adjustments" => query.Where(x => IsCompletedStatus(x.Status)),
+                "Pending Requests" => query.Where(x => x.Status == "For CNC Approval" || x.Status == "For FSG Validation" || x.Status == "For FSG Approval"),
                 "Declined / Rejected" => query.Where(x => x.Status == "Declined" || x.Status == "Rejected"),
                 _ => query
             };
@@ -565,6 +569,9 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
         {
             if (string.IsNullOrWhiteSpace(status))
                 return query;
+
+            if (string.Equals(status, "Posted", StringComparison.OrdinalIgnoreCase))
+                return query.Where(x => IsCompletedStatus(x.Status));
 
             return query.Where(x => x.Status == status);
         }
@@ -667,7 +674,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
             {
                 var currentRole when IsCncApproverRole(currentRole) => "For FSG Validation",
                 var currentRole when IsFsgValidatorRole(currentRole) => "For FSG Approval",
-                var currentRole when IsFsgApproverRole(currentRole) => "For ERP Posting",
+                var currentRole when IsFsgApproverRole(currentRole) => "Posted",
                 _ => throw new InvalidOperationException(Exceptions.INVALID_ROLE)
             };
 
@@ -723,7 +730,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					"For CNC Approval" => "For FSG Validation",
 					"Declined" => throw new InvalidOperationException(Exceptions.ALREADY_DECLINED),
 					"Rejected" => throw new InvalidOperationException(Exceptions.ALREADY_REJECT),
-					"For FSG Validation" or "For FSG Approval" or "For ERP Posting" or "Posted" => throw new InvalidOperationException(Exceptions.ALREADY_APPROVED),
+					"For FSG Validation" or "For FSG Approval" or "Posted" or "For ERP Posting" => throw new InvalidOperationException(Exceptions.ALREADY_APPROVED),
 					_ => throw new InvalidOperationException(Exceptions.INVALID_ROLE)
 				},
 				var _ when IsFsgValidatorRole(role) => currentStatus switch
@@ -732,15 +739,15 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					"Declined" => throw new InvalidOperationException(Exceptions.ALREADY_DECLINED),
 					"Rejected" => throw new InvalidOperationException(Exceptions.ALREADY_REJECT),
 					
-					"For FSG Approval" or "For ERP Posting" or "Posted" => throw new InvalidOperationException(Exceptions.ALREADY_VALIDATED),
+					"For FSG Approval" or "Posted" or "For ERP Posting" => throw new InvalidOperationException(Exceptions.ALREADY_VALIDATED),
 					_ => throw new InvalidOperationException(Exceptions.INVALID_ROLE)
 				},
 				var _ when IsFsgApproverRole(role) => currentStatus switch
 				{
-					"For FSG Approval" => "For ERP Posting",
+					"For FSG Approval" => "Posted",
 					"Declined" => throw new InvalidOperationException(Exceptions.ALREADY_DECLINED),
 					"Rejected" => throw new InvalidOperationException(Exceptions.ALREADY_REJECT),
-					"For ERP Posting" or "Posted" => throw new InvalidOperationException(Exceptions.ALREADY_APPROVED),
+					"Posted" or "For ERP Posting" => throw new InvalidOperationException(Exceptions.ALREADY_APPROVED),
 					_ => throw new InvalidOperationException(Exceptions.INVALID_ROLE)
 				},
 				_ => throw new InvalidOperationException(Exceptions.INVALID_ROLE)
@@ -832,7 +839,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				DateRequested = q.DateRequested.ToString(Formats.Date.DISPLAY_COMPLETE),
 				Approver = ValidateFullName(q.ApproverFirstName, q.ApproverLastName),
 				DateApproved = q.DateApproved.HasValue ? ((DateTime)q.DateApproved).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
-				Creator = q.Status == "Posted" ? "SYSTEM" : ValidateFullName(q.UpdaterFirstName, q.UpdaterLastName),
+				Creator = IsCompletedStatus(q.Status) ? "SYSTEM" : ValidateFullName(q.UpdaterFirstName, q.UpdaterLastName),
 				DateCreated = q.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
 				Status = q.Status,
 				CustomerName = q.CustomerName,
@@ -852,7 +859,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				DateRequested = q.DateRequested.ToString(Formats.Date.DISPLAY_COMPLETE),
 				Approver = ValidateFullName(q.ApproverFirstName, q.ApproverLastName),
 				DateApproved = q.DateApproved.HasValue ? ((DateTime)q.DateApproved).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
-				Creator = q.Status == "Posted" ? "SYSTEM" : ValidateFullName(q.UpdaterFirstName, q.UpdaterLastName),
+				Creator = IsCompletedStatus(q.Status) ? "SYSTEM" : ValidateFullName(q.UpdaterFirstName, q.UpdaterLastName),
 				DateCreated = q.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
 				Status = q.Status,
 				CustomerName = q.CustomerName,

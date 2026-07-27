@@ -30,6 +30,7 @@ namespace ARAS.Blazor.Services.Interfaces
 		Task<IEnumerable<InvoiceAdjustmentRowDto>> GetInvoiceAdjustmentSubmissions(SearchRequestDto data);
 		Task<IEnumerable<AdjustmentPostingDto>> GetReceiptStagingDataByRequestId(long requestId);
 		Task<IEnumerable<AdjustmentPostingDto>> GetReceiptStagingDataByRequestId(IEnumerable<long> requestIds);
+		Task<IEnumerable<AdjustmentPostingDto>> GetInvoiceStagingDataByRequestId(IEnumerable<long> requestIds);
 
 		Task ApproveReceiptAdjustmentRequests(IEnumerable<long> data);
 		Task ApproveInvoiceAdjustmentRequests(IEnumerable<long> data);

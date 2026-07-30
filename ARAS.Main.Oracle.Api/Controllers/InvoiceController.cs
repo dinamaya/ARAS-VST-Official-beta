@@ -130,13 +130,10 @@ namespace ARAS.Main.Oracle.Api.Controllers
 			ResponseDto<IEnumerable<SearchCNDetailsRowDto>> _response = new();
 			try
 			{
+				// SR Auto Net CN is intentionally parked for now.
+				// Keep the endpoint harmless so it does not reach the Oracle DB path.
 				_response.Result = await _invoiceRepo.GetSRAutoNetCNDetails(invoiceNo);
 				return _response;
-			}
-			catch (OracleException ex)
-			{
-				_logger.LogError(Exceptions.CANT_CONNECT);
-				return _response.Failed(Exceptions.CANT_CONNECT);
 			}
 			catch (Exception ex)
 			{

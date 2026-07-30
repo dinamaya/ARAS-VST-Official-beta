@@ -237,51 +237,9 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
         // =========================================================================
         public async Task<IEnumerable<SearchCNDetailsRowDto>> GetSRAutoNetCNDetails(string invoiceNumber)
         {
-            invoiceNumber = invoiceNumber.Trim();
-
-            if (_config.IsOntest())
-                return Enumerable.Range(1, 100)
-                    .Select(i => new SearchCNDetailsRowDto
-                    {
-                        Id = $"CN-{i:000}",
-                        CNRef = $"7{i:00000}",
-                        CNAmt = 10000 + (i * 50),
-                        WT = 500 + (i * 5),
-                        InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
-                        CustomerName = $"Customer {i}",
-                        CustomerNumber = $"CUST-{1000 + i}"
-                    }).Where(c => c.CNRef.Equals(invoiceNumber));
-
-            await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
-
-            // [ORACLE EBS] — Credit Note details via AR + Tax schema
-            // TODO: Replace with Oracle Fusion Credit Note endpoint when provided by Admin.
-            var sql = @"
-					SELECT   
-						rcta.trx_number cn_ref,
-						SUM (rctla.gross_extended_amount) cn_amount,
-						SUM (zl.tax_amt) wt
-					FROM
-						ra_customer_trx_all rcta,
-						ra_customer_trx_lines_all rctla,
-						zx_lines zl
-					WHERE
-						rcta.customer_trx_id = rctla.customer_trx_id
-						AND rctla.customer_trx_line_id = zl.trx_line_id(+)
-						AND rctla.line_type = 'LINE'
-						AND zl.tax_jurisdiction_code(+) = 'MSI_PH_CWTAX'
-						AND TRIM(rcta.trx_number) = UPPER(:trxno)
-					GROUP BY   rcta.trx_number
-					ORDER BY   rcta.trx_number
-				";
-
-            var result = await conn.QueryAsync<SearchCNDetailsRowDto>(
-                sql,
-                new { trxno = $"{invoiceNumber}" },
-                commandTimeout: 120
-            ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
-
-            return result.DistinctBy(r => new { r.CNRef });
+            // Feature parked for now by Finance.
+            // Returning an empty result prevents Oracle DB access and the old EBS path from firing.
+            return [];
         }
 
         // =========================================================================

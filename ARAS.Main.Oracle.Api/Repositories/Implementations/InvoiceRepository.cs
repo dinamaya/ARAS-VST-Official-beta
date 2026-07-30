@@ -242,70 +242,12 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             return [];
         }
 
-        // =========================================================================
-        // GetCnInvoiceDetails — ORACLE EBS (Not yet migrated to Oracle Fusion)
-        // Pending: Oracle Fusion CN invoice endpoint from Admin.
-        // Tables used: ra_customer_trx_all, ra_customer_trx_lines_all,
-        //              hz_cust_accounts, ra_cust_trx_types_all
-        // =========================================================================
         public async Task<IEnumerable<InvoiceDetailsDto>> GetCnInvoiceDetails(string invoiceNo)
         {
-            invoiceNo = invoiceNo.Trim();
-
-            if (_config.IsOntest())
-                return Enumerable.Range(1, 100)
-                    .Select(i => new InvoiceDetailsDto
-                    {
-                        Id = $"INV-{i:000}",
-                        InvoiceNumber = $"5{i:00000}",
-                        InvoiceAmount = 10000 + (i * 50),
-                        InvoiceDate = new DateTime(2024, 1, 1).AddDays(i),
-                        CustomerName = $"Customer {i}",
-                        CustomerNumber = $"CUST-{1000 + i}"
-                    }).Where(c => c.InvoiceNumber.Equals(invoiceNo));
-
-            await using var conn = await oracleConnection.OpenWithPolicyContextAsync();
-
-            // [ORACLE EBS] — CN Invoice details via AR schema
-            // TODO: Replace with Oracle Fusion endpoint when provided by Admin.
-            var sql = @"
-					    SELECT   
-							rcta.trx_number InvoiceNumber,
-							SUM (rctla.gross_extended_amount) InvoiceAmount,
-							rcta.trx_date InvoiceDate,
-							hca.account_name CustomerName,
-							hca.account_number CustomerNumber,
-							rctt.name cust_trx_type
-						FROM
-							ra_customer_trx_all rcta,
-							ra_customer_trx_lines_all rctla,
-							hz_cust_accounts hca,
-							ra_cust_trx_types_all rctt
-						WHERE
-							rcta.customer_trx_id = rctla.customer_trx_id
-							AND rcta.bill_to_customer_id = hca.cust_account_id
-							AND rctla.line_type = 'LINE'
-							AND rcta.cust_trx_type_id = rctt.cust_trx_type_id
-							AND rcta.cust_trx_type_id = rctt.cust_trx_type_id
-							AND rctt.org_id = 101
-							AND TRIM(rcta.trx_number) = UPPER(:trxno)
-						GROUP BY
-							rcta.trx_number,
-							rcta.trx_date,
-							hca.account_name,
-							hca.account_number,
-							rctt.name
-						ORDER BY
-							rcta.trx_number
-				";
-
-            var result = await conn.QueryAsync<InvoiceDetailsDto>(
-                sql,
-                new { trxno = $"{invoiceNo}" },
-                commandTimeout: 120
-            ) ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
-
-            return result;
+            // Feature parked for now by Finance.
+            // Returning an empty list avoids any Oracle DB access and prevents the old
+            // Oracle/EBS path from throwing connection errors while the feature is disabled.
+            return [];
         }
 
         // =========================================================================

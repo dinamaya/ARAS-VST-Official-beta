@@ -1,0 +1,142 @@
+@page "/approvals/invoice/{TypeCode}/{RequestId:long}"
+@page "/submissions/invoice/{TypeCode}/{RequestId:long}"
+
+@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Components.Shared.Summaries
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize]
+@inherits ComponentBase
+
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inject IRequestService RequestService
+@inject IAuthService AuthService
+
+<h2>@adjustmentName</h2>
+
+<RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+	@if (isReady && invoice is not null && details is not null)
+	{
+		@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
+		{
+			<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
+				@adjustmentName updated successfully
+			</RadzenAlert>
+		}
+
+		<RadzenRow>
+			<RadzenColumn Size="12" SizeLG="6">
+				<InvoiceSummary InvoiceDetails="invoice" />
+			</RadzenColumn>
+			<RadzenColumn Size="12" SizeLG="6">
+				<CardStandard HeaderIcon="update" HeaderText="Adjustment Details">
+					<BodyTtemplate>
+						<RadzenRow Gap="1em" class="border-0 p-3 border-radius-md bg-gray-100">
+							<RadzenColumn Size="12" SizeXL="6" SizeXS="12">
+								<div class="mb-2 text-sm">Adjustment Amount: <div class="text-dark font-weight-bold ms-2">@details.AdjustmentAmount.ToPhp()</div></div>
+								<div class="mb-2 text-sm">Adjustment Type: <div class="text-dark font-weight-bold ms-2">@details.AdjustmentType</div></div>
+								<div class="mb-2 text-sm">Reference Count: <div class="text-dark font-weight-bold ms-2">@details.ReferencesCount</div></div>
+							</RadzenColumn>
+							<RadzenColumn Size="12" SizeXL="6" SizeXS="12">
+								<div class="mb-2 text-sm">Requestor: <div class="text-dark font-weight-bold ms-2">@details.Requestor</div></div>
+								<div class="mb-2 text-sm">Approver: <div class="text-dark font-weight-bold ms-2">@details.Approver</div></div>
+								<div class="mb-2 text-sm">Updated By: <div class="text-dark font-weight-bold ms-2">@details.Creator</div></div>
+								<div class="mb-2 text-sm">Status: <div class="text-dark font-weight-bold ms-2">@details.Status</div></div>
+							</RadzenColumn>
+						</RadzenRow>
+					</BodyTtemplate>
+				</CardStandard>
+			</RadzenColumn>
+		</RadzenRow>
+
+		<RadzenRow>
+			<RadzenColumn Size="12" SizeMD="4">
+				<Timeline RequestId="@RequestId" />
+			</RadzenColumn>
+			<RadzenColumn Size="12" SizeMD="8">
+				<CardStandard HeaderIcon="receipt_long" HeaderText="Submission Rows">
+					<BodyTtemplate>
+						<RadzenDataGrid Data="@rows" TItem="InvoiceAdjustmentRowDto" AllowPaging="true" PageSize="10" AllowSorting="true">
+							<Columns>
+								<RadzenDataGridColumn TItem="InvoiceAdjustmentRowDto" Property="@nameof(InvoiceAdjustmentRowDto.AdjustmentType)" Title="Adjustment Type" />
+								<RadzenDataGridColumn TItem="InvoiceAdjustmentRowDto" Property="@nameof(InvoiceAdjustmentRowDto.InvoiceNumber)" Title="Invoice Number" />
+								<RadzenDataGridColumn TItem="InvoiceAdjustmentRowDto" Property="@nameof(InvoiceAdjustmentRowDto.CustomerName)" Title="Customer Name" />
+								<RadzenDataGridColumn TItem="InvoiceAdjustmentRowDto" Property="@nameof(InvoiceAdjustmentRowDto.Status)" Title="Status" />
+								<RadzenDataGridColumn TItem="InvoiceAdjustmentRowDto" Property="@nameof(InvoiceAdjustmentRowDto.DateCreated)" Title="Date Updated" />
+								<RadzenDataGridColumn TItem="InvoiceAdjustmentRowDto" Property="@nameof(InvoiceAdjustmentRowDto.Creator)" Title="Updated By" />
+							</Columns>
+						</RadzenDataGrid>
+					</BodyTtemplate>
+				</CardStandard>
+			</RadzenColumn>
+		</RadzenRow>
+	}
+	@if (isReady && (invoice is null || details is null))
+	{
+		<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Danger" Size="AlertSize.Medium">
+			Failed to load invoice details. Please refresh the page or contact support if the issue persists.
+		</RadzenAlert>
+	}
+</RadzenStack>
+
+@code {
+	[Parameter] public long RequestId { get; set; }
+	[Parameter] public string TypeCode { get; set; }
+	[Parameter, SupplyParameterFromQuery(Name = "q")] public string? QueryAction { get; set; }
+
+	private InvoiceDetailsDto invoice;
+	private InvoiceAdjustmentRowDto details;
+	private IEnumerable<InvoiceAdjustmentRowDto> rows = [];
+	private bool isReady;
+	private string adjustmentName = string.Empty;
+
+	protected override async Task OnInitializedAsync()
+	{
+		isReady = false;
+
+		adjustmentName = TypeCode switch
+		{
+			"ofr" => "AR Invoice Offsetting",
+			"arr" => "AP-AR: Off Set",
+			_ => "Invoice Adjustment"
+		};
+
+		try
+		{
+			var searchRequest = new SearchRequestDto
+			{
+				Category = "Request Number",
+				Value = RequestId.ToString(),
+				StartDate = DateOnly.FromDateTime(DateTime.Now.AddYears(-1)),
+				EndDate = DateOnly.FromDateTime(DateTime.Now)
+			};
+
+			rows = await RequestService.GetInvoiceAdjustmentSubmissions(searchRequest);
+			details = rows.FirstOrDefault() ?? throw new InvalidOperationException("Invoice adjustment request not found.");
+
+			invoice = new InvoiceDetailsDto
+			{
+				Id = details.InvoiceNumber,
+				InvoiceNumber = details.InvoiceNumber,
+				InvoiceAmount = 0,
+				InvoiceDate = DateTime.Now,
+				CustomerName = details.CustomerName,
+				CustomerNumber = string.Empty,
+				InvoiceBalance = 0,
+				DataSource = "SQL"
+			};
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "Initialization Failed");
+		}
+		finally
+		{
+			isReady = true;
+		}
+	}
+}

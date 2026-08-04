@@ -215,7 +215,7 @@
 			Id = source.InvoiceNumber,
 			InvoiceNumber = source.InvoiceNumber,
 			InvoiceAmount = source.InvoiceAmount,
-			InvoiceBalance = source.InvoiceAmount,
+			InvoiceBalance = source.InvoiceBalance > 0 ? source.InvoiceBalance : source.InvoiceAmount,
 			InvoiceDate = source.InvoiceDate.ToDateTime(TimeOnly.MinValue),
 			CustomerName = source.CustomerName,
 			CustomerNumber = source.CustomerNumber,

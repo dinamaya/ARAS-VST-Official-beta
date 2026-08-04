@@ -144,7 +144,7 @@
 			return;
 
 		SearchedInvoice = invoiceDetails;
-		RemainingBalance = invoiceDetails.InvoiceAmount;
+		RemainingBalance = invoiceDetails.InvoiceBalance;
 
 		Reset();
 	}
@@ -184,7 +184,7 @@
 	private void Calculate()
 	{
 		TotalAdjustmentAmount = _adjustments.Values.Sum(a => a.Amount);
-		RemainingBalance = SearchedInvoice.InvoiceAmount - TotalAdjustmentAmount;
+		RemainingBalance = SearchedInvoice.InvoiceBalance - TotalAdjustmentAmount;
 		StateHasChanged();
 	}
 

@@ -13,15 +13,22 @@ namespace ARAS.Main.Oracle.Api.Services.Implementations
 		public string GetFusionAdjustmentSoapAction() => GetRequiredValue("OracleFusionAdjustmentService:SoapAction");
 		public long GetFusionAdjustmentOrgId() => GetRequiredLong("OracleFusionAdjustmentService:OrgId");
 		public long GetFusionAdjustmentSetOfBooksId() => GetRequiredLong("OracleFusionAdjustmentService:SetOfBooksId");
-		public long GetFusionAdjustmentCodeCombinationId() => GetRequiredLong("OracleFusionAdjustmentService:CodeCombinationId");
+		public long GetFusionAdjustmentCodeCombinationId(string activityName)
+		{
+			var section = config.GetSection("OracleFusionAdjustmentService:ReceivablesActivities");
+			var value = section.GetSection(activityName)["CodeCombinationId"];
+
+			if (long.TryParse(value, out var id))
+				return id;
+
+			throw new InvalidOperationException($"CodeCombinationId is not configured for adjustment activity '{activityName}'.");
+		}
 		public long? GetFusionAdjustmentDefaultPaymentScheduleId() => GetOptionalLong("OracleFusionAdjustmentService:DefaultPaymentScheduleId");
 
 		public long GetFusionAdjustmentReceivablesTrxId(string activityName)
 		{
-			var section = config.GetSection("OracleFusionAdjustmentService:ReceivablesTrxIds");
-			var value = section.GetChildren()
-				.FirstOrDefault(item => string.Equals(item.Key, activityName, StringComparison.OrdinalIgnoreCase))
-				?.Value;
+			var section = config.GetSection("OracleFusionAdjustmentService:ReceivablesActivities");
+			var value = section.GetSection(activityName)["ReceivablesTrxId"];
 
 			if (long.TryParse(value, out var id))
 				return id;

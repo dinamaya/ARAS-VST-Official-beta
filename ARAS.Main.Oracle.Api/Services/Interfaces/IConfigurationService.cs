@@ -12,7 +12,7 @@ namespace ARAS.Main.Oracle.Api.Services.Interfaces
 		string GetFusionAdjustmentSoapAction();
 		long GetFusionAdjustmentOrgId();
 		long GetFusionAdjustmentSetOfBooksId();
-		long GetFusionAdjustmentCodeCombinationId();
+		long GetFusionAdjustmentCodeCombinationId(string activityName);
 		long? GetFusionAdjustmentDefaultPaymentScheduleId();
 		long GetFusionAdjustmentReceivablesTrxId(string activityName);
 	}

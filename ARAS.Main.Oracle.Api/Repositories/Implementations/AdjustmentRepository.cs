@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.IO.Compression;
 using System.Net.Http.Headers;
 using System.Security;
+using System.Text.Json;
 using System.Text;
 
 namespace ARAS.Main.Oracle.Api.Repositories.Implementations
@@ -24,6 +25,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 		private readonly IConfigurationService _config;
 		private readonly ILogger<IAdjustmentRepository> _logger;
 		private readonly HttpClient _httpClient;
+		private readonly HttpClient _fusionApiClient;
 
         public AdjustmentRepository(MainDbContext efContext, IOracleConnectionFactory oracleConnection, IConfigurationService config, ILogger<IAdjustmentRepository> logger, IInvoiceRepository invoiceRepo, IHttpClientFactory httpClientFactory)
         {
@@ -33,6 +35,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             _logger = logger;
             this.invoiceRepo = invoiceRepo;
 			_httpClient = httpClientFactory.CreateClient();
+			_fusionApiClient = httpClientFactory.CreateClient("OracleFusionApi");
         }
 
         public async Task<IEnumerable<string>> GetReasonCodes()
@@ -104,7 +107,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/xml"));
 			request.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("identity"));
 			request.Headers.TryAddWithoutValidation("SOAPAction", $"\"{_config.GetFusionAdjustmentSoapAction()}\"");
-			request.Content = new StringContent(CreateFusionAdjustmentEnvelope(item), Encoding.UTF8, "text/xml");
+			request.Content = new StringContent(await CreateFusionAdjustmentEnvelope(item), Encoding.UTF8, "text/xml");
 
 			var response = await _httpClient.SendAsync(request);
 			var content = await ReadResponseContent(response);
@@ -150,13 +153,16 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			return new AuthenticationHeaderValue("Basic", Convert.ToBase64String(bytes));
 		}
 
-		private string CreateFusionAdjustmentEnvelope(AdjustmentPostingDto item)
+		private async Task<string> CreateFusionAdjustmentEnvelope(AdjustmentPostingDto item)
 		{
 			var applyDate = item.DateApplied.ToString("yyyy-MM-dd");
 			var glDate = item.DateApplied.ToString("yyyy-MM-dd");
 			var amount = Convert.ToDecimal(item.AdjustmentAmount).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
 			var receivablesTrxId = _config.GetFusionAdjustmentReceivablesTrxId(item.AdjustmentActivity);
-			var paymentScheduleId = item.PaymentScheduleId ?? _config.GetFusionAdjustmentDefaultPaymentScheduleId();
+			var referenceData = await GetAdjustmentReferenceData(item.CustomerTrxId!.Value);
+			var paymentScheduleId = item.PaymentScheduleId ?? referenceData?.PaymentScheduleId ?? _config.GetFusionAdjustmentDefaultPaymentScheduleId();
+			var orgId = referenceData?.OrgId ?? _config.GetFusionAdjustmentOrgId();
+			var setOfBooksId = referenceData?.SetOfBooksId ?? _config.GetFusionAdjustmentSetOfBooksId();
 
 			return $@"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/""
                   xmlns:typ=""http://xmlns.oracle.com/apps/financials/receivables/transactions/adjustments/adjustmentService/types/""
@@ -173,9 +179,9 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
         <rec:ReasonCode>{EscapeXml(item.ReasonCode)}</rec:ReasonCode>
         <rec:TransactionAdjustmentType>LINE</rec:TransactionAdjustmentType>
         <rec:ReceivablesTrxId>{receivablesTrxId}</rec:ReceivablesTrxId>
-        <rec:CodeCombinationId>{_config.GetFusionAdjustmentCodeCombinationId()}</rec:CodeCombinationId>
-        <rec:SetOfBooksId>{_config.GetFusionAdjustmentSetOfBooksId()}</rec:SetOfBooksId>
-        <rec:OrgId>{_config.GetFusionAdjustmentOrgId()}</rec:OrgId>
+        <rec:CodeCombinationId>{_config.GetFusionAdjustmentCodeCombinationId(item.AdjustmentActivity)}</rec:CodeCombinationId>
+        <rec:SetOfBooksId>{setOfBooksId}</rec:SetOfBooksId>
+        <rec:OrgId>{orgId}</rec:OrgId>
         <rec:Comments>{EscapeXml(item.Remarks)}</rec:Comments>
         <rec:AdjustmentType>M</rec:AdjustmentType>
       </typ:adjustment>
@@ -188,6 +194,26 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			paymentScheduleId.HasValue ? $"<rec:PaymentScheduleId>{paymentScheduleId.Value}</rec:PaymentScheduleId>" : string.Empty;
 
 		private static string EscapeXml(string? value) => SecurityElement.Escape(value ?? string.Empty) ?? string.Empty;
+
+		private async Task<AdjustmentReferenceDataItem?> GetAdjustmentReferenceData(long customerTrxId)
+		{
+			var url = $"/aras/api/adjustment-reference-data?customerTrxId={customerTrxId}";
+			using var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+			var response = await _fusionApiClient.SendAsync(request);
+			var content = await ReadResponseContent(response);
+
+			if (!response.IsSuccessStatusCode)
+			{
+				_logger.LogWarning("Adjustment reference data lookup failed for CustomerTrxId {CustomerTrxId}. StatusCode: {StatusCode}. Response: {Response}", customerTrxId, response.StatusCode, content);
+				return null;
+			}
+
+			var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+			var payload = JsonSerializer.Deserialize<AdjustmentReferenceDataResponse>(content, options);
+
+			return payload?.Data?.FirstOrDefault();
+		}
 
         public async Task<ReceivablesActivityDto> GetReceivableActivityByName(string adjustmentActivity)
         {

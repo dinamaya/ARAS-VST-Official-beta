@@ -164,23 +164,25 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
         public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingData(long requestId)
         {
-			return await _context.VwStagingRequestAdjustment
-			 .Where(a => a.RequestId == requestId)
-			 .Select(a => new AdjustmentPostingDto
-			 {
-				 AdjustmentId = a.AdjustmentId,
-				 InvoiceNumber = a.InvoiceNumber,
-				 CustomerTrxId = a.CustomerTrxId,
-				 AdjustmentAmount = a.AdjustmentAmount,
-				 InvoiceDate = a.InvoiceDate,
-				 PaymentScheduleId = a.PaymentScheduleId,
-				 DateApplied = DateTime.Now,
-				 AdjustmentActivity = a.Activity,
-				 ReasonCode = a.ReasonCode,
-				 Remarks = a.Remarks,
-				 CustomerName = a.CustomerName,
-				 CustomerNumber = a.CustomerNumber
-			 }).ToListAsync();
+			return await (
+				from ar in _context.AROffsets.AsNoTracking()
+				join invoice in _context.Invoices.AsNoTracking() on ar.InvoiceId equals invoice.Id
+				where ar.RequestId == requestId && ar.IsActive && invoice.IsActive
+				select new AdjustmentPostingDto
+				{
+					AdjustmentId = ar.Id,
+					InvoiceNumber = invoice.InvoiceNumber,
+					CustomerTrxId = invoice.CustomerTrxId,
+					AdjustmentAmount = ar.Amount,
+					InvoiceDate = invoice.InvoiceDate,
+					PaymentScheduleId = invoice.PaymentScheduleId,
+					DateApplied = DateTime.Now,
+					AdjustmentActivity = "AR Invoice Offsetting",
+					ReasonCode = string.Empty,
+					Remarks = string.Empty,
+					CustomerName = invoice.CustomerName,
+					CustomerNumber = invoice.CustomerNumber
+				}).ToListAsync();
 		}
     }
 }

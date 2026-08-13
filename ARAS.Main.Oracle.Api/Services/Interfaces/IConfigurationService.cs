@@ -13,7 +13,6 @@ namespace ARAS.Main.Oracle.Api.Services.Interfaces
 		long GetFusionAdjustmentOrgId();
 		long GetFusionAdjustmentSetOfBooksId();
 		long GetFusionAdjustmentCodeCombinationId(string activityName);
-		long? GetFusionAdjustmentDefaultPaymentScheduleId();
 		long GetFusionAdjustmentReceivablesTrxId(string activityName);
 	}
 }

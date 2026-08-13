@@ -60,7 +60,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             var fusionResult = envelope.ApiResponse
                 ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
 
-            return fusionResult.Select(f => new InvoiceDetailsDto
+            var mapped = fusionResult.Select(f => new InvoiceDetailsDto
             {
                 Id = f.InvoiceNumber,
                 InvoiceNumber = f.InvoiceNumber,
@@ -72,7 +72,11 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                 InvoiceBalance = f.InvoiceBalance ?? 0,
                 CustomerTrxId = f.CustomerTrxId,
                 PaymentScheduleId = f.PaymentScheduleId
-            });
+            }).ToList();
+
+            await BackfillPaymentScheduleIdsAsync(mapped);
+
+            return mapped;
         }
 
         // =========================================================================
@@ -152,7 +156,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                 DataSource = f.DataSource ?? "AR",
                 CustomerTrxId = f.CustomerTrxId,
                 PaymentScheduleId = f.PaymentScheduleId
-            });
+            }).ToList();
 
             return mapped
                 .Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max)
@@ -228,6 +232,44 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                 })
                 .FirstOrDefault()
                 ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+        }
+
+        private async Task BackfillPaymentScheduleIdsAsync(IEnumerable<InvoiceDetailsDto> invoices)
+        {
+            var rows = invoices?
+                .Where(i => i is not null && i.CustomerTrxId.HasValue && !i.PaymentScheduleId.HasValue)
+                .ToList();
+
+            if (rows is null || rows.Count == 0)
+                return;
+
+            foreach (var invoice in rows)
+            {
+                try
+                {
+                    invoice.PaymentScheduleId = await GetPaymentScheduleIdByCustomerTrxId(invoice.CustomerTrxId!.Value);
+                }
+                catch (Exception ex)
+                {
+                    // Keep invoice search usable even if reference-data lookup fails.
+                    // Missing PaymentScheduleId can still be handled later in the posting path.
+                    System.Diagnostics.Debug.WriteLine(
+                        $"PaymentScheduleId backfill failed for CustomerTrxId {invoice.CustomerTrxId.Value}: {ex.Message}");
+                }
+            }
+        }
+
+        private async Task<long?> GetPaymentScheduleIdByCustomerTrxId(long customerTrxId)
+        {
+            var url = $"/aras/api/adjustment-reference-data?customerTrxId={customerTrxId}";
+            var response = await _fusionHttpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var envelope = await response.Content.ReadFromJsonAsync<AdjustmentReferenceDataResponse>(jsonOptions);
+            return envelope?.Data?.FirstOrDefault()?.PaymentScheduleId;
         }
 
         // =========================================================================

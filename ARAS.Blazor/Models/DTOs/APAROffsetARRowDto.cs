@@ -10,6 +10,8 @@
 		public string CustomerNumber { get; set; } = string.Empty;
 		public string? AdjustmentReason { get; set; } = null;
 		public double Amount { get; set; } = 0.00d;
+		public long? CustomerTrxId { get; set; }
+		public long? PaymentScheduleId { get; set; }
 
 		public APAROffsetARRowDto() { }
 
@@ -21,6 +23,8 @@
 			InvoiceAmount = details.InvoiceAmount;
 			CustomerName = details.CustomerName;
 			CustomerNumber = details.CustomerNumber;
+			CustomerTrxId = details.CustomerTrxId;
+			PaymentScheduleId = details.PaymentScheduleId;
 		}
 	}
 

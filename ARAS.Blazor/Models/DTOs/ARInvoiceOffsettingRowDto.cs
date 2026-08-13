@@ -14,6 +14,8 @@ namespace ARAS.Blazor.Models.DTOs
         public string InvoiceNumber { get; set; } = string.Empty;
         public string CustomerName { get; set; } = string.Empty;
         public string CustomerNumber { get; set; } = string.Empty;
+        public long? CustomerTrxId { get; set; }
+        public long? PaymentScheduleId { get; set; }
         public string Type { get; set; }
 
         public ARInvoiceOffsettingRowDto() { }
@@ -28,6 +30,8 @@ namespace ARAS.Blazor.Models.DTOs
             InvoiceDate = details.InvoiceDate.ToString("dd MMM yyyy");
             CustomerName = details.CustomerName;
             CustomerNumber = details.CustomerNumber;
+            CustomerTrxId = details.CustomerTrxId;
+            PaymentScheduleId = details.PaymentScheduleId;
             AdjustmentActivity = "AR Invoice Offsetting";
         }
     }

@@ -8,6 +8,8 @@
         public string CustomerName { get; set; } = string.Empty;
         public string CustomerNumber { get; set; } = string.Empty;
         public DateTime InvoiceDate { get; set; }
+        public long? CustomerTrxId { get; set; }
+        public long? PaymentScheduleId { get; set; }
 
         public APAROffsetAPRowDto() { }
 
@@ -19,6 +21,8 @@
             InvoiceDate = details.InvoiceDate;
 			CustomerName = details.CustomerName;
             CustomerNumber = details.CustomerNumber;
+            CustomerTrxId = details.CustomerTrxId;
+            PaymentScheduleId = details.PaymentScheduleId;
         }
     }
 }

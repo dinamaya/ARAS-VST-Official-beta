@@ -83,7 +83,9 @@ namespace ARAS.Blazor.Services.Implementations
 				Type = "AP",
 				InvoiceDate = r.InvoiceDate,
 				CustomerName = r.CustomerName,
-				CustomerNumber = r.CustomerNumber
+				CustomerNumber = r.CustomerNumber,
+				CustomerTrxId = r.CustomerTrxId,
+				PaymentScheduleId = r.PaymentScheduleId
 			});
 
 			var arRequests = arRows.Select(r => new APAROffsetCreateDto()
@@ -94,7 +96,9 @@ namespace ARAS.Blazor.Services.Implementations
 				ReasonCode = r.AdjustmentReason,
 				InvoiceDate = DateTime.Now,
 				CustomerName = r.CustomerName,
-				CustomerNumber = r.CustomerNumber
+				CustomerNumber = r.CustomerNumber,
+				CustomerTrxId = r.CustomerTrxId,
+				PaymentScheduleId = r.PaymentScheduleId
 			});
 
 			return apRequests.Concat(arRequests).ToList();

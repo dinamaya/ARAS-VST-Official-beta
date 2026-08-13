@@ -34,6 +34,8 @@ namespace ARAS.Blazor.Services.Implementations
 				InvoiceNumber = r.InvoiceNumber,
 				CustomerName = r.CustomerName,
 				CustomerNumber = r.CustomerNumber,
+				CustomerTrxId = r.CustomerTrxId,
+				PaymentScheduleId = r.PaymentScheduleId,
 				Type = "AR",
 			});
 
@@ -45,6 +47,8 @@ namespace ARAS.Blazor.Services.Implementations
 				InvoiceNumber = r.InvoiceNumber,
 				CustomerName = r.CustomerName,
 				CustomerNumber = r.CustomerNumber,
+				CustomerTrxId = r.CustomerTrxId,
+				PaymentScheduleId = r.PaymentScheduleId,
 				Type = "CN",
 			});
 

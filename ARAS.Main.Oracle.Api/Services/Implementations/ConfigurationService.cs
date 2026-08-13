@@ -23,7 +23,6 @@ namespace ARAS.Main.Oracle.Api.Services.Implementations
 
 			throw new InvalidOperationException($"CodeCombinationId is not configured for adjustment activity '{activityName}'.");
 		}
-		public long? GetFusionAdjustmentDefaultPaymentScheduleId() => GetOptionalLong("OracleFusionAdjustmentService:DefaultPaymentScheduleId");
 
 		public long GetFusionAdjustmentReceivablesTrxId(string activityName)
 		{

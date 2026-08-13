@@ -160,7 +160,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			var amount = Convert.ToDecimal(item.AdjustmentAmount).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
 			var receivablesTrxId = _config.GetFusionAdjustmentReceivablesTrxId(item.AdjustmentActivity);
 			var referenceData = await GetAdjustmentReferenceData(item.CustomerTrxId!.Value);
-			var paymentScheduleId = item.PaymentScheduleId ?? referenceData?.PaymentScheduleId ?? _config.GetFusionAdjustmentDefaultPaymentScheduleId();
+			var paymentScheduleId = item.PaymentScheduleId ?? referenceData?.PaymentScheduleId;
 			var orgId = referenceData?.OrgId ?? _config.GetFusionAdjustmentOrgId();
 			var setOfBooksId = referenceData?.SetOfBooksId ?? _config.GetFusionAdjustmentSetOfBooksId();
 

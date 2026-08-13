@@ -153,19 +153,22 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.Select(a => new
 				{
 					a.RequestId,
+					a.InvoiceId,
 					a.AdjustmentAmount,
 					a.Remarks,
 				}).FirstOrDefaultAsync()
 				?? throw new InvalidOperationException("Failed to fetch the active adjustment details.");
-			var invoice = await _context.VwReceiptAdjustments.Where(a => a.RequestId == requestId)
-				.Select(a => new InvoiceDetailsRequestDto
-				{
-					InvoiceNumber = a.InvoiceNumber,
-					InvoiceAmount = a.InvoiceAmount,
-					InvoiceDate = DateOnly.FromDateTime(a.InvoiceDate),
-					CustomerName = a.CustomerName,
-					CustomerNumber = a.CustomerNumber
-				}).FirstOrDefaultAsync();
+			var invoiceEntity = await _invoiceRepo.GetById(adjustment.InvoiceId);
+			var invoice = new InvoiceDetailsRequestDto
+			{
+				InvoiceNumber = invoiceEntity.InvoiceNumber,
+				InvoiceAmount = invoiceEntity.InvoiceAmount,
+				CustomerTrxId = invoiceEntity.CustomerTrxId,
+				PaymentScheduleId = invoiceEntity.PaymentScheduleId,
+				InvoiceDate = DateOnly.FromDateTime(invoiceEntity.InvoiceDate),
+				CustomerName = invoiceEntity.CustomerName,
+				CustomerNumber = invoiceEntity.CustomerNumber
+			};
 
 			var transactionHistories = await _transactionRepo.GetHistoryByRequestId(requestId);
 			var notes = await _notesService.GetByRequestId(requestId);

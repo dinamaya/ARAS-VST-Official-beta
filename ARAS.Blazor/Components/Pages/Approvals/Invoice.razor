@@ -1,6 +1,7 @@
 @page "/approvals/invoice"
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Components.Shared.DataTables
+@using ARAS.Blazor.App_Code.Globals
 
 @inject DialogService DialogService
 @inject IAdjustmentService AdjustmentService
@@ -12,6 +13,13 @@
 
 	@if (isReady)
 	{
+		@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
+		{
+			<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
+				Invoice Adjustment(s) approved successfully
+			</RadzenAlert>
+		}
+
 		<MainSearchBar OnSearch="HandleSearch" TextFields="textFields" DropdownFields="dropdowns">
 			<ResultTemplate Context="isLoading">
 				<SearchInvoiceAdjustmentsDataTable IsLoading="isLoading" Rows="rows" Role="@role" />
@@ -26,6 +34,7 @@
 	private IEnumerable<string> textFields { get; set; }
 	private IEnumerable<InvoiceAdjustmentRowDto> rows { get; set; }
 	private string role { get; set; } = string.Empty;
+	[Parameter, SupplyParameterFromQuery(Name = "q")] public string? QueryAction { get; set; }
 
 	protected bool IsOnSearch { get; private set; }
 	protected bool IsLoading { get; private set; }

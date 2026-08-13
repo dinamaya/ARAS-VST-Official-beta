@@ -219,6 +219,7 @@
 
 		await updateCallBack.Invoke(SelectedIds);
 
-		NavManager.NavigateTo(NavManager.Uri, true);
+		var uri = NavManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
+		NavManager.NavigateTo(uri, true);
 	}
 }

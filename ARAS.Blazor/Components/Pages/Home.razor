@@ -1,4 +1,4 @@
-﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Services.Interfaces
 @using Microsoft.AspNetCore.Authorization
 @using ARAS.Blazor.Models.DTOs
@@ -241,12 +241,9 @@
         {
             return
             [
-                new DashboardCard { Title = approvalQueueHealth.QueueStatus, Count = approvalQueueHealth.PendingInMyQueue, IconClass = "ni ni-active-40" },
-                new DashboardCard { Title = "Approved by Me", Subtitle = "In the last 30 days", Count = approvalQueueHealth.ApprovedByMe, IconClass = "ni ni-like-2" },
-                new DashboardCard { Title = "Declined by Me", Subtitle = "In the last 30 days", Count = approvalQueueHealth.DeclinedByMe, IconClass = "ni ni-bold-down" },
-                new DashboardCard { Title = "Rejected by Me", Subtitle = "In the last 30 days", Count = approvalQueueHealth.RejectedByMe, IconClass = "ni ni-fat-remove" },
-                new DashboardCard { Title = "Overdue in My Queue", Subtitle = "In the last 30 days", Count = approvalQueueHealth.OverdueInMyQueue, IconClass = "ni ni-time-alarm" },
-                new DashboardCard { Title = "Posted", Count = approvalQueueHealth.ErpPostingCount, IconClass = "ni ni-check-bold" },
+                new DashboardCard { Title = "Pending in My Queue", Count = approvalQueueHealth.PendingInMyQueue, IconClass = "ni ni-active-40" },
+                new DashboardCard { Title = "Overdue in My Queue", Subtitle = "Overdue (more than 7 days)", Count = approvalQueueHealth.OverdueInMyQueue, IconClass = "ni ni-time-alarm" },
+                new DashboardCard { Title = "Completed / Posted", Count = approvalQueueHealth.ErpPostingCount, IconClass = "ni ni-check-bold" },
             ];
         }
 
@@ -265,27 +262,22 @@
     {
         if (accountDetails.IsApprovalActor())
         {
-            requestChartTitle = $"My Approval Queue Health (Last {approvalQueueHealth.LookbackDays} Days)";
-            return
-            [
-                new DataItem { Request = "Pending in My Queue", Count = approvalQueueHealth.PendingInMyQueue },
-                new DataItem { Request = "Approved by Me", Count = approvalQueueHealth.ApprovedByMe },
-                new DataItem { Request = "Declined by Me", Count = approvalQueueHealth.DeclinedByMe },
-                new DataItem { Request = "Rejected by Me", Count = approvalQueueHealth.RejectedByMe },
-                new DataItem { Request = "Overdue in My Queue", Count = approvalQueueHealth.OverdueInMyQueue },
-            ];
+            requestChartTitle = "My Approval Queue Aging";
+            return approvalQueueHealth.AgingBreakdown.Select(x => new DataItem { Request = x.Label, Count = x.Count });
         }
 
         if (accountDetails.IsInRole("Requestor"))
         {
-            requestChartTitle = "My Open Requests";
+            requestChartTitle = "My Submitted Requests";
             return
             [
-                new DataItem { Request = "Declined", Count = declinedCount },
                 new DataItem { Request = "For CNC Approval", Count = pendingCount },
                 new DataItem { Request = "For FSG Validation", Count = validationCount },
                 new DataItem { Request = "For FSG Approval", Count = fsgApprovalCount },
-                new DataItem { Request = "Posted", Count = approvedCount },
+                new DataItem { Request = "Approved", Count = approvedCount },
+                new DataItem { Request = "Declined", Count = declinedCount },
+                new DataItem { Request = "Rejected", Count = rejectedCount },
+                new DataItem { Request = "ERP Posted", Count = postedCount },
             ];
         }
 

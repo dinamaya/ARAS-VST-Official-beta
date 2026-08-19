@@ -18,6 +18,9 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
             string.Equals(status, "Posted", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(status, "For ERP Posting", StringComparison.OrdinalIgnoreCase);
 
+        private static bool IsCompletedStatusSql(string status) =>
+            status == "Posted" || status == "For ERP Posting";
+
         private sealed class ReportQueryRow
         {
             public long RequestId { get; set; }
@@ -91,7 +94,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			var latest = await _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking().Where(t =>
 				t.RequestId == requestId &&
-				!(t.Status == "Rejected" || t.Status == "Declined" || IsCompletedStatus(t.Status))
+				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "Posted" || t.Status == "For ERP Posting")
 			).ToListAsync();
 
 			return latest.Count() > 0;
@@ -106,7 +109,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			return await _context.VwLatestReceiptAdjustmentDetails.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
-				!(t.Status == "Rejected" || t.Status == "Declined" || IsCompletedStatus(t.Status))
+				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "Posted" || t.Status == "For ERP Posting")
 			);
 		}
 
@@ -116,7 +119,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		/// <param name="requestId"></param>
 		/// <returns></returns>
 		public async Task<bool> IsPostable(long requestId) =>
-			await _context.VwLatestReceiptAdjustmentDetails.AsNoTracking().AnyAsync(t => t.RequestId == requestId && IsCompletedStatus(t.Status));
+			await _context.VwLatestReceiptAdjustmentDetails.AsNoTracking().AnyAsync(t => t.RequestId == requestId && (t.Status == "Posted" || t.Status == "For ERP Posting"));
 
 		/// <summary>
 		/// Checks if the request is currently declined
@@ -203,7 +206,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                     v => v.RequestId,
                     r => r.Id,
                     (v, r) => new { v, r })
-                .Where(x => x.r.CreatedBy == userId && IsCompletedStatus(x.v.Status))
+                .Where(x => x.r.CreatedBy == userId && (x.v.Status == "Posted" || x.v.Status == "For ERP Posting"))
                 .CountAsync();
         }
 
@@ -262,7 +265,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                     v => v.RequestId,
                     r => r.Id,
                     (v, r) => new { v, r })
-                .Where(x => x.r.CreatedBy == userId && IsCompletedStatus(x.v.Status))
+                .Where(x => x.r.CreatedBy == userId && (x.v.Status == "Posted" || x.v.Status == "For ERP Posting"))
                 .CountAsync();
         }
 
@@ -278,7 +281,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                 .CountAsync();
         }
 
-        public async Task<ApproverQueueHealthDto> GetApproverQueueHealth(string userId, string role, int lookbackDays = 30, int overdueAfterDays = 2)
+		public async Task<ApproverQueueHealthDto> GetApproverQueueHealth(string userId, string role, int lookbackDays = 30, int overdueAfterDays = 2)
         {
             string queueStatus = GetApprovalQueueStatus(role);
             string approvedStatus = GetApprovedStatusForRole(role);
@@ -289,21 +292,49 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
             IQueryable<QueueStatusRow> allCurrentQueueItems = GetCurrentQueueItems();
             IQueryable<QueueStatusRow> myCurrentQueueItems = allCurrentQueueItems.Where(x => x.Status == queueStatus);
-            IQueryable<TransactionsHistoryV> myRecentActions = GetRecentRoleActions(userId, role, actionsSince);
+
+            // Pending / overdue from the queue views (same as before)
+            var pendingCount = await myCurrentQueueItems.CountAsync();
+            var overdueCount = await myCurrentQueueItems.Where(x => x.DateCreated < overdueBefore).CountAsync();
+
+            // Use transaction history to compute "by me" and "completed by this role" metrics
+            var myRecentActions = _context.VwTransactionsHistory
+                .AsNoTracking()
+                .Where(t => t.CreatedBy == userId && t.AccountRole == role && t.DateCreated >= actionsSince);
+
+            var approvedByMe = await myRecentActions.Where(x => x.Status == approvedStatus).CountAsync();
+            var declinedByMe = await myRecentActions.Where(x => x.Status == "Declined").CountAsync();
+            var rejectedByMe = await myRecentActions.Where(x => x.Status == "Rejected").CountAsync();
+
+            // Completed in approver's queue: count distinct RequestId where the transaction history shows this role performed a completed action
+            var completedStatuses = new[] { "Posted", "For ERP Posting" };
+            var erpPostingCount = await _context.VwTransactionsHistory
+                .AsNoTracking()
+                .Where(t => t.AccountRole == role && (t.Status == "Posted" || t.Status == "For ERP Posting") && t.DateCreated >= actionsSince)
+                .Select(t => t.RequestId)
+                .Distinct()
+                .CountAsync();
+
+            var agingBreakdown = IsApproverRole(role)
+                ? await BuildApproverAgingBreakdown(queueStatus, overdueBefore)
+                : await BuildRequestorAgingBreakdown(userId);
 
             return new ApproverQueueHealthDto
             {
                 QueueStatus = queueStatus,
                 LookbackDays = lookbackDays,
                 SlaDays = overdueAfterDays,
-                PendingInMyQueue = await myCurrentQueueItems.CountAsync(),
-                ApprovedByMe = await myRecentActions.Where(x => x.Status == approvedStatus).CountAsync(),
-                DeclinedByMe = await myRecentActions.Where(x => x.Status == "Declined").CountAsync(),
-                RejectedByMe = await myRecentActions.Where(x => x.Status == "Rejected").CountAsync(),
-                OverdueInMyQueue = await myCurrentQueueItems.Where(x => x.DateCreated < overdueBefore).CountAsync(),
-                ErpPostingCount = await allCurrentQueueItems.Where(x => IsCompletedStatus(x.Status)).CountAsync()
+                PendingInMyQueue = pendingCount,
+                ApprovedByMe = approvedByMe,
+                DeclinedByMe = declinedByMe,
+                RejectedByMe = rejectedByMe,
+                OverdueInMyQueue = overdueCount,
+                ErpPostingCount = erpPostingCount,
+                AgingBreakdown = agingBreakdown
             };
         }
+
+
 
         public async Task<IEnumerable<ReportsDto>> GetReports(ReportFiltersDto filters, string role, string fullName)
         {
@@ -555,7 +586,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
         {
             return reportType switch
             {
-                "Posted Adjustments" => query.Where(x => IsCompletedStatus(x.Status)),
+                "Posted Adjustments" => query.Where(x => x.Status == "Posted" || x.Status == "For ERP Posting"),
                 "Pending Requests" => query.Where(x => x.Status == "For CNC Approval" || x.Status == "For FSG Validation" || x.Status == "For FSG Approval"),
                 "Declined / Rejected" => query.Where(x => x.Status == "Declined" || x.Status == "Rejected"),
                 _ => query
@@ -571,7 +602,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                 return query;
 
             if (string.Equals(status, "Posted", StringComparison.OrdinalIgnoreCase))
-                return query.Where(x => IsCompletedStatus(x.Status));
+                return query.Where(x => x.Status == "Posted" || x.Status == "For ERP Posting");
 
             return query.Where(x => x.Status == status);
         }
@@ -637,6 +668,66 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
             _context.VwTransactionsHistory
                 .AsNoTracking()
                 .Where(x => x.CreatedBy == userId && x.AccountRole == role && x.DateCreated >= actionsSince);
+
+        private async Task<List<AgingBucketDto>> BuildApproverAgingBreakdown(string queueStatus, DateTime overdueBefore)
+        {
+            var currentItems = await GetCurrentQueueItems()
+                .Where(x => x.Status == queueStatus)
+                .ToListAsync();
+
+            return BuildAgingBuckets(currentItems.Select(x => x.DateCreated), overdueBefore);
+        }
+
+        private async Task<List<AgingBucketDto>> BuildRequestorAgingBreakdown(string userId)
+        {
+            var openStatuses = new[] { "For CNC Approval", "For FSG Validation", "For FSG Approval" };
+
+            var receiptRequests = await _context.VwLatestReceiptAdjustmentDetails
+                .AsNoTracking()
+                .Where(x => x.RequestorId == userId && openStatuses.Contains(x.Status))
+                .Select(x => x.DateRequested)
+                .ToListAsync();
+
+            var invoiceRequests = await _context.VwLatestInvoiceAdjustments
+                .AsNoTracking()
+                .Where(x => x.RequestorId == userId && openStatuses.Contains(x.Status))
+                .Select(x => x.DateRequested)
+                .ToListAsync();
+
+            var allDates = receiptRequests.Concat(invoiceRequests).ToList();
+            return BuildAgingBuckets(allDates, DateTime.Now);
+        }
+
+        private static List<AgingBucketDto> BuildAgingBuckets(IEnumerable<DateTime> dates, DateTime anchorDate)
+        {
+            DateTime today = anchorDate.Date;
+            int[] counts = new int[4];
+
+            foreach (var date in dates)
+            {
+                int ageDays = Math.Max(0, (today - date.Date).Days);
+
+                if (ageDays <= 2)
+                    counts[0]++;
+                else if (ageDays <= 5)
+                    counts[1]++;
+                else if (ageDays <= 10)
+                    counts[2]++;
+                else
+                    counts[3]++;
+            }
+
+            return new List<AgingBucketDto>
+            {
+                new AgingBucketDto { Label = "0-2 days", Count = counts[0] },
+                new AgingBucketDto { Label = "3-5 days", Count = counts[1] },
+                new AgingBucketDto { Label = "6-10 days", Count = counts[2] },
+                new AgingBucketDto { Label = "10+ days", Count = counts[3] }
+            };
+        }
+
+        private static bool IsApproverRole(string role) =>
+            IsCncApproverRole(role) || IsFsgValidatorRole(role) || IsFsgApproverRole(role);
 
 		private IQueryable<LatestReceiptAdjustmentDetailsV> GetReceiptAdjustmentsForApprovals(string role)
 		{
@@ -839,7 +930,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				DateRequested = q.DateRequested.ToString(Formats.Date.DISPLAY_COMPLETE),
 				Approver = ValidateFullName(q.ApproverFirstName, q.ApproverLastName),
 				DateApproved = q.DateApproved.HasValue ? ((DateTime)q.DateApproved).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
-				Creator = IsCompletedStatus(q.Status) ? "SYSTEM" : ValidateFullName(q.UpdaterFirstName, q.UpdaterLastName),
+				Creator = (q.Status == "Posted" || q.Status == "For ERP Posting") ? "SYSTEM" : ValidateFullName(q.UpdaterFirstName, q.UpdaterLastName),
 				DateCreated = q.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
 				Status = q.Status,
 				CustomerName = q.CustomerName,
@@ -859,7 +950,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				DateRequested = q.DateRequested.ToString(Formats.Date.DISPLAY_COMPLETE),
 				Approver = ValidateFullName(q.ApproverFirstName, q.ApproverLastName),
 				DateApproved = q.DateApproved.HasValue ? ((DateTime)q.DateApproved).ToString(Formats.Date.DISPLAY_COMPLETE) : string.Empty,
-				Creator = IsCompletedStatus(q.Status) ? "SYSTEM" : ValidateFullName(q.UpdaterFirstName, q.UpdaterLastName),
+				Creator = (q.Status == "Posted" || q.Status == "For ERP Posting") ? "SYSTEM" : ValidateFullName(q.UpdaterFirstName, q.UpdaterLastName),
 				DateCreated = q.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
 				Status = q.Status,
 				CustomerName = q.CustomerName,

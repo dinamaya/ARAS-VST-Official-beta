@@ -15,11 +15,10 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		private readonly ITransactionRepository _transactionRepo;
 
         private static bool IsCompletedStatus(string status) =>
-            string.Equals(status, "Posted", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(status, "For ERP Posting", StringComparison.OrdinalIgnoreCase);
+            string.Equals(status, "Posted", StringComparison.OrdinalIgnoreCase);
 
         private static bool IsCompletedStatusSql(string status) =>
-            status == "Posted" || status == "For ERP Posting";
+            status == "Posted";
 
         private sealed class ReportQueryRow
         {
@@ -586,7 +585,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
         {
             return reportType switch
             {
-                "Posted Adjustments" => query.Where(x => x.Status == "Posted" || x.Status == "For ERP Posting"),
+                "Posted Adjustments" => query.Where(x => x.Status == "Posted"),
                 "Pending Requests" => query.Where(x => x.Status == "For CNC Approval" || x.Status == "For FSG Validation" || x.Status == "For FSG Approval"),
                 "Declined / Rejected" => query.Where(x => x.Status == "Declined" || x.Status == "Rejected"),
                 _ => query
@@ -602,7 +601,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                 return query;
 
             if (string.Equals(status, "Posted", StringComparison.OrdinalIgnoreCase))
-                return query.Where(x => x.Status == "Posted" || x.Status == "For ERP Posting");
+                return query.Where(x => x.Status == "Posted");
 
             return query.Where(x => x.Status == status);
         }

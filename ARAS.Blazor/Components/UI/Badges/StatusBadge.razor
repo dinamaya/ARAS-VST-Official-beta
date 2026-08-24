@@ -41,8 +41,7 @@
         string.Equals(status, "For CNC Approval", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsCompleted(string? status) =>
-        string.Equals(status, "Posted", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(status, "For ERP Posting", StringComparison.OrdinalIgnoreCase);
+        string.Equals(status, "Posted", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsForFsgValidation(string? status) =>
         string.Equals(status, "For FSG Validation", StringComparison.OrdinalIgnoreCase);

@@ -160,8 +160,7 @@
     [
         "For CNC Approval",
         "For FSG Validation",
-        "For FSG Approval",
-        "Posted"
+        "For FSG Approval"
     ];
 
     private ReportFiltersDto filters = new();
@@ -176,7 +175,7 @@
     private string selectedAdjustmentType = "All Adjustment Types";
 
     private int TotalRequests => rows.Count;
-    private int PostedCount => rows.Count(x => x.Status == "Posted" || x.Status == "For ERP Posting");
+    private int PostedCount => rows.Count(x => x.Status == "Posted");
     private int PendingCount => rows.Count(x => pendingStatuses.Contains(x.Status));
     private int DeclinedCount => rows.Count(x => x.Status == "Declined");
     private int RejectedCount => rows.Count(x => x.Status == "Rejected");

@@ -23,14 +23,17 @@
 <h2>Receipt Adjustment</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<SearchInvoiceDetails OnSelectInvoice="OnInvoiceSelected" />
+	<SearchInvoiceDetails OnSelectInvoice="OnInvoiceSelected">
+		<ResultHeader>
+			@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
+			{
+				<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
+					Receipt Adjustment created successfully
+				</RadzenAlert>
+			}
+		</ResultHeader>
+	</SearchInvoiceDetails>
 	@code { [Parameter, SupplyParameterFromQuery(Name = "q")] public string? QueryAction { get; set; } }
-	@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
-		{
-	<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
-		Receipt Adjustment created successfully
-	</RadzenAlert>
-		}
 	@if (isReady && !string.IsNullOrEmpty(SearchedInvoice.CustomerName))
 		{
 	<RadzenRow Gap="2.5em">

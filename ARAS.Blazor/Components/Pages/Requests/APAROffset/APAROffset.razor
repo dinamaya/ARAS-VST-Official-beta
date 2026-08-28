@@ -26,14 +26,17 @@
 <h2>AP AR : Offset</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<SearchInvoiceAPARDetails OnAPAdd="AddAP" OnARAdd="AddAR" />
+	<SearchInvoiceAPARDetails OnAPAdd="AddAP" OnARAdd="AddAR">
+		<ResultHeader>
+			@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
+			{
+				<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
+					Invoice Adjustment created successfully
+				</RadzenAlert>
+			}
+		</ResultHeader>
+	</SearchInvoiceAPARDetails>
 	@code { [Parameter, SupplyParameterFromQuery(Name = "q")] public string? QueryAction { get; set; } }
-	@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
-	{
-		<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
-			Invoice Adjustment created successfully
-		</RadzenAlert>
-	}
 	<RadzenRow id="apar-offset-groups" Gap="1.5rem">
 		<RadzenColumn Size="5">
 			<div class="text-center pb-3">

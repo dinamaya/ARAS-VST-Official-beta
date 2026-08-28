@@ -8,12 +8,17 @@
 
 <MainSearchBar OnSearch="HandleSearch" TextFields="textFields">
 	<ResultTemplate Context="isLoading">
+		@if (ResultHeader is not null)
+		{
+			@ResultHeader
+		}
 		<SearchInvoiceDataTable IsLoading="isLoading" InvoiceRows="results" Select="OnSelectChanged" />
 	</ResultTemplate>
 </MainSearchBar>
 
 @code{
     [Parameter] public EventCallback<InvoiceDetailsDto> OnSelectInvoice { get; set; }
+	[Parameter] public RenderFragment? ResultHeader { get; set; }
 	private IEnumerable<InvoiceDetailsDto> results { get; set; }
 	private IEnumerable<string> textFields { get; set; }
 

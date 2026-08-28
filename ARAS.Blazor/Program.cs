@@ -7,6 +7,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("vstecs-aras-client", client =>
+{
+	client.Timeout = TimeSpan.FromSeconds(60);
+});
 
 // Add services to the container.
 builder.Services.AddLocalRepositories();

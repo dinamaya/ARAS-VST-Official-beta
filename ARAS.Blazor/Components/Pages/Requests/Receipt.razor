@@ -139,6 +139,9 @@
 		await base.OnParametersSetAsync();
 		if (Utils.Equals(QueryAction, Queries.Success.CREATE))
 		{
+			// A successful navigation starts a fresh request workflow.
+			IsSubmitting = false;
+			isSubmitConfirmationOpen = false;
 			Reset();
 			SearchedInvoice = new();
 		}
@@ -155,6 +158,10 @@
 
 	protected async Task OnInvoiceSelected(InvoiceDetailsDto invoiceDetails)
 	{
+		// Selecting an invoice starts a new editable request attempt.
+		IsSubmitting = false;
+		isSubmitConfirmationOpen = false;
+
 		if (invoiceDetails.InvoiceNumber == SearchedInvoice.InvoiceNumber)
 			return;
 

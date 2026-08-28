@@ -12,12 +12,14 @@
 @using ARAS.Blazor.Services.Interfaces
 @using ARAS.Blazor.Components.Shared.DataTables
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.JSInterop
 
 @inject DialogService DialogService
 @inject NavigationManager NavManager
 @inject IAdjustmentService AdjustmentService
 @inject IRequestService RequestService
 @inject IQueryService QueryService
+@inject IJSRuntime JS
 <h2>Receipt Adjustment</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
@@ -33,7 +35,7 @@
 		{
 	<RadzenRow Gap="2.5em">
 		<RadzenColumn Size="12">
-			<div class="rz-text-align-center pb-3">
+			<div id="receipt-adjustment-types" class="rz-text-align-center pb-3">
 				<RadzenLabel class="fs-5" Text="Select Adjustment Types to Submit" />
 			</div>
 			<div class="pb-3 rz-text-align-center">
@@ -120,6 +122,7 @@
 	private double TotalAdjustmentAmount = 0d;
 	private bool isReady = false;
 	private bool isSubmitConfirmationOpen = false;
+	private bool _scrollToAdjustmentTypes;
 	private ReceiptAttachmentsDatatable receiptAttachments;
 	protected override async Task OnInitializedAsync()
 	{
@@ -138,6 +141,15 @@
 		}
 	}
 
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (!_scrollToAdjustmentTypes)
+			return;
+
+		_scrollToAdjustmentTypes = false;
+		await JS.InvokeVoidAsync("scrollToElement", "receipt-adjustment-types");
+	}
+
 	protected async Task OnInvoiceSelected(InvoiceDetailsDto invoiceDetails)
 	{
 		if (invoiceDetails.InvoiceNumber == SearchedInvoice.InvoiceNumber)
@@ -145,6 +157,7 @@
 
 		SearchedInvoice = invoiceDetails;
 		RemainingBalance = invoiceDetails.InvoiceBalance;
+		_scrollToAdjustmentTypes = true;
 
 		Reset();
 	}

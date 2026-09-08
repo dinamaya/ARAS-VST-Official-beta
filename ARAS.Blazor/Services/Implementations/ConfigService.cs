@@ -85,8 +85,26 @@ namespace ARAS.Blazor.Services.Implementations
 
         public IEnumerable<string> GetRequstorSearchInvoiceCategories(string? defaultOption = null)
         {
-            var items = _config.GetSection("DropdownOptions:SearchCategories:Requestor").Get<IEnumerable<string>>() ?? Enumerable.Empty<string>();
+            var requestorSection = _config.GetSection("DropdownOptions:SearchCategories:Requestor");
+            var items = requestorSection.Get<IEnumerable<string>>();
+            items ??= requestorSection.GetSection("Invoice").Get<IEnumerable<string>>();
+            items ??= Enumerable.Empty<string>();
             return items.Prepend(defaultOption ?? "Select Search Category");
+        }
+
+        public Dictionary<string, IEnumerable<string>> GetRequestorSearchGroups()
+        {
+            var section = _config.GetSection("DropdownOptions:SearchCategories:Requestor");
+            var invoice = section.GetSection("Invoice").Get<IEnumerable<string>>()
+                ?? ["Invoice Number", "Invoice Customer Name"];
+            var receipt = section.GetSection("Receipt").Get<IEnumerable<string>>()
+                ?? ["Receipt Number", "Receipt Customer Name"];
+
+            return new Dictionary<string, IEnumerable<string>>
+            {
+                ["Invoice"] = invoice,
+                ["Receipt"] = receipt
+            };
         }
 
         public IEnumerable<string> GetApprovalSearchInvoiceCategories(string? defaultOption = null)

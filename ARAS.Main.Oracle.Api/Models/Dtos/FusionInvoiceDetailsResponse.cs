@@ -54,4 +54,27 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
         [JsonPropertyName("PAYMENTSCHEDULEID")]
         public long? PaymentScheduleId { get; set; }
     }
+
+    public class FusionReceiptApiEnvelope
+    {
+        [JsonPropertyName("data")]
+        public IEnumerable<FusionReceiptDetailsResponse> ApiResponse { get; set; }
+    }
+
+    public class FusionReceiptDetailsResponse
+    {
+        [JsonPropertyName("RECEIPTNUMBER")] public string ReceiptNumber { get; set; }
+        [JsonPropertyName("RECEIPTDATE")] public DateTime? ReceiptDate { get; set; }
+        [JsonPropertyName("RECEIPTAMOUNT")] public double? ReceiptAmount { get; set; }
+        [JsonPropertyName("APPLIEDAMOUNT")] public double? AppliedAmount { get; set; }
+        [JsonPropertyName("INVOICENUMBER")] public string InvoiceNumber { get; set; }
+        [JsonPropertyName("INVOICEAMOUNT")] public double? InvoiceAmount { get; set; }
+        [JsonPropertyName("INVOICEBALANCE")] public double? InvoiceBalance { get; set; }
+        [JsonPropertyName("INVOICEDATE")] public DateTime InvoiceDate { get; set; }
+        [JsonPropertyName("CUSTOMERNAME")] public string CustomerName { get; set; }
+        [JsonPropertyName("CUSTOMERNUMBER")] public string CustomerNumber { get; set; }
+        [JsonPropertyName("DATASOURCE")] public string DataSource { get; set; }
+        [JsonPropertyName("CUSTOMERTRXID")] public long? CustomerTrxId { get; set; }
+        [JsonPropertyName("PAYMENTSCHEDULEID")] public long? PaymentScheduleId { get; set; }
+    }
 }

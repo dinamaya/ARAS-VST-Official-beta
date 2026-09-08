@@ -79,6 +79,57 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             return mapped;
         }
 
+        private async Task<IEnumerable<InvoiceDetailsDto>> GetFusionReceiptDetailsAsync(string? receiptNumber = null, string? customerName = null)
+        {
+            var queryParams = new List<string>();
+            if (!string.IsNullOrWhiteSpace(receiptNumber))
+                queryParams.Add($"receiptNumber={Uri.EscapeDataString(receiptNumber.Trim())}");
+            if (!string.IsNullOrWhiteSpace(customerName))
+                queryParams.Add($"customerName={Uri.EscapeDataString(customerName.Trim())}");
+
+            var requestUri = "/aras/api/receipt/details"
+                + (queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty);
+            var response = await _fusionHttpClient.GetAsync(requestUri);
+            response.EnsureSuccessStatusCode();
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var envelope = await response.Content.ReadFromJsonAsync<FusionReceiptApiEnvelope>(options)
+                ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
+
+            return (envelope.ApiResponse ?? []).Select(r => new InvoiceDetailsDto
+            {
+                Id = r.InvoiceNumber ?? r.ReceiptNumber,
+                InvoiceNumber = r.InvoiceNumber,
+                InvoiceAmount = r.InvoiceAmount ?? 0,
+                InvoiceBalance = r.InvoiceBalance ?? 0,
+                InvoiceDate = r.InvoiceDate,
+                CustomerName = r.CustomerName,
+                CustomerNumber = r.CustomerNumber,
+                DataSource = r.DataSource ?? "AR",
+                CustomerTrxId = r.CustomerTrxId,
+                PaymentScheduleId = r.PaymentScheduleId,
+                ReceiptNumber = r.ReceiptNumber,
+                ReceiptDate = r.ReceiptDate,
+                ReceiptAmount = r.ReceiptAmount,
+                AppliedAmount = r.AppliedAmount
+            });
+        }
+
+        public async Task<IEnumerable<InvoiceDetailsDto>> GetReceiptsDetails(SearchRequestDto searchRequest)
+        {
+            searchRequest.Category = searchRequest.Category?.Trim();
+            searchRequest.Value = searchRequest.Value?.Trim();
+            if (searchRequest.Category != "Receipt Number" && searchRequest.Category != "Receipt Customer Name")
+                throw new ArgumentException("Invalid receipt search category. Use Receipt Number or Receipt Customer Name.");
+
+            var rows = await GetFusionReceiptDetailsAsync(
+                searchRequest.Category == "Receipt Number" ? searchRequest.Value : null,
+                searchRequest.Category == "Receipt Customer Name" ? searchRequest.Value : null);
+
+            var min = searchRequest.StartDate.ToDateTime(TimeOnly.MinValue);
+            var max = searchRequest.EndDate.ToDateTime(TimeOnly.MaxValue);
+            return rows.Where(r => !r.ReceiptDate.HasValue || (min <= r.ReceiptDate.Value && r.ReceiptDate.Value <= max));
+        }
+
         // =========================================================================
         // GetInvoiceDetails — MIGRATED TO ORACLE FUSION (ARAS API)
         // Previously: /fin/api/masterdata/financials/invoice-details

@@ -36,6 +36,16 @@
 							</Template>
 						</RadzenDataGridColumn>
 						<RadzenDataGridColumn Visible="false" Property="@nameof(InvoiceDetailsDto.Id)" Title="Id" />
+						@if (InvoiceRows?.Any(r => !string.IsNullOrWhiteSpace(r.ReceiptNumber)) == true)
+						{
+							<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.ReceiptNumber)" Title="Receipt Number" />
+							<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.ReceiptDate)" Title="Receipt Date">
+								<Template Context="data">@(data.ReceiptDate?.ToString(Formats.Date.DISPLAY2) ?? "—")</Template>
+							</RadzenDataGridColumn>
+							<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.ReceiptAmount)" Title="Receipt Amount">
+								<Template Context="data">@(data.ReceiptAmount?.ToPhp() ?? "—")</Template>
+							</RadzenDataGridColumn>
+						}
 						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.CustomerName)" Title="Customer Name" />
 						<RadzenDataGridColumn Visible="false" Property="@nameof(InvoiceDetailsDto.CustomerNumber)" Title="Customer Number" />
 							<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceNumber)" Title="Invoice Number" />

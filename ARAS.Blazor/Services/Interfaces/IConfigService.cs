@@ -31,6 +31,7 @@ namespace ARAS.Blazor.Services.Interfaces
 		string GetTokenName();
 		string GetTokenDomainName();
 		IEnumerable<string> GetRequstorSearchInvoiceCategories(string? defaultOption = null);
+		Dictionary<string, IEnumerable<string>> GetRequestorSearchGroups();
 		IEnumerable<string> GetApprovalSearchInvoiceCategories(string? defaultOption = null);
 		IEnumerable<double> GetDiscountPercentages();
 

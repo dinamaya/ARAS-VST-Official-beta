@@ -26,23 +26,41 @@
 
 			<RadzenColumn Size="12" SizeLG="10">
 				<RadzenRow class="w-100">
-					@if (categories.First() != searchRequest.Category)
+					@if (SearchGroups is not null)
+					{
+						<RadzenColumn Size="12" SizeLG="8">
+							<RadzenFormField class="w-100 mt-2 pb-1" Text="Search for" Variant="Variant.Outlined">
+								<RadzenDropDown TValue="string" Data="@SearchGroups.Keys" Value="@selectedSearchGroup" Change="OnSearchGroupChanged" class="w-100" />
+							</RadzenFormField>
+						</RadzenColumn>
+					}
+
+					@if (SearchGroups is not null || categories.First() != searchRequest.Category)
 					{
 
-						<RadzenColumn Size="12" SizeLG="6">
+						<RadzenColumn Size="12" SizeLG="@(SearchGroups is null ? 6 : 4)">
+							@if (SearchGroups is not null)
+							{
+								<RadzenFormField class="w-100 mt-2 pb-1" Text="Search by" Variant="Variant.Outlined">
+									<RadzenDropDown TValue="string" Data="@categories" Change="(key) => OnCategoryChanged((string)key)" @bind-Value="searchRequest.Category" class="w-100" />
+								</RadzenFormField>
+							}
+							else
+							{
 							<RadzenDropDown TValue="string" Change="(key) => OnCategoryChanged((string)key)" class="w-100 mt-2 pb-1" Data="@categories" @bind-Value="searchRequest.Category" />
+							}
 						</RadzenColumn>
 						var option = DropdownFields?.GetValueOrDefault(searchRequest.Category);
 
 						@if (option != null)
 						{
-							<RadzenColumn Size="12" SizeLG="6">
+							<RadzenColumn Size="12" SizeLG="@(SearchGroups is null ? 6 : 4)">
 								<RadzenDropDown ClearSearchAfterSelection="true" class="w-100 mt-2 pb-1" Data="@option" @bind-Value="searchRequest.Value" TValue="string" />
 							</RadzenColumn>
 						}
 						else
 						{
-							<RadzenColumn Size="12" SizeLG="6">
+							<RadzenColumn Size="12" SizeLG="@(SearchGroups is null ? 6 : 8)">
 								<RadzenFormField class="w-100 border-0 mb-2" Text="@categories.FirstOrDefault(c => c == searchRequest.Category)" Variant="Variant.Outlined">
 									<RadzenTextBox @bind-Value="@searchRequest.Value" />
 								</RadzenFormField>
@@ -57,7 +75,7 @@
 					}
 				</RadzenRow>
 
-				@if (categories.First() != searchRequest.Category)
+				@if (SearchGroups is not null || categories.First() != searchRequest.Category)
 				{
 					<RadzenRow class="w-100 pb-3">
 						<RadzenColumn Size="12" SizeMD="6">
@@ -81,7 +99,7 @@
 				}
 			</RadzenColumn>
 
-			<RadzenColumn Size="12" SizeLG="2">
+			<RadzenColumn Size="12" SizeLG="2" class="d-flex align-items-end">
 				<RadzenContent>
 					@if (!isLoading)
 					{
@@ -121,6 +139,7 @@
 	[Parameter] public EventCallback<bool> OnSearchChanged { get; set; }
 	[Parameter] public EventCallback<bool> OnLoadingChanged { get; set; }
 	[Parameter] public Dictionary<string, IEnumerable<string>>? DropdownFields { get; set; }
+	[Parameter] public Dictionary<string, IEnumerable<string>>? SearchGroups { get; set; }
 	[Parameter] public IEnumerable<string> TextFields { get; set; }
 	[Parameter] public RenderFragment? ChildContent { get; set; }
 	[Parameter] public RenderFragment? OptionsTemplate { get; set; }
@@ -141,6 +160,7 @@
 
 	private SearchRequestDto searchRequest;
 	private IList<string> categories;
+	private string selectedSearchGroup;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -148,8 +168,17 @@
 		// Combine the keys from both dictionaries to form the categories list
 		categories = [];
 
-		foreach (var key in TextFields)
-			categories.Add(key);
+		if (SearchGroups is not null)
+		{
+			selectedSearchGroup = SearchGroups.Keys.FirstOrDefault();
+			foreach (var key in SearchGroups.GetValueOrDefault(selectedSearchGroup) ?? [])
+				categories.Add(key);
+		}
+		else
+		{
+			foreach (var key in TextFields)
+				categories.Add(key);
+		}
 
 		if(DropdownFields != null)
 		{
@@ -269,6 +298,16 @@
 	{
 		bool isDropdown = DropdownFields?.ContainsKey(key) ?? false;
 		searchRequest.Value = isDropdown ? DropdownFields?.GetValueOrDefault(key).FirstOrDefault() : string.Empty;
+	}
+
+	private async Task OnSearchGroupChanged(object value)
+	{
+		selectedSearchGroup = value?.ToString() ?? SearchGroups?.Keys.FirstOrDefault();
+		categories = (SearchGroups?.GetValueOrDefault(selectedSearchGroup) ?? []).ToList();
+		searchRequest.Category = categories.FirstOrDefault();
+		searchRequest.Value = string.Empty;
+		isOnSearch = false;
+		await OnSearchChanged.InvokeAsync(false);
 	}
 
 	private bool HasValidSearchValue()

@@ -6,7 +6,7 @@
 @inject IConfigService ConfigService
 @inherits ComponentBase
 
-<MainSearchBar OnSearch="HandleSearch" TextFields="textFields">
+<MainSearchBar OnSearch="HandleSearch" TextFields="textFields" SearchGroups="@(UseRecordTypeSearch ? SearchGroups : null)">
 	<ResultTemplate Context="isLoading">
 		@if (ResultHeader is not null)
 		{
@@ -18,18 +18,27 @@
 
 @code{
     [Parameter] public EventCallback<InvoiceDetailsDto> OnSelectInvoice { get; set; }
+	[Parameter] public bool UseRecordTypeSearch { get; set; }
 	[Parameter] public RenderFragment? ResultHeader { get; set; }
 	private IEnumerable<InvoiceDetailsDto> results { get; set; }
 	private IEnumerable<string> textFields { get; set; }
+	private Dictionary<string, IEnumerable<string>> SearchGroups { get; set; } = new()
+	{
+		["Invoice"] = ["Invoice Number", "Invoice Customer Name"],
+		["Receipt"] = ["Receipt Number", "Receipt Customer Name"]
+	};
 
 	protected override async Task OnInitializedAsync()
 	{
 		textFields = ConfigService.GetRequstorSearchInvoiceCategories();
+		SearchGroups = ConfigService.GetRequestorSearchGroups();
 	}
 
 	private async Task HandleSearch(SearchRequestDto request)
 	{
-		results = await InvoiceService.GetDetailsList(request);
+		results = request.Category.StartsWith("Receipt", StringComparison.OrdinalIgnoreCase)
+			? await InvoiceService.GetReceiptDetailsList(request)
+			: await InvoiceService.GetDetailsList(request);
 	}
 
 	protected async Task OnSelectChanged(InvoiceDetailsDto invoiceDetails)

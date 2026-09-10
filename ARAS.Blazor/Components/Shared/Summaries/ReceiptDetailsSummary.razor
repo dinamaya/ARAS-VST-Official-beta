@@ -1,0 +1,32 @@
+@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Models.DTOs
+
+<RadzenRow class="p-3" Gap="1em">
+	<RadzenColumn Size="12">
+		<h4 class="mb-3">Receipt Number</h4>
+		<div class="border-dashed border-1 border-secondary border-radius-md p-3">
+			<div class="input-group bg-gray-200">
+				<input class="form-control form-control-sm fs-6 letter-spacing-2 px-3 py-2" value="@ReceiptDetails?.ReceiptNumber" type="text" disabled>
+			</div>
+		</div>
+	</RadzenColumn>
+
+	<RadzenColumn Size="12" class="mt-3 mt-lg-0">
+		<h4 class="mb-3">Other Information</h4>
+		<RadzenRow Gap="1em" class="border-0 p-3 border-radius-md bg-gray-100">
+			<RadzenColumn Size="12" SizeXL="6" SizeXS="12">
+				<div class="mb-2 text-sm">Customer Name: <div class="text-dark font-weight-bold ms-2">@ReceiptDetails?.CustomerName</div></div>
+				<div class="mb-2 text-sm">Customer Number: <div class="text-dark ms-2 font-weight-bold letter-spacing-1">@ReceiptDetails?.CustomerNumber</div></div>
+			</RadzenColumn>
+			<RadzenColumn Size="12" SizeXL="6" SizeXS="12">
+				<div class="mb-2 text-sm">Receipt Date: <div class="text-dark font-weight-bold ms-2">@(ReceiptDetails?.ReceiptDate?.ToString(Formats.Date.DISPLAY2) ?? "—")</div></div>
+				<div class="mb-2 text-sm">Receipt Amount: <div class="text-dark font-weight-bold ms-2">@((ReceiptDetails?.ReceiptAmount ?? 0).ToPhp())</div></div>
+				<div class="mb-2 text-sm">Receipt Balance: <div class="text-dark font-weight-bold ms-2">@((ReceiptDetails?.ReceiptBalance ?? 0).ToPhp())</div></div>
+			</RadzenColumn>
+		</RadzenRow>
+	</RadzenColumn>
+</RadzenRow>
+
+@code {
+	[Parameter] public InvoiceDetailsDto ReceiptDetails { get; set; }
+}

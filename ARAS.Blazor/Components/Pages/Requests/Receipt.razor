@@ -23,7 +23,7 @@
 <h2>Receipt Adjustment</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<SearchInvoiceDetails OnSelectInvoice="OnInvoiceSelected" UseRecordTypeSearch="true">
+	<SearchInvoiceDetails OnSelectInvoice="OnInvoiceSelected" OnReceiptSearchChanged="SetReceiptSearch" OnSearchGroupChanged="HandleSearchGroupChanged" UseRecordTypeSearch="true">
 		<ResultHeader>
 			@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
 			{
@@ -55,7 +55,14 @@
 		<RadzenColumn Size="12" SizeMD="@(selectedAdjustmentTypes.Any() ? 5 : 12)">
 			<RadzenRow>
 				<RadzenColumn Size="@(selectedAdjustmentTypes.Any() ? 12 : 6)">
-					<InvoiceSummary InvoiceDetails="SearchedInvoice" />
+								@if (isReceiptSearch)
+								{
+									<ReceiptSummary ReceiptDetails="SearchedInvoice" />
+								}
+								else
+								{
+									<InvoiceSummary InvoiceDetails="SearchedInvoice" />
+								}
 				</RadzenColumn>
 				<RadzenColumn Size="@(selectedAdjustmentTypes.Any() ? 12 : 6)">
 					<CardStandard HeaderText="Calculations">
@@ -126,6 +133,7 @@
 	private bool isReady = false;
 	private bool isSubmitConfirmationOpen = false;
 	private bool _scrollToAdjustmentTypes;
+	private bool isReceiptSearch;
 	private ReceiptAttachmentsDatatable receiptAttachments;
 	protected override async Task OnInitializedAsync()
 	{
@@ -162,13 +170,29 @@
 		IsSubmitting = false;
 		isSubmitConfirmationOpen = false;
 
-		if (invoiceDetails.InvoiceNumber == SearchedInvoice.InvoiceNumber)
+		// Receipt searches may not return an InvoiceNumber. Compare only populated
+		// stable identifiers so the first receipt result is not treated as already selected.
+		var isSameSelection =
+			(!string.IsNullOrWhiteSpace(invoiceDetails.InvoiceNumber) && invoiceDetails.InvoiceNumber == SearchedInvoice.InvoiceNumber) ||
+			(!string.IsNullOrWhiteSpace(invoiceDetails.ReceiptNumber) && invoiceDetails.ReceiptNumber == SearchedInvoice.ReceiptNumber) ||
+			(!string.IsNullOrWhiteSpace(invoiceDetails.Id) && invoiceDetails.Id == SearchedInvoice.Id);
+
+		if (isSameSelection)
 			return;
 
 		SearchedInvoice = invoiceDetails;
 		RemainingBalance = invoiceDetails.InvoiceBalance;
 		_scrollToAdjustmentTypes = true;
 
+		Reset();
+	}
+
+	private void SetReceiptSearch(bool value) => isReceiptSearch = value;
+
+	private void HandleSearchGroupChanged(string group)
+	{
+		isReceiptSearch = string.Equals(group, "Receipt", StringComparison.OrdinalIgnoreCase);
+		SearchedInvoice = new();
 		Reset();
 	}
 

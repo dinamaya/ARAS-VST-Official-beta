@@ -66,8 +66,12 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
         [JsonPropertyName("RECEIPTNUMBER")] public string ReceiptNumber { get; set; }
         [JsonPropertyName("RECEIPTDATE")] public DateTime? ReceiptDate { get; set; }
         [JsonPropertyName("RECEIPTAMOUNT")] public double? ReceiptAmount { get; set; }
-        [JsonPropertyName("APPLIEDAMOUNT")] public double? AppliedAmount { get; set; }
+        [JsonPropertyName("RECEIPTBALANCE")] public double? ReceiptBalance { get; set; }
         [JsonPropertyName("INVOICENUMBER")] public string InvoiceNumber { get; set; }
+        [JsonPropertyName("INVOICE_NUMBER")] public string InvoiceNumberUnderscore { get; set; }
+        [JsonPropertyName("TRXNUMBER")] public string TrxNumber { get; set; }
+        [JsonPropertyName("TRX_NUMBER")] public string TrxNumberUnderscore { get; set; }
+        [JsonPropertyName("AR_INVOICE_NUMBER")] public string ArInvoiceNumber { get; set; }
         [JsonPropertyName("INVOICEAMOUNT")] public double? InvoiceAmount { get; set; }
         [JsonPropertyName("INVOICEBALANCE")] public double? InvoiceBalance { get; set; }
         [JsonPropertyName("INVOICEDATE")] public DateTime InvoiceDate { get; set; }

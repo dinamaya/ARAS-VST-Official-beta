@@ -87,7 +87,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             if (!string.IsNullOrWhiteSpace(customerName))
                 queryParams.Add($"customerName={Uri.EscapeDataString(customerName.Trim())}");
 
-            var requestUri = "/aras/api/receipt/details"
+            var requestUri = "/aras/api/receipt-details"
                 + (queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty);
             var response = await _fusionHttpClient.GetAsync(requestUri);
             response.EnsureSuccessStatusCode();
@@ -95,22 +95,31 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             var envelope = await response.Content.ReadFromJsonAsync<FusionReceiptApiEnvelope>(options)
                 ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
 
-            return (envelope.ApiResponse ?? []).Select(r => new InvoiceDetailsDto
+            return (envelope.ApiResponse ?? []).Select(r =>
             {
-                Id = r.InvoiceNumber ?? r.ReceiptNumber,
-                InvoiceNumber = r.InvoiceNumber,
-                InvoiceAmount = r.InvoiceAmount ?? 0,
-                InvoiceBalance = r.InvoiceBalance ?? 0,
-                InvoiceDate = r.InvoiceDate,
-                CustomerName = r.CustomerName,
-                CustomerNumber = r.CustomerNumber,
-                DataSource = r.DataSource ?? "AR",
-                CustomerTrxId = r.CustomerTrxId,
-                PaymentScheduleId = r.PaymentScheduleId,
-                ReceiptNumber = r.ReceiptNumber,
-                ReceiptDate = r.ReceiptDate,
-                ReceiptAmount = r.ReceiptAmount,
-                AppliedAmount = r.AppliedAmount
+                var invoiceNumber = r.InvoiceNumber
+                    ?? r.InvoiceNumberUnderscore
+                    ?? r.TrxNumber
+                    ?? r.TrxNumberUnderscore
+                    ?? r.ArInvoiceNumber;
+
+                return new InvoiceDetailsDto
+                {
+                    Id = invoiceNumber ?? r.ReceiptNumber,
+                    InvoiceNumber = invoiceNumber,
+                    InvoiceAmount = r.InvoiceAmount ?? 0,
+                    InvoiceBalance = r.InvoiceBalance ?? 0,
+                    InvoiceDate = r.InvoiceDate,
+                    CustomerName = r.CustomerName,
+                    CustomerNumber = r.CustomerNumber,
+                    DataSource = r.DataSource ?? "AR",
+                    CustomerTrxId = r.CustomerTrxId,
+                    PaymentScheduleId = r.PaymentScheduleId,
+                    ReceiptNumber = r.ReceiptNumber,
+                    ReceiptDate = r.ReceiptDate,
+                    ReceiptAmount = r.ReceiptAmount,
+                    ReceiptBalance = r.ReceiptBalance
+                };
             });
         }
 

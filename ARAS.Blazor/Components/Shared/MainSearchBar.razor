@@ -138,6 +138,7 @@
 	[Parameter] public EventCallback<SearchRequestDto> OnSearch { get; set; }
 	[Parameter] public EventCallback<bool> OnSearchChanged { get; set; }
 	[Parameter] public EventCallback<bool> OnLoadingChanged { get; set; }
+	[Parameter] public EventCallback<string> OnSearchGroupChangedCallback { get; set; }
 	[Parameter] public Dictionary<string, IEnumerable<string>>? DropdownFields { get; set; }
 	[Parameter] public Dictionary<string, IEnumerable<string>>? SearchGroups { get; set; }
 	[Parameter] public IEnumerable<string> TextFields { get; set; }
@@ -308,6 +309,7 @@
 		searchRequest.Value = string.Empty;
 		isOnSearch = false;
 		await OnSearchChanged.InvokeAsync(false);
+		await OnSearchGroupChangedCallback.InvokeAsync(selectedSearchGroup);
 	}
 
 	private bool HasValidSearchValue()

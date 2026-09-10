@@ -6,7 +6,7 @@
 @inject IConfigService ConfigService
 @inherits ComponentBase
 
-<MainSearchBar OnSearch="HandleSearch" TextFields="textFields" SearchGroups="@(UseRecordTypeSearch ? SearchGroups : null)">
+<MainSearchBar OnSearch="HandleSearch" TextFields="textFields" SearchGroups="@(UseRecordTypeSearch ? SearchGroups : null)" OnSearchGroupChangedCallback="HandleSearchGroupChanged">
 	<ResultTemplate Context="isLoading">
 		@if (ResultHeader is not null)
 		{
@@ -17,7 +17,9 @@
 </MainSearchBar>
 
 @code{
-    [Parameter] public EventCallback<InvoiceDetailsDto> OnSelectInvoice { get; set; }
+	[Parameter] public EventCallback<InvoiceDetailsDto> OnSelectInvoice { get; set; }
+	[Parameter] public EventCallback<bool> OnReceiptSearchChanged { get; set; }
+	[Parameter] public EventCallback<string> OnSearchGroupChanged { get; set; }
 	[Parameter] public bool UseRecordTypeSearch { get; set; }
 	[Parameter] public RenderFragment? ResultHeader { get; set; }
 	private IEnumerable<InvoiceDetailsDto> results { get; set; }
@@ -36,9 +38,15 @@
 
 	private async Task HandleSearch(SearchRequestDto request)
 	{
+		await OnReceiptSearchChanged.InvokeAsync(request.Category.StartsWith("Receipt", StringComparison.OrdinalIgnoreCase));
 		results = request.Category.StartsWith("Receipt", StringComparison.OrdinalIgnoreCase)
 			? await InvoiceService.GetReceiptDetailsList(request)
 			: await InvoiceService.GetDetailsList(request);
+	}
+
+	private async Task HandleSearchGroupChanged(string group)
+	{
+		await OnSearchGroupChanged.InvokeAsync(group);
 	}
 
 	protected async Task OnSelectChanged(InvoiceDetailsDto invoiceDetails)

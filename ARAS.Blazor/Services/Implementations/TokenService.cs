@@ -30,7 +30,10 @@ namespace ARAS.Blazor.Services.Implementations
 			return hasToken is true ? token : null;
 		}
 
-		public string GenerateToken(Account account, string role)
+		public string GenerateToken(Account account, string role) =>
+			GenerateToken(account, new[] { role });
+
+		public string GenerateToken(Account account, IEnumerable<string> roles)
 		{
 			var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtOptions.Key));
 			var claims = new Claim[]
@@ -42,16 +45,19 @@ namespace ARAS.Blazor.Services.Implementations
 				new(JwtRegisteredClaimNames.GivenName, account.FirstName),
 				new(JwtRegisteredClaimNames.FamilyName, account.LastName),
 				new(ClaimTypes.GroupSid, account.GroupCode ?? ""),
-				new(ClaimTypes.Role, role),
 				new(ClaimTypes.Hash, account.SecurityHash ?? ""),
 			};
+
+			var allClaims = claims.Concat(
+				roles.Where(role => !string.IsNullOrWhiteSpace(role))
+					.Select(role => new Claim(ClaimTypes.Role, role)));
 
 			var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
 			var securityToken = new JwtSecurityToken(
 					_jwtOptions.Issuer,
 					_jwtOptions.Audience,
-					claims,
+					allClaims,
 					expires: DateTime.Now.AddDays(_jwtOptions.DaysDuration),
 					signingCredentials: credentials
 			);

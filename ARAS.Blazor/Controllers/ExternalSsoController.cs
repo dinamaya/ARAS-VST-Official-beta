@@ -6,6 +6,7 @@ using ARAS.Blazor.App_Code.Globals.Constants;
 using ARAS.Blazor.Context;
 using ARAS.Blazor.Models.Configuration;
 using ARAS.Blazor.Models.Entities;
+using ARAS.Blazor.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -23,17 +24,23 @@ public sealed class ExternalSsoController : Controller
 	private readonly ExternalSsoOptions _options;
 	private readonly UserManager<Account> _userManager;
 	private readonly ILogger<ExternalSsoController> _logger;
+	private readonly ITokenService _tokenService;
+	private readonly IConfigService _config;
 
 	public ExternalSsoController(
 		IOptions<ExternalSsoOptions> options,
 		UserManager<Account> userManager,
 		AuthDbContext dbContext,
-		ILogger<ExternalSsoController> logger)
+		ILogger<ExternalSsoController> logger,
+		ITokenService tokenService,
+		IConfigService config)
 	{
 		_options = options.Value;
 		_userManager = userManager;
 		_dbContext = dbContext;
 		_logger = logger;
+		_tokenService = tokenService;
+		_config = config;
 	}
 
 	[HttpGet("Index")]
@@ -157,6 +164,23 @@ public sealed class ExternalSsoController : Controller
 				ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30)
 			});
 
+		// The downstream API gateway still validates the legacy JWT. Issue it
+		// alongside the SSO cookie so API calls made by the Blazor app remain
+		// authenticated during the SSO migration.
+		var apiToken = _tokenService.GenerateToken(account, arasRoles);
+		Response.Cookies.Append(
+			_config.GetTokenName(),
+			apiToken,
+			new CookieOptions
+			{
+				HttpOnly = true,
+				Secure = true,
+				SameSite = SameSiteMode.Strict,
+				Path = "/",
+				Domain = _config.GetTokenDomainName(),
+				Expires = DateTimeOffset.UtcNow.AddHours(8)
+			});
+
 		_logger.LogInformation(
 			"MIS SSO login succeeded for employee {EmployeeNumber}.",
 			employeeNumber);
@@ -178,6 +202,16 @@ public sealed class ExternalSsoController : Controller
 
 		await HttpContext.SignOutAsync(
 			ExternalSsoConstants.SchemeName);
+
+		Response.Cookies.Delete(
+			_config.GetTokenName(),
+			new CookieOptions
+			{
+				Path = "/",
+				Domain = _config.GetTokenDomainName(),
+				Secure = true,
+				SameSite = SameSiteMode.Strict
+			});
 
 		return Redirect("/");
 	}

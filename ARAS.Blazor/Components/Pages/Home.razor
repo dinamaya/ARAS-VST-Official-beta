@@ -186,6 +186,12 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // API calls require the JWT issued by the SSO callback. During static
+        // prerendering the browser cookie is not yet available to the server
+        // circuit, so defer dashboard loading until the interactive circuit.
+        if (!RendererInfo.IsInteractive)
+            return;
+
         accountDetails = await AuthService.GetAccountDetails();
         profileImageUrl = string.IsNullOrWhiteSpace(accountDetails?.PhotoCacheKey)
             ? "/img/avatar.png"

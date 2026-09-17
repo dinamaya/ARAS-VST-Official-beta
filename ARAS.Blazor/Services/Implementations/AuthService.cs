@@ -1,4 +1,5 @@
-﻿using ARAS.Blazor.App_Code.Globals.Extensions;
+using ARAS.Blazor.App_Code.Globals.Constants;
+using ARAS.Blazor.App_Code.Globals.Extensions;
 using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Models.Entities;
 using ARAS.Blazor.Services.Interfaces;
@@ -68,13 +69,15 @@ namespace ARAS.Blazor.Services.Implementations
 				?? user.GetClaim(ClaimTypes.Name)
 				?? string.Empty;
 
-			return new AccountDetailsDto()
+			string fullName = user.GetClaim(JwtRegisteredClaimNames.GivenName) + " " + user.GetClaim(JwtRegisteredClaimNames.FamilyName);
+
+			return new AccountDetailsDto
 			{
-				FullName = user.GetClaim(JwtRegisteredClaimNames.GivenName) + " " + user.GetClaim(JwtRegisteredClaimNames.FamilyName),
+				FullName = fullName,
 				AccountRole = role == "Ops" ? "Admin" : role,
-				GroupCode = user.GetClaim(ClaimTypes.GroupSid) ?? string.Empty,
+				GroupCode = string.Empty,
 				Email = user.GetClaim(ClaimTypes.Email) ?? string.Empty,
-				PhotoCacheKey = BuildPhotoCacheKey(photoCacheSource)
+				PhotoCacheKey = string.Empty
 			};
 		}
 
@@ -101,7 +104,6 @@ namespace ARAS.Blazor.Services.Implementations
 
 			return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
 		}
-
 		public async Task<bool> IsAccountSecurityHashValid()
 		{
 			var user = await GetUser();

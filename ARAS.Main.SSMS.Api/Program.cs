@@ -8,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddValidationConfig();
 builder.Services.AddAuthConfig(builder);
+builder.Services.AddAuthorization();
 builder.Services.AddComplexConfiguration();
 builder.Services.AddRepositoriesConfig();
 builder.Services.AddControllers();
@@ -26,6 +27,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

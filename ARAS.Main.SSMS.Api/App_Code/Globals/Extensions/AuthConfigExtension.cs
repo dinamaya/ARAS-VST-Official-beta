@@ -16,6 +16,18 @@ namespace ARAS.Main.SSMS.Api.App_Code.Globals.Extensions
 				options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 			}).AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
 			{
+				options.Events = new JwtBearerEvents
+				{
+					OnAuthenticationFailed = context =>
+					{
+						var logger = context.HttpContext.RequestServices
+							.GetRequiredService<ILoggerFactory>()
+							.CreateLogger("JwtBearer");
+						logger.LogError(context.Exception, "JWT authentication failed for {Path}", context.Request.Path);
+						return Task.CompletedTask;
+					}
+				};
+
 				options.TokenValidationParameters = new TokenValidationParameters
 				{
 					ValidateIssuer = true,

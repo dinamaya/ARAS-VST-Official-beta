@@ -4,7 +4,8 @@
 		<TargetFramework>net9.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
-	</PropertyGroup>
+	  <UserSecretsId>e87cd691-f866-4033-a121-35d9804b51c5</UserSecretsId>
+  </PropertyGroup>
 
 	<ItemGroup>
 		<Content Remove="compilerconfig.json" />

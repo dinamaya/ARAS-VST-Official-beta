@@ -106,26 +106,9 @@
 		avatar = firstInitial + secondInitial;
 	}
 
-	private async Task Logout()
+	private void Logout()
 	{
-		try
-		{
-			var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
-			string currentUrl = Uri.EscapeDataString(uri.GetLeftPart(UriPartial.Path));
-			string externalUrl = Config.GetAuthUrl($"aad/logout?url={currentUrl}");
-			Navigation.NavigateTo(externalUrl, forceLoad: true);
-		}
-		catch (Exception ex)
-		{
-			await Task.Delay(10);
-			NotificationService.Notify(new NotificationMessage
-			{
-				Severity = NotificationSeverity.Error,
-				Summary = "Error",
-				Detail = ex.Message,
-				Duration = 5000
-			});
-		}
+		Navigation.NavigateTo("/Login/Logout", forceLoad: true);
 	}
 }
 

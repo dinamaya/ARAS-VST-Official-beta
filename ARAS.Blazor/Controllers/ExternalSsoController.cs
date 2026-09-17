@@ -194,9 +194,20 @@ public sealed class ExternalSsoController : Controller
 		return StatusCode(StatusCodes.Status403Forbidden);
 	}
 
+	[HttpGet("Logout")]
+	public Task<IActionResult> LogoutFromBrowser()
+	{
+		return LogoutAsync();
+	}
+
 	[HttpPost("Logout")]
 	[IgnoreAntiforgeryToken]
-	public async Task<IActionResult> Logout()
+	public Task<IActionResult> Logout()
+	{
+		return LogoutAsync();
+	}
+
+	private async Task<IActionResult> LogoutAsync()
 	{
 		HttpContext.Session.Clear();
 

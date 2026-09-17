@@ -1,4 +1,5 @@
-﻿using ARAS.Blazor.Context;
+using ARAS.Blazor.App_Code.Globals.Constants;
+using ARAS.Blazor.Context;
 using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Models.Entities;
 using ARAS.Blazor.Repositories.Interfaces;
@@ -40,10 +41,23 @@ namespace ARAS.Blazor.App_Code.Globals.Extensions
 
 			services.AddAuthentication(options =>
 			{
-				options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-				options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+				options.DefaultAuthenticateScheme = ExternalSsoConstants.SchemeName;
+				options.DefaultSignInScheme = ExternalSsoConstants.SchemeName;
+				options.DefaultChallengeScheme = ExternalSsoConstants.SchemeName;
 			})
-			.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
+			.AddCookie(ExternalSsoConstants.SchemeName, options =>
+			{
+				options.Cookie.Name = "ARAS.ExternalSSO";
+				options.Cookie.HttpOnly = true;
+				options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+				options.Cookie.SameSite = SameSiteMode.Lax;
+
+				options.LoginPath = "/Login/Index";
+				options.AccessDeniedPath = "/Login/AccessDenied";
+
+				options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+				options.SlidingExpiration = true;
+			})
 			.AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
 			{
 				options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;

@@ -61,15 +61,7 @@ namespace ARAS.Blazor.Services.Implementations
 				return null;
 
 			string role = user.GetClaim(ClaimTypes.Role) ?? "Unassigned";
-			string photoCacheSource =
-				user.GetClaim("oid")
-				?? user.GetClaim("http://schemas.microsoft.com/identity/claims/objectidentifier")
-				?? user.GetClaim(ClaimTypes.PrimarySid)
-				?? user.GetClaim(ClaimTypes.Email)
-				?? user.GetClaim(ClaimTypes.Name)
-				?? string.Empty;
-
-			string fullName = user.GetClaim(JwtRegisteredClaimNames.GivenName) + " " + user.GetClaim(JwtRegisteredClaimNames.FamilyName);
+			string fullName = BuildFullName(user);
 
 			return new AccountDetailsDto
 			{
@@ -87,7 +79,41 @@ namespace ARAS.Blazor.Services.Implementations
 			var user = await GetUser();
 			if (user.Identity is null || !user.Identity.IsAuthenticated)
 				return null;
-			return user.GetClaim(JwtRegisteredClaimNames.FamilyName) + ", " + user.GetClaim(JwtRegisteredClaimNames.GivenName);
+
+			var givenName =
+				user.GetClaim(JwtRegisteredClaimNames.GivenName) ??
+				user.GetClaim(ClaimTypes.GivenName);
+
+			var familyName =
+				user.GetClaim(JwtRegisteredClaimNames.FamilyName) ??
+				user.GetClaim(ClaimTypes.Surname);
+
+			if (!string.IsNullOrWhiteSpace(givenName) && !string.IsNullOrWhiteSpace(familyName))
+				return $"{familyName}, {givenName}";
+
+			return BuildFullName(user);
+		}
+
+		private static string BuildFullName(ClaimsPrincipal user)
+		{
+			var givenName =
+				user.GetClaim(JwtRegisteredClaimNames.GivenName) ??
+				user.GetClaim(ClaimTypes.GivenName);
+
+			var familyName =
+				user.GetClaim(JwtRegisteredClaimNames.FamilyName) ??
+				user.GetClaim(ClaimTypes.Surname);
+
+			var fullName = string.Join(" ", new[] { givenName, familyName }.Where(x => !string.IsNullOrWhiteSpace(x)));
+
+			if (!string.IsNullOrWhiteSpace(fullName))
+				return fullName;
+
+			return user.GetClaim("name")
+				?? user.GetClaim(ClaimTypes.Name)
+				?? user.Identity?.Name
+				?? user.GetClaim(ClaimTypes.Email)
+				?? "User";
 		}
 
 		public void InitLazyState()

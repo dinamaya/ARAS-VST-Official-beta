@@ -1,4 +1,4 @@
-﻿namespace ARAS.Blazor.Models.DTOs
+namespace ARAS.Blazor.Models.DTOs
 {
     public class ReceiptAdjustmentUpdateResponseDto
     {

@@ -48,6 +48,14 @@
 						}
 						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.CustomerName)" Title="Customer Name" />
 						<RadzenDataGridColumn Visible="false" Property="@nameof(InvoiceDetailsDto.CustomerNumber)" Title="Customer Number" />
+						@if (ShowReceiptColumns)
+						{
+							<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.ReceiptBalance)" Title="Receipt Balance">
+								<Template Context="data">@(data.ReceiptBalance?.ToPhp() ?? "—")</Template>
+							</RadzenDataGridColumn>
+						}
+						else
+						{
 							<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceNumber)" Title="Invoice Number" />
 							<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.InvoiceDate)" Title="Invoice Date">
 								<Template Context="data">
@@ -64,6 +72,7 @@
 								@data.InvoiceBalance.ToPhp()
 							</Template>
 						</RadzenDataGridColumn>
+						}
 						<RadzenDataGridColumn Property="@nameof(InvoiceDetailsDto.DataSource)" Title="Source">
 							<Template Context="data">
 								@data.DataSource
@@ -80,6 +89,7 @@
 	[Parameter] public EventCallback<InvoiceDetailsDto> Select { get; set; }
 	[Parameter] public IEnumerable<InvoiceDetailsDto> InvoiceRows { get; set; }
 	[Parameter] public bool IsLoading { get; set; }
+	[Parameter] public bool ShowReceiptColumns { get; set; }
 	[Parameter] public string? ButtonSelectText { get; set; } = "Select";
 	[Parameter] public string? ButtonSelectIcon { get; set; } = "edit_document";
 	private RadzenDataGrid<InvoiceDetailsDto> dataGrid;

@@ -12,7 +12,7 @@
 		{
 			@ResultHeader
 		}
-		<SearchInvoiceDataTable IsLoading="isLoading" InvoiceRows="results" Select="OnSelectChanged" />
+		<SearchInvoiceDataTable IsLoading="isLoading" InvoiceRows="results" Select="OnSelectChanged" ShowReceiptColumns="@isReceiptSearch" />
 	</ResultTemplate>
 </MainSearchBar>
 
@@ -26,6 +26,7 @@
 	[Parameter] public RenderFragment? ResultHeader { get; set; }
 	private IEnumerable<InvoiceDetailsDto> results { get; set; }
 	private IEnumerable<string> textFields { get; set; }
+	private bool isReceiptSearch;
 	private Dictionary<string, IEnumerable<string>> SearchGroups { get; set; } = new()
 	{
 		["Invoice"] = ["Invoice Number", "Invoice Customer Name"],
@@ -40,8 +41,9 @@
 
 	private async Task HandleSearch(SearchRequestDto request)
 	{
-		await OnReceiptSearchChanged.InvokeAsync(request.Category.StartsWith("Receipt", StringComparison.OrdinalIgnoreCase));
-		results = request.Category.StartsWith("Receipt", StringComparison.OrdinalIgnoreCase)
+		isReceiptSearch = request.Category.StartsWith("Receipt", StringComparison.OrdinalIgnoreCase);
+		await OnReceiptSearchChanged.InvokeAsync(isReceiptSearch);
+		results = isReceiptSearch
 			? await InvoiceService.GetReceiptDetailsList(request)
 			: await InvoiceService.GetDetailsList(request);
 	}

@@ -71,8 +71,6 @@ namespace ARAS.Blazor.Repositories.Implementations
 		public async Task Update(AccountEditRequestDto request)
 		{
 			Account account = await _userManager.FindByIdAsync(request.Id) ?? throw new InvalidOperationException("Account not found. Please contact the administrator");
-			account.FirstName = Utils.Security.CleanString(request.FirstName);
-			account.LastName = Utils.Security.CleanString(request.LastName);
 			account.GroupCode = Utils.Security.CleanString(request.GroupCode);
 			account.IsActive = request.IsActive;
 			account.SecurityHash = Utils.Security.GenerateExtendedGuid("", 2);

@@ -11,14 +11,14 @@
 	<RadzenRow Gap="1rem">
 		<RadzenColumn Size="12" SizeMD="6">
 			<RadzenFormField class="w-100" Text="First Name" Variant="@Variant.Outlined" Max>
-				<RadzenTextBox @bind-Value="@accountEditRequest.FirstName" />
+				<RadzenTextBox @bind-Value="@accountEditRequest.FirstName" Disabled="true" />
 			</RadzenFormField>
 			<ComponentValidator ValidationName="@nameof(accountEditRequest.FirstName)" />
 		</RadzenColumn>
 
 		<RadzenColumn Size="12" SizeMD="6">
 			<RadzenFormField class="w-100" Text="Last Name" Variant="@Variant.Outlined" Max>
-				<RadzenTextBox @bind-Value="@accountEditRequest.LastName" />
+				<RadzenTextBox @bind-Value="@accountEditRequest.LastName" Disabled="true" />
 			</RadzenFormField>
 			<ComponentValidator ValidationName="@nameof(accountEditRequest.LastName)" />
 		</RadzenColumn>

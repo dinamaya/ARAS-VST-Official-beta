@@ -42,7 +42,14 @@
 			}
 
 			<RadzenColumn Size="12" SizeLG="@(isRequestUpdatable ? 4 : 6)">
-				<InvoiceSummary InvoiceDetails="invoice"/>
+				@if (TypeCode is "bca" or "cdr" or "sar")
+				{
+					<ReceiptSummary ReceiptDetails="@invoice" />
+				}
+				else
+				{
+					<InvoiceSummary InvoiceDetails="@invoice" />
+				}
 			</RadzenColumn>
 
 			@if (isRequestUpdatable)
@@ -193,7 +200,7 @@
 			};
 			inputHash = Utils.Security.ObjectHash(data);
 
-			invoice = ToInvoiceDetails(details.Invoice);
+			invoice = ToInvoiceDetails(details.Invoice, details.AdjustmentAmount);
 		}
 		catch (Exception ex)
 		{
@@ -205,7 +212,9 @@
 		}
 	}
 
-	private static InvoiceDetailsDto? ToInvoiceDetails(InvoiceDetailsRequestDto? source)
+	private static InvoiceDetailsDto? ToInvoiceDetails(
+		InvoiceDetailsRequestDto? source,
+		double adjustmentAmount)
 	{
 		if (source is null)
 			return null;
@@ -219,6 +228,11 @@
 			InvoiceDate = source.InvoiceDate.ToDateTime(TimeOnly.MinValue),
 			CustomerName = source.CustomerName,
 			CustomerNumber = source.CustomerNumber,
+			// Receipt requests are persisted using the legacy Invoice* columns.
+			ReceiptNumber = source.InvoiceNumber,
+			ReceiptDate = source.InvoiceDate.ToDateTime(TimeOnly.MinValue),
+			ReceiptAmount = source.InvoiceAmount,
+			ReceiptBalance = Math.Max(0, source.InvoiceAmount - adjustmentAmount),
 			DataSource = "SQL"
 		};
 	}

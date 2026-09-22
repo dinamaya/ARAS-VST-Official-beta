@@ -1,4 +1,4 @@
-﻿using ARAS.Blazor.Models.Complex;
+using ARAS.Blazor.Models.Complex;
 
 namespace ARAS.Blazor.Models.DTOs
 {
@@ -16,18 +16,27 @@ namespace ARAS.Blazor.Models.DTOs
 		public string Remarks { get; set; }
 
 		public BaseReceiptAdjustmentCreateDto() { }
-		public BaseReceiptAdjustmentCreateDto(string adjustmentTypeName, InvoiceDetailsDto invoiceDetails, ReceiptAdjustmentEntry adjumentEntry)
-		{
-			AdjustmentType = adjustmentTypeName;
-			InvoiceAmount = invoiceDetails.InvoiceAmount;
-			AdjustmentAmount = adjumentEntry.Amount;
-			InvoiceDate = invoiceDetails.InvoiceDate;
-			InvoiceNumber = invoiceDetails.InvoiceNumber;
-			CustomerName = invoiceDetails.CustomerName;
-			CustomerNumber = invoiceDetails.CustomerNumber;
-			CustomerTrxId = invoiceDetails.CustomerTrxId;
-			PaymentScheduleId = invoiceDetails.PaymentScheduleId;
-			Remarks = adjumentEntry.Remarks;
-		}
+		public BaseReceiptAdjustmentCreateDto(
+	string adjustmentTypeName,
+	InvoiceDetailsDto invoiceDetails,
+	ReceiptAdjustmentEntry adjustmentEntry)
+{
+	AdjustmentType = adjustmentTypeName;
+	InvoiceAmount = invoiceDetails.ReceiptAmount ?? invoiceDetails.InvoiceAmount;
+	AdjustmentAmount = adjustmentEntry.Amount;
+	InvoiceDate = invoiceDetails.ReceiptDate ?? invoiceDetails.InvoiceDate;
+
+	// The API still calls this field InvoiceNumber,
+	// but receipt requests must send the ReceiptNumber.
+	InvoiceNumber = !string.IsNullOrWhiteSpace(invoiceDetails.ReceiptNumber)
+		? invoiceDetails.ReceiptNumber
+		: invoiceDetails.InvoiceNumber;
+
+	CustomerName = invoiceDetails.CustomerName;
+	CustomerNumber = invoiceDetails.CustomerNumber;
+	CustomerTrxId = invoiceDetails.CustomerTrxId;
+	PaymentScheduleId = invoiceDetails.PaymentScheduleId;
+	Remarks = adjustmentEntry.Remarks;
+}
 	}
 }

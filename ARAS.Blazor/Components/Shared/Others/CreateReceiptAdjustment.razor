@@ -1,4 +1,4 @@
-﻿@using ARAS.Blazor.App_Code.Globals
+@using ARAS.Blazor.App_Code.Globals
 @using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Components.Shared.Summaries
 @using ARAS.Blazor.Components.UI
@@ -15,7 +15,11 @@
 			@if (SelectedAdjustmentTypes.Contains("Cash Discount"))
 			{
 				<RadzenColumn Size="12">
-					<CreateCashDiscountAdjustment IsDisabled="@IsDisabled" InvoiceAmount="InvoiceDetails.InvoiceAmount" InvoiceBalance="InvoiceDetails.InvoiceBalance" AdjustmentAmountChanged="OnAdjustmentAmountChanged" />
+					<CreateCashDiscountAdjustment
+						IsDisabled="@IsDisabled"
+						InvoiceAmount="@(InvoiceDetails.ReceiptAmount ?? InvoiceDetails.InvoiceAmount)"
+						InvoiceBalance="@AvailableBalance"
+						AdjustmentAmountChanged="OnAdjustmentAmountChanged" />
 				</RadzenColumn>
 			}
 			@if (SelectedAdjustmentTypes.Contains("Bank Charges"))
@@ -45,6 +49,9 @@
 	private string remarks = string.Empty;
 	private bool isAdjustable = false;
 
+	private double AvailableBalance =>
+		InvoiceDetails.ReceiptBalance ?? InvoiceDetails.InvoiceBalance;
+
 	protected override async Task OnInitializedAsync()
 	{
 		await base.OnInitializedAsync();
@@ -54,7 +61,7 @@
 	protected override async Task OnParametersSetAsync()
 	{
 		await base.OnParametersSetAsync();
-		isAdjustable = InvoiceDetails.InvoiceBalance > 0;
+		isAdjustable = AvailableBalance > 0;
 	}
 
 	protected async Task OnAdjustmentAmountChanged(AdjustmentEntry data)

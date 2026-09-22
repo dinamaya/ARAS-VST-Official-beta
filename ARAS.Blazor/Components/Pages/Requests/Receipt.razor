@@ -1,4 +1,4 @@
-﻿@page "/requests/receipt"
+@page "/requests/receipt"
 @attribute [Authorize(Roles = "Requestor")]
 @inherits CreateReceiptRequestBaseComponent
 
@@ -45,7 +45,7 @@
 				<RadzenSelectBar Disabled="@IsSubmitting"
 								 Multiple="true"
 								 Data="@ReceiptAdjustmentTypes"
-								 @bind-Value=@selectedAdjustmentTypes
+								 @bind-Value="@selectedAdjustmentTypes"
 								 TValue="IEnumerable<string>"
 								 Change="OnAdjustmentTypeSelectionChanged"
 								 TextProperty="@nameof(AdjustmentTypeSelectBarOption.Name)"
@@ -135,6 +135,9 @@
 	private bool _scrollToAdjustmentTypes;
 	private bool isReceiptSearch;
 	private ReceiptAttachmentsDatatable receiptAttachments;
+	private double AvailableBalance =>
+		SearchedInvoice.ReceiptBalance ?? SearchedInvoice.InvoiceBalance;
+
 	protected override async Task OnInitializedAsync()
 	{
 		ReceiptAdjustmentTypes = (await AdjustmentService.GetReceiptTypes()).Select((t, i) => new AdjustmentTypeSelectBarOption(i, t));
@@ -181,9 +184,9 @@
 			return;
 
 		SearchedInvoice = invoiceDetails;
-		RemainingBalance = invoiceDetails.InvoiceBalance;
-		_scrollToAdjustmentTypes = true;
+		RemainingBalance = invoiceDetails.ReceiptBalance ?? invoiceDetails.InvoiceBalance;
 
+		_scrollToAdjustmentTypes = true;
 		Reset();
 	}
 
@@ -231,7 +234,7 @@
 	private void Calculate()
 	{
 		TotalAdjustmentAmount = _adjustments.Values.Sum(a => a.Amount);
-		RemainingBalance = SearchedInvoice.InvoiceBalance - TotalAdjustmentAmount;
+		RemainingBalance = AvailableBalance - TotalAdjustmentAmount;
 		StateHasChanged();
 	}
 
@@ -264,14 +267,28 @@
 
 			IList<BaseReceiptAdjustmentCreateDto> requests = new List<BaseReceiptAdjustmentCreateDto>();
 
-			Guards.ThrowInvalidOperationIf(SearchedInvoice.InvoiceBalance <= 0, "Cannot apply adjustment(s) because the current invoice is non adjustable due to the invoice balance is less than or equals to 0");
-			Guards.ThrowInvalidOperationIf(RemainingBalance <= 0, "Cannot apply adjustment(s) because the Remaining Balance is less than or equals to 0");
+			Guards.ThrowInvalidOperationIf(
+				AvailableBalance <= 0,
+				"Cannot apply adjustment(s) because the current receipt is non-adjustable because its balance is less than or equal to 0.");
+
+			Guards.ThrowInvalidOperationIf(
+				RemainingBalance <= 0,
+				"Cannot apply adjustment(s) because the remaining receipt balance is less than or equal to 0.");
 
 			foreach (var adj in _adjustments)
 			{
-				Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(adj.Value.Remarks), $"Cannot apply adjustment(s) because there is no remarks on {adj.Key} adjustment field.");
-				Guards.ThrowInvalidOperationIf(adj.Value.Amount <= 0, "Cannot apply adjustment(s) because the adjustment amount is less than or equals to 0");
-				requests.Add(new BaseReceiptAdjustmentCreateDto(adj.Key, SearchedInvoice, adj.Value));
+				Guards.ThrowInvalidOperationIf(
+					string.IsNullOrEmpty(adj.Value.Remarks),
+					$"Cannot apply adjustment(s) because there is no remarks on {adj.Key} adjustment field.");
+
+				Guards.ThrowInvalidOperationIf(
+					adj.Value.Amount <= 0,
+					"Cannot apply adjustment(s) because the adjustment amount is less than or equal to 0.");
+
+				requests.Add(new BaseReceiptAdjustmentCreateDto(
+					adj.Key,
+					SearchedInvoice,
+					adj.Value));
 			}
 
 			await RequestService.Create(requests, Notes);

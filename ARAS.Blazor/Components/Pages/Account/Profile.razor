@@ -1,0 +1,57 @@
+@page "/account/profile"
+
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize]
+
+@inject IAuthService AuthService
+
+<h3>Account Profile</h3>
+
+<div class="card card-body blur shadow-blur mx-4 mt-4">
+    @if (_account is null)
+    {
+        <div class="text-secondary">Loading account profile...</div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <div class="col-12 col-md-6">
+                <label class="form-label">Full Name</label>
+                <input class="form-control" value="@_account.FullName" disabled />
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label">Email</label>
+                <input class="form-control" value="@_account.Email" disabled />
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label">Role</label>
+                <input class="form-control" value="@_account.AccountRole" disabled />
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label class="form-label">Group Code</label>
+                <input class="form-control" value="@_account.GroupCode" disabled />
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <span class="text-secondary">
+                Your role and account status are managed by an administrator.
+            </span>
+        </div>
+    }
+</div>
+
+@code {
+    private AccountDetailsDto? _account;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _account = await AuthService.GetAccountDetails();
+    }
+}

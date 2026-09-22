@@ -74,7 +74,9 @@
 				</div>
 			</Template>
 			<ChildContent>
-				<RadzenProfileMenuItem Text="Account Profile" Icon="person" />
+				<div @onclick="OpenProfile">
+					<RadzenProfileMenuItem Text="Account Profile" Icon="person" />
+				</div>
 				<div @onclick="Logout">
 					<RadzenProfileMenuItem Text="Logout" Icon="logout" />
 				</div>
@@ -109,6 +111,11 @@
 	private void Logout()
 	{
 		Navigation.NavigateTo("/Login/Logout", forceLoad: true);
+	}
+
+	private void OpenProfile()
+	{
+		Navigation.NavigateTo("/account/profile");
 	}
 }
 

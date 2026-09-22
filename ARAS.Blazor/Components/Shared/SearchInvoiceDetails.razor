@@ -6,7 +6,7 @@
 @inject IConfigService ConfigService
 @inherits ComponentBase
 
-<MainSearchBar OnSearch="HandleSearch" TextFields="textFields" SearchGroups="@(UseRecordTypeSearch ? SearchGroups : null)" OnSearchGroupChangedCallback="HandleSearchGroupChanged" PlaceSearchButtonBelowDate="@PlaceSearchButtonBelowDate">
+<MainSearchBar OnSearch="HandleSearch" TextFields="textFields" SearchGroups="@(UseRecordTypeSearch ? SearchGroups : null)" OnSearchGroupChangedCallback="HandleSearchGroupChanged" PlaceSearchButtonBelowDate="@PlaceSearchButtonBelowDate" AlignSearchFields="@AlignSearchFields">
 	<ResultTemplate Context="isLoading">
 		@if (ResultHeader is not null)
 		{
@@ -22,6 +22,7 @@
 	[Parameter] public EventCallback<string> OnSearchGroupChanged { get; set; }
 	[Parameter] public bool UseRecordTypeSearch { get; set; }
 	[Parameter] public bool PlaceSearchButtonBelowDate { get; set; }
+	[Parameter] public bool AlignSearchFields { get; set; }
 	[Parameter] public RenderFragment? ResultHeader { get; set; }
 	private IEnumerable<InvoiceDetailsDto> results { get; set; }
 	private IEnumerable<string> textFields { get; set; }

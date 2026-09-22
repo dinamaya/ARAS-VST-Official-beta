@@ -7,7 +7,6 @@ namespace ARAS.Blazor.Services.Interfaces
 	{
 		Task<IEnumerable<AccountRowDto>> GetAccounts();
 		Task<AccountEditRequestDto> GetAccountById(string id);
-		Task<IEnumerable<DropdownOptionDto>> GetRoles();
 		Task<bool> Update(AccountEditRequestDto data);
 	}
 }

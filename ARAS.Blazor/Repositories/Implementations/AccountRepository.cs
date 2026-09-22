@@ -11,13 +11,11 @@ namespace ARAS.Blazor.Repositories.Implementations
 	public class AccountRepository : IAccountRepository
 	{
 		private readonly AuthDbContext _context;
-		private readonly RoleManager<IdentityRole> _roleManager;
 		private readonly UserManager<Account> _userManager;
 
-		public AccountRepository(AuthDbContext context, RoleManager<IdentityRole> roleManager, UserManager<Account> userManager)
+		public AccountRepository(AuthDbContext context, UserManager<Account> userManager)
 		{
 			_context = context;
-			_roleManager = roleManager;
 			_userManager = userManager;
 		}
 
@@ -52,22 +50,6 @@ namespace ARAS.Blazor.Repositories.Implementations
 				}).FirstOrDefaultAsync() ?? throw new InvalidOperationException("Account not found. Please contact the administrator");
 		}
 
-		public async Task<IEnumerable<DropdownOptionDto>> GetAllRoleOptions()
-		{
-			return (await _roleManager.Roles
-				.Select(r => new DropdownOptionDto()
-				{
-					Value = r.Id,
-					Label = r.Name
-				})
-				.ToListAsync())
-				.Prepend(new DropdownOptionDto()
-				{
-					Value = "",
-					Label = "Unassigned"
-				});
-		}
-
 		public async Task Update(AccountEditRequestDto request)
 		{
 			Account account = await _userManager.FindByIdAsync(request.Id) ?? throw new InvalidOperationException("Account not found. Please contact the administrator");
@@ -78,33 +60,6 @@ namespace ARAS.Blazor.Repositories.Implementations
 			var accountUpdateResult = await _userManager.UpdateAsync(account);
 			Guards.ThrowInvalidOperationIf(!accountUpdateResult.Succeeded, "Failed to update account. " + Utils.GetErrorDescription(accountUpdateResult));
 
-			// === Role handling ===
-			// TEST Need thorough testing
-			string currentRole = Utils.Security.DecodeString((await _userManager.GetRolesAsync(account)).FirstOrDefault());
-			string requestedRole = Utils.Security.CleanString(request.AccountRole);
-
-			if (string.IsNullOrEmpty(requestedRole) || requestedRole.Equals("Unassigned", StringComparison.OrdinalIgnoreCase))
-			{
-				if (!string.IsNullOrEmpty(currentRole))
-				{
-					var removeRoleResult = await _userManager.RemoveFromRoleAsync(account, currentRole);
-					Guards.ThrowInvalidOperationIf(!removeRoleResult.Succeeded, "Failed to remove role. " + Utils.GetErrorDescription(removeRoleResult));
-				}
-
-				return;
-			}
-
-			if (string.Equals(currentRole, requestedRole, StringComparison.OrdinalIgnoreCase))
-				return;
-
-			if (!string.IsNullOrEmpty(currentRole))
-			{
-				var removeRoleResult = await _userManager.RemoveFromRoleAsync(account, currentRole);
-				Guards.ThrowInvalidOperationIf(!removeRoleResult.Succeeded, "Failed to remove role. " + Utils.GetErrorDescription(removeRoleResult));
-			}
-
-			var addRoleResult = await _userManager.AddToRoleAsync(account, requestedRole);
-			Guards.ThrowInvalidOperationIf(!addRoleResult.Succeeded, "Failed to add role. " + Utils.GetErrorDescription(addRoleResult));
 		}
 	}
 }

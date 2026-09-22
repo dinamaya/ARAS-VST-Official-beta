@@ -94,7 +94,8 @@ public sealed class ExternalSsoController : Controller
 			return Forbid();
 		}
 
-		// ARAS remains the authorization source of truth.
+		// URMS is the authorization source of truth. ARAS only maps URMS roles
+		// to the role names used by its existing authorization policies.
 		var account = await _userManager.FindByEmailAsync(email);
 
 		if (account is null || !account.IsActive)
@@ -106,12 +107,7 @@ public sealed class ExternalSsoController : Controller
 			return Forbid();
 		}
 
-		var assignedRoles = await _userManager.GetRolesAsync(account);
-
-		var arasRoles = assignedRoles
-			.Where(role => _options.AllowedRoles.Contains(role))
-			.Distinct(StringComparer.OrdinalIgnoreCase)
-			.ToList();
+		var arasRoles = ResolveArasRoles(payloadDocument.RootElement);
 
 		if (arasRoles.Count == 0)
 		{
@@ -186,6 +182,44 @@ public sealed class ExternalSsoController : Controller
 			employeeNumber);
 
 		return Redirect("/");
+	}
+
+	private List<string> ResolveArasRoles(JsonElement payloadRoot)
+	{
+		var roles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+		if (!payloadRoot.TryGetProperty("permissions", out var permissions) ||
+			permissions.ValueKind != JsonValueKind.Array)
+			return roles.ToList();
+
+		foreach (var permission in permissions.EnumerateArray())
+		{
+			string? externalRole = null;
+
+			if (permission.TryGetProperty("applicationRole", out var applicationRole) &&
+				applicationRole.ValueKind == JsonValueKind.Object &&
+				applicationRole.TryGetProperty("name", out var nestedName))
+			{
+				externalRole = nestedName.GetString();
+			}
+
+			externalRole ??= GetString(permission, "applicationRoleName");
+
+			if (string.IsNullOrWhiteSpace(externalRole))
+				continue;
+
+			if (_options.RoleMappings.TryGetValue(externalRole, out var arasRole) &&
+				_options.AllowedRoles.Contains(arasRole))
+			{
+				roles.Add(arasRole);
+			}
+			else if (_options.AllowedRoles.Contains(externalRole))
+			{
+				roles.Add(externalRole);
+			}
+		}
+
+		return roles.ToList();
 	}
 
 	[HttpGet("AccessDenied")]

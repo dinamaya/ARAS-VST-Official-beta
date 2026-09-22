@@ -6,7 +6,6 @@ namespace ARAS.Blazor.Repositories.Interfaces
 	{
 		Task<IEnumerable<AccountRowDto>> GetAll();
 		Task<AccountEditRequestDto> GetById(string id);
-		Task<IEnumerable<DropdownOptionDto>> GetAllRoleOptions();
 		Task Update(AccountEditRequestDto request);
 	}
 }

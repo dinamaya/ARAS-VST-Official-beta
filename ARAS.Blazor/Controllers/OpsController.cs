@@ -37,22 +37,6 @@ namespace ARAS.Blazor.Controllers
 			}
 		}
 
-		[HttpGet("roles")]
-		public async Task<ResponseDto<IEnumerable<DropdownOptionDto>>> Roles()
-		{
-			ResponseDto<IEnumerable<DropdownOptionDto>> _response = new();
-			try
-			{
-				_response.Result = await _accountService.GetAllRoleOptions();
-				return _response;
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex.Message);
-				return _response.Failed(ex.Message);
-			}
-		}
-
 		[HttpGet("accounts/{id}")]
 		public async Task<ResponseDto<AccountEditRequestDto>> Get(string id)
 		{

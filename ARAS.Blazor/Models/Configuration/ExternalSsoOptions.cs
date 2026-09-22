@@ -14,4 +14,7 @@ public sealed class ExternalSsoOptions
 
 	public HashSet<string> AllowedRoles { get; set; } =
 		new(StringComparer.OrdinalIgnoreCase);
+
+	public Dictionary<string, string> RoleMappings { get; set; } =
+		new(StringComparer.OrdinalIgnoreCase);
 }

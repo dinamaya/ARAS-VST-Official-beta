@@ -22,11 +22,6 @@ namespace ARAS.Blazor.App_Code.Globals.Validations
 				.WithMessage("Email must not exceed 100 characters.")
 				.Matches(RegEx.NAMES).WithMessage("Last name contains invalid characters.");
 
-			RuleFor(x => x.AccountRole)
-				.NotEmpty().WithMessage("Account Role is Required")
-				.NotNull().WithMessage("Account Role is Required")
-				.MaximumLength(50);
-
 			RuleFor(x => x.GroupCode)
 				.Matches(RegEx.GROUPCODE)
 					.WithMessage("Group Code contains invalid characters.")

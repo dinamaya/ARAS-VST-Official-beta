@@ -37,16 +37,6 @@ namespace ARAS.Blazor.Services.Implementations
 			return response.Result;
 		}
 
-		public async Task<IEnumerable<DropdownOptionDto>> GetRoles()
-		{
-			var response = await _baseService.SendAsync<IEnumerable<DropdownOptionDto>>(new RequestDto()
-			{
-				URL = _configService.GetOpsUrl("roles")
-			});
-
-			return response.Result;
-		}
-
 		public async Task<bool> Update(AccountEditRequestDto data)
 		{
 			var response = await _baseService.SendAsync<string>(new RequestDto<AccountEditRequestDto>()

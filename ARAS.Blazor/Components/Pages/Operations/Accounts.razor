@@ -58,7 +58,6 @@
 				<RadzenDataGridColumn Property="@nameof(AccountRowDto.FirstName)" Title="First Name"/>
 				<RadzenDataGridColumn Property="@nameof(AccountRowDto.LastName)" Title="Last Name" />
 				<RadzenDataGridColumn Property="@nameof(AccountRowDto.Email)" Title="Email"/>
-				<RadzenDataGridColumn Property="@nameof(AccountRowDto.AccountRole)" Title="Account Role" Width="100px" />
 				<RadzenDataGridColumn Property="@nameof(AccountRowDto.GroupCode)" Title="Group Code" />
 				<RadzenDataGridColumn Property="@nameof(AccountRowDto.IsActive)" Title="Status" Width="130px" />
 			</Columns>
@@ -75,14 +74,12 @@
 @code {
 	private RadzenDataGrid<AccountRowDto> _dataGrid;
 	private IEnumerable<AccountRowDto>? _accounts;
-	private IEnumerable<DropdownOptionDto> _roles;
 	private string _accountId = "";
 
 	protected override async Task OnInitializedAsync()
 	{
 		_accounts = null;
 		_accounts = await OpsService.GetAccounts();
-		_roles = await OpsService.GetRoles();
 	}
 
 	private async Task OpenEditAccount(AccountRowDto account)
@@ -93,7 +90,6 @@
 			new Dictionary<string, object>()
 			{
 				{ "AccountId", _accountId },
-				{ "Roles", _roles },
 				{ "DataGrid", _dataGrid }
 			},
 			new DialogOptions() { Width = "800px", Height = "auto" }

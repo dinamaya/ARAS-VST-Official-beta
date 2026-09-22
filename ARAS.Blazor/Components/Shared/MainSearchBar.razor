@@ -97,8 +97,24 @@
 						</RadzenColumn>
 					</RadzenRow>
 				}
+
+				@if (PlaceSearchButtonBelowDate)
+				{
+					<RadzenContent class="d-flex justify-content-center pb-3">
+						@if (!isLoading)
+						{
+							<RadzenButton Text="Search" class="mt-2 mb-3 px-4" Click="Navigate" />
+						}
+						else
+						{
+							<RadzenButton Text="Searching" class="mt-2 mb-3 px-4" Disabled="true" />
+						}
+					</RadzenContent>
+				}
 			</RadzenColumn>
 
+			@if (!PlaceSearchButtonBelowDate)
+			{
 			<RadzenColumn Size="12" SizeLG="2" class="d-flex align-items-end">
 				<RadzenContent>
 					@if (!isLoading)
@@ -111,6 +127,7 @@
 					}
 				</RadzenContent>
 			</RadzenColumn>
+			}
 		</RadzenRow>
 	</div>
 	@if (isValueEmpty)
@@ -145,6 +162,7 @@
 	[Parameter] public RenderFragment? ChildContent { get; set; }
 	[Parameter] public RenderFragment? OptionsTemplate { get; set; }
 	[Parameter] public RenderFragment<bool> ResultTemplate { get; set; }
+	[Parameter] public bool PlaceSearchButtonBelowDate { get; set; }
 
 	[Parameter, SupplyParameterFromQuery(Name = "c")] public string? Category { get; set; }
 

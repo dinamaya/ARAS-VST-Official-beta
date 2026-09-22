@@ -23,7 +23,7 @@
 <h2>Receipt Adjustment</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<SearchInvoiceDetails OnSelectInvoice="OnInvoiceSelected" OnReceiptSearchChanged="SetReceiptSearch" OnSearchGroupChanged="HandleSearchGroupChanged" UseRecordTypeSearch="true">
+	<SearchInvoiceDetails OnSelectInvoice="OnInvoiceSelected" OnReceiptSearchChanged="SetReceiptSearch" OnSearchGroupChanged="HandleSearchGroupChanged" UseRecordTypeSearch="true" PlaceSearchButtonBelowDate="true">
 		<ResultHeader>
 			@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
 			{

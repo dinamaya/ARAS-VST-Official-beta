@@ -17,6 +17,19 @@
 			<RadzenColumn Size="12" SizeXL="6" SizeXS="12">
 				<div class="mb-2 text-sm">Customer Name: <div class="text-dark font-weight-bold ms-2">@ReceiptDetails?.CustomerName</div></div>
 				<div class="mb-2 text-sm">Customer Number: <div class="text-dark ms-2 font-weight-bold letter-spacing-1">@ReceiptDetails?.CustomerNumber</div></div>
+				<div class="mb-2 text-sm">
+					Status:
+					<span class="ps-3">
+						@if (IsAdjustable)
+						{
+							<RadzenBadge Text="Adjustable" class="px-3 py-2 fw-bold" BadgeStyle="BadgeStyle.Success" />
+						}
+						else
+						{
+							<RadzenBadge Text="Non Adjustable" class="px-3 py-2 fw-bold" BadgeStyle="BadgeStyle.Secondary" />
+						}
+					</span>
+				</div>
 			</RadzenColumn>
 			<RadzenColumn Size="12" SizeXL="6" SizeXS="12">
 				<div class="mb-2 text-sm">Receipt Date: <div class="text-dark font-weight-bold ms-2">@(ReceiptDetails?.ReceiptDate?.ToString(Formats.Date.DISPLAY2) ?? "—")</div></div>
@@ -29,4 +42,6 @@
 
 @code {
 	[Parameter] public InvoiceDetailsDto ReceiptDetails { get; set; }
+
+	private bool IsAdjustable => (ReceiptDetails?.ReceiptBalance ?? ReceiptDetails?.InvoiceBalance ?? 0) > 0;
 }

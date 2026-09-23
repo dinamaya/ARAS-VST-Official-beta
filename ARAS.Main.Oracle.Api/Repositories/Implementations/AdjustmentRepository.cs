@@ -93,11 +93,75 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 			foreach(var item in rows)
 			{
+				if (string.Equals(item.AdjustmentActivity, "Bank Charge", StringComparison.OrdinalIgnoreCase))
+				{
+					await CreateFusionBankChargeActivityApplication(item);
+					continue;
+				}
+
 				if (item.CustomerTrxId is null)
 					throw new InvalidOperationException($"CustomerTrxId is required for Fusion adjustment posting. Invoice: {item.InvoiceNumber}");
 
 				await CreateFusionAdjustment(item);
 			}
+		}
+
+		private async Task CreateFusionBankChargeActivityApplication(AdjustmentPostingDto item)
+		{
+			using var request = new HttpRequestMessage(
+				HttpMethod.Post,
+				_config.GetFusionReceiptActivityEndpoint());
+			request.Headers.Authorization = CreateBasicAuthenticationHeader();
+			request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/xml"));
+			request.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("identity"));
+			request.Headers.TryAddWithoutValidation(
+				"SOAPAction",
+				$"\"{_config.GetFusionReceiptActivitySoapAction()}\"");
+			request.Content = new StringContent(
+				CreateFusionBankChargeActivityApplicationEnvelope(item),
+				Encoding.UTF8,
+				"text/xml");
+
+			var response = await _httpClient.SendAsync(request);
+			var content = await ReadResponseContent(response);
+
+			if (!response.IsSuccessStatusCode)
+			{
+				_logger.LogError(
+					"Fusion bank charge activity application failed. StatusCode: {StatusCode}. Response: {Response}",
+					response.StatusCode,
+					content);
+				throw new InvalidOperationException(
+					$"Fusion bank charge activity application failed. StatusCode: {(int)response.StatusCode}. Response: {content}");
+			}
+		}
+
+		private string CreateFusionBankChargeActivityApplicationEnvelope(AdjustmentPostingDto item)
+		{
+			var applyDate = item.DateApplied.ToString("yyyy-MM-dd");
+			var amount = Convert.ToDecimal(item.AdjustmentAmount)
+				.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+			var receivablesTrxId = _config.GetFusionAdjustmentReceivablesTrxId(item.AdjustmentActivity);
+			var paymentScheduleId = _config.GetFusionReceiptActivityPaymentScheduleId();
+
+			return $@"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/""
+ xmlns:typ=""http://xmlns.oracle.com/apps/financials/receivables/receipts/shared/standardReceiptService/commonService/types/""
+ xmlns:com=""http://xmlns.oracle.com/apps/financials/receivables/receipts/shared/standardReceiptService/commonService/"">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <typ:createActivityApplication>
+      <typ:activityApplication>
+        <com:BusinessUnit>{EscapeXml(_config.GetFusionReceiptActivityBusinessUnit())}</com:BusinessUnit>
+        <com:ReceiptNumber>{EscapeXml(item.InvoiceNumber)}</com:ReceiptNumber>
+        <com:ReceivablesTrxId>{receivablesTrxId}</com:ReceivablesTrxId>
+        <com:AppliedPaymentScheduleId>{paymentScheduleId}</com:AppliedPaymentScheduleId>
+        <com:AmountApplied>{amount}</com:AmountApplied>
+        <com:ApplyDate>{applyDate}</com:ApplyDate>
+        <com:ApplyGlDate>{applyDate}</com:ApplyGlDate>
+      </typ:activityApplication>
+    </typ:createActivityApplication>
+  </soapenv:Body>
+</soapenv:Envelope>";
 		}
 
 		private async Task CreateFusionAdjustment(AdjustmentPostingDto item)

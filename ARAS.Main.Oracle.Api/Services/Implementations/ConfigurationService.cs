@@ -11,6 +11,10 @@ namespace ARAS.Main.Oracle.Api.Services.Implementations
 		public string GetFusionAdjustmentUsername() => GetRequiredValue("OracleFusionAdjustmentService:Username");
 		public string GetFusionAdjustmentPassword() => GetRequiredValue("OracleFusionAdjustmentService:Password");
 		public string GetFusionAdjustmentSoapAction() => GetRequiredValue("OracleFusionAdjustmentService:SoapAction");
+		public string GetFusionReceiptActivityEndpoint() => GetRequiredValue("OracleFusionReceiptActivityService:Endpoint");
+		public string GetFusionReceiptActivitySoapAction() => GetRequiredValue("OracleFusionReceiptActivityService:SoapAction");
+		public string GetFusionReceiptActivityBusinessUnit() => GetRequiredValue("OracleFusionReceiptActivityService:BusinessUnit");
+		public long GetFusionReceiptActivityPaymentScheduleId() => GetRequiredLong("OracleFusionReceiptActivityService:AppliedPaymentScheduleId");
 		public long GetFusionAdjustmentOrgId() => GetRequiredLong("OracleFusionAdjustmentService:OrgId");
 		public long GetFusionAdjustmentSetOfBooksId() => GetRequiredLong("OracleFusionAdjustmentService:SetOfBooksId");
 		public long GetFusionAdjustmentCodeCombinationId(string activityName)

@@ -10,6 +10,10 @@ namespace ARAS.Main.Oracle.Api.Services.Interfaces
 		string GetFusionAdjustmentUsername();
 		string GetFusionAdjustmentPassword();
 		string GetFusionAdjustmentSoapAction();
+		string GetFusionReceiptActivityEndpoint();
+		string GetFusionReceiptActivitySoapAction();
+		string GetFusionReceiptActivityBusinessUnit();
+		long GetFusionReceiptActivityPaymentScheduleId();
 		long GetFusionAdjustmentOrgId();
 		long GetFusionAdjustmentSetOfBooksId();
 		long GetFusionAdjustmentCodeCombinationId(string activityName);

@@ -95,7 +95,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             var envelope = await response.Content.ReadFromJsonAsync<FusionReceiptApiEnvelope>(options)
                 ?? throw new InvalidOperationException(Exceptions.NULL_INVOICE_DETAILS);
 
-            return (envelope.ApiResponse ?? []).Select(r =>
+            var mapped = (envelope.ApiResponse ?? []).Select(r =>
             {
                 var invoiceNumber = r.InvoiceNumber
                     ?? r.InvoiceNumberUnderscore
@@ -120,7 +120,43 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                     ReceiptAmount = r.ReceiptAmount,
                     ReceiptBalance = r.ReceiptBalance
                 };
-            });
+            }).ToList();
+
+            await BackfillReceiptCustomerTrxIdsAsync(mapped);
+            return mapped;
+        }
+
+        private async Task BackfillReceiptCustomerTrxIdsAsync(IEnumerable<InvoiceDetailsDto> receipts)
+        {
+            foreach (var receipt in receipts.Where(r =>
+                r.CustomerTrxId is null && !string.IsNullOrWhiteSpace(r.InvoiceNumber)))
+            {
+                try
+                {
+                    var requestUri = $"/aras/api/invoice/details?trxNumber={Uri.EscapeDataString(receipt.InvoiceNumber.Trim())}";
+                    var response = await _fusionHttpClient.GetAsync(requestUri);
+                    if (!response.IsSuccessStatusCode)
+                        continue;
+
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    var envelope = await response.Content.ReadFromJsonAsync<FusionInvoiceApiEnvelope>(options);
+                    var invoice = envelope?.ApiResponse?.FirstOrDefault(i =>
+                        string.Equals(i.InvoiceNumber, receipt.InvoiceNumber, StringComparison.OrdinalIgnoreCase));
+
+                    if (invoice?.CustomerTrxId is long customerTrxId)
+                    {
+                        receipt.CustomerTrxId = customerTrxId;
+                        receipt.PaymentScheduleId ??= invoice.PaymentScheduleId;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Keep the search result available. Posting will provide the
+                    // explicit missing-transaction error if the fallback fails.
+                    System.Diagnostics.Debug.WriteLine(
+                        $"Receipt CustomerTrxId lookup failed for {receipt.InvoiceNumber}: {ex.Message}");
+                }
+            }
         }
 
         public async Task<IEnumerable<InvoiceDetailsDto>> GetReceiptsDetails(SearchRequestDto searchRequest)

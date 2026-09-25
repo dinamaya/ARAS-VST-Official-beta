@@ -7,14 +7,21 @@
 @inject DialogService DialogService
 @inherits ComponentBase
 
-<MainSearchBar OnSearch="HandleSearch" TextFields="textFields">
+<MainSearchBar OnSearch="HandleSearch"
+               TextFields="textFields"
+               SearchGroups="@SearchGroups">
 	<ResultTemplate Context="isLoading">
 		@if (ResultHeader is not null)
 		{
 			@ResultHeader
 		}
-		<SearchInvoiceDataTable ButtonSelectIcon="add" ButtonSelectText="Add to List" IsLoading="isLoading" InvoiceRows="results" Select="OnSelectChanged" />
+		<SearchInvoiceDataTable ButtonSelectIcon="add"
+								ButtonSelectText="Add to List"
+								IsLoading="isLoading"
+								InvoiceRows="results"
+								Select="OnSelectChanged" />
 	</ResultTemplate>
+
 	<OptionsTemplate>
 		<RadzenSelectBar class="mt-2" @bind-Value="selectedSource" TValue="string">
 			<Items>
@@ -29,14 +36,24 @@
 	[Parameter] public EventCallback<InvoiceDetailsDto> OnAPAdd { get; set; }
 	[Parameter] public EventCallback<InvoiceDetailsDto> OnARAdd { get; set; }
 	[Parameter] public RenderFragment? ResultHeader { get; set; }
-	private IEnumerable<InvoiceDetailsDto> results { get; set; }
 
-	private IEnumerable<string> textFields { get; set; }
-	private string selectedSource = "AP"; // Default to AP
+	private IEnumerable<InvoiceDetailsDto> results { get; set; } = [];
+	private IEnumerable<string> textFields { get; set; } = [];
+	private Dictionary<string, IEnumerable<string>> SearchGroups { get; set; } = [];
 
-	protected override async Task OnInitializedAsync()
+	private string selectedSource = "AP";
+
+	protected override Task OnInitializedAsync()
 	{
 		textFields = ConfigService.GetRequstorSearchInvoiceCategories();
+		var requestorSearchGroups = ConfigService.GetRequestorSearchGroups();
+
+		SearchGroups = new Dictionary<string, IEnumerable<string>>
+		{
+			["Invoice"] = requestorSearchGroups["Invoice"]
+		};
+
+		return Task.CompletedTask;
 	}
 
 	private async Task HandleSearch(SearchRequestDto request)
@@ -49,8 +66,12 @@
 	protected async Task OnSelectChanged(InvoiceDetailsDto invoiceDetails)
 	{
 		if (invoiceDetails.DataSource == "AR")
+		{
 			await OnARAdd.InvokeAsync(invoiceDetails);
+		}
 		else
+		{
 			await OnAPAdd.InvokeAsync(invoiceDetails);
+		}
 	}
 }

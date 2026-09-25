@@ -9,7 +9,9 @@
 
 <MainSearchBar OnSearch="HandleSearch"
                TextFields="textFields"
-               SearchGroups="@SearchGroups">
+               SearchGroups="@SearchGroups"
+               PlaceSearchButtonBelowDate="@PlaceSearchButtonBelowDate"
+               AlignSearchFields="@AlignSearchFields">
 	<ResultTemplate Context="isLoading">
 		@if (ResultHeader is not null)
 		{
@@ -36,6 +38,8 @@
 	[Parameter] public EventCallback<InvoiceDetailsDto> OnAPAdd { get; set; }
 	[Parameter] public EventCallback<InvoiceDetailsDto> OnARAdd { get; set; }
 	[Parameter] public RenderFragment? ResultHeader { get; set; }
+	[Parameter] public bool PlaceSearchButtonBelowDate { get; set; }
+	[Parameter] public bool AlignSearchFields { get; set; }
 
 	private IEnumerable<InvoiceDetailsDto> results { get; set; } = [];
 	private IEnumerable<string> textFields { get; set; } = [];

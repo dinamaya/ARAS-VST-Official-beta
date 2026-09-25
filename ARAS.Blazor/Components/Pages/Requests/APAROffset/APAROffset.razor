@@ -1,4 +1,4 @@
-﻿@page "/requests/invoice/apar-offset"
+@page "/requests/invoice/apar-offset"
 
 @using ARAS.Blazor.App_Code.Globals
 @using ARAS.Blazor.App_Code.Globals.Extensions
@@ -26,7 +26,10 @@
 <h2>AP AR : Offset</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
-	<SearchInvoiceAPARDetails OnAPAdd="AddAP" OnARAdd="AddAR">
+	<SearchInvoiceAPARDetails OnAPAdd="AddAP"
+                          OnARAdd="AddAR"
+                          PlaceSearchButtonBelowDate="true"
+                          AlignSearchFields="true">
 		<ResultHeader>
 			@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
 			{
@@ -392,7 +395,6 @@
 			StateHasChanged();
 		}
 	}
-
 	private void HandleSearchChanged(bool value)
 	{
 		isOnSearch = value;

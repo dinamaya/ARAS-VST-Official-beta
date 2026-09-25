@@ -251,7 +251,15 @@
 		if (IsSubmitting || isSubmitConfirmationOpen)
 			return;
 
-		if (!isReceiptSearch && selectedAdjustmentTypes.Any(type => string.Equals(type, "Bank Charges", StringComparison.OrdinalIgnoreCase)))
+		if (isReceiptSearch && HasSelectedAdjustmentType("Cash Discount"))
+		{
+			await DialogService.Alert(
+				"Cash Discount can only be applied to invoices. Please select an invoice.",
+				"Invalid Transaction Type");
+			return;
+		}
+
+		if (!isReceiptSearch && HasSelectedAdjustmentType("Bank Charges"))
 		{
 			await DialogService.Alert(
 				"Bank Charges can only be applied to receipts. Please select a receipt.",
@@ -316,4 +324,7 @@
 			StateHasChanged();
 		}
 	}
+
+	private bool HasSelectedAdjustmentType(string adjustmentType) =>
+		selectedAdjustmentTypes.Any(type => string.Equals(type, adjustmentType, StringComparison.OrdinalIgnoreCase));
 }

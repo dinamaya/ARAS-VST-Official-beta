@@ -29,7 +29,10 @@
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 	@if (isRequestUpdatable)
 	{
-		<SearchInvoiceAPARDetails OnAPAdd="AddAP" OnARAdd="AddAR" />
+		<SearchInvoiceAPARDetails OnAPAdd="AddAP"
+		                          OnARAdd="AddAR"
+		                          PlaceSearchButtonBelowDate="true"
+		                          AlignSearchFields="true" />
 	}
 
 	@code { [Parameter, SupplyParameterFromQuery(Name = "q")] public string? QueryAction { get; set; } }

@@ -251,6 +251,14 @@
 		if (IsSubmitting || isSubmitConfirmationOpen)
 			return;
 
+		if (!isReceiptSearch && selectedAdjustmentTypes.Any(type => string.Equals(type, "Bank Charges", StringComparison.OrdinalIgnoreCase)))
+		{
+			await DialogService.Alert(
+				"Bank Charges can only be applied to receipts. Please select a receipt.",
+				"Invalid Transaction Type");
+			return;
+		}
+
 		try
 		{
 			await base.OnSubmit();

@@ -58,9 +58,19 @@
 
 	private async Task HandleSearch(SearchRequestDto request)
 	{
+		var apiRequest = new SearchRequestDto
+		{
+			Category = request.Category == "Invoice Customer Name"
+				? "Customer Name"
+				: request.Category,
+			Value = request.Value,
+			StartDate = request.StartDate,
+			EndDate = request.EndDate
+		};
+
 		results = selectedSource == "AR"
-			? await InvoiceService.GetDetailsList(request)
-			: await InvoiceService.GetAPDetailsList(request);
+			? await InvoiceService.GetDetailsList(apiRequest)
+			: await InvoiceService.GetAPDetailsList(apiRequest);
 	}
 
 	protected async Task OnSelectChanged(InvoiceDetailsDto invoiceDetails)

@@ -271,13 +271,21 @@
 			</RadzenColumn>
 		</RadzenRow>
 
-		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-			<RadzenRow>
-				<RadzenColumn>
-					<RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Submit" class="btn-primary" Icon="send" Click="OnSubmit" />
-				</RadzenColumn>
-			</RadzenRow>
-		</RadzenStack>
+        @if (isRequestUpdatable)
+        {
+            <RadzenStack Orientation="Orientation.Horizontal"
+                         JustifyContent="JustifyContent.End">
+                <RadzenRow>
+                    <RadzenColumn>
+                        <RadzenButton ButtonStyle="ButtonStyle.Primary"
+                                      Text="Submit"
+                                      class="btn-primary"
+                                      Icon="send"
+                                      Click="OnSubmit" />
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenStack>
+        }
 	}
 </RadzenStack>
 
@@ -309,7 +317,7 @@
 	private double NetBalance => (APAdjustments?.Sum(a => a.InvoiceAmount) ?? 0) - (ARAdjustments?.Sum(a => a.Amount) ?? 0);
 
 	// track newly added rows so we can remove them on cancel if they remain empty
-	private HashSet<string> newlyAddedRowIds = new();
+	private HashSet<String> newlyAddedRowIds = new();
 
 	protected override async Task OnParametersSetAsync()
 	{

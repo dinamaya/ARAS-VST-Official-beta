@@ -100,11 +100,19 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 				}
 
 				if (item.CustomerTrxId is null)
-					throw new InvalidOperationException($"CustomerTrxId is required for Fusion adjustment posting. Invoice: {item.InvoiceNumber}");
+				{
+					string documentType = IsReceiptAdjustment(item.AdjustmentActivity) ? "Receipt" : "Invoice";
+					throw new InvalidOperationException($"CustomerTrxId is required for Fusion adjustment posting. {documentType}: {item.InvoiceNumber}");
+				}
 
 				await CreateFusionAdjustment(item);
 			}
 		}
+
+		private static bool IsReceiptAdjustment(string? adjustmentActivity) =>
+			string.Equals(adjustmentActivity, "Cash Discount", StringComparison.OrdinalIgnoreCase) ||
+			string.Equals(adjustmentActivity, "Bank Charge", StringComparison.OrdinalIgnoreCase) ||
+			string.Equals(adjustmentActivity, "Write-off Other Expense/Income", StringComparison.OrdinalIgnoreCase);
 
 		private async Task CreateFusionBankChargeActivityApplication(AdjustmentPostingDto item)
 		{

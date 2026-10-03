@@ -5,6 +5,7 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
         public long HeaderId { get; set; }
         public long AdjustmentId { get; set; } // Source adjustment id
         public string InvoiceNumber { get; set; }
+		public double InvoiceAmount { get; set; } // Original receipt amount
 		public double AdjustmentAmount { get; set; } // Amount
 		
 		//public string CreatedFrom { get; set; } Default to ADJUSTMENT API

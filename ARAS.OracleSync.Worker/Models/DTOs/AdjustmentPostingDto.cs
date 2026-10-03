@@ -5,6 +5,7 @@ namespace ARAS.OracleSync.Worker.Models.DTOs
         public long HeaderId { get; set; }
         public long AdjustmentId { get; set; }
 		public string InvoiceNumber { get; set; }
+		public double InvoiceAmount { get; set; }
 		public double AdjustmentAmount { get; set; }
 		public DateTime InvoiceDate { get; set; }
 		public int? PaymentScheduleId { get; set; } = null;

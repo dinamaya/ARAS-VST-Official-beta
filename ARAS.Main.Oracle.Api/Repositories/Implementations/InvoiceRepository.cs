@@ -37,7 +37,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             _fusionHttpClient = httpClientFactory.CreateClient("OracleFusionApi");
         }
 
-        private async Task<IEnumerable<InvoiceDetailsDto>> GetFusionApInvoiceDetailsAsync(string? invoiceNumber = null, string? customerName = null)
+        private async Task<IEnumerable<InvoiceDetailsDto>> GetFusionApInvoiceDetailsAsync(string? invoiceNumber = null, string? customerName = null, string? customerNumber = null)
         {
             var queryParams = new List<string>();
 
@@ -46,6 +46,8 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
             if (!string.IsNullOrWhiteSpace(customerName))
                 queryParams.Add($"customerName={Uri.EscapeDataString(customerName.Trim())}");
+            if (!string.IsNullOrWhiteSpace(customerNumber))
+                queryParams.Add($"customerNumber={Uri.EscapeDataString(customerNumber.Trim())}");
 
             var requestUri = "/aras/api/ap/invoice/details"
                 + (queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty);
@@ -79,13 +81,15 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             return mapped;
         }
 
-        private async Task<IEnumerable<InvoiceDetailsDto>> GetFusionReceiptDetailsAsync(string? receiptNumber = null, string? customerName = null)
+        private async Task<IEnumerable<InvoiceDetailsDto>> GetFusionReceiptDetailsAsync(string? receiptNumber = null, string? customerName = null, string? customerNumber = null)
         {
             var queryParams = new List<string>();
             if (!string.IsNullOrWhiteSpace(receiptNumber))
                 queryParams.Add($"receiptNumber={Uri.EscapeDataString(receiptNumber.Trim())}");
             if (!string.IsNullOrWhiteSpace(customerName))
                 queryParams.Add($"customerName={Uri.EscapeDataString(customerName.Trim())}");
+            if (!string.IsNullOrWhiteSpace(customerNumber))
+                queryParams.Add($"customerNumber={Uri.EscapeDataString(customerNumber.Trim())}");
 
             var requestUri = "/aras/api/receipt-details"
                 + (queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty);
@@ -163,12 +167,12 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
         {
             searchRequest.Category = searchRequest.Category?.Trim();
             searchRequest.Value = searchRequest.Value?.Trim();
-            if (searchRequest.Category != "Receipt Number" && searchRequest.Category != "Receipt Customer Name")
-                throw new ArgumentException("Invalid receipt search category. Use Receipt Number or Receipt Customer Name.");
+            if (searchRequest.Category != "Receipt Customer Name" && searchRequest.Category != "Receipt Customer Number")
+                throw new ArgumentException("Invalid receipt search category. Use Receipt Customer Name or Receipt Customer Number.");
 
             var rows = await GetFusionReceiptDetailsAsync(
-                searchRequest.Category == "Receipt Number" ? searchRequest.Value : null,
-                searchRequest.Category == "Receipt Customer Name" ? searchRequest.Value : null);
+                customerName: searchRequest.Category == "Receipt Customer Name" ? searchRequest.Value : null,
+                customerNumber: searchRequest.Category == "Receipt Customer Number" ? searchRequest.Value : null);
 
             var min = searchRequest.StartDate.ToDateTime(TimeOnly.MinValue);
             var max = searchRequest.EndDate.ToDateTime(TimeOnly.MaxValue);
@@ -204,10 +208,10 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                         InvoiceBalance = i % 5 == 0 ? 0 : i * 100
                     });
 
-                if (searchRequest.Category == "Customer Name")
+                if (searchRequest.Category == "Invoice Customer Name")
                     return list.Where(l => l.CustomerName == searchRequest.Value);
-                if (searchRequest.Category == "Invoice Number")
-                    return list.Where(l => l.InvoiceNumber == searchRequest.Value);
+                if (searchRequest.Category == "Invoice Customer Number")
+                    return list.Where(l => l.CustomerNumber == searchRequest.Value);
 
                 throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
             }
@@ -294,12 +298,12 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
                 throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
             }
-            if (searchRequest.Category != "Invoice Number" && searchRequest.Category != "Customer Name")
-                throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
+            if (searchRequest.Category != "Invoice Customer Name" && searchRequest.Category != "Invoice Customer Number")
+                throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Customer Name or Invoice Customer Number).");
 
             var fusionResult = await GetFusionApInvoiceDetailsAsync(
-                searchRequest.Category == "Invoice Number" ? searchRequest.Value : null,
-                searchRequest.Category == "Customer Name" ? searchRequest.Value : null
+                customerName: searchRequest.Category == "Invoice Customer Name" ? searchRequest.Value : null,
+                customerNumber: searchRequest.Category == "Invoice Customer Number" ? searchRequest.Value : null
             );
 
             return fusionResult

@@ -3,13 +3,13 @@
 @using ARAS.Blazor.Models.DTOs
 
 @inject IInvoiceService InvoiceService
-@inject IConfigService ConfigService
 @inject DialogService DialogService
 @inherits ComponentBase
 
-<MainSearchBar OnSearch="HandleSearch"
+<MainSearchBar @key="selectedSource"
+               OnSearch="HandleSearch"
                TextFields="textFields"
-               SearchGroups="@SearchGroups"
+               AlwaysShowValueInput="true"
                PlaceSearchButtonBelowDate="@PlaceSearchButtonBelowDate"
                AlignSearchFields="@AlignSearchFields">
 	<ResultTemplate Context="isLoading">
@@ -25,7 +25,7 @@
 	</ResultTemplate>
 
 	<OptionsTemplate>
-		<RadzenSelectBar class="mt-2" @bind-Value="selectedSource" TValue="string">
+		<RadzenSelectBar class="mt-2" @bind-Value="selectedSource" Change="OnSourceChanged" TValue="string">
 			<Items>
 				<RadzenSelectBarItem Text="AP" Value="@("AP")" />
 				<RadzenSelectBarItem Text="AR" Value="@("AR")" />
@@ -43,37 +43,40 @@
 
 	private IEnumerable<InvoiceDetailsDto> results { get; set; } = [];
 	private IEnumerable<string> textFields { get; set; } = [];
-	private Dictionary<string, IEnumerable<string>> SearchGroups { get; set; } = [];
 
 	private string selectedSource = "AP";
 
 	protected override Task OnInitializedAsync()
 	{
-		textFields = ConfigService.GetRequstorSearchInvoiceCategories();
-		var requestorSearchGroups = ConfigService.GetRequestorSearchGroups();
-
-		SearchGroups = new Dictionary<string, IEnumerable<string>>
-		{
-			["Invoice"] = requestorSearchGroups["Invoice"]
-		};
+		textFields = GetSearchFields();
 
 		return Task.CompletedTask;
+	}
+
+	private IEnumerable<string> GetSearchFields() => selectedSource == "AR"
+		? ["Receipt Customer Name", "Receipt Customer Number"]
+		: ["Invoice Customer Name", "Invoice Customer Number"];
+
+	private Task OnSourceChanged(object value)
+	{
+		selectedSource = value?.ToString() == "AR" ? "AR" : "AP";
+		textFields = GetSearchFields();
+		results = [];
+		return InvokeAsync(StateHasChanged);
 	}
 
 	private async Task HandleSearch(SearchRequestDto request)
 	{
 		var apiRequest = new SearchRequestDto
 		{
-			Category = request.Category == "Invoice Customer Name"
-				? "Customer Name"
-				: request.Category,
+			Category = request.Category,
 			Value = request.Value,
 			StartDate = request.StartDate,
 			EndDate = request.EndDate
 		};
 
 		results = selectedSource == "AR"
-			? await InvoiceService.GetDetailsList(apiRequest)
+			? await InvoiceService.GetReceiptDetailsList(apiRequest)
 			: await InvoiceService.GetAPDetailsList(apiRequest);
 	}
 

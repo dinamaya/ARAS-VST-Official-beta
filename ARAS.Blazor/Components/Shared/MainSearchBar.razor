@@ -44,7 +44,7 @@
 						</RadzenColumn>
 					}
 
-					@if (SearchGroups is not null || categories.First() != searchRequest.Category)
+					@if (SearchGroups is not null || AlwaysShowValueInput || categories.First() != searchRequest.Category)
 					{
 
 						<RadzenColumn Size="12" SizeLG="@(SearchGroups is null ? 6 : (AlignSearchFields ? 6 : 4))">
@@ -84,7 +84,7 @@
 					}
 				</RadzenRow>
 
-				@if (SearchGroups is not null || categories.First() != searchRequest.Category)
+				@if (SearchGroups is not null || AlwaysShowValueInput || categories.First() != searchRequest.Category)
 				{
 					<RadzenRow class="w-100 pb-3">
 						<RadzenColumn Size="12" SizeLG="6">
@@ -173,6 +173,7 @@
 	[Parameter] public RenderFragment<bool> ResultTemplate { get; set; }
 	[Parameter] public bool PlaceSearchButtonBelowDate { get; set; }
 	[Parameter] public bool AlignSearchFields { get; set; }
+	[Parameter] public bool AlwaysShowValueInput { get; set; }
 
 	[Parameter, SupplyParameterFromQuery(Name = "c")] public string? Category { get; set; }
 
@@ -233,6 +234,11 @@
 		string endDate = QueryService.GetValue("ed");
 
 		if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(category))
+			return;
+
+		// A source-specific search bar can be recreated when its field set changes.
+		// Do not replay a query for a category that is not valid for the active field set.
+		if (!categories.Contains(category, StringComparer.OrdinalIgnoreCase))
 			return;
 
 		if (Token == _lastToken)

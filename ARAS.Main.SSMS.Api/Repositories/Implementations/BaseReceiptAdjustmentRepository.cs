@@ -185,11 +185,12 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
         public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByRequestId(long requestId)
         {
-            return await _context.VwStagingRequestAdjustment
+            var rows = await _context.VwStagingRequestAdjustment
 				.Where(a => a.RequestId == requestId)
 				.Select(a => new AdjustmentPostingDto
 				{
                     HeaderId = StagingHeaderIdHelper.Generate(a.RequestId, a.AdjustmentId),
+                    AdjustmentId = a.AdjustmentId,
                     InvoiceNumber = a.InvoiceNumber,
 					CustomerTrxId = a.CustomerTrxId,
 					AdjustmentAmount = a.AdjustmentAmount,
@@ -202,11 +203,13 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					CustomerName = a.CustomerName,
 					CustomerNumber = a.CustomerNumber
 				}).ToListAsync();
+
+            return await RestoreInvoiceIdentifiersAsync(rows);
 		}
 
 		public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByRequestIds(IEnumerable<long> requestIds)
 		{
-			return await _context.VwStagingRequestAdjustment
+            var rows = await _context.VwStagingRequestAdjustment
 			   .Where(a => requestIds.Contains(a.RequestId))
 			   .Select(a => new AdjustmentPostingDto
 			   {
@@ -224,15 +227,18 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				   CustomerName = a.CustomerName,
 				   CustomerNumber = a.CustomerNumber
 			   }).ToListAsync();
+
+			return await RestoreInvoiceIdentifiersAsync(rows);
 		}
 
 		public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByAdjustmentId(long adjustmentId)
         {
-			return await _context.VwStagingRequestAdjustment
+            var rows = await _context.VwStagingRequestAdjustment
 				.Where(a => a.AdjustmentId == adjustmentId)
 				.Select(a => new AdjustmentPostingDto
 				{
                     HeaderId = StagingHeaderIdHelper.Generate(a.RequestId, a.AdjustmentId),
+                    AdjustmentId = a.AdjustmentId,
                     InvoiceNumber = a.InvoiceNumber,
 					CustomerTrxId = a.CustomerTrxId,
 					AdjustmentAmount = a.AdjustmentAmount,
@@ -245,6 +251,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					CustomerName = a.CustomerName,
 					CustomerNumber = a.CustomerNumber
 				}).ToListAsync();
+
+            return await RestoreInvoiceIdentifiersAsync(rows);
 		}
 
 		public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByAdjustmentId(IEnumerable<long> adjustmentIds)
@@ -285,11 +293,53 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                 })
                 .ToListAsync();
 
-            return rows.Where(x =>
+            rows = rows.Where(x =>
             {
                 var parsed = StagingHeaderIdHelper.Parse(x.HeaderId);
                 return keySet.Contains($"{parsed.RequestId}:{parsed.AdjustmentId}");
-            });
+            }).ToList();
+
+            return await RestoreInvoiceIdentifiersAsync(rows);
+        }
+
+        private async Task<List<AdjustmentPostingDto>> RestoreInvoiceIdentifiersAsync(List<AdjustmentPostingDto> rows)
+        {
+            var adjustmentIds = rows
+                .Where(row => row.CustomerTrxId is null || row.PaymentScheduleId is null || row.InvoiceAmount <= 0)
+                .Select(row => row.AdjustmentId)
+                .Distinct()
+                .ToList();
+
+            if (!adjustmentIds.Any())
+                return rows;
+
+            var invoiceIdentifiers = await _context.Adjustments
+                .Where(adjustment => adjustmentIds.Contains(adjustment.Id))
+                .Join(
+                    _context.Invoices,
+                    adjustment => adjustment.InvoiceId,
+                    invoice => invoice.Id,
+                    (adjustment, invoice) => new
+                    {
+                        AdjustmentId = adjustment.Id,
+                        invoice.CustomerTrxId,
+                        invoice.PaymentScheduleId,
+                        invoice.InvoiceAmount
+                    })
+                .ToDictionaryAsync(x => x.AdjustmentId);
+
+            foreach (var row in rows)
+            {
+                if (!invoiceIdentifiers.TryGetValue(row.AdjustmentId, out var identifiers))
+                    continue;
+
+                row.CustomerTrxId ??= identifiers.CustomerTrxId;
+                row.PaymentScheduleId ??= identifiers.PaymentScheduleId;
+                if (row.InvoiceAmount <= 0)
+                    row.InvoiceAmount = identifiers.InvoiceAmount;
+            }
+
+            return rows;
         }
     }
 }

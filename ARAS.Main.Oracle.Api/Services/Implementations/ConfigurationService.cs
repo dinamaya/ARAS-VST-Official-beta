@@ -13,6 +13,7 @@ namespace ARAS.Main.Oracle.Api.Services.Implementations
 		public string GetFusionAdjustmentSoapAction() => GetRequiredValue("OracleFusionAdjustmentService:SoapAction");
 		public string GetFusionReceiptActivityEndpoint() => GetRequiredValue("OracleFusionReceiptActivityService:Endpoint");
 		public string GetFusionReceiptActivitySoapAction() => GetRequiredValue("OracleFusionReceiptActivityService:SoapAction");
+		public string GetFusionReceiptApplySoapAction() => GetRequiredValue("OracleFusionReceiptActivityService:ApplySoapAction");
 		public string GetFusionReceiptActivityBusinessUnit() => GetRequiredValue("OracleFusionReceiptActivityService:BusinessUnit");
 		public long GetFusionReceiptActivityPaymentScheduleId() => GetRequiredLong("OracleFusionReceiptActivityService:AppliedPaymentScheduleId");
 		public long GetFusionAdjustmentOrgId() => GetRequiredLong("OracleFusionAdjustmentService:OrgId");
@@ -68,5 +69,6 @@ namespace ARAS.Main.Oracle.Api.Services.Implementations
 
 			throw new InvalidOperationException($"Invalid numeric configuration value: {key}");
 		}
+
 	}
 }

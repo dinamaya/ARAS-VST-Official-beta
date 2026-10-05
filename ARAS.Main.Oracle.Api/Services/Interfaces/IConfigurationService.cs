@@ -12,6 +12,7 @@ namespace ARAS.Main.Oracle.Api.Services.Interfaces
 		string GetFusionAdjustmentSoapAction();
 		string GetFusionReceiptActivityEndpoint();
 		string GetFusionReceiptActivitySoapAction();
+		string GetFusionReceiptApplySoapAction();
 		string GetFusionReceiptActivityBusinessUnit();
 		long GetFusionReceiptActivityPaymentScheduleId();
 		long GetFusionAdjustmentOrgId();

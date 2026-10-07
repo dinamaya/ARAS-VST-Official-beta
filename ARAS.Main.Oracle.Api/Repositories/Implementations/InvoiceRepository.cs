@@ -80,7 +80,6 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
             return mapped;
         }
-
         private async Task<IEnumerable<InvoiceDetailsDto>> GetFusionReceiptDetailsAsync(string? receiptNumber = null, string? customerName = null, string? customerNumber = null)
         {
             var queryParams = new List<string>();
@@ -122,7 +121,9 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                     ReceiptNumber = r.ReceiptNumber,
                     ReceiptDate = r.ReceiptDate,
                     ReceiptAmount = r.ReceiptAmount,
-                    ReceiptBalance = r.ReceiptBalance
+                    ReceiptBalance = r.ReceiptBalance,
+                    CurrencyCode = r.CurrencyCode,
+                    GlAccountingDate = r.GlAccountingDate
                 };
             }).ToList();
 
@@ -165,18 +166,28 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
         public async Task<IEnumerable<InvoiceDetailsDto>> GetReceiptsDetails(SearchRequestDto searchRequest)
         {
-            searchRequest.Category = searchRequest.Category?.Trim();
-            searchRequest.Value = searchRequest.Value?.Trim();
-            if (searchRequest.Category != "Receipt Customer Name" && searchRequest.Category != "Receipt Customer Number")
-                throw new ArgumentException("Invalid receipt search category. Use Receipt Customer Name or Receipt Customer Number.");
+            var category = searchRequest.Category?.Trim();
+            var value = searchRequest.Value?.Trim();
+
+            if (category is not "Receipt Number"
+                and not "Receipt Customer Name"
+                and not "Receipt Customer Number")
+            {
+                throw new ArgumentException(
+                    "Invalid receipt search category. Use Receipt Number, Receipt Customer Name, or Receipt Customer Number.");
+            }
 
             var rows = await GetFusionReceiptDetailsAsync(
-                customerName: searchRequest.Category == "Receipt Customer Name" ? searchRequest.Value : null,
-                customerNumber: searchRequest.Category == "Receipt Customer Number" ? searchRequest.Value : null);
+                receiptNumber: category == "Receipt Number" ? value : null,
+                customerName: category == "Receipt Customer Name" ? value : null,
+                customerNumber: category == "Receipt Customer Number" ? value : null);
 
             var min = searchRequest.StartDate.ToDateTime(TimeOnly.MinValue);
             var max = searchRequest.EndDate.ToDateTime(TimeOnly.MaxValue);
-            return rows.Where(r => !r.ReceiptDate.HasValue || (min <= r.ReceiptDate.Value && r.ReceiptDate.Value <= max));
+
+            return rows.Where(r =>
+                !r.ReceiptDate.HasValue ||
+                (min <= r.ReceiptDate.Value && r.ReceiptDate.Value <= max));
         }
 
         // =========================================================================
@@ -262,7 +273,6 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                 .Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max)
                 .DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
         }
-
         // =========================================================================
         // GetAPInvoiceDetails — AP Fusion lookup for invoice-number searches.
         // Customer-name searches remain on the legacy Oracle path until Fusion
@@ -310,7 +320,6 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                 .Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max)
                 .DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
         }
-
         // =========================================================================
         // GetAPInvoiceNo — ORACLE EBS (Not yet migrated to Oracle Fusion)
         // Pending: Oracle Fusion AP invoice by number endpoint from Admin.
@@ -371,7 +380,6 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             var envelope = await response.Content.ReadFromJsonAsync<AdjustmentReferenceDataResponse>(jsonOptions);
             return envelope?.Data?.FirstOrDefault()?.PaymentScheduleId;
         }
-
         // =========================================================================
         // GetSRAutoNetCNDetails — ORACLE EBS (Not yet migrated to Oracle Fusion)
         // Pending: Oracle Fusion Credit Note endpoint from Admin.
@@ -391,7 +399,6 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             // Oracle/EBS path from throwing connection errors while the feature is disabled.
             return [];
         }
-
         // =========================================================================
         // GetOneInvoiceDetails — ORACLE EBS (Not yet migrated to Oracle Fusion)
         // Pending: Oracle Fusion single-invoice lookup endpoint from Admin.

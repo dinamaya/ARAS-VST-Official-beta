@@ -169,12 +169,15 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             var category = searchRequest.Category?.Trim();
             var value = searchRequest.Value?.Trim();
 
+            // Preserve compatibility with previously generated AP/AR Offset URLs.
+            if (category == "Receipt Customer Number")
+                category = "Receipt Number";
+
             if (category is not "Receipt Number"
-                and not "Receipt Customer Name"
-                and not "Receipt Customer Number")
+                and not "Receipt Customer Name")
             {
                 throw new ArgumentException(
-                    "Invalid receipt search category. Use Receipt Number, Receipt Customer Name, or Receipt Customer Number.");
+                    "Invalid receipt search category. Use Receipt Number or Receipt Customer Name.");
             }
 
             var rows = await GetFusionReceiptDetailsAsync(
@@ -187,7 +190,15 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
             return rows.Where(r =>
                 !r.ReceiptDate.HasValue ||
-                (min <= r.ReceiptDate.Value && r.ReceiptDate.Value <= max));
+                (min <= r.ReceiptDate.Value && r.ReceiptDate.Value <= max))
+                .Where(r => category == "Receipt Number"
+                    ? !string.IsNullOrWhiteSpace(r.ReceiptNumber)
+                        && string.Equals(r.ReceiptNumber.Trim(), value, StringComparison.OrdinalIgnoreCase)
+                    : category == "Receipt Customer Name"
+                        ? !string.IsNullOrWhiteSpace(r.CustomerName)
+                            && r.CustomerName.Contains(value ?? string.Empty, StringComparison.OrdinalIgnoreCase)
+                        : !string.IsNullOrWhiteSpace(r.CustomerNumber)
+                            && string.Equals(r.CustomerNumber.Trim(), value, StringComparison.OrdinalIgnoreCase));
         }
 
         // =========================================================================
@@ -321,6 +332,10 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             searchRequest.Category = searchRequest.Category.Trim();
             searchRequest.Value = searchRequest.Value.Trim();
 
+            // Preserve compatibility with previously generated AP/AR Offset URLs.
+            if (searchRequest.Category == "Invoice Customer Number")
+                searchRequest.Category = "Invoice Number";
+
             DateTime min = searchRequest.StartDate.ToDateTime(TimeOnly.MinValue);
             DateTime max = searchRequest.EndDate.ToDateTime(TimeOnly.MaxValue);
 
@@ -341,19 +356,18 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
                 if (searchRequest.Category is "Invoice Customer Name" or "Customer Name")
                     return list.Where(l => l.CustomerName.Contains(searchRequest.Value, StringComparison.OrdinalIgnoreCase));
-                if (searchRequest.Category == "Invoice Customer Number")
-                    return list.Where(l => string.Equals(l.CustomerNumber, searchRequest.Value, StringComparison.OrdinalIgnoreCase));
                 if (searchRequest.Category == "Invoice Number")
-                    return list.Where(l => l.InvoiceNumber == searchRequest.Value);
+                    return list.Where(l => string.Equals(l.InvoiceNumber, searchRequest.Value, StringComparison.OrdinalIgnoreCase));
 
                 throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Number or Customer Name).");
             }
-            if (searchRequest.Category != "Invoice Customer Name" && searchRequest.Category != "Invoice Customer Number")
-                throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Customer Name or Invoice Customer Number).");
+            if (searchRequest.Category != "Invoice Customer Name" && searchRequest.Category != "Invoice Number")
+                throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Customer Name or Invoice Number).");
 
             var fusionResult = await GetFusionApInvoiceDetailsAsync(
+                invoiceNumber: searchRequest.Category == "Invoice Number" ? searchRequest.Value : null,
                 customerName: searchRequest.Category == "Invoice Customer Name" ? searchRequest.Value : null,
-                customerNumber: searchRequest.Category == "Invoice Customer Number" ? searchRequest.Value : null
+                customerNumber: null
             );
 
             return fusionResult
@@ -361,8 +375,8 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                 .Where(r => searchRequest.Category == "Invoice Customer Name"
                     ? !string.IsNullOrWhiteSpace(r.CustomerName)
                         && r.CustomerName.Contains(searchRequest.Value, StringComparison.OrdinalIgnoreCase)
-                    : !string.IsNullOrWhiteSpace(r.CustomerNumber)
-                        && string.Equals(r.CustomerNumber.Trim(), searchRequest.Value, StringComparison.OrdinalIgnoreCase))
+                    : !string.IsNullOrWhiteSpace(r.InvoiceNumber)
+                        && string.Equals(r.InvoiceNumber.Trim(), searchRequest.Value, StringComparison.OrdinalIgnoreCase))
                 .DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
         }
         // =========================================================================

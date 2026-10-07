@@ -21,6 +21,7 @@
 								ButtonSelectText="Add to List"
 								IsLoading="isLoading"
 								InvoiceRows="results"
+								ShowReceiptColumns="@(selectedSource == "AR")"
 								Select="OnSelectChanged" />
 	</ResultTemplate>
 
@@ -54,8 +55,8 @@
 	}
 
 	private IEnumerable<string> GetSearchFields() => selectedSource == "AR"
-		? ["Receipt Customer Name", "Receipt Customer Number"]
-		: ["Invoice Customer Name", "Invoice Customer Number"];
+		? ["Receipt Customer Name", "Receipt Number"]
+		: ["Invoice Customer Name", "Invoice Number"];
 
 	private Task OnSourceChanged(object value)
 	{
@@ -67,9 +68,13 @@
 
 	private async Task HandleSearch(SearchRequestDto request)
 	{
+		var category = request.Category == "Invoice Customer Number"
+			? "Invoice Number"
+			: request.Category;
+
 		var apiRequest = new SearchRequestDto
 		{
-			Category = request.Category,
+			Category = category,
 			Value = request.Value,
 			StartDate = request.StartDate,
 			EndDate = request.EndDate

@@ -339,8 +339,10 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                         InvoiceBalance = i % 5 == 0 ? 0 : i * 100
                     });
 
-                if (searchRequest.Category == "Customer Name")
-                    return list.Where(l => l.CustomerName == searchRequest.Value);
+                if (searchRequest.Category is "Invoice Customer Name" or "Customer Name")
+                    return list.Where(l => l.CustomerName.Contains(searchRequest.Value, StringComparison.OrdinalIgnoreCase));
+                if (searchRequest.Category == "Invoice Customer Number")
+                    return list.Where(l => string.Equals(l.CustomerNumber, searchRequest.Value, StringComparison.OrdinalIgnoreCase));
                 if (searchRequest.Category == "Invoice Number")
                     return list.Where(l => l.InvoiceNumber == searchRequest.Value);
 
@@ -356,6 +358,11 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
             return fusionResult
                 .Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max)
+                .Where(r => searchRequest.Category == "Invoice Customer Name"
+                    ? !string.IsNullOrWhiteSpace(r.CustomerName)
+                        && r.CustomerName.Contains(searchRequest.Value, StringComparison.OrdinalIgnoreCase)
+                    : !string.IsNullOrWhiteSpace(r.CustomerNumber)
+                        && string.Equals(r.CustomerNumber.Trim(), searchRequest.Value, StringComparison.OrdinalIgnoreCase))
                 .DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
         }
         // =========================================================================

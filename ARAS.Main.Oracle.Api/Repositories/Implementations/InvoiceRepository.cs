@@ -68,7 +68,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                 InvoiceNumber = f.InvoiceNumber,
                 InvoiceAmount = f.InvoiceAmount ?? 0,
                 InvoiceDate = f.InvoiceDate,
-                CustomerName = f.CustomerName,
+                CustomerName = f.CustomerName ?? f.CustomerNameLegacy,
                 CustomerNumber = f.CustomerNumber,
                 DataSource = f.DataSource ?? "AP",
                 InvoiceBalance = f.InvoiceBalance ?? 0,
@@ -219,7 +219,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                         InvoiceBalance = i % 5 == 0 ? 0 : i * 100
                     });
 
-                if (searchRequest.Category == "Invoice Customer Name")
+                if (searchRequest.Category is "Invoice Customer Name" or "Customer Name")
                     return list.Where(l => l.CustomerName == searchRequest.Value);
                 if (searchRequest.Category == "Invoice Customer Number")
                     return list.Where(l => l.CustomerNumber == searchRequest.Value);
@@ -232,8 +232,10 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             // Query params: trxNumber (Invoice Number), customerName (Customer Name)
             // Headers: client-id, x-api-key (configured in Program.cs)
             // -----------------------------------------------------------------
-            var trxNumber   = searchRequest.Category == "Invoice Number" ? searchRequest.Value : null;
-            var customerName = searchRequest.Category == "Customer Name"  ? searchRequest.Value : null;
+            var trxNumber = searchRequest.Category == "Invoice Number" ? searchRequest.Value : null;
+            var customerName = searchRequest.Category is "Invoice Customer Name" or "Customer Name"
+                ? searchRequest.Value
+                : null;
 
             var queryParams = new List<string>();
             if (!string.IsNullOrEmpty(trxNumber))
@@ -262,12 +264,48 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                 InvoiceAmount = f.InvoiceAmount ?? 0,
                 InvoiceBalance = f.InvoiceBalance ?? 0,
                 InvoiceDate = f.InvoiceDate,
-                CustomerName = f.CustomerName,
+                CustomerName = f.CustomerName ?? f.CustomerNameLegacy,
                 CustomerNumber = f.CustomerNumber,
                 DataSource = f.DataSource ?? "AR",
                 CustomerTrxId = f.CustomerTrxId,
                 PaymentScheduleId = f.PaymentScheduleId
             }).ToList();
+
+            // The generic invoice endpoint currently returns blank customer names
+            // and does not apply the customer-name filter. Enrich those rows from
+            // the AP invoice endpoint, which contains CUSTOMERNAME, while keeping
+            // the generic endpoint's balance and amount values for this screen.
+            if (searchRequest.Category is "Invoice Number" or "Invoice Customer Name" or "Invoice Customer Number")
+            {
+                var apRows = await GetFusionApInvoiceDetailsAsync(
+                    invoiceNumber: searchRequest.Category == "Invoice Number" ? searchRequest.Value : null,
+                    customerName: searchRequest.Category == "Invoice Customer Name" ? searchRequest.Value : null,
+                    customerNumber: searchRequest.Category == "Invoice Customer Number" ? searchRequest.Value : null);
+
+                var apByInvoiceNumber = apRows
+                    .Where(r => !string.IsNullOrWhiteSpace(r.InvoiceNumber))
+                    .GroupBy(r => r.InvoiceNumber, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+                mapped = mapped
+                    .Where(r => apByInvoiceNumber.ContainsKey(r.InvoiceNumber))
+                    .Select(r =>
+                    {
+                        var ap = apByInvoiceNumber[r.InvoiceNumber];
+                        r.CustomerName = ap.CustomerName;
+                        r.CustomerNumber = ap.CustomerNumber;
+                        return r;
+                    })
+                    .Where(r => searchRequest.Category == "Invoice Number"
+                        ? !string.IsNullOrWhiteSpace(r.InvoiceNumber)
+                            && r.InvoiceNumber.Contains(searchRequest.Value, StringComparison.OrdinalIgnoreCase)
+                        : searchRequest.Category == "Invoice Customer Name"
+                            ? !string.IsNullOrWhiteSpace(r.CustomerName)
+                                && r.CustomerName.Contains(searchRequest.Value, StringComparison.OrdinalIgnoreCase)
+                            : !string.IsNullOrWhiteSpace(r.CustomerNumber)
+                                && r.CustomerNumber.Contains(searchRequest.Value, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
 
             return mapped
                 .Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max)

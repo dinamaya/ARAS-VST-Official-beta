@@ -39,6 +39,10 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
         [JsonPropertyName("CUSTOMERNAME")]
         public string CustomerName { get; set; }
 
+        // Some generic invoice-detail responses use the legacy CUSTNAME key.
+        [JsonPropertyName("CUSTNAME")]
+        public string CustomerNameLegacy { get; set; }
+
         [JsonPropertyName("CUSTOMERNUMBER")]
         public string CustomerNumber { get; set; }
 
@@ -80,5 +84,7 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
         [JsonPropertyName("DATASOURCE")] public string DataSource { get; set; }
         [JsonPropertyName("CUSTOMERTRXID")] public long? CustomerTrxId { get; set; }
         [JsonPropertyName("PAYMENTSCHEDULEID")] public long? PaymentScheduleId { get; set; }
+        [JsonPropertyName("CURRENCYCODE")] public string? CurrencyCode { get; set; }
+        [JsonPropertyName("GLACCOUNTINGDATE")] public DateTime? GlAccountingDate { get; set; }
     }
 }

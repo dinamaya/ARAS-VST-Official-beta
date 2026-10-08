@@ -6,6 +6,9 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
         public long AdjustmentId { get; set; }
 		public string InvoiceNumber { get; set; }
 		public double AdjustmentAmount { get; set; }
+		public double InvoiceAmount { get; set; }
+		public string? CurrencyCode { get; set; }
+		public DateTime? GlAccountingDate { get; set; }
 		public DateTime InvoiceDate { get; set; }
 		public long? PaymentScheduleId { get; set; } = null;
 		public DateTime DateApplied { get; set; }

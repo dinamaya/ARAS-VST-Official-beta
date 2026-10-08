@@ -596,7 +596,10 @@
 			bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"APPROVE\" this request?", "Approve Request") ?? false;
 			if (!isConfirmed) return;
 
-			await RequestService.Approve(RequestId, Notes, null);
+			var stagingDetails = await RequestService.IsFinalApprover()
+				? await RequestService.GetInvoiceStagingDataByRequestId([RequestId])
+				: null;
+			await RequestService.Approve(RequestId, Notes, stagingDetails);
 			RefreshPage();
 		}
 		catch (Exception ex)

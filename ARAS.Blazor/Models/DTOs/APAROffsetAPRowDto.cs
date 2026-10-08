@@ -10,6 +10,8 @@
         public DateTime InvoiceDate { get; set; }
         public long? CustomerTrxId { get; set; }
         public long? PaymentScheduleId { get; set; }
+        public string? CurrencyCode { get; set; }
+        public DateTime? GlAccountingDate { get; set; }
 
         public APAROffsetAPRowDto() { }
 
@@ -23,6 +25,8 @@
             CustomerNumber = details.CustomerNumber;
             CustomerTrxId = details.CustomerTrxId;
             PaymentScheduleId = details.PaymentScheduleId;
+            CurrencyCode = details.CurrencyCode;
+            GlAccountingDate = details.GlAccountingDate;
         }
     }
 }

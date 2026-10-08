@@ -243,7 +243,10 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			{
 				var stagingRows = new List<AdjustmentPostingDto>();
 				foreach (var requestId in requestIds.Distinct())
+				{
+					stagingRows.AddRange(await _aparOffsetRepo.GetStagingData(requestId));
 					stagingRows.AddRange(await _arOffsetRepo.GetStagingData(requestId));
+				}
 
 				response.Result = stagingRows;
 				return response;

@@ -80,25 +80,31 @@ namespace ARAS.Blazor.Services.Implementations
 			{
 				InvoiceNumber = r.InvoiceNumber,
 				Amount = r.InvoiceAmount,
+				InvoiceAmount = r.InvoiceAmount,
 				Type = "AP",
 				InvoiceDate = r.InvoiceDate,
 				CustomerName = r.CustomerName,
 				CustomerNumber = r.CustomerNumber,
 				CustomerTrxId = r.CustomerTrxId,
-				PaymentScheduleId = r.PaymentScheduleId
+				PaymentScheduleId = r.PaymentScheduleId,
+				CurrencyCode = r.CurrencyCode,
+				GlAccountingDate = r.GlAccountingDate
 			});
 
 			var arRequests = arRows.Select(r => new APAROffsetCreateDto()
 			{
 				InvoiceNumber = r.InvoiceNumber,
 				Amount = r.Amount,
+				InvoiceAmount = r.InvoiceAmount,
 				Type = "AR",
 				ReasonCode = r.AdjustmentReason,
 				InvoiceDate = DateTime.Now,
 				CustomerName = r.CustomerName,
 				CustomerNumber = r.CustomerNumber,
 				CustomerTrxId = r.CustomerTrxId,
-				PaymentScheduleId = r.PaymentScheduleId
+				PaymentScheduleId = r.PaymentScheduleId,
+				CurrencyCode = r.CurrencyCode,
+				GlAccountingDate = r.GlAccountingDate
 			});
 
 			return apRequests.Concat(arRequests).ToList();

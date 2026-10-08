@@ -12,19 +12,25 @@
 		public double Amount { get; set; } = 0.00d;
 		public long? CustomerTrxId { get; set; }
 		public long? PaymentScheduleId { get; set; }
+		public string? CurrencyCode { get; set; }
+		public DateTime? GlAccountingDate { get; set; }
 
 		public APAROffsetARRowDto() { }
 
 		public APAROffsetARRowDto(InvoiceDetailsDto details)
 		{
 			Id = details.Id;
-			Amount = details.InvoiceBalance;
-			InvoiceNumber = details.InvoiceNumber;
-			InvoiceAmount = details.InvoiceAmount;
+			Amount = details.ReceiptBalance ?? details.InvoiceBalance;
+			InvoiceNumber = details.ReceiptNumber ?? details.InvoiceNumber;
+			// For AR, the remaining receipt balance is the amount used to determine
+			// whether the Fusion adjustment is LINE or INVOICE.
+			InvoiceAmount = details.ReceiptBalance ?? details.ReceiptAmount ?? details.InvoiceAmount;
 			CustomerName = details.CustomerName;
 			CustomerNumber = details.CustomerNumber;
 			CustomerTrxId = details.CustomerTrxId;
 			PaymentScheduleId = details.PaymentScheduleId;
+			CurrencyCode = details.CurrencyCode;
+			GlAccountingDate = details.GlAccountingDate;
 		}
 	}
 

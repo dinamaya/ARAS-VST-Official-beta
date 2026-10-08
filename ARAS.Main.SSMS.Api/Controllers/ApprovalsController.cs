@@ -103,7 +103,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		{
 			"CNC Approver" => "Request has been successfully approved and moved to FSG validation",
 			"FSG Validator" => "Request has been successfully validated and moved to FSG approval",
-			"FSG Approver" => "Request has been successfully approved and moved to ERP posting",
+			"FSG Approver" => "Request has been successfully approved and posted to Fusion",
 			_ => "Request has been successfully processed"
 		};
     }

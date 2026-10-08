@@ -46,6 +46,9 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
         [JsonPropertyName("CUSTOMERNUMBER")]
         public string CustomerNumber { get; set; }
 
+        [JsonPropertyName("CUSTOMERCODE")]
+        public string CustomerCode { get; set; }
+
         [JsonPropertyName("DATASOURCE")]
         public string DataSource { get; set; }
 

@@ -297,9 +297,9 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                 .DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
         }
         // =========================================================================
-        // GetAPInvoiceDetails — AP Fusion lookup for invoice-number searches.
-        // Customer-name searches remain on the legacy Oracle path until Fusion
-        // exposes an equivalent contract.
+        // GetAPInvoiceDetails — AP tab lookup using the generic DEV invoice API.
+        // The generic endpoint owns the invoiceNumber/customerName contract and
+        // avoids joining against a separate AP result set.
         // =========================================================================
         public async Task<IEnumerable<InvoiceDetailsDto>> GetAPInvoiceDetails(SearchRequestDto searchRequest)
         {
@@ -309,9 +309,6 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             // Preserve compatibility with previously generated AP/AR Offset URLs.
             if (searchRequest.Category == "Invoice Customer Number")
                 searchRequest.Category = "Invoice Number";
-
-            DateTime min = searchRequest.StartDate.ToDateTime(TimeOnly.MinValue);
-            DateTime max = searchRequest.EndDate.ToDateTime(TimeOnly.MaxValue);
 
             if (_config.IsOntest())
             {
@@ -338,20 +335,14 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             if (searchRequest.Category != "Invoice Customer Name" && searchRequest.Category != "Invoice Number")
                 throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Customer Name or Invoice Number).");
 
-            var fusionResult = await GetFusionApInvoiceDetailsAsync(
-                invoiceNumber: searchRequest.Category == "Invoice Number" ? searchRequest.Value : null,
-                customerName: searchRequest.Category == "Invoice Customer Name" ? searchRequest.Value : null,
-                customerNumber: null
-            );
+            var results = await GetInvoiceDetails(searchRequest);
 
-            return fusionResult
-                .Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max)
-                .Where(r => searchRequest.Category == "Invoice Customer Name"
-                    ? !string.IsNullOrWhiteSpace(r.CustomerName)
-                        && r.CustomerName.Contains(searchRequest.Value, StringComparison.OrdinalIgnoreCase)
-                    : !string.IsNullOrWhiteSpace(r.InvoiceNumber)
-                        && string.Equals(r.InvoiceNumber.Trim(), searchRequest.Value, StringComparison.OrdinalIgnoreCase))
-                .DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
+            // This method is used by the AP tab, so keep the source explicit even
+            // if the gateway omits or varies DATASOURCE in its response.
+            foreach (var result in results)
+                result.DataSource = "AP";
+
+            return results;
         }
         // =========================================================================
         // GetAPInvoiceNo — ORACLE EBS (Not yet migrated to Oracle Fusion)

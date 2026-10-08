@@ -7,6 +7,8 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
         public string InvoiceNumber { get; set; }
 		public double InvoiceAmount { get; set; } // Original receipt amount
 		public double AdjustmentAmount { get; set; } // Amount
+		public string? CurrencyCode { get; set; }
+		public DateTime? GlAccountingDate { get; set; }
 		
 		//public string CreatedFrom { get; set; } Default to ADJUSTMENT API
 

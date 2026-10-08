@@ -12,10 +12,12 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 		public string CustomerName { get; set; }
 		public long? CustomerTrxId { get; set; }
 		public long? PaymentScheduleId { get; set; }
+		public string? CurrencyCode { get; set; }
+		public DateTime? GlAccountingDate { get; set; }
 
 		public InvoiceCreateDto() { }
 
-		public InvoiceCreateDto(string invoiceNumber, double invoiceAmount, DateTime invoiceDate, string customerNumber, string customerName, long? customerTrxId = null, long? paymentScheduleId = null)
+		public InvoiceCreateDto(string invoiceNumber, double invoiceAmount, DateTime invoiceDate, string customerNumber, string customerName, long? customerTrxId = null, long? paymentScheduleId = null, string? currencyCode = null, DateTime? glAccountingDate = null)
 		{
 			InvoiceNumber = invoiceNumber;
 			InvoiceAmount = invoiceAmount;
@@ -24,6 +26,8 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 			CustomerName = customerName;
 			CustomerTrxId = customerTrxId;
 			PaymentScheduleId = paymentScheduleId;
+			CurrencyCode = currencyCode;
+			GlAccountingDate = glAccountingDate;
 		}
 
 

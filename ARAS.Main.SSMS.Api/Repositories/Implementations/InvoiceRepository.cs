@@ -28,6 +28,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                 CustomerNumber = data.CustomerNumber,
                 CustomerTrxId = data.CustomerTrxId,
                 PaymentScheduleId = data.PaymentScheduleId,
+                CurrencyCode = data.CurrencyCode,
+                GlAccountingDate = data.GlAccountingDate,
 
                 DateCreated = date,
                 DateModified = date,
@@ -59,6 +61,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					CustomerNumber = _data.CustomerNumber,
 					CustomerTrxId = _data.CustomerTrxId,
 					PaymentScheduleId = _data.PaymentScheduleId,
+					CurrencyCode = _data.CurrencyCode,
+					GlAccountingDate = _data.GlAccountingDate,
 
 					DateCreated = date,
 					DateModified = date,

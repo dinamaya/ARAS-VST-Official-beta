@@ -50,7 +50,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					if (!string.IsNullOrEmpty(_data.ReasonCode))
 						reasons.Add(new ReasonAdjustmentCreateDto(requestId, _data.ReasonCode, _data.Amount, _data.CustomerNumber, _data.CustomerName));
 					else
-						invoices.Add(new InvoiceCreateDto(_data.InvoiceNumber, _data.Amount, invoiceDate: DateTime.Now, _data.CustomerNumber, _data.CustomerName));
+						invoices.Add(new InvoiceCreateDto(_data.InvoiceNumber, _data.InvoiceAmount, invoiceDate: DateTime.Now, _data.CustomerNumber, _data.CustomerName, _data.CustomerTrxId, _data.PaymentScheduleId, _data.CurrencyCode, _data.GlAccountingDate));
 				}
 
 				invoiceIds = await _invoiceRepo.CreateAsync(invoices, createdBy);
@@ -142,7 +142,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					if (!string.IsNullOrEmpty(_data.ReasonCode))
 						reasons.Add(new ReasonAdjustmentCreateDto(requestId, _data.ReasonCode, _data.Amount, _data.CustomerNumber, _data.CustomerName));
 					else
-						invoices.Add(new InvoiceCreateDto(_data.InvoiceNumber, _data.Amount, invoiceDate: DateTime.Now, _data.CustomerNumber, _data.CustomerName));
+						invoices.Add(new InvoiceCreateDto(_data.InvoiceNumber, _data.InvoiceAmount, invoiceDate: DateTime.Now, _data.CustomerNumber, _data.CustomerName, _data.CustomerTrxId, _data.PaymentScheduleId, _data.CurrencyCode, _data.GlAccountingDate));
 				}
 
 				// Creates new invoices and apar offsets
@@ -230,6 +230,33 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					 })
 					.ToListAsync()
 			};
+		}
+
+		public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingData(long requestId)
+		{
+			return await (
+				from apar in _context.APAROffsets.AsNoTracking()
+				join invoice in _context.Invoices.AsNoTracking() on apar.InvoiceId equals invoice.Id
+				where apar.RequestId == requestId && apar.IsActive && invoice.IsActive
+				select new AdjustmentPostingDto
+				{
+					HeaderId = apar.Id,
+					AdjustmentId = apar.Id,
+					InvoiceNumber = invoice.InvoiceNumber,
+					CustomerTrxId = invoice.CustomerTrxId,
+					InvoiceAmount = invoice.InvoiceAmount,
+					AdjustmentAmount = apar.Amount,
+					InvoiceDate = invoice.InvoiceDate,
+					PaymentScheduleId = invoice.PaymentScheduleId,
+					CurrencyCode = invoice.CurrencyCode,
+					GlAccountingDate = invoice.GlAccountingDate,
+					DateApplied = DateTime.Now,
+					AdjustmentActivity = "AP/AR Adjustment",
+					ReasonCode = apar.ReasonCode ?? string.Empty,
+					Remarks = string.Empty,
+					CustomerName = invoice.CustomerName,
+					CustomerNumber = invoice.CustomerNumber
+				}).ToListAsync();
 		}
 	}
 }

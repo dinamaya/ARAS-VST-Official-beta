@@ -170,14 +170,18 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				where ar.RequestId == requestId && ar.IsActive && invoice.IsActive
 				select new AdjustmentPostingDto
 				{
+					HeaderId = ar.Id,
 					AdjustmentId = ar.Id,
 					InvoiceNumber = invoice.InvoiceNumber,
 					CustomerTrxId = invoice.CustomerTrxId,
+					InvoiceAmount = invoice.InvoiceAmount,
 					AdjustmentAmount = ar.Amount,
 					InvoiceDate = invoice.InvoiceDate,
 					PaymentScheduleId = invoice.PaymentScheduleId,
+					CurrencyCode = invoice.CurrencyCode,
+					GlAccountingDate = invoice.GlAccountingDate,
 					DateApplied = DateTime.Now,
-					AdjustmentActivity = "AR Invoice Offsetting",
+					AdjustmentActivity = "AP/AR Adjustment",
 					ReasonCode = string.Empty,
 					Remarks = string.Empty,
 					CustomerName = invoice.CustomerName,

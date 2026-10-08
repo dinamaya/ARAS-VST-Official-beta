@@ -6,5 +6,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 	{
 		Task<long> Update(long requestId, RequestCreationDto<IEnumerable<APAROffsetCreateDto>> data, string modifiedBy);
 		Task<APAROffsetRowDto> GetAPAdjustmentsByRequestId(long requestId);
+		Task<IEnumerable<AdjustmentPostingDto>> GetStagingData(long requestId);
 	}
 }

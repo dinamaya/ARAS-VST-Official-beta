@@ -16,6 +16,8 @@ namespace ARAS.Main.SSMS.Api.Models.Entities
 
 		public long? CustomerTrxId { get; set; }
 		public long? PaymentScheduleId { get; set; }
+		public string? CurrencyCode { get; set; }
+		public DateTime? GlAccountingDate { get; set; }
 
 		public string CreatedBy { get; set; }
 		public DateTime DateCreated { get; set; }

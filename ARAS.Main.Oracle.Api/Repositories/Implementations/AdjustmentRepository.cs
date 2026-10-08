@@ -106,12 +106,47 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 				}
 
 				if (item.CustomerTrxId is null)
+					await BackfillCustomerTrxIdAsync(item);
+
+				if (item.CustomerTrxId is null)
 				{
 					string documentType = IsReceiptAdjustment(item.AdjustmentActivity) ? "Receipt" : "Invoice";
 					throw new InvalidOperationException($"CustomerTrxId is required for Fusion adjustment posting. {documentType}: {item.InvoiceNumber}");
 				}
 
 				await CreateFusionAdjustment(item);
+			}
+		}
+
+		private async Task BackfillCustomerTrxIdAsync(AdjustmentPostingDto item)
+		{
+			if (string.IsNullOrWhiteSpace(item.InvoiceNumber))
+				return;
+
+			try
+			{
+				var requestUri = $"/aras/api/invoice/details?invoiceNumber={Uri.EscapeDataString(item.InvoiceNumber.Trim())}";
+				using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
+				var response = await _fusionApiClient.SendAsync(request);
+				if (!response.IsSuccessStatusCode)
+					return;
+
+				var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+				var envelope = await response.Content.ReadFromJsonAsync<FusionInvoiceApiEnvelope>(options);
+				var invoice = envelope?.ApiResponse?.FirstOrDefault(i =>
+					string.Equals(i.InvoiceNumber, item.InvoiceNumber, StringComparison.OrdinalIgnoreCase));
+
+				if (invoice is null)
+					return;
+
+				item.CustomerTrxId = invoice.CustomerTrxId ?? invoice.InvoiceId;
+				item.PaymentScheduleId ??= invoice.PaymentScheduleId;
+				item.CurrencyCode ??= invoice.CurrencyCode;
+				item.GlAccountingDate ??= invoice.GlAccountingDate;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogWarning(ex, "CustomerTrxId lookup failed for invoice {InvoiceNumber}", item.InvoiceNumber);
 			}
 		}
 
@@ -301,8 +336,12 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 		private async Task<string> CreateFusionAdjustmentEnvelope(AdjustmentPostingDto item)
 		{
 			var applyDate = item.DateApplied.ToString("yyyy-MM-dd");
-			var glDate = item.DateApplied.ToString("yyyy-MM-dd");
-			var amount = Convert.ToDecimal(item.AdjustmentAmount).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+			var glDate = (item.GlAccountingDate ?? item.InvoiceDate).ToString("yyyy-MM-dd");
+			var adjustmentAmount = decimal.Round(Convert.ToDecimal(item.AdjustmentAmount), 2, MidpointRounding.AwayFromZero);
+			var invoiceAmount = decimal.Round(Convert.ToDecimal(item.InvoiceAmount), 2, MidpointRounding.AwayFromZero);
+			var amount = adjustmentAmount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+			var currencyCode = EscapeXml(string.IsNullOrWhiteSpace(item.CurrencyCode) ? "USD" : item.CurrencyCode.Trim().ToUpperInvariant());
+			var transactionAdjustmentType = adjustmentAmount >= invoiceAmount ? "INVOICE" : "LINE";
 			var receivablesTrxId = _config.GetFusionAdjustmentReceivablesTrxId(item.AdjustmentActivity);
 			var referenceData = await GetAdjustmentReferenceData(item.CustomerTrxId!.Value);
 			var paymentScheduleId = item.PaymentScheduleId ?? referenceData?.PaymentScheduleId;
@@ -318,11 +357,11 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
       <typ:adjustment>
         <rec:CustomerTrxId>{item.CustomerTrxId}</rec:CustomerTrxId>
         {CreateOptionalPaymentScheduleId(paymentScheduleId)}
-        <rec:Amount>{amount}</rec:Amount>
+        <rec:Amount currencyCode=""{currencyCode}"">{amount}</rec:Amount>
         <rec:ApplyDate>{applyDate}</rec:ApplyDate>
         <rec:GlDate>{glDate}</rec:GlDate>
         <rec:ReasonCode>{EscapeXml(item.ReasonCode)}</rec:ReasonCode>
-        <rec:TransactionAdjustmentType>LINE</rec:TransactionAdjustmentType>
+        <rec:TransactionAdjustmentType>{transactionAdjustmentType}</rec:TransactionAdjustmentType>
         <rec:ReceivablesTrxId>{receivablesTrxId}</rec:ReceivablesTrxId>
         <rec:CodeCombinationId>{_config.GetFusionAdjustmentCodeCombinationId(item.AdjustmentActivity)}</rec:CodeCombinationId>
         <rec:SetOfBooksId>{setOfBooksId}</rec:SetOfBooksId>

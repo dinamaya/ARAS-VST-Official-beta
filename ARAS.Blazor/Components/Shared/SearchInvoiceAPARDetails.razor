@@ -21,7 +21,7 @@
 								ButtonSelectText="Add to List"
 								IsLoading="isLoading"
 								InvoiceRows="results"
-								ShowReceiptColumns="@(selectedSource == "AR")"
+								ShowReceiptColumns="false"
 								Select="OnSelectChanged" />
 	</ResultTemplate>
 
@@ -55,7 +55,7 @@
 	}
 
 	private IEnumerable<string> GetSearchFields() => selectedSource == "AR"
-		? ["Receipt Customer Name", "Receipt Number"]
+		? ["Invoice Customer Name", "Invoice Number"]
 		: ["Invoice Customer Name", "Invoice Number"];
 
 	private Task OnSourceChanged(object value)
@@ -81,13 +81,16 @@
 		};
 
 		results = selectedSource == "AR"
-			? await InvoiceService.GetReceiptDetailsList(apiRequest)
+			? await InvoiceService.GetDetailsList(apiRequest)
 			: await InvoiceService.GetAPDetailsList(apiRequest);
+
+		foreach (var result in results)
+			result.DataSource = selectedSource;
 	}
 
 	protected async Task OnSelectChanged(InvoiceDetailsDto invoiceDetails)
 	{
-		if (invoiceDetails.DataSource == "AR")
+		if (selectedSource == "AR")
 		{
 			await OnARAdd.InvokeAsync(invoiceDetails);
 		}

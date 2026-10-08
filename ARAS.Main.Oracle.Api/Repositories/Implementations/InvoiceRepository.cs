@@ -64,7 +64,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
             var mapped = fusionResult.Select(f => new InvoiceDetailsDto
             {
-                Id = f.InvoiceNumber,
+                Id = f.InvoiceNumber ?? f.InvoiceId?.ToString(),
                 InvoiceNumber = f.InvoiceNumber,
                 InvoiceAmount = f.InvoiceAmount ?? 0,
                 InvoiceDate = f.InvoiceDate,
@@ -72,8 +72,10 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                 CustomerNumber = f.CustomerNumber ?? f.CustomerCode,
                 DataSource = f.DataSource ?? "AP",
                 InvoiceBalance = f.InvoiceBalance ?? 0,
-                CustomerTrxId = f.CustomerTrxId,
-                PaymentScheduleId = f.PaymentScheduleId
+                CustomerTrxId = f.CustomerTrxId ?? f.InvoiceId,
+                PaymentScheduleId = f.PaymentScheduleId,
+                CurrencyCode = f.CurrencyCode,
+                GlAccountingDate = f.GlAccountingDate
             }).ToList();
 
             await BackfillPaymentScheduleIdsAsync(mapped);
@@ -270,16 +272,18 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
             var mapped = fusionResult.Select(f => new InvoiceDetailsDto
             {
-                Id = f.InvoiceNumber,
+                Id = f.InvoiceNumber ?? f.InvoiceId?.ToString(),
                 InvoiceNumber = f.InvoiceNumber,
                 InvoiceAmount = f.InvoiceAmount ?? 0,
                 InvoiceBalance = f.InvoiceBalance ?? 0,
                 InvoiceDate = f.InvoiceDate,
                 CustomerName = f.CustomerName ?? f.CustomerNameLegacy,
-                CustomerNumber = f.CustomerNumber,
+                CustomerNumber = f.CustomerNumber ?? f.CustomerCode,
                 DataSource = f.DataSource ?? "AR",
-                CustomerTrxId = f.CustomerTrxId,
-                PaymentScheduleId = f.PaymentScheduleId
+                CustomerTrxId = f.CustomerTrxId ?? f.InvoiceId,
+                PaymentScheduleId = f.PaymentScheduleId,
+                CurrencyCode = f.CurrencyCode,
+                GlAccountingDate = f.GlAccountingDate
             }).ToList();
 
             return mapped

@@ -27,6 +27,9 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
         [JsonPropertyName("INVOICEAMOUNT")]
         public double? InvoiceAmount { get; set; }
 
+        [JsonPropertyName("INVOICEID")]
+        public long? InvoiceId { get; set; }
+
         [JsonPropertyName("INVOICEBALANCE")]
         public double? InvoiceBalance { get; set; }
 
@@ -60,6 +63,12 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
 
         [JsonPropertyName("PAYMENTSCHEDULEID")]
         public long? PaymentScheduleId { get; set; }
+
+        [JsonPropertyName("CURRENCYCODE")]
+        public string? CurrencyCode { get; set; }
+
+        [JsonPropertyName("GLACCOUNTINGDATE")]
+        public DateTime? GlAccountingDate { get; set; }
     }
 
     public class FusionReceiptApiEnvelope

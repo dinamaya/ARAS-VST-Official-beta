@@ -26,19 +26,17 @@
 <h2>AP AR : Offset</h2>
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
+	@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
+	{
+		<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
+			Invoice Adjustment created successfully
+		</RadzenAlert>
+	}
+
 	<SearchInvoiceAPARDetails OnAPAdd="AddAP"
                           OnARAdd="AddAR"
                           PlaceSearchButtonBelowDate="true"
-                          AlignSearchFields="true">
-		<ResultHeader>
-			@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
-			{
-				<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
-					Invoice Adjustment created successfully
-				</RadzenAlert>
-			}
-		</ResultHeader>
-	</SearchInvoiceAPARDetails>
+                          AlignSearchFields="true" />
 	@code { [Parameter, SupplyParameterFromQuery(Name = "q")] public string? QueryAction { get; set; } }
 	<RadzenRow id="apar-offset-groups" Gap="1.5rem">
 		<RadzenColumn Size="5">
@@ -353,13 +351,15 @@
 	{
 		await APAROffsetService.Create(APAdjustments, ARAdjustments, Notes);
 
-		var uri = NavigationManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
+		// Keep only the success flag so the search component does not replay the
+		// previous query and repopulate results after a successful submission.
+		var uri = $"{NavigationManager.Uri.Split('?')[0]}?q={Uri.EscapeDataString(Queries.Success.CREATE)}";
 		NavigationManager.NavigateTo(uri, true);
 	}
 
 	protected async Task AddAR(InvoiceDetailsDto data){
 		var result = await DialogService.OpenAsync<AddAPAROffsettingAR>(
-            "Confirm AR Invoice Number",
+			"Confirm AR Invoice Number",
             new Dictionary<string, object>()
             {
 				{ "APRows", APAdjustments },

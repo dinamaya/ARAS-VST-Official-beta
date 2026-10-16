@@ -95,6 +95,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			{
 				if (string.Equals(item.AdjustmentActivity, "Bank Charge", StringComparison.OrdinalIgnoreCase))
 				{
+					await BackfillReceiptGlAccountingDateAsync(item);
 					await CreateFusionReceiptActivityApplication(item);
 					continue;
 				}
@@ -150,25 +151,88 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			}
 		}
 
+		private async Task<FusionReceiptDetailsResponse?> TryGetReceiptDetailsAsync(string? receiptNumber)
+		{
+			if (string.IsNullOrWhiteSpace(receiptNumber))
+				return null;
+
+			try
+			{
+				var normalizedReceiptNumber = receiptNumber.Trim();
+				var requestUri = $"/aras/api/receipt-details?receiptNumber={Uri.EscapeDataString(normalizedReceiptNumber)}";
+				using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
+				var response = await _fusionApiClient.SendAsync(request);
+
+				if (!response.IsSuccessStatusCode)
+					return null;
+
+				var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+				var envelope = await response.Content.ReadFromJsonAsync<FusionReceiptApiEnvelope>(options);
+
+				return envelope?.ApiResponse?.FirstOrDefault(r =>
+					string.Equals(r.ReceiptNumber, normalizedReceiptNumber, StringComparison.OrdinalIgnoreCase));
+			}
+			catch (Exception ex)
+			{
+				_logger.LogWarning(ex, "Receipt details lookup failed for receipt {ReceiptNumber}", receiptNumber);
+				return null;
+			}
+		}
+
+		private async Task BackfillReceiptGlAccountingDateAsync(AdjustmentPostingDto item)
+		{
+			var receipt = await TryGetReceiptDetailsAsync(item.InvoiceNumber);
+			if (receipt is not null)
+				item.GlAccountingDate = receipt.CreationDate ?? receipt.GlAccountingDate ?? item.GlAccountingDate;
+		}
+
 		private async Task CreateFusionSmallAmountWriteOff(AdjustmentPostingDto item)
 		{
 			var receiptAmount = decimal.Round(Convert.ToDecimal(item.InvoiceAmount), 2, MidpointRounding.AwayFromZero);
 			var writeOffAmount = decimal.Round(Convert.ToDecimal(item.AdjustmentAmount), 2, MidpointRounding.AwayFromZero);
-			var applicationAmount = decimal.Round(receiptAmount - writeOffAmount, 2, MidpointRounding.AwayFromZero);
 
-			if (receiptAmount <= 0)
-				throw new InvalidOperationException($"The original receipt amount is missing or invalid ({receiptAmount:0.00}).");
 			if (writeOffAmount <= 0)
 				throw new InvalidOperationException($"The write-off amount must be greater than zero ({writeOffAmount:0.00}).");
-			if (writeOffAmount >= receiptAmount || applicationAmount <= 0)
-				throw new InvalidOperationException($"The write-off amount ({writeOffAmount:0.00}) must be less than the receipt amount ({receiptAmount:0.00}).");
-			if (item.CustomerTrxId is null)
-				throw new InvalidOperationException($"CustomerTrxId is required for receipt write-off. Invoice: {item.InvoiceNumber}");
-			if (item.PaymentScheduleId is null)
-				throw new InvalidOperationException($"PaymentScheduleId is required for receipt write-off. Invoice: {item.InvoiceNumber}");
 
-			await CreateFusionReceiptApplication(item, applicationAmount);
-			await CreateFusionReceiptActivityApplication(item, writeOffAmount, "Write-off Small Amount");
+			// Source detection:
+			// - Receipt/GetReceiptDetails => use 2 calls and receipt activity name
+			// - Invoice/GetInvoiceDetails => use 1 call and invoice activity name
+			var receiptDetails = await TryGetReceiptDetailsAsync(item.InvoiceNumber);
+			var isReceiptSource = receiptDetails is not null;
+
+			if (isReceiptSource)
+			{
+				item.GlAccountingDate ??= receiptDetails!.CreationDate ?? receiptDetails.GlAccountingDate;
+
+				var applicationAmount = decimal.Round(receiptAmount - writeOffAmount, 2, MidpointRounding.AwayFromZero);
+
+				if (receiptAmount <= 0)
+					throw new InvalidOperationException($"The original receipt amount is missing or invalid ({receiptAmount:0.00}).");
+				if (writeOffAmount >= receiptAmount || applicationAmount <= 0)
+					throw new InvalidOperationException($"The write-off amount ({writeOffAmount:0.00}) must be less than the receipt amount ({receiptAmount:0.00}).");
+				if (item.CustomerTrxId is null)
+					throw new InvalidOperationException($"CustomerTrxId is required for receipt write-off. Invoice: {item.InvoiceNumber}");
+				if (item.PaymentScheduleId is null)
+					throw new InvalidOperationException($"PaymentScheduleId is required for receipt write-off. Invoice: {item.InvoiceNumber}");
+
+				// Receipt source: first call
+				await CreateFusionReceiptApplication(item, applicationAmount);
+			}
+			else
+			{
+				_logger.LogInformation(
+					"SAR posting for {InvoiceNumber} detected as Invoice source. Skipping createApplyReceipt and using invoice-specific receivables activity.",
+					item.InvoiceNumber);
+			}
+
+			// Receipt source -> Write-off Small Amount
+			// Invoice source -> Write-Off Small Amount - INV
+			var sarActivityName = isReceiptSource
+				? "Write-off Small Amount"
+				: "Write-Off Small Amount - INV";
+
+			// Always call activity application
+			await CreateFusionReceiptActivityApplication(item, writeOffAmount, sarActivityName);
 		}
 
 		private async Task CreateFusionReceiptApplication(AdjustmentPostingDto item, decimal amount)
@@ -232,7 +296,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 				"SOAPAction",
 				$"\"{_config.GetFusionReceiptActivitySoapAction()}\"");
 			request.Content = new StringContent(
-				CreateFusionBankChargeActivityApplicationEnvelope(item, appliedAmount ?? Convert.ToDecimal(item.AdjustmentAmount), activityName),
+				CreateFusionReceiptActivityApplicationEnvelope(item, appliedAmount ?? Convert.ToDecimal(item.AdjustmentAmount), activityName),
 				Encoding.UTF8,
 				"text/xml");
 
@@ -242,22 +306,26 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			if (!response.IsSuccessStatusCode)
 			{
 				_logger.LogError(
-					"Fusion bank charge activity application failed. StatusCode: {StatusCode}. Response: {Response}",
+					"Fusion receipt activity application failed. StatusCode: {StatusCode}. Response: {Response}",
 					response.StatusCode,
 					content);
 				throw new InvalidOperationException(
-					$"Fusion bank charge activity application failed. StatusCode: {(int)response.StatusCode}. Response: {content}");
+					$"Fusion receipt activity application failed. StatusCode: {(int)response.StatusCode}. Response: {content}");
 			}
 		}
 
-		private string CreateFusionBankChargeActivityApplicationEnvelope(AdjustmentPostingDto item, decimal appliedAmount, string? activityName)
+		private string CreateFusionReceiptActivityApplicationEnvelope(AdjustmentPostingDto item, decimal appliedAmount, string? activityName)
 		{
 			var applyDate = item.DateApplied.ToString("yyyy-MM-dd");
-			var applyGlDate = item.InvoiceDate.ToString("yyyy-MM-dd");
+			var applyGlDate = (item.GlAccountingDate ?? item.InvoiceDate).ToString("yyyy-MM-dd");
+			_logger.LogInformation(
+				"Posting Fusion receipt activity for receipt {ReceiptNumber} with ApplyDate {ApplyDate} and ApplyGlDate {ApplyGlDate}",
+				item.InvoiceNumber,
+				applyDate,
+				applyGlDate);
 			var amount = appliedAmount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
 			var receivablesTrxId = _config.GetFusionAdjustmentReceivablesTrxId(activityName ?? item.AdjustmentActivity);
 			var appliedPaymentScheduleId = _config.GetFusionReceiptActivityPaymentScheduleId();
-			var valWriteoffLimits = amount;
 
 			return $@"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/""
  xmlns:typ=""http://xmlns.oracle.com/apps/financials/receivables/receipts/shared/standardReceiptService/commonService/types/""
@@ -273,7 +341,6 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
         <com:AmountApplied>{amount}</com:AmountApplied>
         <com:ApplyDate>{applyDate}</com:ApplyDate>
         <com:ApplyGlDate>{applyGlDate}</com:ApplyGlDate>
-        <com:ValWriteoffLimits>{valWriteoffLimits}</com:ValWriteoffLimits>
       </typ:activityApplication>
     </typ:createActivityApplication>
   </soapenv:Body>

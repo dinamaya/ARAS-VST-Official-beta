@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);
+ var builder = WebApplication.CreateBuilder(args);
 string mainDbConnection = builder.Configuration.GetConnectionString("MainDbContext") ?? throw new Exception("Main Oracle Database Context not found");
 
 builder.Services.AddAuthentication(options =>
@@ -47,7 +47,7 @@ builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<IAdjustmentRepository, AdjustmentRepository>();
 
 // -------------------------------------------------------------------------
-// Oracle Fusion Integration Hub — Named HttpClient
+// Oracle Fusion Integration Hub â€” Named HttpClient
 // Replaces Oracle EBS direct database access for AR invoice lookups.
 // Configuration source: appsettings.json > OracleFusionApi
 // -------------------------------------------------------------------------

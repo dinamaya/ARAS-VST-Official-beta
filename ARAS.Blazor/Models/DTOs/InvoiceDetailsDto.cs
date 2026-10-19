@@ -18,5 +18,7 @@ namespace ARAS.Blazor.Models.DTOs
 		public DateTime? ReceiptDate { get; set; }
 		public double? ReceiptAmount { get; set; }
 		public double? ReceiptBalance { get; set; }
+		public double? OriginalInvoiceBalance { get; set; }
+		public double? OriginalReceiptBalance { get; set; }
 	}
 }

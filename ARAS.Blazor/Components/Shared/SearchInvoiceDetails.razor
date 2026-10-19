@@ -1,4 +1,4 @@
-﻿@using ARAS.Blazor.Components.Shared
+@using ARAS.Blazor.Components.Shared
 @using ARAS.Blazor.Components.Shared.DataTables
 @using ARAS.Blazor.Models.DTOs
 
@@ -55,6 +55,8 @@
 
 	protected async Task OnSelectChanged(InvoiceDetailsDto invoiceDetails)
 	{
+		invoiceDetails.OriginalInvoiceBalance ??= invoiceDetails.InvoiceBalance;
+		invoiceDetails.OriginalReceiptBalance ??= invoiceDetails.ReceiptBalance;
 		await OnSelectInvoice.InvokeAsync(invoiceDetails);
 	}
 }

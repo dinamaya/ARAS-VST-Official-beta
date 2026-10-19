@@ -1,4 +1,4 @@
-﻿namespace ARAS.Blazor.Models.DTOs
+namespace ARAS.Blazor.Models.DTOs
 {
     public class InvoiceDetailsRequestDto
     {
@@ -8,5 +8,6 @@
 		public DateOnly InvoiceDate { get; set; }
 		public string CustomerName { get; set; }
 		public string CustomerNumber { get; set; }
+        public string SourceType { get; set; } = "Receipt";
     }
 }

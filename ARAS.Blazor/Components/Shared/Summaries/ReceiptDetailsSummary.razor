@@ -34,7 +34,7 @@
 			<RadzenColumn Size="12" SizeXL="6" SizeXS="12">
 				<div class="mb-2 text-sm">Receipt Date: <div class="text-dark font-weight-bold ms-2">@(ReceiptDetails?.ReceiptDate?.ToString(Formats.Date.DISPLAY2) ?? "—")</div></div>
 				<div class="mb-2 text-sm">Receipt Amount: <div class="text-dark font-weight-bold ms-2">@((ReceiptDetails?.ReceiptAmount ?? 0).ToPhp())</div></div>
-				<div class="mb-2 text-sm">Receipt Balance: <div class="text-dark font-weight-bold ms-2">@((ReceiptDetails?.ReceiptBalance ?? 0).ToPhp())</div></div>
+				<div class="mb-2 text-sm">Receipt Balance: <div class="text-dark font-weight-bold ms-2">@((ReceiptDetails?.OriginalReceiptBalance ?? ReceiptDetails?.ReceiptBalance ?? 0).ToPhp())</div></div>
 			</RadzenColumn>
 		</RadzenRow>
 	</RadzenColumn>
@@ -43,5 +43,5 @@
 @code {
 	[Parameter] public InvoiceDetailsDto ReceiptDetails { get; set; }
 
-	private bool IsAdjustable => (ReceiptDetails?.ReceiptBalance ?? ReceiptDetails?.InvoiceBalance ?? 0) > 0;
+	private bool IsAdjustable => (ReceiptDetails?.OriginalReceiptBalance ?? ReceiptDetails?.ReceiptBalance ?? ReceiptDetails?.OriginalInvoiceBalance ?? ReceiptDetails?.InvoiceBalance ?? 0) > 0;
 }

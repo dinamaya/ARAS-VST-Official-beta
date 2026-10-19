@@ -1,4 +1,4 @@
-﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Models.DTOs
 <RadzenRow class="p-3" Gap="1em">
 	<RadzenColumn Size="12">
@@ -24,7 +24,7 @@
 				<div class="mb-2 text-sm">
 					Status:
 					<span class="ps-3">
-						@if (InvoiceDetails.InvoiceBalance <= 0)
+						@if ((InvoiceDetails.OriginalInvoiceBalance ?? InvoiceDetails.InvoiceBalance) <= 0)
 						{
 							<RadzenBadge Text="Non Adjustable" class="px-3 py-2 fw-bold" BadgeStyle="BadgeStyle.Secondary" />
 						}
@@ -38,7 +38,7 @@
 			<RadzenColumn Size="12" SizeXL="6" SizeXS="12">
 				<div class="mb-2 text-sm">Invoice Date: <div class="text-dark font-weight-bold ms-2">@InvoiceDetails.InvoiceDate.ToString(Formats.Date.DISPLAY2)</div></div>
 				<div class="mb-2 text-sm">Invoice Amount: <div class="text-dark font-weight-bold ms-2">@InvoiceDetails.InvoiceAmount.ToPhp()</div></div>
-				<div class="mb-2 text-sm">Invoice Balance: <div class="text-dark font-weight-bold ms-2">@InvoiceDetails.InvoiceBalance.ToPhp()</div></div>
+				<div class="mb-2 text-sm">Invoice Balance: <div class="text-dark font-weight-bold ms-2">@((InvoiceDetails.OriginalInvoiceBalance ?? InvoiceDetails.InvoiceBalance).ToPhp())</div></div>
 			</RadzenColumn>
 		</RadzenRow>
 	</RadzenColumn>

@@ -217,7 +217,7 @@
             {
                 Guards.ThrowInvalidOperationIf(string.IsNullOrEmpty(adj.Value.Remarks), $"Cannot apply adjustment(s) because there is no remarks on {adj.Key} adjustment field.");
                 Guards.ThrowInvalidOperationIf(adj.Value.Amount <= 0, "Cannot apply adjustment(s) because the adjustment amount is less than or equals to 0");
-                requests.Add(new BaseReceiptAdjustmentCreateDto(adj.Key, SearchedInvoice, adj.Value));
+                requests.Add(new BaseReceiptAdjustmentCreateDto(adj.Key, SearchedInvoice, adj.Value, "Invoice"));
             }
 
             await RequestService.Create(requests, Notes);

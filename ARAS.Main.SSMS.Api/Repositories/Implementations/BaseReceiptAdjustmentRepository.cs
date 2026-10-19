@@ -59,7 +59,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					adjustmentTypeIds.Add(adjustmentType);
 				}
 
-				requestIds = await _requestRepo.CreateAsync(adjustmentTypeIds, createdBy);
+				string sourceType = data.Model.Select(model => model.SourceType).FirstOrDefault() ?? "Receipt";
+				requestIds = await _requestRepo.CreateAsync(adjustmentTypeIds, createdBy, sourceType);
 				
 				string existingAdjustments = await _requestRepo.InvoiceExistingAdjustments(invoiceNumber, adjustmentTypeIds);
 
@@ -156,6 +157,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					a.InvoiceId,
 					a.AdjustmentAmount,
 					a.Remarks,
+					SourceType = a.Request.SourceType ?? a.Request.AdjustmentType.Category
 				}).FirstOrDefaultAsync()
 				?? throw new InvalidOperationException("Failed to fetch the active adjustment details.");
 			var invoiceEntity = await _invoiceRepo.GetById(adjustment.InvoiceId);
@@ -167,7 +169,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				PaymentScheduleId = invoiceEntity.PaymentScheduleId,
 				InvoiceDate = DateOnly.FromDateTime(invoiceEntity.InvoiceDate),
 				CustomerName = invoiceEntity.CustomerName,
-				CustomerNumber = invoiceEntity.CustomerNumber
+					CustomerNumber = invoiceEntity.CustomerNumber,
+					SourceType = adjustment.SourceType
 			};
 
 			var transactionHistories = await _transactionRepo.GetHistoryByRequestId(requestId);
@@ -305,7 +308,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
         private async Task<List<AdjustmentPostingDto>> RestoreInvoiceIdentifiersAsync(List<AdjustmentPostingDto> rows)
         {
             var adjustmentIds = rows
-                .Where(row => row.CustomerTrxId is null || row.PaymentScheduleId is null || row.InvoiceAmount <= 0)
+                .Where(row => row.CustomerTrxId is null || row.PaymentScheduleId is null || row.InvoiceAmount <= 0 || row.GlAccountingDate is null)
                 .Select(row => row.AdjustmentId)
                 .Distinct()
                 .ToList();
@@ -324,7 +327,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                         AdjustmentId = adjustment.Id,
                         invoice.CustomerTrxId,
                         invoice.PaymentScheduleId,
-                        invoice.InvoiceAmount
+                        invoice.InvoiceAmount,
+                        invoice.GlAccountingDate
                     })
                 .ToDictionaryAsync(x => x.AdjustmentId);
 
@@ -337,6 +341,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                 row.PaymentScheduleId ??= identifiers.PaymentScheduleId;
                 if (row.InvoiceAmount <= 0)
                     row.InvoiceAmount = identifiers.InvoiceAmount;
+                row.GlAccountingDate ??= identifiers.GlAccountingDate;
             }
 
             return rows;

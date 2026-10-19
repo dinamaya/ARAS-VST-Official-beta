@@ -14,12 +14,14 @@ namespace ARAS.Blazor.Models.DTOs
 		public long? CustomerTrxId { get; set; }
 		public long? PaymentScheduleId { get; set; }
 		public string Remarks { get; set; }
+		public string SourceType { get; set; } = "Receipt";
 
 		public BaseReceiptAdjustmentCreateDto() { }
 		public BaseReceiptAdjustmentCreateDto(
 	string adjustmentTypeName,
 	InvoiceDetailsDto invoiceDetails,
-	ReceiptAdjustmentEntry adjustmentEntry)
+	ReceiptAdjustmentEntry adjustmentEntry,
+	string sourceType)
 {
 	AdjustmentType = adjustmentTypeName;
 	InvoiceAmount = invoiceDetails.ReceiptAmount ?? invoiceDetails.InvoiceAmount;
@@ -37,6 +39,7 @@ namespace ARAS.Blazor.Models.DTOs
 	CustomerTrxId = invoiceDetails.CustomerTrxId;
 	PaymentScheduleId = invoiceDetails.PaymentScheduleId;
 	Remarks = adjustmentEntry.Remarks;
+	SourceType = sourceType;
 }
 	}
 }

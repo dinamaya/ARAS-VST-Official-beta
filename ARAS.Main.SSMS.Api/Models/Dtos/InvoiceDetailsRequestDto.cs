@@ -1,4 +1,4 @@
-﻿namespace ARAS.Main.SSMS.Api.Models.Dtos
+namespace ARAS.Main.SSMS.Api.Models.Dtos
 {
     public class InvoiceDetailsRequestDto
     {
@@ -9,5 +9,6 @@
 		public DateOnly InvoiceDate { get; set; }
 		public string CustomerName { get; set; }
 		public string CustomerNumber { get; set; }
+		public string? SourceType { get; set; }
     }
 }

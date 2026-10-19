@@ -13,5 +13,6 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 		public long? CustomerTrxId { get; set; }
 		public long? PaymentScheduleId { get; set; }
 		public string Remarks { get; set; }
+		public string SourceType { get; set; } = "Receipt";
 	}
 }

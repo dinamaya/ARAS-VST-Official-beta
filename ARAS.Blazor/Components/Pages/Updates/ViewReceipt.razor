@@ -42,7 +42,7 @@
 			}
 
 			<RadzenColumn Size="12" SizeLG="@(isRequestUpdatable ? 4 : 6)">
-				@if (TypeCode is "bca" or "cdr" or "sar")
+				@if (ShouldRenderReceiptSummary())
 				{
 					<ReceiptSummary ReceiptDetails="@invoice" />
 				}
@@ -337,5 +337,13 @@
 	{
 		var uri = NavigationManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
 		NavigationManager.NavigateTo(uri, true);
+	}
+
+	private bool ShouldRenderReceiptSummary()
+	{
+		if (!string.IsNullOrWhiteSpace(details?.Invoice?.SourceType))
+			return string.Equals(details.Invoice.SourceType, "Receipt", StringComparison.OrdinalIgnoreCase);
+
+		return TypeCode is "bca" or "cdr" or "sar";
 	}
 }

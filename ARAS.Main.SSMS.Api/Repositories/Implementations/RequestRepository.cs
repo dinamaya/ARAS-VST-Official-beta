@@ -106,7 +106,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		/// <returns></returns>
 		public async Task<bool> IsRejectable(long requestId)
 		{
-			return await _context.VwLatestReceiptAdjustmentDetails.AsNoTracking().AnyAsync(t =>
+			return await _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
 				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "Posted" || t.Status == "For ERP Posting")
 			);
@@ -128,10 +128,14 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		public async Task<bool> IsDeclined(long requestId) => await _context.VwLatestReceiptAdjustmentDetails.AsNoTracking().AnyAsync(t => t.RequestId == requestId && t.Status == "Declined");
 
 		public async Task<long> CreateAsync(string adjustmentTypeId, string createdBy)
+			=> await CreateAsync(adjustmentTypeId, createdBy, null);
+
+		public async Task<long> CreateAsync(string adjustmentTypeId, string createdBy, string? sourceType)
 		{
             var request = new Request
             {
                 AdjustmentTypeId = adjustmentTypeId,
+                SourceType = sourceType,
                 CreatedBy = createdBy,
                 DateCreated = DateTime.Now
             };
@@ -143,6 +147,9 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		}
 
 		public async Task<IEnumerable<long>> CreateAsync(IEnumerable<string> adjustmentTypeIds, string createdBy)
+			=> await CreateAsync(adjustmentTypeIds, createdBy, null);
+
+		public async Task<IEnumerable<long>> CreateAsync(IEnumerable<string> adjustmentTypeIds, string createdBy, string? sourceType)
 		{
 			IList<Request> results = [];
 			var date = DateTime.Now;
@@ -151,6 +158,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				results.Add(new Request
 				{
 					AdjustmentTypeId = id,
+					SourceType = sourceType,
 					CreatedBy = createdBy,
 					DateCreated = date
 				});

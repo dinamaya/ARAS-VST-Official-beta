@@ -1,4 +1,4 @@
-﻿@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Models.DTOs
 <RadzenRow class="p-3" Gap="1em">
 	<RadzenColumn Size="12">
@@ -25,7 +25,7 @@
 			<RadzenColumn Size="12" SizeXL="6" SizeXS="12">
 				<div class="mb-2 text-sm">Invoice Date: <div class="text-dark font-weight-bold ms-2">@InvoiceDetails.InvoiceDate</div></div>
 				<div class="mb-2 text-sm">Invoice Amount: <div class="text-dark font-weight-bold ms-2">@InvoiceDetails.InvoiceAmount.ToPhp()</div></div>
-				<div class="mb-2 text-sm">Invoice Balance: <div class="text-dark font-weight-bold ms-2">@InvoiceDetails.InvoiceBalance.ToPhp()</div></div>
+				<div class="mb-2 text-sm">Invoice Balance: <div class="text-dark font-weight-bold ms-2">@((InvoiceDetails.OriginalInvoiceBalance ?? InvoiceDetails.InvoiceBalance).ToPhp())</div></div>
 			</RadzenColumn>
 		</RadzenRow>
 	</RadzenColumn>

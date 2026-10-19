@@ -136,7 +136,10 @@
 	private bool isReceiptSearch;
 	private ReceiptAttachmentsDatatable receiptAttachments;
 	private double AvailableBalance =>
-		SearchedInvoice.ReceiptBalance ?? SearchedInvoice.InvoiceBalance;
+		SearchedInvoice.OriginalReceiptBalance
+		?? SearchedInvoice.ReceiptBalance
+		?? SearchedInvoice.OriginalInvoiceBalance
+		?? SearchedInvoice.InvoiceBalance;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -304,7 +307,8 @@
 				requests.Add(new BaseReceiptAdjustmentCreateDto(
 					adj.Key,
 					SearchedInvoice,
-					adj.Value));
+					adj.Value,
+					isReceiptSearch ? "Receipt" : "Invoice"));
 			}
 
 			await RequestService.Create(requests, Notes);

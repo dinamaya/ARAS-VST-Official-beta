@@ -174,6 +174,7 @@
 	[Parameter] public bool PlaceSearchButtonBelowDate { get; set; }
 	[Parameter] public bool AlignSearchFields { get; set; }
 	[Parameter] public bool AlwaysShowValueInput { get; set; }
+	[Parameter] public bool IgnoreInitialQueryReplay { get; set; }
 
 	[Parameter, SupplyParameterFromQuery(Name = "c")] public string? Category { get; set; }
 
@@ -187,6 +188,7 @@
 	private bool isLoading { get; set; }
 	private bool isValueEmpty => Value != null && !HasValidSearchValue();
 	private string? _lastToken;
+	private bool _hasInitializedQueryReplay;
 
 	private SearchRequestDto searchRequest;
 	private IList<string> categories;
@@ -228,6 +230,17 @@
 	protected override async Task OnParametersSetAsync()
 	{
 		await base.OnParametersSetAsync();
+
+		if (!_hasInitializedQueryReplay)
+		{
+			_hasInitializedQueryReplay = true;
+			if (IgnoreInitialQueryReplay)
+			{
+				_lastToken = Token;
+				return;
+			}
+		}
+
 		string value = QueryService.GetValue("v");
 		string category = QueryService.GetValue("c");
 		string startDate = QueryService.GetValue("sd");

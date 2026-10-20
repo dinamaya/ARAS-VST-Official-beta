@@ -31,6 +31,7 @@
 	{
 		<SearchInvoiceAPARDetails OnAPAdd="AddAP"
 		                          OnARAdd="AddAR"
+								  IgnoreInitialQueryReplay="true"
 		                          PlaceSearchButtonBelowDate="true"
 		                          AlignSearchFields="true" />
 	}
@@ -127,14 +128,7 @@
 						<Columns>
 							<RadzenDataGridColumn TItem="APAROffsetARRowDto" Title="Invoice No.">
 								<Template Context="data">
-									@if (data.RowType == ARRowType.Invoice)
-									{
-										@data.InvoiceNumber
-									}
-									else
-									{
-										@data.AdjustmentReason
-									}
+									@data.InvoiceNumber
 								</Template>
 
 								<FooterTemplate>
@@ -143,63 +137,29 @@
 								</FooterTemplate>
 
 								<EditTemplate Context="data">
-									@if (data.RowType == ARRowType.Invoice)
-									{
-										{
-											<div>@data.InvoiceNumber</div>
-										}
-									}
-									else
-									{
-										<RadzenDropDown @bind-Value="data.AdjustmentReason" Style="width:100%" Data="@reasonCodes"
-														Name="@($"AdjustmentReason_{data.Id}")" />
-										<RadzenRequiredValidator Component="@($"AdjustmentReason_{data.Id}")"
-																 Text="Adjustment reason is required"
-																 Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
-									}
+									<div>@data.InvoiceNumber</div>
 								</EditTemplate>
 							</RadzenDataGridColumn>
 
 							<RadzenDataGridColumn TItem="APAROffsetARRowDto" Title="Customer Name">
 								<Template Context="data">
-									@if (data.RowType == ARRowType.Invoice)
-									{
-										@(string.IsNullOrWhiteSpace(data.CustomerName) ? data.CustomerNumber : data.CustomerName)
-									}
-									else
-									{
-										@string.Empty
-									}
+									@(string.IsNullOrWhiteSpace(data.CustomerName) ? data.CustomerNumber : data.CustomerName)
 								</Template>
 							</RadzenDataGridColumn>
 
 							<RadzenDataGridColumn TItem="APAROffsetARRowDto" Property="Amount" Title="Invoice Amount">
 								<Template Context="data">
-									@if (data.RowType == ARRowType.Invoice)
-									{
-										@data.InvoiceAmount.ToPhp()
-									}
-									else
-									{
-										@string.Empty
-									}
+									@data.InvoiceAmount.ToPhp()
 								</Template>
 
 
 								<EditTemplate Context="data">
 									@if (isRequestUpdatable)
 									{
-										@if (data.RowType == ARRowType.Invoice)
-										{
-											<div style="position: relative; z-index: 1;">
-												<RadzenNumeric @bind-Value="data.Amount" Name="@($"Amount_{data.Id}")" Style="width:100%" Step="0.01" />
-											</div>
-											<RadzenRequiredValidator Component="@($"Amount_{data.Id}")" Text="Amount is required" Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
-										}
-										else
-										{
-											@string.Empty
-										}
+										<div style="position: relative; z-index: 1;">
+											<RadzenNumeric @bind-Value="data.Amount" Name="@($"Amount_{data.Id}")" Style="width:100%" Step="0.01" />
+										</div>
+										<RadzenRequiredValidator Component="@($"Amount_{data.Id}")" Text="Amount is required" Popup=true Style="z-index: 9999 !important; position: absolute; margin-top:30px" />
 									}
 								</EditTemplate>
 							</RadzenDataGridColumn>
@@ -231,19 +191,13 @@
 								<RadzenDataGridColumn TItem="APAROffsetARRowDto" Context="data" TextAlign="TextAlign.Right">
 									<Template Context="data">
 										<RadzenStack Gap="0.6em" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Right">
-											@if (data.RowType == ARRowType.Adjustment)
-											{
-												<RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@((args) => arGrid.EditRow(data))" />
-											}
+											<RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@((args) => arGrid.EditRow(data))" />
 											<RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Click="@((args) => OnRemoveRow(data))" />
 										</RadzenStack>
 									</Template>
 									<EditTemplate Context="data">
 										<RadzenStack Gap="0.6em" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Right">
-											@if (data.RowType == ARRowType.Adjustment)
-											{
-												<RadzenButton Icon="save" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success" Click="@((args) => arGrid.UpdateRow(data))" />
-											}
+											<RadzenButton Icon="save" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Success" Click="@((args) => arGrid.UpdateRow(data))" />
 											<RadzenButton Icon="cancel" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="@((args) => CancelEditRow(data))" />
 										</RadzenStack>
 									</EditTemplate>
@@ -251,16 +205,76 @@
 							}
 						</Columns>
 					</RadzenDataGrid>
-					@if (isRequestUpdatable)
-					{
-						<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap" class="rz-mt-2" JustifyContent="JustifyContent.Center">
-							<RadzenButton Icon="add_circle" Text="Add Adjustment Reason" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Outlined" Click="@(args => AddAdjustmentReasonRow())" />
-						</RadzenStack>
-					}
 				</div>
 
 			</RadzenColumn>
 		</RadzenRow>
+
+		@if (RequiresWriteOff)
+		{
+			<div class="card p-3">
+				<RadzenRow Gap="1rem" AlignItems="AlignItems.Center" class="mb-2">
+					<RadzenColumn Size="12" SizeMD="8">
+						<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem">
+							<RadzenLabel Text="WRITE-OFF TRANSACTION" class="fw-bold" />
+							<span class="badge bg-warning text-dark">Required</span>
+						</RadzenStack>
+						<div class="text-sm text-muted">Required because there is a remaining difference to reconcile.</div>
+					</RadzenColumn>
+					<RadzenColumn Size="12" SizeMD="4" class="text-md-end">
+						<span class="badge bg-light text-dark">Transaction 2 · Write-off</span>
+					</RadzenColumn>
+				</RadzenRow>
+
+				<RadzenRow Gap="1rem" AlignItems="AlignItems.Center">
+					<RadzenColumn Size="12" SizeMD="4">
+						<RadzenLabel Text="Write-off Amount" />
+						<RadzenNumeric TValue="double" @bind-Value="WriteOffAmount" Style="width:100%" Step="0.01" Min="0" Disabled="@(!isRequestUpdatable)" Change="@(args => OnWriteOffAmountChanged())" />
+					</RadzenColumn>
+					<RadzenColumn Size="12" SizeMD="4">
+						<RadzenLabel Text="Write-off Reason" />
+						<RadzenDropDown @bind-Value="WriteOffReason" Data="writeOffReasons" Style="width:100%" AllowClear="false" Disabled="@(!isRequestUpdatable)" Placeholder="Select write-off reason" />
+					</RadzenColumn>
+					<RadzenColumn Size="12" SizeMD="4">
+						<div class="d-flex align-items-center gap-2 px-3 py-2 border-radius-lg"
+							 style="background: linear-gradient(180deg, #f6f9ff 0%, #edf3ff 100%); border: 1px solid #dbe8ff; color: #1f3b72; min-height: 56px;">
+							<RadzenIcon Icon="info" Style="color:#1d5fd0; font-size: 1.2rem;" />
+							<span class="fw-semibold text-sm">This will be submitted as a separate transaction in Oracle Fusion.</span>
+						</div>
+					</RadzenColumn>
+				</RadzenRow>
+			</div>
+		}
+
+		<div class="card p-3">
+			<h4 class="mb-3">Reconciliation Summary</h4>
+			<RadzenRow Gap="1rem">
+				<RadzenColumn Size="12" SizeMD="3">
+					<div class="border rounded p-2">
+						<div class="text-sm">AP Total</div>
+						<div class="fw-bold">@APGroupTotal.ToPhp()</div>
+					</div>
+				</RadzenColumn>
+				<RadzenColumn Size="12" SizeMD="3">
+					<div class="border rounded p-2">
+						<div class="text-sm">AR Adjustment</div>
+						<div class="fw-bold">@ARGroupTotal.ToPhp()</div>
+					</div>
+				</RadzenColumn>
+				<RadzenColumn Size="12" SizeMD="3">
+					<div class="border rounded p-2">
+						<div class="text-sm">Write-off</div>
+						<div class="fw-bold">@WriteOffAmount.ToPhp()</div>
+					</div>
+				</RadzenColumn>
+				<RadzenColumn Size="12" SizeMD="3">
+					<div class="border rounded p-2">
+						<div class="text-sm">Remaining Difference</div>
+						<div class="fw-bold @(HasBalancedTransactions ? "text-success" : "text-danger")">@RemainingDifference.ToPhp()</div>
+					</div>
+				</RadzenColumn>
+			</RadzenRow>
+		</div>
 
 		<RadzenRow>
 			<RadzenColumn Size="12" SizeMD="4">
@@ -278,7 +292,7 @@
                 <RadzenRow>
                     <RadzenColumn>
                         <RadzenButton ButtonStyle="ButtonStyle.Primary"
-                                      Text="Submit"
+										Text="@SubmitButtonLabel"
                                       class="btn-primary"
                                       Icon="send"
                                       Click="OnSubmit" />
@@ -298,7 +312,7 @@
 	[Parameter] public IList<APAROffsetAPRowDto> APAdjustments { get; set; }
 	[Parameter] public IList<APAROffsetARRowDto> ARAdjustments { get; set; }
 	private IList<NoteRowDto> Notes { get; set; } = new List<NoteRowDto>();
-	private IEnumerable<string> reasonCodes { get; set; }
+	private IEnumerable<string> writeOffReasons { get; set; } = [];
 
 	private InvoiceDetailsDto searchedInvoiceNumber;
 	private RadzenDataGrid<APAROffsetAPRowDto> apGrid;
@@ -313,8 +327,18 @@
 	private string role;
 	private string requestStatus = string.Empty;
 	private string inputHash = string.Empty;
+	private double WriteOffAmount;
+	private string? WriteOffReason;
+	private bool _writeOffAmountManuallyChanged;
 
-	private double NetBalance => (APAdjustments?.Sum(a => a.InvoiceAmount) ?? 0) - (ARAdjustments?.Sum(a => a.Amount) ?? 0);
+	private double APGroupTotal => Math.Round(APAdjustments?.Sum(a => a.InvoiceAmount) ?? 0, 2);
+	private double ARGroupTotal => Math.Round(ARAdjustments?.Sum(a => a.Amount) ?? 0, 2);
+	private double NetBalance => Math.Round(APGroupTotal - ARGroupTotal, 2);
+	private double SuggestedWriteOffAmount => Math.Round(Math.Abs(NetBalance), 2);
+	private bool RequiresWriteOff => Math.Abs(NetBalance) > 0;
+	private double RemainingDifference => Math.Round(APGroupTotal - ARGroupTotal - WriteOffAmount, 2);
+	private bool HasBalancedTransactions => Math.Abs(RemainingDifference) < 0.01;
+	private string SubmitButtonLabel => RequiresWriteOff ? "Submit 2 Transactions" : "Submit Adjustment";
 
 	// track newly added rows so we can remove them on cancel if they remain empty
 	private HashSet<String> newlyAddedRowIds = new();
@@ -329,16 +353,26 @@
 		await base.OnInitializedAsync();
 
 		var adjustments = await APAROffsetService.GetAdjustments(RequestId);
+		var existingWriteOff = adjustments.ARGroup.FirstOrDefault(a => a.RowType == ARRowType.Adjustment || !string.IsNullOrWhiteSpace(a.AdjustmentReason));
 		APAdjustments = adjustments.APGroup.ToList();
-		ARAdjustments = adjustments.ARGroup.ToList();
+		ARAdjustments = adjustments.ARGroup
+			.Where(a => a.RowType == ARRowType.Invoice && !string.IsNullOrWhiteSpace(a.InvoiceNumber))
+			.ToList();
 		searchedInvoiceNumber = new InvoiceDetailsDto();
-		reasonCodes = await SearchOptionService.GetReasonCodes();
+		writeOffReasons = await SearchOptionService.GetReasonCodes();
+		WriteOffReason = existingWriteOff?.AdjustmentReason ?? writeOffReasons.FirstOrDefault();
+		if (existingWriteOff is not null && existingWriteOff.Amount > 0)
+		{
+			WriteOffAmount = existingWriteOff.Amount;
+			_writeOffAmountManuallyChanged = true;
+		}
 			role = await AuthService.GetRole();
 			var request = await RequestService.GetRequestDetails(RequestId);
 			requestStatus = request.Status;
 			isReady = true;
 			isUpdatable = await RequestService.IsUpdatable(RequestId);
-			inputHash = Utils.Security.ObjectHash(adjustments);
+			SyncWriteOffIfNeeded();
+			inputHash = Utils.Security.ObjectHash(BuildChangeSnapshot());
 
 			isStatusChangeable = role.CanUpdateApprovalStatus(requestStatus);
 		Notes = await NoteService.GetRows(RequestId);
@@ -372,10 +406,17 @@
 	{
 		try
 		{
+			SyncWriteOffIfNeeded();
+
+			Guards.ThrowInvalidOperationIf(!APAdjustments.Any(), "Can't submit request because AP Group has no rows");
 			Guards.ThrowInvalidOperationIf(!ARAdjustments.Any(), "Can't submit request because there are no adjustment in the current request");
 			Guards.ThrowInvalidOperationIf(isLoading, "Can't submit request while search operation is ongoing");
 
-			bool isConfirmed = await DialogService.Confirm("Would you like to submit the following \"Invoice Adjustment(s)\"?", "Update AP-AR Offset Request") ?? false;
+			var confirmMessage = RequiresWriteOff
+				? "This request will submit 2 transactions (AP/AR Adjustment and Write-off). Continue?"
+				: "Would you like to submit the AP/AR Adjustment transaction?";
+
+			bool isConfirmed = await DialogService.Confirm(confirmMessage, "Update AP-AR Offset Request") ?? false;
 			if (!isConfirmed)
 				return;
 
@@ -386,10 +427,17 @@
 				return;
 			}
 
-			var apTotal = APAdjustments.Sum(a => a.InvoiceAmount);
-			var arTotal = Math.Round(ARAdjustments.Sum(a => a.Amount), 2);
+			if (RequiresWriteOff)
+			{
+				Guards.ThrowInvalidOperationIf(WriteOffAmount <= 0, "Write-off amount must be greater than 0.00.");
+				Guards.ThrowInvalidOperationIf(string.IsNullOrWhiteSpace(WriteOffReason), "Write-off reason is required.");
+				Guards.ThrowInvalidOperationIf(!HasBalancedTransactions, "AP, AR and Write-off amounts must reconcile to 0.00 difference.");
+			}
+			else
+			{
+				Guards.ThrowInvalidOperationIf(Math.Abs(NetBalance) > 0.01, "AP and AR amounts must balance.");
+			}
 
-			Guards.ThrowInvalidOperationIf((apTotal != arTotal), "AP and AR amounts must balance.");
 			await SubmitRequest();
 		}
 		catch (Exception ex)
@@ -400,21 +448,28 @@
 
 	public async Task SubmitRequest()
 	{
-		APAROffsetRowDto data = new()
-		{
-			APGroup = APAdjustments,
-			ARGroup = ARAdjustments
-		};
+		var data = BuildChangeSnapshot();
 		string newHash = Utils.Security.ObjectHash(data);
 		Guards.ThrowInvalidOperationIf(newHash.Equals(inputHash), "No changes detected in the current request.");
 		bool _isUpdatable = isRequestUpdatable && !newHash.Equals(inputHash);
-		await APAROffsetService.Update(_isUpdatable, RequestId, APAdjustments, ARAdjustments, Notes);
+
+		await APAROffsetService.Update(_isUpdatable, RequestId, APAdjustments, ARAdjustments, Notes, GetWriteOffRow());
 		RefreshPage();
+	}
+
+	private object BuildChangeSnapshot()
+	{
+		return new
+		{
+			APGroup = APAdjustments,
+			ARGroup = ARAdjustments,
+			WriteOff = GetWriteOffRow()
+		};
 	}
 
 	protected async Task AddAR(InvoiceDetailsDto data)
 	{
-		await DialogService.OpenAsync<AddAPAROffsettingAR>(
+		var result = await DialogService.OpenAsync<AddAPAROffsettingAR>(
 			"Confirm AR Invoice Number",
 			new Dictionary<string, object>()
 			{
@@ -424,11 +479,17 @@
 			},
 			ModalTemplates.Variant.XSMALL
 		);
+
+		if (result is true)
+		{
+			SyncWriteOffIfNeeded();
+			StateHasChanged();
+		}
 	}
 
 	protected async Task AddAP(InvoiceDetailsDto data)
 	{
-		await DialogService.OpenAsync<AddAPAROffsettingAP>(
+		var result = await DialogService.OpenAsync<AddAPAROffsettingAP>(
 			"Confirm AP Invoice Number",
 			new Dictionary<string, object>()
 			{
@@ -438,6 +499,12 @@
 			},
 			ModalTemplates.Variant.XSMALL
 		);
+
+		if (result is true)
+		{
+			SyncWriteOffIfNeeded();
+			StateHasChanged();
+		}
 	}
 
 	private void HandleSearchChanged(bool value)
@@ -469,35 +536,26 @@
 
 	private void OnARRowUpdate(APAROffsetARRowDto args)
 	{
+		SyncWriteOffIfNeeded();
 		StateHasChanged();
 	}
 
 	private void OnAPRowUpdate(APAROffsetAPRowDto args)
 	{
+		SyncWriteOffIfNeeded();
 		StateHasChanged();
 	}
 
 	private async Task AddAdjustmentReasonRow()
 	{
-		var newRow = new APAROffsetARRowDto
-		{
-			Id = Guid.NewGuid().ToString(),
-			RowType = ARRowType.Adjustment,
-			AdjustmentReason = reasonCodes.FirstOrDefault(),
-			Amount = 0.00d
-		};
-
-		ARAdjustments.Add(newRow);
-		newlyAddedRowIds.Add(newRow.Id);
-		await arGrid.Reload();
-		await arGrid.EditRow(newRow);
-		StateHasChanged();
+		await Task.CompletedTask;
 	}
 
 	private async Task OnRemoveRow(APAROffsetARRowDto item)
 	{
 		ARAdjustments.Remove(item);
 		newlyAddedRowIds.Remove(item?.Id);
+		SyncWriteOffIfNeeded();
 		await arGrid.Reload();
 		StateHasChanged();
 	}
@@ -505,6 +563,7 @@
 	private async Task OnRemoveAPRow(APAROffsetAPRowDto item)
 	{
 		APAdjustments.Remove(item);
+		SyncWriteOffIfNeeded();
 		await apGrid.Reload();
 		StateHasChanged();
 	}
@@ -532,15 +591,7 @@
 	private bool IsRowEffectivelyEmpty(APAROffsetARRowDto row)
 	{
 		if (row == null) return true;
-
-		if (row.RowType == ARRowType.Invoice)
-		{
-			return string.IsNullOrWhiteSpace(row.InvoiceNumber) && (row.Amount == 0.0);
-		}
-		else
-		{
-			return string.IsNullOrWhiteSpace(row.AdjustmentReason) && (row.Amount == 0.0);
-		}
+		return string.IsNullOrWhiteSpace(row.InvoiceNumber) && (row.Amount == 0.0);
 	}
 
 	private bool ValidateARRows(out string message)
@@ -561,32 +612,64 @@
 				return false;
 			}
 
-			if (ar.RowType == ARRowType.Invoice)
+			if (string.IsNullOrWhiteSpace(ar.InvoiceNumber))
 			{
-				if (string.IsNullOrWhiteSpace(ar.InvoiceNumber))
-				{
-					message = "AR Group: Invoice number is required for invoice rows.";
-					return false;
-				}
-			}
-			else
-			{
-				if (string.IsNullOrWhiteSpace(ar.AdjustmentReason))
-				{
-					message = "AR Group: Adjustment reason is required for adjustment rows.";
-					return false;
-				}
+				message = "AR Group: Invoice number is required.";
+				return false;
 			}
 
 			if (ar.Amount == 0.0)
 			{
-				var id = ar.RowType == ARRowType.Invoice ? ar.InvoiceNumber : ar.AdjustmentReason;
+				var id = ar.InvoiceNumber;
 				message = $"AR Group: Amount must not be 0.00 for '{id ?? "unknown"}'.";
 				return false;
 			}
 		}
 
 		return true;
+	}
+
+	private void OnWriteOffAmountChanged()
+	{
+		_writeOffAmountManuallyChanged = true;
+	}
+
+	private void SyncWriteOffIfNeeded()
+	{
+		if (!RequiresWriteOff)
+		{
+			WriteOffAmount = 0;
+			WriteOffReason = writeOffReasons.FirstOrDefault();
+			_writeOffAmountManuallyChanged = false;
+			return;
+		}
+
+		if (!_writeOffAmountManuallyChanged)
+			WriteOffAmount = SuggestedWriteOffAmount;
+	}
+
+	private APAROffsetARRowDto? GetWriteOffRow()
+	{
+		if (!RequiresWriteOff)
+			return null;
+
+		var contextRow = ARAdjustments.FirstOrDefault();
+		if (contextRow is null)
+			return null;
+
+		return new APAROffsetARRowDto
+		{
+			Id = Guid.NewGuid().ToString(),
+			RowType = ARRowType.Adjustment,
+			Amount = WriteOffAmount,
+			AdjustmentReason = WriteOffReason,
+			CustomerName = contextRow.CustomerName,
+			CustomerNumber = contextRow.CustomerNumber,
+			CustomerTrxId = contextRow.CustomerTrxId,
+			PaymentScheduleId = contextRow.PaymentScheduleId,
+			CurrencyCode = contextRow.CurrencyCode,
+			GlAccountingDate = contextRow.GlAccountingDate
+		};
 	}
 
 	protected async Task OnApprove()
@@ -642,7 +725,7 @@
 
 	protected void RefreshPage()
 	{
-		var uri = NavigationManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
+		var uri = $"{NavigationManager.Uri.Split('?')[0]}?q={Uri.EscapeDataString(Queries.Success.CREATE)}";
 		NavigationManager.NavigateTo(uri, true);
 	}
 }

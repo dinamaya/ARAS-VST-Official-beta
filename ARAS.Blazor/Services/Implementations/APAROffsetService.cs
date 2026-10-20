@@ -1,4 +1,4 @@
-﻿using ARAS.Blazor.App_Code.Globals;
+using ARAS.Blazor.App_Code.Globals;
 using ARAS.Blazor.App_Code.Globals.Enums;
 using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Services.Interfaces;
@@ -22,9 +22,9 @@ namespace ARAS.Blazor.Services.Implementations
             _noteService = noteService;
         }
 
-        public async Task Create(IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes)
+		public async Task Create(IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes, APAROffsetARRowDto? writeOffRow = null)
 		{
-			var requestsDto = ToCreateDto(apRows, arRows);
+			var requestsDto = ToCreateDto(apRows, arRows, writeOffRow);
 
 			var createResult = await _baseService.SendAsync<long>(new RequestDto<IEnumerable<APAROffsetCreateDto>>()
 			{
@@ -38,11 +38,11 @@ namespace ARAS.Blazor.Services.Implementations
 			await _noteService.Create(createResult.Result, notes);
 		}
 
-		public async Task Update(bool isUpdatable, long requestId, IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes)
+		public async Task Update(bool isUpdatable, long requestId, IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes, APAROffsetARRowDto? writeOffRow = null)
         {
 			if(isUpdatable)
 			{
-				var requestsDto = ToCreateDto(apRows, arRows);
+				var requestsDto = ToCreateDto(apRows, arRows, writeOffRow);
 
 				var result = await _baseService.SendAsync<long>(new RequestDto<IEnumerable<APAROffsetCreateDto>>()
 				{
@@ -74,7 +74,7 @@ namespace ARAS.Blazor.Services.Implementations
 			return arResponse.Result;
 		}
 
-		private static List<APAROffsetCreateDto> ToCreateDto(IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows)
+		private static List<APAROffsetCreateDto> ToCreateDto(IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, APAROffsetARRowDto? writeOffRow)
 		{
 			var apRequests = apRows.Select(r => new APAROffsetCreateDto()
 			{
@@ -91,13 +91,15 @@ namespace ARAS.Blazor.Services.Implementations
 				GlAccountingDate = r.GlAccountingDate
 			});
 
-			var arRequests = arRows.Select(r => new APAROffsetCreateDto()
+			var arRequests = arRows
+				.Where(r => r.RowType == ARRowType.Invoice)
+				.Select(r => new APAROffsetCreateDto()
 			{
 				InvoiceNumber = r.InvoiceNumber,
 				Amount = r.Amount,
 				InvoiceAmount = r.InvoiceAmount,
 				Type = "AR",
-				ReasonCode = r.AdjustmentReason,
+				ReasonCode = null,
 				InvoiceDate = DateTime.Now,
 				CustomerName = r.CustomerName,
 				CustomerNumber = r.CustomerNumber,
@@ -107,7 +109,31 @@ namespace ARAS.Blazor.Services.Implementations
 				GlAccountingDate = r.GlAccountingDate
 			});
 
-			return apRequests.Concat(arRequests).ToList();
+			var writeOffRequests = Enumerable.Empty<APAROffsetCreateDto>();
+			if (writeOffRow is not null)
+			{
+				var contextRow = arRows.FirstOrDefault() ?? writeOffRow;
+				writeOffRequests =
+				[
+					new APAROffsetCreateDto
+					{
+						InvoiceNumber = string.Empty,
+						Amount = writeOffRow.Amount,
+						InvoiceAmount = 0,
+						Type = "AR",
+						ReasonCode = writeOffRow.AdjustmentReason,
+						InvoiceDate = DateTime.Now,
+						CustomerName = contextRow.CustomerName,
+						CustomerNumber = contextRow.CustomerNumber,
+						CustomerTrxId = contextRow.CustomerTrxId,
+						PaymentScheduleId = contextRow.PaymentScheduleId,
+						CurrencyCode = contextRow.CurrencyCode,
+						GlAccountingDate = contextRow.GlAccountingDate
+					}
+				];
+			}
+
+			return apRequests.Concat(arRequests).Concat(writeOffRequests).ToList();
 		}
 	}
 }

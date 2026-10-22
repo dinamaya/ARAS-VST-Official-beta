@@ -87,6 +87,10 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 		public async Task Create(IEnumerable<AdjustmentPostingDto> data)
 		{
 			var rows = data
+				.Where(item =>
+					!string.Equals(item.AdjustmentActivity, "AP/AR Adjustment", StringComparison.OrdinalIgnoreCase) ||
+					!string.IsNullOrWhiteSpace(item.ReasonCode) ||
+					item.CustomerTrxId is not null)
 				.GroupBy(item => item.HeaderId)
 				.Select(group => group.First())
 				.ToList();
@@ -403,12 +407,17 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 		private async Task<string> CreateFusionAdjustmentEnvelope(AdjustmentPostingDto item)
 		{
 			var applyDate = item.DateApplied.ToString("yyyy-MM-dd");
-			var glDate = (item.GlAccountingDate ?? item.InvoiceDate).ToString("yyyy-MM-dd");
 			var adjustmentAmount = decimal.Round(Convert.ToDecimal(item.AdjustmentAmount), 2, MidpointRounding.AwayFromZero);
 			var invoiceAmount = decimal.Round(Convert.ToDecimal(item.InvoiceAmount), 2, MidpointRounding.AwayFromZero);
 			var amount = adjustmentAmount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
 			var currencyCode = EscapeXml(string.IsNullOrWhiteSpace(item.CurrencyCode) ? "USD" : item.CurrencyCode.Trim().ToUpperInvariant());
-			var transactionAdjustmentType = adjustmentAmount >= invoiceAmount ? "INVOICE" : "LINE";
+			var isAparFlow = string.Equals(item.AdjustmentActivity, "AP/AR Adjustment", StringComparison.OrdinalIgnoreCase);
+			var isAparWriteOffFlow = string.Equals(item.AdjustmentActivity, "Write-Off Small Amount - INV", StringComparison.OrdinalIgnoreCase);
+			var glDateValue = isAparFlow
+				? item.DateApplied.Date
+				: ResolveFusionGlDate(item);
+			var glDate = glDateValue.ToString("yyyy-MM-dd");
+			var transactionAdjustmentType = (isAparFlow || isAparWriteOffFlow) ? "LINE" : (adjustmentAmount >= invoiceAmount ? "INVOICE" : "LINE");
 			var receivablesTrxId = _config.GetFusionAdjustmentReceivablesTrxId(item.AdjustmentActivity);
 			var referenceData = await GetAdjustmentReferenceData(item.CustomerTrxId!.Value);
 			var paymentScheduleId = item.PaymentScheduleId ?? referenceData?.PaymentScheduleId;
@@ -443,6 +452,20 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 		private static string CreateOptionalPaymentScheduleId(long? paymentScheduleId) =>
 			paymentScheduleId.HasValue ? $"<rec:PaymentScheduleId>{paymentScheduleId.Value}</rec:PaymentScheduleId>" : string.Empty;
+
+		private static DateTime ResolveFusionGlDate(AdjustmentPostingDto item)
+		{
+			if (IsValidFusionDate(item.GlAccountingDate))
+				return item.GlAccountingDate!.Value.Date;
+
+			if (IsValidFusionDate(item.InvoiceDate))
+				return item.InvoiceDate.Date;
+
+			return item.DateApplied.Date;
+		}
+
+		private static bool IsValidFusionDate(DateTime? date) =>
+			date.HasValue && date.Value.Year > 1900;
 
 		private static string EscapeXml(string? value) => SecurityElement.Escape(value ?? string.Empty) ?? string.Empty;
 

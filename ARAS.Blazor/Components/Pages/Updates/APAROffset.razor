@@ -32,6 +32,7 @@
 		<SearchInvoiceAPARDetails OnAPAdd="AddAP"
 		                          OnARAdd="AddAR"
 								  IgnoreInitialQueryReplay="true"
+								  ManualSearchTriggerOnly="true"
 		                          PlaceSearchButtonBelowDate="true"
 		                          AlignSearchFields="true" />
 	}
@@ -333,10 +334,10 @@
 
 	private double APGroupTotal => Math.Round(APAdjustments?.Sum(a => a.InvoiceAmount) ?? 0, 2);
 	private double ARGroupTotal => Math.Round(ARAdjustments?.Sum(a => a.Amount) ?? 0, 2);
-	private double NetBalance => Math.Round(APGroupTotal - ARGroupTotal, 2);
+	private double NetBalance => Math.Round(ARGroupTotal - APGroupTotal, 2);
 	private double SuggestedWriteOffAmount => Math.Round(Math.Abs(NetBalance), 2);
 	private bool RequiresWriteOff => Math.Abs(NetBalance) > 0;
-	private double RemainingDifference => Math.Round(APGroupTotal - ARGroupTotal - WriteOffAmount, 2);
+	private double RemainingDifference => Math.Round(ARGroupTotal - APGroupTotal - WriteOffAmount, 2);
 	private bool HasBalancedTransactions => Math.Abs(RemainingDifference) < 0.01;
 	private string SubmitButtonLabel => RequiresWriteOff ? "Submit 2 Transactions" : "Submit Adjustment";
 

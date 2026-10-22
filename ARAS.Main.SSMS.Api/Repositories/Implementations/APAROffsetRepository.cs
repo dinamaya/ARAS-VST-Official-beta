@@ -32,10 +32,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			try
 			{
 				IList<InvoiceCreateDto> invoices = [];
-
-				IList<ReasonAdjustmentCreateDto> reasons = [];
 				IEnumerable<long> invoiceIds = [];
-				IEnumerable<long> reasonInvoiceIds = [];
 
 				IList<APAROffsetCreateDto> adjustments = [];
 
@@ -46,15 +43,9 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				var transactId = await _transactionRepo.CreateAsync(transaction, createdBy);
 
 				foreach (var _data in data.Model)
-				{
-					if (!string.IsNullOrEmpty(_data.ReasonCode))
-						reasons.Add(new ReasonAdjustmentCreateDto(requestId, _data.ReasonCode, _data.Amount, _data.CustomerNumber, _data.CustomerName));
-					else
-						invoices.Add(new InvoiceCreateDto(_data.InvoiceNumber, _data.InvoiceAmount, invoiceDate: DateTime.Now, _data.CustomerNumber, _data.CustomerName, _data.CustomerTrxId, _data.PaymentScheduleId, _data.CurrencyCode, _data.GlAccountingDate));
-				}
+					invoices.Add(new InvoiceCreateDto(_data.InvoiceNumber, _data.InvoiceAmount, invoiceDate: DateTime.Now, _data.CustomerNumber, _data.CustomerName, _data.CustomerTrxId, _data.PaymentScheduleId, _data.CurrencyCode, _data.GlAccountingDate));
 
 				invoiceIds = await _invoiceRepo.CreateAsync(invoices, createdBy);
-				reasonInvoiceIds = await _invoiceRepo.CreateAsync(reasons, createdBy);
 
 				// Combine the model, invoiceIds and requestIds
 				var zippedInvoices = invoiceIds
@@ -63,13 +54,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 						invoice = inv,
 						model = mod
 					});
-				var zippedReasons = reasonInvoiceIds
-					.Zip(reasons, (inv, mod) => new
-					{
-						invoice = inv,
-						model = mod
-					});
-
 				foreach (var result in zippedInvoices)
 					adjustments.Add(new APAROffsetCreateDto()
 					{
@@ -79,18 +63,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 						Type = result.model.Type,
 						ReasonCode = result.model.ReasonCode ?? string.Empty,
 						InvoiceDate = result.model.InvoiceDate,
-					});
-
-
-				foreach (var result in zippedReasons)
-					adjustments.Add(new APAROffsetCreateDto()
-					{
-						RequestId = requestId,
-						InvoiceNumber = result.invoice.ToString(),
-						Amount = result.model.Amount,
-						Type = "AR",
-						ReasonCode = result.model.ReasonCode ?? string.Empty,
-						InvoiceDate = DateTime.MinValue,
 					});
 
 				await _adjustmentRepo.CreateAsync(adjustments, createdBy);
@@ -112,10 +84,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			try
 			{
 				IList<InvoiceCreateDto> invoices = [];
-
-				IList<ReasonAdjustmentCreateDto> reasons = [];
 				IEnumerable<long> invoiceIds = [];
-				IEnumerable<long> reasonInvoiceIds = [];
 
 				IList<APAROffsetCreateDto> adjustments = [];
 
@@ -138,16 +107,10 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				await _context.SaveChangesAsync();
 
 				foreach (var _data in data.Model)
-				{
-					if (!string.IsNullOrEmpty(_data.ReasonCode))
-						reasons.Add(new ReasonAdjustmentCreateDto(requestId, _data.ReasonCode, _data.Amount, _data.CustomerNumber, _data.CustomerName));
-					else
-						invoices.Add(new InvoiceCreateDto(_data.InvoiceNumber, _data.InvoiceAmount, invoiceDate: DateTime.Now, _data.CustomerNumber, _data.CustomerName, _data.CustomerTrxId, _data.PaymentScheduleId, _data.CurrencyCode, _data.GlAccountingDate));
-				}
+					invoices.Add(new InvoiceCreateDto(_data.InvoiceNumber, _data.InvoiceAmount, invoiceDate: DateTime.Now, _data.CustomerNumber, _data.CustomerName, _data.CustomerTrxId, _data.PaymentScheduleId, _data.CurrencyCode, _data.GlAccountingDate));
 
 				// Creates new invoices and apar offsets
 				invoiceIds = await _invoiceRepo.CreateAsync(invoices, modifiedBy);
-				reasonInvoiceIds = await _invoiceRepo.CreateAsync(reasons, modifiedBy);
 
 				// Combine the model, invoiceIds and requestIds
 				var zippedInvoices = invoiceIds
@@ -156,13 +119,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 						invoice = inv,
 						model = mod
 					});
-				var zippedReasons = reasonInvoiceIds
-					.Zip(reasons, (inv, mod) => new
-					{
-						invoice = inv,
-						model = mod
-					});
-
 				foreach (var result in zippedInvoices)
 					adjustments.Add(new APAROffsetCreateDto()
 					{
@@ -172,17 +128,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 						Type = result.model.Type,
 						ReasonCode = result.model.ReasonCode ?? string.Empty,
 						InvoiceDate = result.model.InvoiceDate,
-					});
-
-				foreach (var result in zippedReasons)
-					adjustments.Add(new APAROffsetCreateDto()
-					{
-						RequestId = requestId,
-						InvoiceNumber = result.invoice.ToString(),
-						Amount = result.model.Amount,
-						Type = "AR",
-						ReasonCode = result.model.ReasonCode ?? string.Empty,
-						InvoiceDate = DateTime.MinValue,
 					});
 
 				await _adjustmentRepo.CreateAsync(adjustments, modifiedBy);
@@ -215,18 +160,28 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.ToListAsync(),
 				ARGroup = await _context.VwAparoffsetRows.AsNoTracking()
 					 .Where(r => r.Type == "AR" && r.RequestiD == requestId && r.IsActive)
+					 .Join(
+						 _context.Invoices.AsNoTracking(),
+						 r => r.Id,
+						 i => i.Id,
+						 (r, i) => new { r, i })
 					 .Select(r => new APAROffsetARRowDto()
 					 {
-						 Id = r.Id.ToString(),
-						 Amount = r.InvoiceAmount,
-						 InvoiceNumber = r.InvoiceNumber,
-						 AdjustmentReason = r.ReasonCode,
-						 RowType = !string.IsNullOrEmpty(r.ReasonCode)
+						 Id = r.r.Id.ToString(),
+						 Amount = r.r.InvoiceAmount,
+						 InvoiceAmount = r.i.InvoiceAmount,
+						 InvoiceNumber = r.r.InvoiceNumber,
+						 AdjustmentReason = r.r.ReasonCode,
+						 RowType = !string.IsNullOrEmpty(r.r.ReasonCode)
 						   ? ARRowType.Adjustment
 						  : ARRowType.Invoice,
 
-						 CustomerName = r.CustomerName,
-						 CustomerNumber = r.CustomerNumber
+						 CustomerName = r.r.CustomerName,
+						 CustomerNumber = r.r.CustomerNumber,
+						 CustomerTrxId = r.i.CustomerTrxId,
+						 PaymentScheduleId = r.i.PaymentScheduleId,
+						 CurrencyCode = r.i.CurrencyCode,
+						 GlAccountingDate = r.i.GlAccountingDate
 					 })
 					.ToListAsync()
 			};
@@ -234,10 +189,11 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 		public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingData(long requestId)
 		{
-			return await (
+			var rows = await (
 				from apar in _context.APAROffsets.AsNoTracking()
 				join invoice in _context.Invoices.AsNoTracking() on apar.InvoiceId equals invoice.Id
-				where apar.RequestId == requestId && apar.IsActive && invoice.IsActive
+				where apar.RequestId == requestId && apar.IsActive && invoice.IsActive && apar.Type == "AR"
+				orderby apar.Id
 				select new AdjustmentPostingDto
 				{
 					HeaderId = apar.Id,
@@ -251,12 +207,31 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					CurrencyCode = invoice.CurrencyCode,
 					GlAccountingDate = invoice.GlAccountingDate,
 					DateApplied = DateTime.Now,
-					AdjustmentActivity = "AP/AR Adjustment",
+					AdjustmentActivity = string.IsNullOrWhiteSpace(apar.ReasonCode)
+						? "AP/AR Adjustment"
+						: "Write-Off Small Amount - INV",
 					ReasonCode = apar.ReasonCode ?? string.Empty,
 					Remarks = string.Empty,
 					CustomerName = invoice.CustomerName,
 					CustomerNumber = invoice.CustomerNumber
 				}).ToListAsync();
+
+			var arInvoiceContext = rows.FirstOrDefault(r =>
+				string.IsNullOrWhiteSpace(r.ReasonCode) &&
+				r.CustomerTrxId.HasValue);
+
+			if (arInvoiceContext is not null)
+			{
+				foreach (var row in rows.Where(r => !string.IsNullOrWhiteSpace(r.ReasonCode)))
+				{
+					row.CustomerTrxId ??= arInvoiceContext.CustomerTrxId;
+					row.PaymentScheduleId ??= arInvoiceContext.PaymentScheduleId;
+					row.CurrencyCode ??= arInvoiceContext.CurrencyCode;
+					row.GlAccountingDate ??= arInvoiceContext.GlAccountingDate;
+				}
+			}
+
+			return rows;
 		}
 	}
 }

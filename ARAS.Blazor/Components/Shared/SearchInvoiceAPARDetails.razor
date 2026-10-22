@@ -11,6 +11,7 @@
                TextFields="textFields"
                AlwaysShowValueInput="true"
 				  IgnoreInitialQueryReplay="@IgnoreInitialQueryReplay"
+				  ManualSearchTriggerOnly="@ManualSearchTriggerOnly"
                PlaceSearchButtonBelowDate="@PlaceSearchButtonBelowDate"
                AlignSearchFields="@AlignSearchFields">
 	<ResultTemplate Context="isLoading">
@@ -43,6 +44,7 @@
 	[Parameter] public bool PlaceSearchButtonBelowDate { get; set; }
 	[Parameter] public bool AlignSearchFields { get; set; }
 	[Parameter] public bool IgnoreInitialQueryReplay { get; set; }
+	[Parameter] public bool ManualSearchTriggerOnly { get; set; }
 
 	private IEnumerable<InvoiceDetailsDto> results { get; set; } = [];
 	private IEnumerable<string> textFields { get; set; } = [];

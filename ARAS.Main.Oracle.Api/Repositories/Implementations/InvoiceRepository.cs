@@ -78,9 +78,6 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                 GlAccountingDate = f.GlAccountingDate
             }).ToList();
 
-			await BackfillInvoiceCustomerTrxIdsAsync(mapped);
-            await BackfillPaymentScheduleIdsAsync(mapped);
-
             return mapped;
         }
 
@@ -269,7 +266,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                     });
 
                 if (searchRequest.Category is "Invoice Customer Name" or "Customer Name")
-                    return list.Where(l => l.CustomerName == searchRequest.Value);
+                    return list.Where(l => l.CustomerName.Contains(searchRequest.Value, StringComparison.OrdinalIgnoreCase));
                 if (searchRequest.Category == "Invoice Customer Number")
                     return list.Where(l => l.CustomerNumber == searchRequest.Value);
 
@@ -281,10 +278,9 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             // Query params: invoiceNumber (Invoice Number), customerName (Customer Name)
             // Headers: client-id, x-api-key (configured in Program.cs)
             // -----------------------------------------------------------------
-            var invoiceNumber = searchRequest.Category == "Invoice Number" ? searchRequest.Value : null;
-            var customerName = searchRequest.Category is "Invoice Customer Name" or "Customer Name"
-                ? searchRequest.Value
-                : null;
+            var isCustomerNameSearch = searchRequest.Category is "Invoice Customer Name" or "Customer Name";
+            var invoiceNumber = isCustomerNameSearch ? null : searchRequest.Category == "Invoice Number" ? searchRequest.Value : null;
+            var customerName = (string?)null;
 
             var queryParams = new List<string>();
             if (!string.IsNullOrEmpty(invoiceNumber))
@@ -378,18 +374,37 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
             if (searchRequest.Category != "Invoice Customer Name" && searchRequest.Category != "Invoice Number")
                 throw new Exception("Invalid Search Category. Please provide correct search category (Invoice Customer Name or Invoice Number).");
 
+            var isCustomerNameSearch = searchRequest.Category == "Invoice Customer Name";
+
             var fusionResult = await GetFusionApInvoiceDetailsAsync(
-                invoiceNumber: searchRequest.Category == "Invoice Number" ? searchRequest.Value : null,
-                customerName: searchRequest.Category == "Invoice Customer Name" ? searchRequest.Value : null,
+                invoiceNumber: isCustomerNameSearch ? null : searchRequest.Value,
+                customerName: isCustomerNameSearch ? searchRequest.Value : null,
                 customerNumber: null);
 
-            return fusionResult
+            var filtered = fusionResult
                 .Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max)
                 .Where(r => searchRequest.Category == "Invoice Customer Name"
                     ? !string.IsNullOrWhiteSpace(r.CustomerName)
                         && r.CustomerName.Contains(searchRequest.Value, StringComparison.OrdinalIgnoreCase)
                     : !string.IsNullOrWhiteSpace(r.InvoiceNumber)
                         && string.Equals(r.InvoiceNumber.Trim(), searchRequest.Value, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (isCustomerNameSearch && filtered.Count == 0)
+            {
+                var fallbackResult = await GetFusionApInvoiceDetailsAsync(
+                    invoiceNumber: null,
+                    customerName: null,
+                    customerNumber: null);
+
+                filtered = fallbackResult
+                    .Where(r => min <= r.InvoiceDate && r.InvoiceDate <= max)
+                    .Where(r => !string.IsNullOrWhiteSpace(r.CustomerName)
+                        && r.CustomerName.Contains(searchRequest.Value, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            return filtered
                 .Select(r =>
                 {
                     r.DataSource = "AP";

@@ -76,6 +76,8 @@ namespace ARAS.Blazor.Services.Implementations
 
 		private static List<APAROffsetCreateDto> ToCreateDto(IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, APAROffsetARRowDto? writeOffRow)
 		{
+			var arInvoiceContext = arRows.FirstOrDefault(r => r.RowType == ARRowType.Invoice);
+
 			var apRequests = apRows.Select(r => new APAROffsetCreateDto()
 			{
 				InvoiceNumber = r.InvoiceNumber,
@@ -112,7 +114,7 @@ namespace ARAS.Blazor.Services.Implementations
 			var writeOffRequests = Enumerable.Empty<APAROffsetCreateDto>();
 			if (writeOffRow is not null)
 			{
-				var contextRow = arRows.FirstOrDefault() ?? writeOffRow;
+				var contextRow = arInvoiceContext ?? writeOffRow;
 				writeOffRequests =
 				[
 					new APAROffsetCreateDto
@@ -125,10 +127,10 @@ namespace ARAS.Blazor.Services.Implementations
 						InvoiceDate = DateTime.Now,
 						CustomerName = contextRow.CustomerName,
 						CustomerNumber = contextRow.CustomerNumber,
-						CustomerTrxId = contextRow.CustomerTrxId,
-						PaymentScheduleId = contextRow.PaymentScheduleId,
-						CurrencyCode = contextRow.CurrencyCode,
-						GlAccountingDate = contextRow.GlAccountingDate
+						CustomerTrxId = writeOffRow.CustomerTrxId ?? contextRow.CustomerTrxId,
+						PaymentScheduleId = writeOffRow.PaymentScheduleId ?? contextRow.PaymentScheduleId,
+						CurrencyCode = writeOffRow.CurrencyCode ?? contextRow.CurrencyCode,
+						GlAccountingDate = writeOffRow.GlAccountingDate ?? contextRow.GlAccountingDate
 					}
 				];
 			}

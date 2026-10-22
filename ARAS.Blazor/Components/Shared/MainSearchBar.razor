@@ -6,6 +6,7 @@
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
 @using ARAS.Blazor.Components.Shared.Skeletons
+@using Microsoft.AspNetCore.Components.Web
 
 @inject IConfigService ConfigService
 @inject IInvoiceService InvoiceService
@@ -71,7 +72,7 @@
 						{
 							<RadzenColumn Size="12" SizeLG="@(SearchGroups is null ? 6 : (AlignSearchFields ? 12 : 8))">
 								<RadzenFormField class="w-100 border-0 mb-2" Text="@categories.FirstOrDefault(c => c == searchRequest.Category)" Variant="Variant.Outlined">
-									<RadzenTextBox @bind-Value="@searchRequest.Value" />
+									<RadzenTextBox @bind-Value="@searchRequest.Value" @onkeydown="OnSearchInputKeyDown" />
 								</RadzenFormField>
 							</RadzenColumn>
 						}
@@ -175,6 +176,7 @@
 	[Parameter] public bool AlignSearchFields { get; set; }
 	[Parameter] public bool AlwaysShowValueInput { get; set; }
 	[Parameter] public bool IgnoreInitialQueryReplay { get; set; }
+	[Parameter] public bool ManualSearchTriggerOnly { get; set; }
 
 	[Parameter, SupplyParameterFromQuery(Name = "c")] public string? Category { get; set; }
 
@@ -264,7 +266,8 @@
 		searchRequest.StartDate = DateOnly.Parse(startDate);
 		searchRequest.EndDate = DateOnly.Parse(endDate);
 
-		await SearchInvoice();
+		if (!ManualSearchTriggerOnly)
+			await SearchInvoice();
 	}
 
 	public async Task SearchInvoice()
@@ -307,6 +310,15 @@
 		param.Add("token", token);
 		
 		Nav.NavigateTo(Nav.GetUriWithQueryParameters(QueryService.GetCurrentUrl(false), param));
+
+		if (ManualSearchTriggerOnly)
+			await SearchInvoice();
+	}
+
+	private async Task OnSearchInputKeyDown(KeyboardEventArgs args)
+	{
+		if (args.Key == "Enter")
+			await Navigate();
 	}
 
 	private async Task SetIsOnSearch(bool value)

@@ -1,4 +1,4 @@
-﻿using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
+using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
 using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Models.Entities;
@@ -162,7 +162,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 		public async Task<bool> IsInvoiceNumberAvailable(string invoiceNumber, string adjustmentTypeCode)
 		{
-			string[] invalidStatuses = ["Rejected", "Declined"];
+			string[] invalidStatuses = ["Rejected"];
 			return !(await _context.VwInvoiceNumbers.AnyAsync(inv =>
 				inv.InvoiceNumber == invoiceNumber &&
 				inv.Code == adjustmentTypeCode &&

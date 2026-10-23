@@ -1027,7 +1027,14 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
         public async Task<string> InvoiceExistingAdjustments(string invoiceNumber, IEnumerable<string> adjustmentTypeIds)
         {
-            var adjustments = await _context.VwReceiptAdjustments.AsNoTracking().Where(t => t.InvoiceNumber == invoiceNumber).ToListAsync();
+			var adjustments = await (
+				 from adj in _context.VwReceiptAdjustments.AsNoTracking()
+				 join status in _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking()
+					 on adj.RequestId equals status.RequestId
+				 where adj.InvoiceNumber == invoiceNumber && status.Status != "Rejected"
+				 select adj
+			 ).ToListAsync();
+
 			string existingAdjustments = string.Empty;
 			foreach(var adj in adjustments)
 				if(adjustmentTypeIds.Any(a => a == adj.AdjustmentTypeId))

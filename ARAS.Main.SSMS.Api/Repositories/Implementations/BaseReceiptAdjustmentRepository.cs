@@ -129,6 +129,9 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				if (receiptApplications.Any())
 					await _context.ReceiptInvoiceApplications.AddRangeAsync(receiptApplications);
 
+				// Persist the selected Apply Receipt invoices before committing the transaction.
+				// AddRangeAsync only tracks the entities; without SaveChangesAsync the table remains empty.
+				await _context.SaveChangesAsync();
 				await dbTransaction.CommitAsync();
 
 				var zipResults = requestIdList.Zip(models, 
@@ -205,12 +208,28 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 			var transactionHistories = await _transactionRepo.GetHistoryByRequestId(requestId);
 			var notes = await _notesService.GetByRequestId(requestId);
+			var receiptApplications = await _context.ReceiptInvoiceApplications
+				.AsNoTracking()
+				.Where(a => a.RequestId == requestId && a.IsActive)
+				.Select(a => new ReceiptInvoiceApplicationPostingDto
+				{
+					InvoiceId = a.InvoiceId,
+					InvoiceNumber = a.InvoiceNumber,
+					PaymentScheduleId = a.PaymentScheduleId,
+					AppliedAmount = a.AppliedAmount,
+					DiscountAmount = a.DiscountAmount,
+					AmountDue = a.AmountDue,
+					CurrencyCode = a.CurrencyCode
+				})
+				.ToListAsync();
 			
 			return new ReceiptAdjustmentUpdateResponseDto
 			{
 				AdjustmentAmount = adjustment.AdjustmentAmount,
 				Remarks = adjustment.Remarks,
 				Invoice = invoice,
+				ApplyReceiptEnabled = receiptApplications.Count > 0,
+				ReceiptApplications = receiptApplications,
 				TransactionHistories = transactionHistories,
 				Notes = notes
 			};

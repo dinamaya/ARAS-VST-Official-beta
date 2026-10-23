@@ -80,6 +80,10 @@
 									InitialRemarks="@details.Remarks"
 									InitialAdjustment="@details.AdjustmentAmount"
 									AdjustmentAmountChanged="HandleAdjustment" />
+								@if (TypeCode == "sar" && details.ApplyReceiptEnabled && details.ReceiptApplications.Any())
+								{
+									<ApplyReceiptApplicationsDisplay Applications="@details.ReceiptApplications" />
+								}
 							}
 						</BodyTtemplate>
 					</CardStandard>
@@ -109,6 +113,10 @@
 										<RadzenTextArea class="w-100" Disabled="true" Value="@details.Remarks"/>
 									</RadzenColumn>
 								</RadzenRow>
+								@if (TypeCode == "sar" && details.ApplyReceiptEnabled && details.ReceiptApplications.Any())
+								{
+									<ApplyReceiptApplicationsDisplay Applications="@details.ReceiptApplications" />
+								}
 							</RadzenColumn>
 						</BodyTtemplate>
 					</CardStandard>

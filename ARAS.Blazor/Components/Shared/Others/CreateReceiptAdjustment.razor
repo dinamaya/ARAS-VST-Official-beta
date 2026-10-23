@@ -8,6 +8,7 @@
 @inherits ComponentBase
 @inject DialogService DialogService
 @inject IConfigService ConfigService
+@inject IInvoiceService InvoiceService
 
 <CardStandard HeaderText="Create Adjustment" HeaderIcon="create">
 	<BodyTtemplate>
@@ -33,6 +34,103 @@
 				<RadzenColumn Size="12">
 					<BaseReceiptAdjustment IsDisabled="@IsDisabled" AdjustmentName="Write-Off: Small Amount" IsAdjustable="isAdjustable" AdjustmentAmountChanged="OnAdjustmentAmountChanged" />
 				</RadzenColumn>
+
+				@if (CanShowApplyReceiptSection)
+				{
+					<RadzenColumn Size="12">
+						<RadzenFieldset Text="Apply Receipt (to Invoice)" AllowCollapse="true" Collapsed="false">
+							<RadzenRow Gap="1rem" AlignItems="AlignItems.Center" class="mb-2">
+								<RadzenColumn Size="12" SizeMD="6">
+									<div class="d-flex align-items-center gap-2">
+										<RadzenSwitch @bind-Value="isApplyReceiptEnabled" Disabled="@IsDisabled" Change="OnApplyReceiptToggleChanged" />
+										<RadzenLabel Text="Enable Apply Receipt" />
+									</div>
+								</RadzenColumn>
+								<RadzenColumn Size="12" SizeMD="6" class="text-md-end">
+									<span class="badge bg-light text-dark">Application Type: Transaction</span>
+								</RadzenColumn>
+							</RadzenRow>
+
+							@if (isApplyReceiptEnabled)
+							{
+								<RadzenRow Gap="1rem" class="mb-2">
+									<RadzenColumn Size="12" SizeMD="4">
+										<div class="border rounded p-2">
+											<div class="text-sm">Receipt Balance</div>
+											<div class="fw-bold">@AvailableBalance.ToPhp()</div>
+										</div>
+									</RadzenColumn>
+									<RadzenColumn Size="12" SizeMD="4">
+										<div class="border rounded p-2">
+											<div class="text-sm">Total Applied Amount</div>
+											<div class="fw-bold">@TotalAppliedAmount.ToPhp()</div>
+										</div>
+									</RadzenColumn>
+									<RadzenColumn Size="12" SizeMD="4">
+										<div class="border rounded p-2">
+											<div class="text-sm">Remaining Receipt Balance</div>
+											<div class="fw-bold">@(Math.Max(AvailableBalance - TotalAppliedAmount, 0).ToPhp())</div>
+										</div>
+									</RadzenColumn>
+								</RadzenRow>
+
+								<RadzenRow Gap="1rem" AlignItems="AlignItems.Center" class="mb-2">
+									<RadzenColumn Size="12" SizeMD="5">
+										<RadzenTextBox @bind-Value="invoiceSearch" Style="width:100%" Placeholder="Search by invoice number..." Change="@(args => StateHasChanged())" />
+									</RadzenColumn>
+									<RadzenColumn Size="12" SizeMD="2">
+										<RadzenDropDown @bind-Value="statusFilter" Data="statusOptions" Style="width:100%" AllowClear="false" />
+									</RadzenColumn>
+									<RadzenColumn Size="12" SizeMD="2">
+										<RadzenDropDown @bind-Value="currencyFilter" Data="currencyOptions" Style="width:100%" AllowClear="false" />
+									</RadzenColumn>
+									<RadzenColumn Size="12" SizeMD="3" class="text-md-end">
+										<RadzenButton Icon="refresh" Text="Refresh" Disabled="@IsDisabled" Click="RefreshApplicableInvoices" class="me-2" />
+										<RadzenButton Icon="clear" Text="Clear Selection" ButtonStyle="ButtonStyle.Light" Disabled="@IsDisabled" Click="ClearSelection" />
+									</RadzenColumn>
+								</RadzenRow>
+
+								<RadzenDataGrid Data="@FilteredInvoices" TItem="ApplicableReceiptInvoiceDto" AllowPaging="false" AllowSorting="false" AllowFiltering="false" class="w-100">
+									<Columns>
+										<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="">
+											<Template Context="row">
+												<RadzenCheckBox TValue="bool" @bind-Value="row.IsSelected" Change="@(args => OnSelectionChanged(row))" Disabled="@IsDisabled" />
+											</Template>
+										</RadzenDataGridColumn>
+										<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Property="InvoiceNumber" Title="Invoice Number" />
+										<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Invoice Date">
+											<Template Context="row">@row.InvoiceDate.ToString("MMM dd, yyyy")</Template>
+										</RadzenDataGridColumn>
+										<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Due Date">
+											<Template Context="row">@row.DueDate?.ToString("MMM dd, yyyy")</Template>
+										</RadzenDataGridColumn>
+										<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Invoice Amount">
+											<Template Context="row">@row.InvoiceAmount.ToPhp()</Template>
+										</RadzenDataGridColumn>
+										<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Amount Due">
+											<Template Context="row">@row.InvoiceBalance.ToPhp()</Template>
+										</RadzenDataGridColumn>
+										<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Property="CurrencyCode" Title="Currency" />
+										<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Applied Amount">
+											<Template Context="row">
+												<RadzenNumeric TValue="double" @bind-Value="row.AppliedAmount" Step="0.01" Min="0" Max="@(Convert.ToDecimal(row.InvoiceBalance))" Disabled="@(!row.IsSelected || IsDisabled)" Change="@(args => OnAppliedAmountChanged(row))" Style="width:120px" />
+											</Template>
+										</RadzenDataGridColumn>
+										<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Discount">
+											<Template Context="row">
+												<input class="form-control form-control-sm" value="@((row.DiscountAmount ?? 0).ToString("0.00"))" disabled style="width:120px" />
+											</Template>
+										</RadzenDataGridColumn>
+									</Columns>
+								</RadzenDataGrid>
+
+								<div class="mt-2 d-flex justify-content-end">
+									<span class="fw-bold">Total Selected: @TotalAppliedAmount.ToPhp()</span>
+								</div>
+							}
+						</RadzenFieldset>
+					</RadzenColumn>
+				}
 			}
 		</RadzenRow>
 	</BodyTtemplate>
@@ -43,11 +141,32 @@
 	[Parameter] public InvoiceDetailsDto InvoiceDetails { get; set; }
 	[Parameter] public IEnumerable<string> SelectedAdjustmentTypes { get; set; }
 	[Parameter] public bool IsDisabled { get; set; }
+	[Parameter] public EventCallback<ApplyReceiptStateDto> ApplyReceiptStateChanged { get; set; }
 
 	private IEnumerable<string> invoices = new List<string>();
 
 	private string remarks = string.Empty;
 	private bool isAdjustable = false;
+	private bool isApplyReceiptEnabled = false;
+	private string invoiceSearch = string.Empty;
+	private string statusFilter = "Open";
+	private string currencyFilter = "All";
+	private readonly IEnumerable<string> statusOptions = ["Open", "All"];
+	private IEnumerable<string> currencyOptions = ["All"];
+	private IList<ApplicableReceiptInvoiceDto> applicableInvoices = [];
+
+	private bool CanShowApplyReceiptSection =>
+		SelectedAdjustmentTypes.Contains("Write-Off: Small Amount") &&
+		!string.IsNullOrWhiteSpace(InvoiceDetails?.ReceiptNumber);
+
+	private IEnumerable<ApplicableReceiptInvoiceDto> FilteredInvoices => applicableInvoices
+		.Where(i => string.IsNullOrWhiteSpace(invoiceSearch) || i.InvoiceNumber.Contains(invoiceSearch, StringComparison.OrdinalIgnoreCase))
+		.Where(i => statusFilter == "All" || string.Equals(i.InvoiceStatus, statusFilter, StringComparison.OrdinalIgnoreCase))
+		.Where(i => currencyFilter == "All" || string.Equals(i.CurrencyCode, currencyFilter, StringComparison.OrdinalIgnoreCase));
+
+	private double TotalAppliedAmount => applicableInvoices
+		.Where(i => i.IsSelected)
+		.Sum(i => i.AppliedAmount);
 
 	private double AvailableBalance =>
 		InvoiceDetails.OriginalReceiptBalance
@@ -65,11 +184,120 @@
 	{
 		await base.OnParametersSetAsync();
 		isAdjustable = AvailableBalance > 0;
+
+		if (!CanShowApplyReceiptSection && isApplyReceiptEnabled)
+		{
+			isApplyReceiptEnabled = false;
+			applicableInvoices = [];
+			await NotifyApplyReceiptStateChanged();
+		}
 	}
 
 	protected async Task OnAdjustmentAmountChanged(AdjustmentEntry data)
 	{
 		await AdjustmentAmountChanged.InvokeAsync(data);
+	}
+
+	private async Task OnApplyReceiptToggleChanged(bool enabled)
+	{
+		isApplyReceiptEnabled = enabled;
+		if (isApplyReceiptEnabled)
+			await RefreshApplicableInvoices();
+		else
+			ClearSelectionInternal();
+
+		await NotifyApplyReceiptStateChanged();
+	}
+
+	private async Task RefreshApplicableInvoices()
+	{
+		if (!isApplyReceiptEnabled || string.IsNullOrWhiteSpace(InvoiceDetails?.ReceiptNumber))
+			return;
+
+		var rows = await InvoiceService.GetApplicableInvoicesForReceipt(InvoiceDetails.ReceiptNumber);
+		applicableInvoices = rows
+			.Where(r => r.InvoiceBalance > 0)
+			.Select(r =>
+			{
+				r.AppliedAmount = 0;
+				r.IsSelected = false;
+				r.DiscountAmount = 0;
+				r.InvoiceStatus = string.IsNullOrWhiteSpace(r.InvoiceStatus) ? "Open" : r.InvoiceStatus;
+				return r;
+			})
+			.ToList();
+
+		currencyOptions = ["All", .. applicableInvoices.Select(i => i.CurrencyCode).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct(StringComparer.OrdinalIgnoreCase)];
+		await NotifyApplyReceiptStateChanged();
+	}
+
+	private void OnSelectionChanged(ApplicableReceiptInvoiceDto row)
+	{
+		if (!row.IsSelected)
+			row.AppliedAmount = 0;
+		else if (row.AppliedAmount <= 0)
+			row.AppliedAmount = Math.Min(row.InvoiceBalance, Math.Max(AvailableBalance - TotalAppliedAmount, 0));
+
+		_ = NotifyApplyReceiptStateChanged();
+	}
+
+	private void OnAppliedAmountChanged(ApplicableReceiptInvoiceDto row)
+	{
+		if (!row.IsSelected)
+			return;
+
+		if (row.AppliedAmount < 0)
+			row.AppliedAmount = 0;
+
+		if (row.AppliedAmount > row.InvoiceBalance)
+			row.AppliedAmount = row.InvoiceBalance;
+
+		_ = NotifyApplyReceiptStateChanged();
+	}
+
+	private async Task ClearSelection()
+	{
+		ClearSelectionInternal();
+		await NotifyApplyReceiptStateChanged();
+	}
+
+	private void ClearSelectionInternal()
+	{
+		foreach (var row in applicableInvoices)
+		{
+			row.IsSelected = false;
+			row.AppliedAmount = 0;
+			row.DiscountAmount = 0;
+		}
+	}
+
+	private async Task NotifyApplyReceiptStateChanged()
+	{
+		if (!ApplyReceiptStateChanged.HasDelegate)
+			return;
+
+		var state = new ApplyReceiptStateDto
+		{
+			IsEnabled = isApplyReceiptEnabled,
+			SelectedApplications = applicableInvoices
+				.Where(i => i.IsSelected && i.AppliedAmount > 0)
+				.Select(i => new ReceiptInvoiceApplicationSelectionDto
+				{
+					InvoiceId = i.InvoiceId,
+					InvoiceNumber = i.InvoiceNumber,
+					PaymentScheduleId = i.PaymentScheduleId,
+					InvoiceDate = i.InvoiceDate,
+					DueDate = i.DueDate,
+					InvoiceAmount = i.InvoiceAmount,
+					AmountDue = i.InvoiceBalance,
+					CurrencyCode = i.CurrencyCode,
+					AppliedAmount = i.AppliedAmount,
+					DiscountAmount = i.DiscountAmount
+				})
+				.ToList()
+		};
+
+		await ApplyReceiptStateChanged.InvokeAsync(state);
 	}
 
 	public void Reset() => remarks = string.Empty;

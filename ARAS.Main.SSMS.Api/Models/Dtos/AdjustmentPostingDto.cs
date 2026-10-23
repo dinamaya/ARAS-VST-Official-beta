@@ -17,6 +17,20 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 		public string Remarks { get; set; }
 		public string CustomerName { get; set; }
 		public string CustomerNumber { get; set; }
-       public long? CustomerTrxId { get; set; }
+		public long? CustomerTrxId { get; set; }
+		public long? ReceiptId { get; set; }
+		public bool ApplyReceiptEnabled { get; set; }
+		public IList<ReceiptInvoiceApplicationPostingDto> ReceiptApplications { get; set; } = [];
+	}
+
+	public class ReceiptInvoiceApplicationPostingDto
+	{
+		public long? InvoiceId { get; set; }
+		public string InvoiceNumber { get; set; } = string.Empty;
+		public long PaymentScheduleId { get; set; }
+		public double AppliedAmount { get; set; }
+		public double? DiscountAmount { get; set; }
+		public double AmountDue { get; set; }
+		public string CurrencyCode { get; set; } = string.Empty;
 	}
 }

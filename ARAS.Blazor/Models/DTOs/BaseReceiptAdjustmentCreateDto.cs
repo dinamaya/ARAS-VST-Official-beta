@@ -13,8 +13,11 @@ namespace ARAS.Blazor.Models.DTOs
 		public string CustomerNumber { get; set; }
 		public long? CustomerTrxId { get; set; }
 		public long? PaymentScheduleId { get; set; }
+		public long? ReceiptId { get; set; }
 		public string Remarks { get; set; }
 		public string SourceType { get; set; } = "Receipt";
+		public bool ApplyReceiptEnabled { get; set; }
+		public IList<ReceiptInvoiceApplicationSelectionDto> ReceiptApplications { get; set; } = [];
 
 		public BaseReceiptAdjustmentCreateDto() { }
 		public BaseReceiptAdjustmentCreateDto(
@@ -38,6 +41,7 @@ namespace ARAS.Blazor.Models.DTOs
 	CustomerNumber = invoiceDetails.CustomerNumber;
 	CustomerTrxId = invoiceDetails.CustomerTrxId;
 	PaymentScheduleId = invoiceDetails.PaymentScheduleId;
+	ReceiptId = invoiceDetails.ReceiptId;
 	Remarks = adjustmentEntry.Remarks;
 	SourceType = sourceType;
 }

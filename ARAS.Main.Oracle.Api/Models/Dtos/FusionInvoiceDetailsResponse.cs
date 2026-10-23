@@ -76,8 +76,53 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
 		public IEnumerable<FusionReceiptDetailsResponse> ApiResponse { get; set; }
 	}
 
+	/// <summary>
+	/// Response returned by /aras/api/applicable-invoice-for-receipt.
+	/// The gateway has used both compact upper-case field names and
+	/// underscore-separated names, so the row model supports both contracts.
+	/// </summary>
+	public class FusionApplicableReceiptInvoiceApiEnvelope
+	{
+		public int StatusCode { get; set; }
+		public string? Message { get; set; }
+
+		[JsonPropertyName("data")]
+		public IEnumerable<FusionApplicableReceiptInvoiceResponse>? Data { get; set; }
+	}
+
+	public class FusionApplicableReceiptInvoiceResponse
+	{
+		[JsonPropertyName("INVOICEID")] public long? InvoiceId { get; set; }
+		[JsonPropertyName("INVOICE_ID")] public long? InvoiceIdUnderscore { get; set; }
+		[JsonPropertyName("INVOICENUMBER")] public string? InvoiceNumber { get; set; }
+		[JsonPropertyName("INVOICE_NUMBER")] public string? InvoiceNumberUnderscore { get; set; }
+		[JsonPropertyName("INVOICEDATE")] public DateTime? InvoiceDate { get; set; }
+		[JsonPropertyName("INVOICE_DATE")] public DateTime? InvoiceDateUnderscore { get; set; }
+		[JsonPropertyName("DUEDATE")] public DateTime? DueDate { get; set; }
+		[JsonPropertyName("DUE_DATE")] public DateTime? DueDateUnderscore { get; set; }
+		[JsonPropertyName("CUSTOMERACCOUNTID")] public long? CustomerAccountId { get; set; }
+		[JsonPropertyName("CUSTOMER_ACCOUNT_ID")] public long? CustomerAccountIdUnderscore { get; set; }
+		[JsonPropertyName("CUSTOMERCODE")] public string? CustomerCode { get; set; }
+		[JsonPropertyName("CUSTOMER_CODE")] public string? CustomerCodeUnderscore { get; set; }
+		[JsonPropertyName("CUSTOMERNAME")] public string? CustomerName { get; set; }
+		[JsonPropertyName("CUSTOMER_NAME")] public string? CustomerNameUnderscore { get; set; }
+		[JsonPropertyName("INVOICEAMOUNT")] public double? InvoiceAmount { get; set; }
+		[JsonPropertyName("INVOICE_AMOUNT")] public double? InvoiceAmountUnderscore { get; set; }
+		[JsonPropertyName("INVOICEBALANCE")] public double? InvoiceBalance { get; set; }
+		[JsonPropertyName("INVOICE_BALANCE")] public double? InvoiceBalanceUnderscore { get; set; }
+		[JsonPropertyName("INVOICESTATUS")] public string? InvoiceStatus { get; set; }
+		[JsonPropertyName("INVOICE_STATUS")] public string? InvoiceStatusUnderscore { get; set; }
+		[JsonPropertyName("CURRENCYCODE")] public string? CurrencyCode { get; set; }
+		[JsonPropertyName("CURRENCY_CODE")] public string? CurrencyCodeUnderscore { get; set; }
+		[JsonPropertyName("PAYMENTSCHEDULEID")] public long? PaymentScheduleId { get; set; }
+		[JsonPropertyName("PAYMENT_SCHEDULE_ID")] public long? PaymentScheduleIdUnderscore { get; set; }
+		[JsonPropertyName("ORGID")] public long? OrgId { get; set; }
+		[JsonPropertyName("ORG_ID")] public long? OrgIdUnderscore { get; set; }
+	}
+
 	public class FusionReceiptDetailsResponse
 	{
+		[JsonPropertyName("RECEIPTID")] public long? ReceiptId { get; set; }
 		[JsonPropertyName("RECEIPTNUMBER")] public string ReceiptNumber { get; set; }
 		[JsonPropertyName("RECEIPTDATE")] public DateTime? ReceiptDate { get; set; }
 		[JsonPropertyName("RECEIPTAMOUNT")] public double? ReceiptAmount { get; set; }

@@ -1,4 +1,4 @@
-﻿using ARAS.Main.Oracle.Api.App_Code.Globals.Constants;
+using ARAS.Main.Oracle.Api.App_Code.Globals.Constants;
 using ARAS.Main.Oracle.Api.Models.Dtos;
 using ARAS.Main.Oracle.Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +17,22 @@ namespace ARAS.Main.Oracle.Api.Controllers
 		{
 			_logger = logger;
 			_invoiceRepo = invoiceRepo;
+		}
+
+		[HttpGet("receipts/{receiptNumber}/applicable-invoices")]
+		public async Task<ResponseDto<IEnumerable<ApplicableReceiptInvoiceDto>>> GetApplicableInvoicesForReceipt(string receiptNumber)
+		{
+			ResponseDto<IEnumerable<ApplicableReceiptInvoiceDto>> response = new();
+			try
+			{
+				response.Result = await _invoiceRepo.GetApplicableInvoicesForReceipt(receiptNumber);
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
 		}
 
 		[HttpGet("/api/single/invoice/details")]

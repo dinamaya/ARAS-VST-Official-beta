@@ -154,6 +154,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                     CustomerTrxId = r.CustomerTrxId,
                     PaymentScheduleId = r.PaymentScheduleId,
                     ReceiptNumber = r.ReceiptNumber,
+                    ReceiptId = r.ReceiptId,
                     ReceiptDate = r.ReceiptDate,
                     ReceiptAmount = r.ReceiptAmount,
                     ReceiptBalance = r.ReceiptBalance,
@@ -411,6 +412,43 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
                     return r;
                 })
                 .DistinctBy(r => new { r.CustomerName, r.CustomerNumber, r.InvoiceAmount, r.InvoiceDate });
+        }
+
+        public async Task<IEnumerable<ApplicableReceiptInvoiceDto>> GetApplicableInvoicesForReceipt(string receiptNumber)
+        {
+            if (string.IsNullOrWhiteSpace(receiptNumber))
+                throw new ArgumentException("Receipt number is required.");
+
+            var requestUri = $"/aras/api/applicable-invoice-for-receipt?receiptNumber={Uri.EscapeDataString(receiptNumber.Trim())}";
+            using var response = await _fusionHttpClient.GetAsync(requestUri);
+            response.EnsureSuccessStatusCode();
+
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var envelope = await response.Content.ReadFromJsonAsync<FusionApplicableReceiptInvoiceApiEnvelope>(options)
+                ?? throw new InvalidOperationException("The applicable-invoice service returned an empty response.");
+
+            if (envelope.StatusCode is not 0 and not 200)
+                throw new InvalidOperationException(envelope.Message ?? "The applicable-invoice service returned an error.");
+
+            return (envelope.Data ?? [])
+                .Select(invoice => new ApplicableReceiptInvoiceDto
+                {
+                    InvoiceId = invoice.InvoiceId ?? invoice.InvoiceIdUnderscore,
+                    InvoiceNumber = invoice.InvoiceNumber ?? invoice.InvoiceNumberUnderscore ?? string.Empty,
+                    InvoiceDate = invoice.InvoiceDate ?? invoice.InvoiceDateUnderscore ?? default,
+                    DueDate = invoice.DueDate ?? invoice.DueDateUnderscore,
+                    CustomerAccountId = invoice.CustomerAccountId ?? invoice.CustomerAccountIdUnderscore,
+                    CustomerCode = invoice.CustomerCode ?? invoice.CustomerCodeUnderscore ?? string.Empty,
+                    CustomerName = invoice.CustomerName ?? invoice.CustomerNameUnderscore ?? string.Empty,
+                    InvoiceAmount = invoice.InvoiceAmount ?? invoice.InvoiceAmountUnderscore ?? 0,
+                    InvoiceBalance = invoice.InvoiceBalance ?? invoice.InvoiceBalanceUnderscore ?? 0,
+                    InvoiceStatus = invoice.InvoiceStatus ?? invoice.InvoiceStatusUnderscore ?? "Open",
+                    CurrencyCode = invoice.CurrencyCode ?? invoice.CurrencyCodeUnderscore ?? string.Empty,
+                    PaymentScheduleId = invoice.PaymentScheduleId ?? invoice.PaymentScheduleIdUnderscore ?? 0,
+                    OrgId = invoice.OrgId ?? invoice.OrgIdUnderscore
+                })
+                .Where(invoice => invoice.PaymentScheduleId > 0)
+                .ToList();
         }
         // =========================================================================
         // GetAPInvoiceNo — ORACLE EBS (Not yet migrated to Oracle Fusion)

@@ -1,4 +1,4 @@
-﻿using ARAS.Blazor.App_Code.Globals;
+using ARAS.Blazor.App_Code.Globals;
 using ARAS.Blazor.App_Code.Globals.Constants;
 using ARAS.Blazor.Models.DTOs;
 using ARAS.Blazor.Services.Interfaces;
@@ -108,6 +108,19 @@ namespace ARAS.Blazor.Services.Implementations
 			});
 
 			Guards.ThrowNullReferenceIf(response?.Result, response.Message);
+			return response.Result;
+		}
+
+		public async Task<IEnumerable<ApplicableReceiptInvoiceDto>> GetApplicableInvoicesForReceipt(string receiptNumber)
+		{
+			Guards.ThrowInvalidOperationIf(string.IsNullOrWhiteSpace(receiptNumber), "Receipt number is required.");
+
+			var response = await _baseService.SendAsync<IEnumerable<ApplicableReceiptInvoiceDto>>(new RequestDto()
+			{
+				URL = _configService.GetOracleInvoiceApiUrl($"receipts/{Uri.EscapeDataString(receiptNumber.Trim())}/applicable-invoices")
+			});
+
+			Guards.ThrowNullReferenceIf(response?.Result, response?.Message ?? "Failed to retrieve applicable invoices.");
 			return response.Result;
 		}
 

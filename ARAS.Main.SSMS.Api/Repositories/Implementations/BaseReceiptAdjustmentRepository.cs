@@ -2,6 +2,7 @@ using ARAS.Main.SSMS.Api.App_Code.Globals;
 using ARAS.Main.SSMS.Api.App_Code.Globals.Helpers;
 using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
+using ARAS.Main.SSMS.Api.Models.Entities;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using ARAS.Main.SSMS.Api.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -41,7 +42,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 			try
 			{
-				string invoiceNumber = data.Model.Select(d => d.InvoiceNumber).First();
+				var models = data.Model.ToList();
+				string invoiceNumber = models.Select(d => d.InvoiceNumber).First();
 				IList<string> adjustmentTypeIds = [];
 				IEnumerable<long> requestIds = [];
 
@@ -53,35 +55,36 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 				IList<AdjustmentCreateDto> adjustments = [];
 
-				foreach (string adjustmentName in data.Model.Select(d => d.AdjustmentType))
+				foreach (string adjustmentName in models.Select(d => d.AdjustmentType))
 				{
 					string adjustmentType = (await _adjustmentRepo.GetAdjustmentInfoByName(adjustmentName)).Id;
 					adjustmentTypeIds.Add(adjustmentType);
 				}
 
-				string sourceType = data.Model.Select(model => model.SourceType).FirstOrDefault() ?? "Receipt";
+				string sourceType = models.Select(model => model.SourceType).FirstOrDefault() ?? "Receipt";
 				requestIds = await _requestRepo.CreateAsync(adjustmentTypeIds, createdBy, sourceType);
+				var requestIdList = requestIds.ToList();
 				
 				string existingAdjustments = await _requestRepo.InvoiceExistingAdjustments(invoiceNumber, adjustmentTypeIds);
 
 				Guards.ThrowInvalidOperationIf(!string.IsNullOrEmpty(existingAdjustments), "Invoice Number already has the following adjustments:\n" + existingAdjustments);
 
-				foreach (var requestId in requestIds)
+				foreach (var requestId in requestIdList)
 					transactions.Add(new TransactionCreateDto(requestId, "For CNC Approval"));
 				transactionIds = await _transactionRepo.CreateAsync(transactions, createdBy);
 
-				foreach (var invoice in data.Model)
+				foreach (var invoice in models)
 					invoices.Add(new InvoiceCreateDto(invoice));
 				invoiceIds = await _invoiceRepo.CreateAsync(invoices, createdBy);
 
 				// Combine the model, invoiceIds and requestIds
 				var zipped = invoiceIds
-					.Zip(data.Model, (inv, mod) => new
+					.Zip(models, (inv, mod) => new
 					{
 						invoice = inv,
 						model = mod
 					})
-					.Zip(requestIds, (mod, req) => new
+					.Zip(requestIdList, (mod, req) => new
 						{
 							ids = new 
 							{
@@ -99,9 +102,36 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					);
 
 				await _adjustmentRepo.CreateAsync(adjustments, createdBy);
+
+				var receiptApplications = zipped
+					.Where(z => z.model.ApplyReceiptEnabled && z.model.ReceiptApplications is not null && z.model.ReceiptApplications.Any())
+					.SelectMany(z => z.model.ReceiptApplications
+						.Where(a => a is not null && a.PaymentScheduleId > 0 && a.AppliedAmount > 0)
+						.Select(a => new ReceiptInvoiceApplication
+						{
+							RequestId = z.ids.requests,
+							ReceiptNumber = z.model.InvoiceNumber,
+							ReceiptId = z.model.ReceiptId,
+							InvoiceId = a.InvoiceId,
+							InvoiceNumber = a.InvoiceNumber,
+							PaymentScheduleId = a.PaymentScheduleId,
+							AppliedAmount = a.AppliedAmount,
+							DiscountAmount = a.DiscountAmount,
+							AmountDue = a.AmountDue,
+							CurrencyCode = a.CurrencyCode,
+							CreatedBy = createdBy,
+							DateCreated = DateTime.Now,
+							ModifiedBy = createdBy,
+							DateModified = DateTime.Now,
+							IsActive = true
+						}));
+
+				if (receiptApplications.Any())
+					await _context.ReceiptInvoiceApplications.AddRangeAsync(receiptApplications);
+
 				await dbTransaction.CommitAsync();
 
-				var zipResults = requestIds.Zip(data.Model, 
+				var zipResults = requestIdList.Zip(models, 
 					(req, mod)	=> new ReceiptAdjustmentCreateResponseDto
 					{
 						RequestId = req,
@@ -207,7 +237,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					CustomerNumber = a.CustomerNumber
 				}).ToListAsync();
 
-            return await RestoreInvoiceIdentifiersAsync(rows);
+			rows = await RestoreInvoiceIdentifiersAsync(rows);
+			return await AttachReceiptApplicationsAsync(rows);
 		}
 
 		public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByRequestIds(IEnumerable<long> requestIds)
@@ -231,7 +262,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				   CustomerNumber = a.CustomerNumber
 			   }).ToListAsync();
 
-			return await RestoreInvoiceIdentifiersAsync(rows);
+			rows = await RestoreInvoiceIdentifiersAsync(rows);
+			return await AttachReceiptApplicationsAsync(rows);
 		}
 
 		public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByAdjustmentId(long adjustmentId)
@@ -255,7 +287,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					CustomerNumber = a.CustomerNumber
 				}).ToListAsync();
 
-            return await RestoreInvoiceIdentifiersAsync(rows);
+			rows = await RestoreInvoiceIdentifiersAsync(rows);
+			return await AttachReceiptApplicationsAsync(rows);
 		}
 
 		public async Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByAdjustmentId(IEnumerable<long> adjustmentIds)
@@ -302,7 +335,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                 return keySet.Contains($"{parsed.RequestId}:{parsed.AdjustmentId}");
             }).ToList();
 
-            return await RestoreInvoiceIdentifiersAsync(rows);
+			rows = await RestoreInvoiceIdentifiersAsync(rows);
+			return await AttachReceiptApplicationsAsync(rows);
         }
 
         private async Task<List<AdjustmentPostingDto>> RestoreInvoiceIdentifiersAsync(List<AdjustmentPostingDto> rows)
@@ -346,5 +380,64 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
             return rows;
         }
+
+		private async Task<List<AdjustmentPostingDto>> AttachReceiptApplicationsAsync(List<AdjustmentPostingDto> rows)
+		{
+			if (!rows.Any())
+				return rows;
+
+			var requestIds = rows
+				.Select(row => StagingHeaderIdHelper.Parse(row.HeaderId).RequestId)
+				.Distinct()
+				.ToList();
+
+			var applicationRows = await _context.ReceiptInvoiceApplications
+				.AsNoTracking()
+				.Where(a => requestIds.Contains(a.RequestId) && a.IsActive)
+				.Select(a => new
+				{
+					a.RequestId,
+					a.ReceiptId,
+					a.InvoiceId,
+					a.InvoiceNumber,
+					a.PaymentScheduleId,
+					a.AppliedAmount,
+					a.DiscountAmount,
+					a.AmountDue,
+					a.CurrencyCode
+				})
+				.ToListAsync();
+
+			var grouped = applicationRows
+				.GroupBy(a => a.RequestId)
+				.ToDictionary(
+					g => g.Key,
+					g => g.Select(a => new ReceiptInvoiceApplicationPostingDto
+					{
+						InvoiceId = a.InvoiceId,
+						InvoiceNumber = a.InvoiceNumber,
+						PaymentScheduleId = a.PaymentScheduleId,
+						AppliedAmount = a.AppliedAmount,
+						DiscountAmount = a.DiscountAmount,
+						AmountDue = a.AmountDue,
+						CurrencyCode = a.CurrencyCode
+					}).ToList());
+
+			foreach (var row in rows)
+			{
+				var requestId = StagingHeaderIdHelper.Parse(row.HeaderId).RequestId;
+				if (!grouped.TryGetValue(requestId, out var applications) || applications.Count == 0)
+					continue;
+
+				row.ApplyReceiptEnabled = true;
+				row.ReceiptApplications = applications;
+				row.ReceiptId ??= applicationRows
+					.Where(a => a.RequestId == requestId)
+					.Select(a => a.ReceiptId)
+					.FirstOrDefault();
+			}
+
+			return rows;
+		}
     }
 }

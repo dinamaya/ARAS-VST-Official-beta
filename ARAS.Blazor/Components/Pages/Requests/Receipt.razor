@@ -76,9 +76,20 @@
 										<input class="form-control form-control-sm fs-6 px-3 py-2" type="text" disabled value="@TotalAdjustmentAmount.ToPhp()">
 									</div>
 								</div>
+								@if (_applyReceiptState.IsEnabled)
+								{
+									<div>
+										<div class="mb-2">
+											<RadzenLabel Text="Total Applied Amount:" />
+										</div>
+										<div class="input-group ps-3">
+											<input class="form-control form-control-sm fs-6 px-3 py-2" type="text" disabled value="@TotalAppliedAmount.ToPhp()">
+										</div>
+									</div>
+								}
 								<div>
 									<div class="mb-2">
-										<RadzenLabel Text="Remaining Balance:" />
+										<RadzenLabel Text="Remaining Receipt Balance:" />
 									</div>
 									<div class="input-group ps-3">
 										<input class="form-control form-control-sm fs-6 px-3 py-2" type="text" disabled value="@RemainingBalance.ToPhp()">
@@ -86,7 +97,7 @@
 								</div>
 								<div>
 									<p class="text-xs mb-1">
-										Calculated by the summation of <b>Adjustment Amounts</b> subtracted to the <b>Invoice Amount</b>
+										Only relevant totals are shown based on selected workflow.
 									</p>
 								</div>
 							</RadzenStack>
@@ -99,7 +110,7 @@
 		@if (selectedAdjustmentTypes.Any())
 				{
 		<RadzenColumn Size="12" SizeMD="7">
-			<CreateReceiptAdjustment IsDisabled="@IsSubmitting" InvoiceDetails="SearchedInvoice" SelectedAdjustmentTypes="selectedAdjustmentTypes" AdjustmentAmountChanged="HandleAdjustmentChange" />
+			<CreateReceiptAdjustment IsDisabled="@IsSubmitting" InvoiceDetails="SearchedInvoice" SelectedAdjustmentTypes="selectedAdjustmentTypes" AdjustmentAmountChanged="HandleAdjustmentChange" ApplyReceiptStateChanged="HandleApplyReceiptStateChange" />
 		</RadzenColumn>
 				}
 
@@ -130,11 +141,13 @@
 
 	private double RemainingBalance = 0d;
 	private double TotalAdjustmentAmount = 0d;
+	private double TotalAppliedAmount = 0d;
 	private bool isReady = false;
 	private bool isSubmitConfirmationOpen = false;
 	private bool _scrollToAdjustmentTypes;
 	private bool isReceiptSearch;
 	private ReceiptAttachmentsDatatable receiptAttachments;
+	private ApplyReceiptStateDto _applyReceiptState = new();
 	private double AvailableBalance =>
 		SearchedInvoice.OriginalReceiptBalance
 		?? SearchedInvoice.ReceiptBalance
@@ -188,6 +201,7 @@
 
 		SearchedInvoice = invoiceDetails;
 		RemainingBalance = invoiceDetails.ReceiptBalance ?? invoiceDetails.InvoiceBalance;
+		_applyReceiptState = new ApplyReceiptStateDto();
 
 		_scrollToAdjustmentTypes = true;
 		Reset();
@@ -199,6 +213,7 @@
 	{
 		isReceiptSearch = string.Equals(group, "Receipt", StringComparison.OrdinalIgnoreCase);
 		SearchedInvoice = new();
+		_applyReceiptState = new ApplyReceiptStateDto();
 		Reset();
 	}
 
@@ -210,6 +225,12 @@
 			Remarks = data.Remarks
 		};
 
+		Calculate();
+	}
+
+	private void HandleApplyReceiptStateChange(ApplyReceiptStateDto state)
+	{
+		_applyReceiptState = state ?? new ApplyReceiptStateDto();
 		Calculate();
 	}
 
@@ -237,7 +258,10 @@
 	private void Calculate()
 	{
 		TotalAdjustmentAmount = _adjustments.Values.Sum(a => a.Amount);
-		RemainingBalance = AvailableBalance - TotalAdjustmentAmount;
+		TotalAppliedAmount = _applyReceiptState.IsEnabled
+			? _applyReceiptState.SelectedApplications.Sum(a => a.AppliedAmount)
+			: 0d;
+		RemainingBalance = Math.Round(AvailableBalance - TotalAppliedAmount, 2);
 		StateHasChanged();
 	}
 
@@ -246,6 +270,7 @@
 		_adjustments.Clear();
 		selectedAdjustmentTypes = [];
 		TotalAdjustmentAmount = 0;
+		TotalAppliedAmount = 0;
 		Calculate();
 	}
 
@@ -290,9 +315,20 @@
 				AvailableBalance <= 0,
 				"Cannot apply adjustment(s) because the current receipt is non-adjustable because its balance is less than or equal to 0.");
 
+			if (_applyReceiptState.IsEnabled)
+			{
+				Guards.ThrowInvalidOperationIf(
+					!_applyReceiptState.SelectedApplications.Any(),
+					"Enable Apply Receipt requires at least one selected invoice with a positive applied amount.");
+
+				Guards.ThrowInvalidOperationIf(
+					TotalAppliedAmount > AvailableBalance,
+					"Total applied amount cannot be greater than the available receipt balance.");
+			}
+
 			Guards.ThrowInvalidOperationIf(
-				RemainingBalance <= 0,
-				"Cannot apply adjustment(s) because the remaining receipt balance is less than or equal to 0.");
+				RemainingBalance < 0,
+				"Cannot apply adjustment(s) because the remaining receipt balance is less than 0.");
 
 			foreach (var adj in _adjustments)
 			{
@@ -308,7 +344,17 @@
 					adj.Key,
 					SearchedInvoice,
 					adj.Value,
-					isReceiptSearch ? "Receipt" : "Invoice"));
+					isReceiptSearch ? "Receipt" : "Invoice")
+				{
+					ApplyReceiptEnabled = isReceiptSearch
+						&& string.Equals(adj.Key, "Write-Off: Small Amount", StringComparison.OrdinalIgnoreCase)
+						&& _applyReceiptState.IsEnabled,
+					ReceiptApplications = isReceiptSearch
+						&& string.Equals(adj.Key, "Write-Off: Small Amount", StringComparison.OrdinalIgnoreCase)
+						&& _applyReceiptState.IsEnabled
+						? _applyReceiptState.SelectedApplications
+						: []
+				});
 			}
 
 			await RequestService.Create(requests, Notes);

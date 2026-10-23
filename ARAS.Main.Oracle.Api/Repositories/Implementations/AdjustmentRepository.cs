@@ -208,22 +208,33 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			{
 				item.GlAccountingDate ??= receiptDetails!.CreationDate ?? receiptDetails.GlAccountingDate;
 
-				var applicationAmount = decimal.Round(receiptAmount - writeOffAmount, 2, MidpointRounding.AwayFromZero);
-
 				if (receiptAmount <= 0)
 					throw new InvalidOperationException($"The original receipt amount is missing or invalid ({receiptAmount:0.00}).");
-				if (writeOffAmount >= receiptAmount || applicationAmount <= 0)
-					throw new InvalidOperationException($"The write-off amount ({writeOffAmount:0.00}) must be less than the receipt amount ({receiptAmount:0.00}).");
-				if (item.CustomerTrxId is null)
-					throw new InvalidOperationException($"CustomerTrxId is required for receipt write-off. Invoice: {item.InvoiceNumber}");
-				if (item.PaymentScheduleId is null)
-					throw new InvalidOperationException($"PaymentScheduleId is required for receipt write-off. Invoice: {item.InvoiceNumber}");
 
-				// Receipt source: first call
-				await CreateFusionReceiptApplication(item, applicationAmount);
+				if (item.ApplyReceiptEnabled)
+				{
+					await ApplyReceiptToInvoicesAsync(item, receiptAmount);
+				}
+				else
+				{
+					var applicationAmount = decimal.Round(receiptAmount - writeOffAmount, 2, MidpointRounding.AwayFromZero);
+
+					if (writeOffAmount >= receiptAmount || applicationAmount <= 0)
+						throw new InvalidOperationException($"The write-off amount ({writeOffAmount:0.00}) must be less than the receipt amount ({receiptAmount:0.00}).");
+					if (item.CustomerTrxId is null)
+						throw new InvalidOperationException($"CustomerTrxId is required for receipt write-off. Invoice: {item.InvoiceNumber}");
+					if (item.PaymentScheduleId is null)
+						throw new InvalidOperationException($"PaymentScheduleId is required for receipt write-off. Invoice: {item.InvoiceNumber}");
+
+					// Legacy receipt source flow: first call
+					await CreateFusionReceiptApplication(item, applicationAmount);
+				}
 			}
 			else
 			{
+				if (item.ApplyReceiptEnabled)
+					throw new InvalidOperationException("Apply Receipt can only be used for receipt-based write-off transactions.");
+
 				_logger.LogInformation(
 					"SAR posting for {InvoiceNumber} detected as Invoice source. Skipping createApplyReceipt and using invoice-specific receivables activity.",
 					item.InvoiceNumber);
@@ -237,6 +248,86 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 			// Always call activity application
 			await CreateFusionReceiptActivityApplication(item, writeOffAmount, sarActivityName);
+		}
+
+		private async Task ApplyReceiptToInvoicesAsync(AdjustmentPostingDto item, decimal receiptAmount)
+		{
+			if (item.ReceiptId is null || item.ReceiptId <= 0)
+				throw new InvalidOperationException("ReceiptId is required to apply receipt to selected invoices.");
+
+			var applications = item.ReceiptApplications?
+				.Where(a => a is not null && a.PaymentScheduleId > 0 && a.AppliedAmount > 0)
+				.ToList() ?? [];
+
+			if (!applications.Any())
+				throw new InvalidOperationException("Apply Receipt is enabled but no invoice applications were provided.");
+
+			var applicableInvoices = (await invoiceRepo.GetApplicableInvoicesForReceipt(item.InvoiceNumber)).ToList();
+			if (!applicableInvoices.Any())
+				throw new InvalidOperationException($"No applicable invoices found for receipt {item.InvoiceNumber}.");
+
+			var invoiceBySchedule = applicableInvoices.ToDictionary(a => a.PaymentScheduleId, a => a);
+			var totalApplied = applications.Sum(a => decimal.Round(Convert.ToDecimal(a.AppliedAmount), 2, MidpointRounding.AwayFromZero));
+
+			if (totalApplied > receiptAmount)
+				throw new InvalidOperationException($"Total applied amount ({totalApplied:0.00}) cannot exceed receipt balance ({receiptAmount:0.00}).");
+
+			foreach (var app in applications)
+			{
+				if (!invoiceBySchedule.TryGetValue(app.PaymentScheduleId, out var invoice))
+					throw new InvalidOperationException($"Selected payment schedule {app.PaymentScheduleId} is no longer applicable for receipt {item.InvoiceNumber}.");
+
+				var applyAmount = decimal.Round(Convert.ToDecimal(app.AppliedAmount), 2, MidpointRounding.AwayFromZero);
+				var amountDue = decimal.Round(Convert.ToDecimal(invoice.InvoiceBalance), 2, MidpointRounding.AwayFromZero);
+				if (applyAmount > amountDue)
+					throw new InvalidOperationException($"Applied amount ({applyAmount:0.00}) for invoice {invoice.InvoiceNumber} exceeds current amount due ({amountDue:0.00}).");
+
+				if (!string.IsNullOrWhiteSpace(app.CurrencyCode)
+					&& !string.IsNullOrWhiteSpace(invoice.CurrencyCode)
+					&& !string.Equals(app.CurrencyCode, invoice.CurrencyCode, StringComparison.OrdinalIgnoreCase))
+				{
+					throw new InvalidOperationException($"Currency mismatch for invoice {invoice.InvoiceNumber}: selected {app.CurrencyCode}, current {invoice.CurrencyCode}.");
+				}
+
+				await CreateFusionReceiptApplicationByRestAsync(item.ReceiptId.Value, app.PaymentScheduleId, applyAmount, invoice.InvoiceNumber);
+			}
+		}
+
+		private async Task CreateFusionReceiptApplicationByRestAsync(long receiptId, long paymentScheduleId, decimal amountApplied, string invoiceNumber)
+		{
+			var endpointTemplate = _config.GetFusionReceiptApplyRestEndpointTemplate();
+			var endpoint = endpointTemplate.Replace("{receiptId}", receiptId.ToString(), StringComparison.OrdinalIgnoreCase);
+
+			using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+			request.Headers.Authorization = CreateBasicAuthenticationHeader();
+			request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+			request.Headers.TryAddWithoutValidation("REST-Framework-Version", "4");
+
+			var payload = new
+			{
+				appliedPaymentScheduleId = paymentScheduleId,
+				amountApplied = amountApplied
+			};
+
+			request.Content = new StringContent(
+				JsonSerializer.Serialize(payload),
+				Encoding.UTF8,
+				"application/vnd.oracle.adf.action+json");
+
+			var response = await _httpClient.SendAsync(request);
+			var content = await ReadResponseContent(response);
+
+			if (!response.IsSuccessStatusCode)
+			{
+				_logger.LogError("Fusion REST applyReceipt failed for invoice {InvoiceNumber}. StatusCode: {StatusCode}. Response: {Response}", invoiceNumber, response.StatusCode, content);
+				throw new InvalidOperationException($"Fusion REST applyReceipt failed for invoice {invoiceNumber}. StatusCode: {(int)response.StatusCode}. Response: {content}");
+			}
+
+			if (!string.IsNullOrWhiteSpace(content) && content.Contains("errorCode", StringComparison.OrdinalIgnoreCase))
+			{
+				_logger.LogError("Fusion REST applyReceipt returned business error for invoice {InvoiceNumber}. Response: {Response}", invoiceNumber, content);
+				throw new InvalidOperationException($"Fusion REST applyReceipt returned an error for invoice {invoiceNumber}. Response: {content}");
+			}
 		}
 
 		private async Task CreateFusionReceiptApplication(AdjustmentPostingDto item, decimal amount)

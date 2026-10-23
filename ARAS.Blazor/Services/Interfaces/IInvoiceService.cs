@@ -1,4 +1,4 @@
-﻿using ARAS.Blazor.Models.DTOs;
+using ARAS.Blazor.Models.DTOs;
 
 namespace ARAS.Blazor.Services.Interfaces
 {
@@ -8,6 +8,7 @@ namespace ARAS.Blazor.Services.Interfaces
 		Task<IEnumerable<InvoiceDetailsDto>> GetDetailsList(SearchRequestDto searchRequest);
 		Task<IEnumerable<InvoiceDetailsDto>> GetReceiptDetailsList(SearchRequestDto searchRequest);
 		Task<IEnumerable<InvoiceDetailsDto>> GetAPDetailsList(SearchRequestDto searchRequest);
+		Task<IEnumerable<ApplicableReceiptInvoiceDto>> GetApplicableInvoicesForReceipt(string receiptNumber);
 
 		Task<IEnumerable<SearchCNDetailsRowDto>> GetSRAutoNetCNDetails(string invoiceNumber);
 		

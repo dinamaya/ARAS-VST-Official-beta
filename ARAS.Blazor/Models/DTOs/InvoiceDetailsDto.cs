@@ -15,6 +15,7 @@ namespace ARAS.Blazor.Models.DTOs
 		public string? CurrencyCode { get; set; }
 		public DateTime? GlAccountingDate { get; set; }
 		public string ReceiptNumber { get; set; }
+		public long? ReceiptId { get; set; }
 		public DateTime? ReceiptDate { get; set; }
 		public double? ReceiptAmount { get; set; }
 		public double? ReceiptBalance { get; set; }

@@ -1,4 +1,4 @@
-﻿
+
 namespace ARAS.Main.SSMS.Api.Models.Dtos
 {
     public class BaseReceiptAdjustmentCreateDto
@@ -12,7 +12,10 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 		public string CustomerNumber { get; set; }
 		public long? CustomerTrxId { get; set; }
 		public long? PaymentScheduleId { get; set; }
+		public long? ReceiptId { get; set; }
 		public string Remarks { get; set; }
 		public string SourceType { get; set; } = "Receipt";
+		public bool ApplyReceiptEnabled { get; set; }
+		public IList<ReceiptInvoiceApplicationSelectionDto> ReceiptApplications { get; set; } = [];
 	}
 }

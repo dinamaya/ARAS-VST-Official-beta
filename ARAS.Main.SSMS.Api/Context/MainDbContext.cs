@@ -1,4 +1,4 @@
-﻿using ARAS.Main.SSMS.Api.Models.Entities;
+using ARAS.Main.SSMS.Api.Models.Entities;
 using ARAS.Main.SSMS.Api.Models.SQLVIews;
 using ARAS.Main.SSMS.Api.Models.Views;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +15,7 @@ namespace ARAS.Main.SSMS.Api.Context
 		public virtual DbSet<Invoice> Invoices { get; set; }
 		public virtual DbSet<Note> Notes { get; set; }
 		public virtual DbSet<Request> Requests { get; set; }
+		public virtual DbSet<ReceiptInvoiceApplication> ReceiptInvoiceApplications { get; set; }
 		public virtual DbSet<Status> Statuses { get; set; }
 		public virtual DbSet<Transaction> Transactions { get; set; }
 		public virtual DbSet<TransactionRemarks> TransactionRemarks { get; set; }
@@ -90,6 +91,11 @@ namespace ARAS.Main.SSMS.Api.Context
 			});
 
 			modelBuilder.Entity<Note>()
+			  .HasOne(a => a.Request)
+			  .WithMany()
+			  .HasForeignKey(a => a.RequestId);
+
+			modelBuilder.Entity<ReceiptInvoiceApplication>()
 			  .HasOne(a => a.Request)
 			  .WithMany()
 			  .HasForeignKey(a => a.RequestId);

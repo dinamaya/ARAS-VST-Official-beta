@@ -1,4 +1,4 @@
-﻿using ARAS.Main.Oracle.Api.Models.Dtos;
+using ARAS.Main.Oracle.Api.Models.Dtos;
 
 namespace ARAS.Main.Oracle.Api.Services.Interfaces
 {
@@ -13,6 +13,7 @@ namespace ARAS.Main.Oracle.Api.Services.Interfaces
 		string GetFusionReceiptActivityEndpoint();
 		string GetFusionReceiptActivitySoapAction();
 		string GetFusionReceiptApplySoapAction();
+		string GetFusionReceiptApplyRestEndpointTemplate();
 		string GetFusionReceiptActivityBusinessUnit();
 		long GetFusionReceiptActivityPaymentScheduleId();
 		long GetFusionAdjustmentOrgId();

@@ -13,7 +13,6 @@ namespace ARAS.Main.Oracle.Api.Services.Implementations
 		public string GetFusionAdjustmentSoapAction() => GetRequiredValue("OracleFusionAdjustmentService:SoapAction");
 		public string GetFusionReceiptActivityEndpoint() => GetRequiredValue("OracleFusionReceiptActivityService:Endpoint");
 		public string GetFusionReceiptActivitySoapAction() => GetRequiredValue("OracleFusionReceiptActivityService:SoapAction");
-		public string GetFusionReceiptApplySoapAction() => GetRequiredValue("OracleFusionReceiptActivityService:ApplySoapAction");
 		public string GetFusionReceiptApplyRestEndpointTemplate() => GetRequiredValue("OracleFusionReceiptApplicationService:EndpointTemplate");
 		public string GetFusionReceiptActivityBusinessUnit() => GetRequiredValue("OracleFusionReceiptActivityService:BusinessUnit");
 		public long GetFusionReceiptActivityPaymentScheduleId() => GetRequiredLong("OracleFusionReceiptActivityService:AppliedPaymentScheduleId");

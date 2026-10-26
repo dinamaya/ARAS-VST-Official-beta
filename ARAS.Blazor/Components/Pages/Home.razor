@@ -44,8 +44,8 @@
             {
                 @foreach (var card in dashboardCards)
                 {
-                    <div class="col-xl-2 col-sm-6 mb-4">
-                        <div class="card">
+                    <div class="@(accountDetails.IsApprovalActor() ? "col-xl-4 col-sm-6 mb-4" : "col-xl-2 col-sm-6 mb-4")">
+                        <div class="card h-100">
                             <div class="card-body p-3">
                                 <div class="row">
                                     <div class="col-8">
@@ -259,7 +259,7 @@
             new DashboardCard { Title = "Approved", Count = approvedCount, IconClass = "ni ni-like-2" },
             new DashboardCard { Title = "Declined", Count = declinedCount, IconClass = "ni ni-bold-down" },
             new DashboardCard { Title = "FSG Validation / Approval", Count = resubmittedCount, IconClass = "ni ni-user-run" },
-            new DashboardCard { Title = "ERP Posted", Count = postedCount, IconClass = "ni ni-check-bold" },
+            new DashboardCard { Title = "Posted", Count = postedCount, IconClass = "ni ni-check-bold" },
             new DashboardCard { Title = "Rejected", Count = rejectedCount, IconClass = "ni ni-fat-remove" },
         ];
     }

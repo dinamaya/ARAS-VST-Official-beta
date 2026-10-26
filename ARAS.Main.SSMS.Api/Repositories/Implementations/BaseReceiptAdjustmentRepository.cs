@@ -67,7 +67,12 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				
 				string existingAdjustments = await _requestRepo.InvoiceExistingAdjustments(invoiceNumber, adjustmentTypeIds);
 
-				Guards.ThrowInvalidOperationIf(!string.IsNullOrEmpty(existingAdjustments), "Invoice Number already has the following adjustments:\n" + existingAdjustments);
+				var sourceLabel = string.Equals(sourceType, "Receipt", StringComparison.OrdinalIgnoreCase)
+					? "Receipt Number"
+					: "Invoice Number";
+				Guards.ThrowInvalidOperationIf(
+					!string.IsNullOrEmpty(existingAdjustments),
+					$"{sourceLabel} already has the following adjustments:\n{existingAdjustments}");
 
 				foreach (var requestId in requestIdList)
 					transactions.Add(new TransactionCreateDto(requestId, "For CNC Approval"));

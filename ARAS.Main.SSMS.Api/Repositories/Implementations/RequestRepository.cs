@@ -1029,9 +1029,15 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
         {
 			var adjustments = await (
 				 from adj in _context.VwReceiptAdjustments.AsNoTracking()
-				 join status in _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking()
+				 join status in _context.VwLatestReceiptAdjustmentDetails.AsNoTracking()
 					 on adj.RequestId equals status.RequestId
-				 where adj.InvoiceNumber == invoiceNumber && status.Status != "Rejected"
+					 // Completed requests may be reused during development testing. Some
+					 // deployments expose a completed request as "For ERP Posting" before
+					 // the final "Posted" status, so both terminal states are excluded.
+					 where adj.InvoiceNumber == invoiceNumber
+						&& status.Status != "Rejected"
+						&& status.Status != "Posted"
+						&& status.Status != "For ERP Posting"
 				 select adj
 			 ).ToListAsync();
 

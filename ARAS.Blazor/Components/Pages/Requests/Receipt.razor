@@ -89,7 +89,7 @@
 								}
 								<div>
 									<div class="mb-2">
-										<RadzenLabel Text="Remaining Receipt Balance:" />
+										<RadzenLabel Text="Projected Remaining Balance:" />
 									</div>
 									<div class="input-group ps-3">
 										<input class="form-control form-control-sm fs-6 px-3 py-2" type="text" disabled value="@RemainingBalance.ToPhp()">
@@ -261,7 +261,9 @@
 		TotalAppliedAmount = _applyReceiptState.IsEnabled
 			? _applyReceiptState.SelectedApplications.Sum(a => a.AppliedAmount)
 			: 0d;
-		RemainingBalance = Math.Round(AvailableBalance - TotalAppliedAmount, 2);
+		// Reflect both selected invoice applications and the adjustment amounts
+		// currently entered by the user.
+		RemainingBalance = Math.Round(AvailableBalance - TotalAppliedAmount - TotalAdjustmentAmount, 2);
 		StateHasChanged();
 	}
 

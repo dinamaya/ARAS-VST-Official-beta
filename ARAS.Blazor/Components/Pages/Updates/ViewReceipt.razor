@@ -100,7 +100,7 @@
 									<RadzenColumn Size="12" SizeXL="6" SizeXS="12">
 										@if (TypeCode == "cdr")
 										{
-											<div class="mb-2 text-sm">Discount Percentage: <div class="text-dark font-weight-bold ms-2">@(invoice.InvoiceAmount == 0 ? 0 : Math.Round((details.AdjustmentAmount / invoice.InvoiceAmount) * 100, 2)) %</div></div>
+												<div class="mb-2 text-sm">Discount Percentage: <div class="text-dark font-weight-bold ms-2">@(invoice.InvoiceBalance == 0 ? 0 : Math.Round((details.AdjustmentAmount / invoice.InvoiceBalance) * 100, 2)) %</div></div>
 											<div class="mb-2 text-sm">Discount Value: <div class="text-dark font-weight-bold ms-2">@details.AdjustmentAmount.ToPhp()</div></div>
 										}
 										else

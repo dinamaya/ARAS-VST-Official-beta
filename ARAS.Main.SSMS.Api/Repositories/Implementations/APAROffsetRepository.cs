@@ -148,44 +148,49 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			return new APAROffsetRowDto()
 			{
-				APGroup = await _context.VwAparoffsetRows.AsNoTracking()
-					.Where(r => r.Type == "AP" && r.RequestiD == requestId && r.IsActive)
-					.Select(r => new APAROffsetAPRowDto()
+				APGroup = await (
+					from apar in _context.APAROffsets.AsNoTracking()
+					join invoice in _context.Invoices.AsNoTracking() on apar.InvoiceId equals invoice.Id
+					where apar.Type == "AP"
+					   && apar.RequestId == requestId
+					   && apar.IsActive
+					   && invoice.IsActive
+					select new APAROffsetAPRowDto
 					{
-						Id = r.Id.ToString(),
-						InvoiceAmount = r.InvoiceAmount,
-						InvoiceNumber = r.InvoiceNumber,
-						InvoiceDate = r.InvoiceDate,
-						CustomerName = r.CustomerName,
-						CustomerNumber = r.CustomerNumber,
-					})
-				.ToListAsync(),
-				ARGroup = await _context.VwAparoffsetRows.AsNoTracking()
-					 .Where(r => r.Type == "AR" && r.RequestiD == requestId && r.IsActive)
-					 .Join(
-						 _context.Invoices.AsNoTracking(),
-						 r => r.Id,
-						 i => i.Id,
-						 (r, i) => new { r, i })
-					 .Select(r => new APAROffsetARRowDto()
+						Id = apar.Id.ToString(),
+						InvoiceAmount = invoice.InvoiceAmount,
+						InvoiceNumber = invoice.InvoiceNumber,
+						InvoiceDate = invoice.InvoiceDate,
+						CustomerName = invoice.CustomerName,
+						CustomerNumber = invoice.CustomerNumber,
+					}
+				).ToListAsync(),
+				ARGroup = await (
+					from apar in _context.APAROffsets.AsNoTracking()
+					join invoice in _context.Invoices.AsNoTracking() on apar.InvoiceId equals invoice.Id
+					where apar.Type == "AR"
+					   && apar.RequestId == requestId
+					   && apar.IsActive
+					   && invoice.IsActive
+					select new APAROffsetARRowDto
 					 {
-						 Id = r.r.Id.ToString(),
-						 Amount = r.r.InvoiceAmount,
-						 InvoiceAmount = r.i.InvoiceAmount,
-						 InvoiceNumber = r.r.InvoiceNumber,
-						 AdjustmentReason = r.r.ReasonCode,
-						 RowType = !string.IsNullOrEmpty(r.r.ReasonCode)
+						 Id = apar.Id.ToString(),
+						 Amount = apar.Amount,
+						 InvoiceAmount = invoice.InvoiceAmount,
+						 InvoiceNumber = invoice.InvoiceNumber,
+						 AdjustmentReason = apar.ReasonCode,
+						 RowType = !string.IsNullOrEmpty(apar.ReasonCode)
 						   ? ARRowType.Adjustment
 						  : ARRowType.Invoice,
 
-						 CustomerName = r.r.CustomerName,
-						 CustomerNumber = r.r.CustomerNumber,
-						 CustomerTrxId = r.i.CustomerTrxId,
-						 PaymentScheduleId = r.i.PaymentScheduleId,
-						 CurrencyCode = r.i.CurrencyCode,
-						 GlAccountingDate = r.i.GlAccountingDate
-					 })
-					.ToListAsync()
+						 CustomerName = invoice.CustomerName,
+						 CustomerNumber = invoice.CustomerNumber,
+						 CustomerTrxId = invoice.CustomerTrxId,
+						 PaymentScheduleId = invoice.PaymentScheduleId,
+						 CurrencyCode = invoice.CurrencyCode,
+						GlAccountingDate = invoice.GlAccountingDate
+					}
+				).ToListAsync()
 			};
 		}
 

@@ -203,6 +203,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			{
 				InvoiceNumber = invoiceEntity.InvoiceNumber,
 				InvoiceAmount = invoiceEntity.InvoiceAmount,
+				InvoiceBalance = invoiceEntity.InvoiceBalance,
 				CustomerTrxId = invoiceEntity.CustomerTrxId,
 				PaymentScheduleId = invoiceEntity.PaymentScheduleId,
 				InvoiceDate = DateOnly.FromDateTime(invoiceEntity.InvoiceDate),

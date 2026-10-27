@@ -23,6 +23,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
             {
                 InvoiceNumber = data.InvoiceNumber,
                 InvoiceAmount = data.InvoiceAmount,
+                InvoiceBalance = data.InvoiceBalance,
                 InvoiceDate = data.InvoiceDate,
                 CustomerName = data.CustomerName,
                 CustomerNumber = data.CustomerNumber,
@@ -56,6 +57,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				{
 					InvoiceNumber = _data.InvoiceNumber,
 					InvoiceAmount = _data.InvoiceAmount,
+					InvoiceBalance = _data.InvoiceBalance,
 					InvoiceDate = _data.InvoiceDate,
 					CustomerName = _data.CustomerName,
 					CustomerNumber = _data.CustomerNumber,

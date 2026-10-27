@@ -240,7 +240,9 @@
 			ReceiptNumber = source.InvoiceNumber,
 			ReceiptDate = source.InvoiceDate.ToDateTime(TimeOnly.MinValue),
 			ReceiptAmount = source.InvoiceAmount,
-			ReceiptBalance = Math.Max(0, source.InvoiceAmount - adjustmentAmount),
+			ReceiptBalance = source.InvoiceBalance > 0
+				? source.InvoiceBalance
+				: Math.Max(0, source.InvoiceAmount - adjustmentAmount),
 			DataSource = "SQL"
 		};
 	}

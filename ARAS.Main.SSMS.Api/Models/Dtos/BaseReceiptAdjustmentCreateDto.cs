@@ -5,6 +5,7 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
     {
 		public string AdjustmentType { get; set; }
 		public double InvoiceAmount { get; set; }
+		public double InvoiceBalance { get; set; }
 		public double AdjustmentAmount { get; set; }
 		public DateTime InvoiceDate { get; set; }
 		public string InvoiceNumber { get; set; }

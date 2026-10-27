@@ -6,6 +6,7 @@ namespace ARAS.Blazor.Models.DTOs
     {
 		public string AdjustmentType { get; set; }
 		public double InvoiceAmount { get; set; }
+		public double InvoiceBalance { get; set; }
 		public double AdjustmentAmount { get; set; }
 		public DateTime InvoiceDate { get; set; }
 		public string InvoiceNumber { get; set; }
@@ -28,6 +29,9 @@ namespace ARAS.Blazor.Models.DTOs
 {
 	AdjustmentType = adjustmentTypeName;
 	InvoiceAmount = invoiceDetails.ReceiptAmount ?? invoiceDetails.InvoiceAmount;
+	InvoiceBalance = string.Equals(sourceType, "Receipt", StringComparison.OrdinalIgnoreCase)
+		? invoiceDetails.ReceiptBalance ?? invoiceDetails.OriginalReceiptBalance ?? invoiceDetails.InvoiceBalance
+		: invoiceDetails.OriginalInvoiceBalance ?? invoiceDetails.InvoiceBalance;
 	AdjustmentAmount = adjustmentEntry.Amount;
 	InvoiceDate = invoiceDetails.ReceiptDate ?? invoiceDetails.InvoiceDate;
 

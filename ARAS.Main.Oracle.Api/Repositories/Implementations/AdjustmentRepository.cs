@@ -176,11 +176,18 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 			try
 			{
-				var requestUri = $"/aras/api/invoice/details?invoiceNumber={Uri.EscapeDataString(item.InvoiceNumber.Trim())}";
+				var requestUri = $"/aras/api/invoice/details?trxNumber={Uri.EscapeDataString(item.InvoiceNumber.Trim())}&customerName={Uri.EscapeDataString(item.CustomerName?.Trim() ?? string.Empty)}";
 				using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
 				var response = await _fusionApiClient.SendAsync(request);
 				if (!response.IsSuccessStatusCode)
+				{
+					_logger.LogWarning(
+						"CustomerTrxId lookup returned HTTP {StatusCode} for invoice {InvoiceNumber} and customer {CustomerName}",
+						response.StatusCode,
+						item.InvoiceNumber,
+						item.CustomerName);
 					return;
+				}
 
 				var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 				var envelope = await response.Content.ReadFromJsonAsync<FusionInvoiceApiEnvelope>(options);
@@ -188,7 +195,13 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 					string.Equals(i.InvoiceNumber, item.InvoiceNumber, StringComparison.OrdinalIgnoreCase));
 
 				if (invoice is null)
+				{
+					_logger.LogWarning(
+						"CustomerTrxId lookup returned no invoice for invoice {InvoiceNumber} and customer {CustomerName}",
+						item.InvoiceNumber,
+						item.CustomerName);
 					return;
+				}
 
 				item.CustomerTrxId = invoice.CustomerTrxId ?? invoice.InvoiceId;
 				item.PaymentScheduleId ??= invoice.PaymentScheduleId;

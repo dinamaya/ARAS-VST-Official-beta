@@ -357,7 +357,9 @@
 		var existingWriteOff = adjustments.ARGroup.FirstOrDefault(a => a.RowType == ARRowType.Adjustment || !string.IsNullOrWhiteSpace(a.AdjustmentReason));
 		APAdjustments = adjustments.APGroup.ToList();
 		ARAdjustments = adjustments.ARGroup
-			.Where(a => a.RowType == ARRowType.Invoice && !string.IsNullOrWhiteSpace(a.InvoiceNumber))
+			// Write-off rows have no invoice number. Keep every persisted AR invoice
+			// row even if the serialized RowType enum is unavailable or stale.
+			.Where(a => !string.IsNullOrWhiteSpace(a.InvoiceNumber))
 			.ToList();
 		searchedInvoiceNumber = new InvoiceDetailsDto();
 		writeOffReasons = await SearchOptionService.GetReasonCodes();

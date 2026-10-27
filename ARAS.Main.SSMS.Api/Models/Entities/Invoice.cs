@@ -9,6 +9,7 @@ namespace ARAS.Main.SSMS.Api.Models.Entities
 		public string InvoiceNumber { get; set; }
 		[DataType(DataType.Currency)]
 		public double InvoiceAmount { get; set; }
+		public double InvoiceBalance { get; set; }
 		public DateTime InvoiceDate { get; set; }
 
 		public string CustomerNumber { get; set; }

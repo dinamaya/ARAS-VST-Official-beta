@@ -7,6 +7,7 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 	{
 		public string InvoiceNumber { get; set; }
 		public double InvoiceAmount { get; set; }
+		public double InvoiceBalance { get; set; }
 		public DateTime InvoiceDate { get; set; }
 		public string CustomerNumber { get; set; }
 		public string CustomerName { get; set; }
@@ -17,10 +18,11 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 
 		public InvoiceCreateDto() { }
 
-		public InvoiceCreateDto(string invoiceNumber, double invoiceAmount, DateTime invoiceDate, string customerNumber, string customerName, long? customerTrxId = null, long? paymentScheduleId = null, string? currencyCode = null, DateTime? glAccountingDate = null)
+		public InvoiceCreateDto(string invoiceNumber, double invoiceAmount, DateTime invoiceDate, string customerNumber, string customerName, long? customerTrxId = null, long? paymentScheduleId = null, string? currencyCode = null, DateTime? glAccountingDate = null, double? invoiceBalance = null)
 		{
 			InvoiceNumber = invoiceNumber;
 			InvoiceAmount = invoiceAmount;
+			InvoiceBalance = invoiceBalance ?? invoiceAmount;
 			InvoiceDate = invoiceDate;
 			CustomerNumber = customerNumber;
 			CustomerName = customerName;
@@ -35,6 +37,7 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 		{
 			InvoiceNumber = model.InvoiceNumber;
 			InvoiceAmount = model.InvoiceAmount;
+			InvoiceBalance = model.InvoiceBalance;
 			InvoiceDate = model.InvoiceDate;
 			CustomerNumber = model.CustomerNumber;
 			CustomerName = model.CustomerName;
@@ -46,6 +49,7 @@ namespace ARAS.Main.SSMS.Api.Models.Dtos
 		{
 			InvoiceNumber = model.InvoiceNumber;
 			InvoiceAmount = model.InvoiceAmount;
+			InvoiceBalance = model.InvoiceBalance;
 			InvoiceDate = model.InvoiceDate;
 			CustomerNumber = model.CustomerNumber;
 			CustomerName = model.CustomerName;

@@ -76,7 +76,12 @@ namespace ARAS.Blazor.Services.Implementations
 
 		private static List<APAROffsetCreateDto> ToCreateDto(IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, APAROffsetARRowDto? writeOffRow)
 		{
-			var arInvoiceContext = arRows.FirstOrDefault(r => r.RowType == ARRowType.Invoice);
+			var arInvoiceRows = arRows
+				// Write-off rows intentionally have no invoice number. Any row with an
+				// invoice number is therefore an AR invoice row and must be submitted.
+				.Where(r => !string.IsNullOrWhiteSpace(r.InvoiceNumber))
+				.ToList();
+			var arInvoiceContext = arInvoiceRows.FirstOrDefault();
 
 			var apRequests = apRows.Select(r => new APAROffsetCreateDto()
 			{
@@ -93,8 +98,7 @@ namespace ARAS.Blazor.Services.Implementations
 				GlAccountingDate = r.GlAccountingDate
 			});
 
-			var arRequests = arRows
-				.Where(r => r.RowType == ARRowType.Invoice)
+			var arRequests = arInvoiceRows
 				.Select(r => new APAROffsetCreateDto()
 			{
 				InvoiceNumber = r.InvoiceNumber,

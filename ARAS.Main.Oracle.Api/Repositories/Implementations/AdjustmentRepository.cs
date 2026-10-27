@@ -95,32 +95,78 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 				.Select(group => group.First())
 				.ToList();
 
+			// AP/AR write-off rows intentionally have no invoice number. Resolve the
+			// Fusion identifiers from the related AR invoice row before validating or
+			// posting the write-off.
+			foreach (var row in rows.Where(r => r.CustomerTrxId is null && !string.IsNullOrWhiteSpace(r.InvoiceNumber)))
+				await BackfillCustomerTrxIdAsync(row);
+
+			var invoiceContext = rows.FirstOrDefault(r =>
+				r.CustomerTrxId is not null && !string.IsNullOrWhiteSpace(r.InvoiceNumber));
+			foreach (var row in rows.Where(r => r.CustomerTrxId is null && string.IsNullOrWhiteSpace(r.InvoiceNumber)))
+			{
+				if (invoiceContext is null)
+					continue;
+
+				row.CustomerTrxId = invoiceContext.CustomerTrxId;
+				row.PaymentScheduleId ??= invoiceContext.PaymentScheduleId;
+				row.CurrencyCode ??= invoiceContext.CurrencyCode;
+				row.GlAccountingDate ??= invoiceContext.GlAccountingDate;
+				_logger.LogInformation(
+					"Inherited Fusion invoice context for write-off row {AdjustmentId} from invoice {InvoiceNumber}: CustomerTrxId={CustomerTrxId}, PaymentScheduleId={PaymentScheduleId}",
+					row.AdjustmentId,
+					invoiceContext.InvoiceNumber,
+					row.CustomerTrxId,
+					row.PaymentScheduleId);
+			}
+
 			foreach(var item in rows)
 			{
-				if (string.Equals(item.AdjustmentActivity, "Bank Charge", StringComparison.OrdinalIgnoreCase))
+				try
 				{
-					await BackfillReceiptGlAccountingDateAsync(item);
-					await CreateFusionReceiptActivityApplication(item);
-					continue;
-				}
+					if (string.Equals(item.AdjustmentActivity, "Bank Charge", StringComparison.OrdinalIgnoreCase))
+					{
+						await BackfillReceiptGlAccountingDateAsync(item);
+						await CreateFusionReceiptActivityApplication(item);
+						continue;
+					}
 
-				if (string.Equals(item.AdjustmentActivity, "Write-off Other Expense/Income", StringComparison.OrdinalIgnoreCase))
+					if (string.Equals(item.AdjustmentActivity, "Write-off Other Expense/Income", StringComparison.OrdinalIgnoreCase))
+					{
+						await CreateFusionSmallAmountWriteOff(item);
+						continue;
+					}
+
+					if (item.CustomerTrxId is null)
+						await BackfillCustomerTrxIdAsync(item);
+
+					if (item.CustomerTrxId is null)
+					{
+						string documentType = IsReceiptAdjustment(item.AdjustmentActivity) ? "Receipt" : "Invoice";
+						throw new InvalidOperationException($"CustomerTrxId is required for Fusion adjustment posting. {documentType}: {item.InvoiceNumber}");
+					}
+
+					await CreateFusionAdjustment(item);
+				}
+				catch (Exception ex) when (ex is not InvalidOperationException || !ex.Message.StartsWith("Fusion posting failed for ", StringComparison.Ordinal))
 				{
-					await CreateFusionSmallAmountWriteOff(item);
-					continue;
+					throw new InvalidOperationException(
+						$"Fusion posting failed for {GetPostingDescription(item)}: {ex.Message}",
+						ex);
 				}
-
-				if (item.CustomerTrxId is null)
-					await BackfillCustomerTrxIdAsync(item);
-
-				if (item.CustomerTrxId is null)
-				{
-					string documentType = IsReceiptAdjustment(item.AdjustmentActivity) ? "Receipt" : "Invoice";
-					throw new InvalidOperationException($"CustomerTrxId is required for Fusion adjustment posting. {documentType}: {item.InvoiceNumber}");
-				}
-
-				await CreateFusionAdjustment(item);
 			}
+		}
+
+		private static string GetPostingDescription(AdjustmentPostingDto item)
+		{
+			var activity = string.IsNullOrWhiteSpace(item.AdjustmentActivity)
+				? "Unknown posting"
+				: item.AdjustmentActivity;
+			var document = string.IsNullOrWhiteSpace(item.InvoiceNumber)
+				? $"adjustment {item.AdjustmentId}"
+				: $"invoice {item.InvoiceNumber}";
+
+			return $"{activity} ({document})";
 		}
 
 		private async Task BackfillCustomerTrxIdAsync(AdjustmentPostingDto item)
@@ -476,10 +522,18 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			var applyDate = item.DateApplied.ToString("yyyy-MM-dd");
 			var adjustmentAmount = decimal.Round(Convert.ToDecimal(item.AdjustmentAmount), 2, MidpointRounding.AwayFromZero);
 			var invoiceAmount = decimal.Round(Convert.ToDecimal(item.InvoiceAmount), 2, MidpointRounding.AwayFromZero);
-			var amount = adjustmentAmount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
 			var currencyCode = EscapeXml(string.IsNullOrWhiteSpace(item.CurrencyCode) ? "USD" : item.CurrencyCode.Trim().ToUpperInvariant());
 			var isAparFlow = string.Equals(item.AdjustmentActivity, "AP/AR Adjustment", StringComparison.OrdinalIgnoreCase);
 			var isAparWriteOffFlow = string.Equals(item.AdjustmentActivity, "Write-Off Small Amount - INV", StringComparison.OrdinalIgnoreCase);
+			var isCashDiscount = string.Equals(item.AdjustmentActivity, "Cash Discount", StringComparison.OrdinalIgnoreCase);
+			// Fusion treats a positive adjustment amount as an increase to the AR
+			// balance. Cash discounts, AP/AR offsets, and write-offs are reductions, so post them as
+			// negative adjustments. Other adjustment activities retain their existing
+			// sign behavior.
+			var postingAmount = (isCashDiscount || isAparFlow || isAparWriteOffFlow)
+				? -Math.Abs(adjustmentAmount)
+				: adjustmentAmount;
+			var amount = postingAmount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
 			var glDateValue = isAparFlow
 				? item.DateApplied.Date
 				: ResolveFusionGlDate(item);

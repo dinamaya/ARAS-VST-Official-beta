@@ -800,13 +800,41 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			if (!string.Equals(currentStatus, "Declined", StringComparison.OrdinalIgnoreCase))
 				return "For CNC Approval";
 
-			string? declinedByRole = await _context.VwTransactionsHistory
+			var declinedTransaction = await _context.VwTransactionsHistory
 				.AsNoTracking()
 				.Where(t => t.RequestId == requestId && t.Status == "Declined")
 				.OrderByDescending(t => t.DateCreated)
 				.ThenByDescending(t => t.TransactionId)
-				.Select(t => t.AccountRole)
 				.FirstOrDefaultAsync();
+
+			if (declinedTransaction is null)
+				return "For CNC Approval";
+
+			// The approval stage before the decline is authoritative. This avoids
+			// incorrectly restarting at CNC when the decline actor's role is missing
+			// or stale in TransactionsHistory_v.
+			var previousStatus = await _context.VwTransactionsHistory
+				.AsNoTracking()
+				.Where(t => t.RequestId == requestId &&
+					(t.DateCreated < declinedTransaction.DateCreated ||
+					 (t.DateCreated == declinedTransaction.DateCreated && t.TransactionId < declinedTransaction.TransactionId)))
+				.OrderByDescending(t => t.DateCreated)
+				.ThenByDescending(t => t.TransactionId)
+				.Select(t => t.Status)
+				.FirstOrDefaultAsync();
+
+			var statusBasedResubmission = previousStatus switch
+			{
+				"For CNC Approval" => "For CNC Approval",
+				"For FSG Validation" => "For FSG Validation",
+				"For FSG Approval" => "For FSG Approval",
+				_ => null
+			};
+
+			if (statusBasedResubmission is not null)
+				return statusBasedResubmission;
+
+			string? declinedByRole = declinedTransaction.AccountRole;
 
 			return declinedByRole switch
 			{

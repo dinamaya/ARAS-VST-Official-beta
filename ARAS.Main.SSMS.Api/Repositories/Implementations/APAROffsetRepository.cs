@@ -15,14 +15,16 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		private readonly IRequestRepository _requestRepo;
 		private readonly ITransactionRepository _transactionRepo;
 		private readonly IInvoiceRepository _invoiceRepo;
+		private readonly ILogger<APAROffsetRepository> _logger;
 
-        public APAROffsetRepository(IAdjustmentRepository adjustmentRepo, IRequestRepository requestRepo, ITransactionRepository transactionRepo, IInvoiceRepository invoiceRepo, MainDbContext context)
+        public APAROffsetRepository(IAdjustmentRepository adjustmentRepo, IRequestRepository requestRepo, ITransactionRepository transactionRepo, IInvoiceRepository invoiceRepo, MainDbContext context, ILogger<APAROffsetRepository> logger)
         {
             _adjustmentRepo = adjustmentRepo;
             _requestRepo = requestRepo;
             _transactionRepo = transactionRepo;
             _invoiceRepo = invoiceRepo;
             _context = context;
+			_logger = logger;
         }
 
         public async Task<long> Create(RequestCreationDto<IEnumerable<APAROffsetCreateDto>> data, string createdBy)
@@ -215,6 +217,30 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					CustomerName = invoice.CustomerName,
 					CustomerNumber = invoice.CustomerNumber
 				}).ToListAsync();
+
+			// The reconciliation screen shows the full AR invoice and the AP total,
+			// but Fusion must receive only the portion of AR that is actually offset.
+			// Otherwise the full AR amount is posted as an offset and the write-off is
+			// posted on top of it, which increases the invoice instead of netting it.
+			var apTotal = await _context.APAROffsets.AsNoTracking()
+				.Where(a => a.RequestId == requestId && a.IsActive && a.Type == "AP")
+				.SumAsync(a => (double?)a.Amount) ?? 0d;
+
+			var remainingApToOffset = Math.Max(apTotal, 0d);
+			foreach (var row in rows.Where(r => string.IsNullOrWhiteSpace(r.ReasonCode)))
+			{
+				var arBalance = Math.Max(row.AdjustmentAmount, 0d);
+				var offsetAmount = Math.Min(arBalance, remainingApToOffset);
+				row.AdjustmentAmount = offsetAmount;
+				remainingApToOffset -= offsetAmount;
+			}
+
+			_logger.LogInformation(
+				"Prepared AP/AR posting for request {RequestId}: AP total {ApTotal}, offset amount {OffsetAmount}, remaining AP {RemainingApToOffset}",
+				requestId,
+				apTotal,
+				rows.Where(r => string.IsNullOrWhiteSpace(r.ReasonCode)).Sum(r => r.AdjustmentAmount),
+				remainingApToOffset);
 
 			var arInvoiceContext = rows.FirstOrDefault(r =>
 				string.IsNullOrWhiteSpace(r.ReasonCode) &&

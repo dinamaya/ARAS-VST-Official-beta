@@ -276,7 +276,12 @@
 		if (!ApplyReceiptStateChanged.HasDelegate)
 			return;
 
-		var state = new ApplyReceiptStateDto
+		await ApplyReceiptStateChanged.InvokeAsync(GetApplyReceiptState());
+	}
+
+	public ApplyReceiptStateDto GetApplyReceiptState()
+	{
+		return new ApplyReceiptStateDto
 		{
 			IsEnabled = isApplyReceiptEnabled,
 			SelectedApplications = applicableInvoices
@@ -296,8 +301,6 @@
 				})
 				.ToList()
 		};
-
-		await ApplyReceiptStateChanged.InvokeAsync(state);
 	}
 
 	public void Reset() => remarks = string.Empty;

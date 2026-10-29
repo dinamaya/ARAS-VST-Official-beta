@@ -1,4 +1,4 @@
-﻿using ARAS.Main.SSMS.Api.Models.Entities;
+using ARAS.Main.SSMS.Api.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ARAS.Main.SSMS.Api.Context.Seeders
@@ -14,6 +14,7 @@ namespace ARAS.Main.SSMS.Api.Context.Seeders
                 await context.Statuses.AddRangeAsync(
                     new Status { Name = "For CNC Approval" },
                     new Status { Name = "For ERP Posting" },
+                    new Status { Name = "ERP Posting Failed" },
                     new Status { Name = "For FSG Validation" },
                     new Status { Name = "For FSG Approval" },
                     new Status { Name = "Declined" },
@@ -39,6 +40,9 @@ namespace ARAS.Main.SSMS.Api.Context.Seeders
 
                 if (!statuses.Any(s => s.Name == "For FSG Approval"))
                     context.Statuses.Add(new Status { Name = "For FSG Approval" });
+
+                if (!statuses.Any(s => s.Name == "ERP Posting Failed"))
+                    context.Statuses.Add(new Status { Name = "ERP Posting Failed" });
             }
             await context.SaveChangesAsync();
 		}

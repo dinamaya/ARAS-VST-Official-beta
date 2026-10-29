@@ -9,6 +9,10 @@ namespace ARAS.Main.SSMS.Api.Models.Entities
 		public string? AdjustmentTypeId { get; set; }
 		public string? SourceType { get; set; }
 
+		// The requestor's "Apply Receipt" choice. Authoritative at posting time:
+		// when true, the selected invoice applications must exist or posting fails.
+		public bool ApplyReceiptEnabled { get; set; }
+
 		public string CreatedBy { get; set; } // Same as Requestor ID
 		public DateTime DateCreated { get; set; } // Same as Date Requested
 

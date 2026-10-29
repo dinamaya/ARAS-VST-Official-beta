@@ -307,8 +307,29 @@
 		}
 		catch (Exception ex)
 		{
-			await DialogService.Alert(ex.Message, "Request Approval Failed");
+			await DialogService.Alert(ex.Message, GetApprovalFailureTitle(ex));
 		}
+	}
+
+	private static string GetApprovalFailureTitle(Exception exception)
+	{
+		var message = exception.ToString();
+
+		if (message.Contains("applyReceipt", StringComparison.OrdinalIgnoreCase)
+			|| message.Contains("Apply Receipt", StringComparison.OrdinalIgnoreCase)
+			|| message.Contains("ReceiptId is required", StringComparison.OrdinalIgnoreCase)
+			|| message.Contains("invoice applications were provided", StringComparison.OrdinalIgnoreCase))
+		{
+			return "Apply Receipt Posting Failed";
+		}
+
+		if (message.Contains("write-off", StringComparison.OrdinalIgnoreCase)
+			|| message.Contains("write off", StringComparison.OrdinalIgnoreCase))
+		{
+			return "Write-Off Posting Failed";
+		}
+
+		return "Request Approval Failed";
 	}
 
 	protected async Task OnDecline()

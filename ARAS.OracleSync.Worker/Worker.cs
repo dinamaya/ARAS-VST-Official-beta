@@ -97,6 +97,30 @@ namespace ARAS.OracleSync.Worker
 						if (!newlyPostedAdjustmentIds.IsSuccess)
 						{
 							_logger.LogWarning("Failed to restage unposted header IDs. Response: {Message}", newlyPostedAdjustmentIds.Message);
+
+						var failedRequestIds = approvedAdjustments
+							.Where(x => unPostedIds.Contains(x.HeaderId))
+							.Select(x => x.RequestId)
+							.Distinct()
+							.ToList();
+
+						if (failedRequestIds.Any())
+						{
+							var postingFailureResponse = await _baseService.SendAsync<string>(new RequestDto<PostingFailureCreateDto>()
+							{
+								URL = _config.GetSSMSAdjustmentsApiUrl("stage/failures"),
+								ApiType = ApiType.POST,
+								Data = new PostingFailureCreateDto
+								{
+									RequestIds = failedRequestIds,
+									ErrorMessage = newlyPostedAdjustmentIds.Message
+								}
+							});
+
+							if (!postingFailureResponse.IsSuccess)
+								_logger.LogWarning("Failed to save posting failure state. Response: {Message}", postingFailureResponse.Message);
+						}
+
 							await Task.Delay(_config.GetRefreshTime(), stoppingToken);
 							continue;
 						}

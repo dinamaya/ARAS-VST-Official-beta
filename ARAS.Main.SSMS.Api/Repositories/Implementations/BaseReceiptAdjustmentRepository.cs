@@ -109,7 +109,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				await _adjustmentRepo.CreateAsync(adjustments, createdBy);
 
 				var receiptApplications = zipped
-					.Where(z => z.model.ApplyReceiptEnabled && z.model.ReceiptApplications is not null && z.model.ReceiptApplications.Any())
+					.Where(z => z.model.ReceiptApplications is not null && z.model.ReceiptApplications.Any())
 					.SelectMany(z => z.model.ReceiptApplications
 						.Where(a => a is not null && a.PaymentScheduleId > 0 && a.AppliedAmount > 0)
 						.Select(a => new ReceiptInvoiceApplication
@@ -129,7 +129,38 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 							ModifiedBy = createdBy,
 							DateModified = DateTime.Now,
 							IsActive = true
-						}));
+						}))
+					.ToList();
+
+				// Persist the requestor's Apply Receipt choice on the request. A request that
+				// asks for Apply Receipt must carry at least one valid invoice application;
+				// otherwise reject the submission instead of silently posting only the write-off later.
+				var applyReceiptRequestIds = zipped
+					.Where(z => z.model.ApplyReceiptEnabled
+						|| (z.model.ReceiptApplications?.Any(a => a is not null && a.PaymentScheduleId > 0 && a.AppliedAmount > 0) ?? false))
+					.Select(z => z.ids.requests)
+					.Distinct()
+					.ToList();
+
+				foreach (var requestId in applyReceiptRequestIds)
+				{
+					Guards.ThrowInvalidOperationIf(
+						!receiptApplications.Any(a => a.RequestId == requestId),
+						"Apply Receipt is enabled but no invoice with a positive applied amount was selected.");
+					Guards.ThrowInvalidOperationIf(
+						receiptApplications.Any(a => a.RequestId == requestId && (a.ReceiptId is null || a.ReceiptId <= 0)),
+						"Apply Receipt is enabled but the receipt ID is missing. Please search the receipt again and resubmit.");
+				}
+
+				if (applyReceiptRequestIds.Any())
+				{
+					var applyReceiptRequests = await _context.Requests
+						.Where(r => applyReceiptRequestIds.Contains(r.Id))
+						.ToListAsync();
+
+					foreach (var request in applyReceiptRequests)
+						request.ApplyReceiptEnabled = true;
+				}
 
 				if (receiptApplications.Any())
 					await _context.ReceiptInvoiceApplications.AddRangeAsync(receiptApplications);
@@ -228,13 +259,19 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 					CurrencyCode = a.CurrencyCode
 				})
 				.ToListAsync();
-			
+
+			var applyReceiptEnabled = await _context.Requests
+				.AsNoTracking()
+				.Where(r => r.Id == requestId)
+				.Select(r => r.ApplyReceiptEnabled)
+				.FirstOrDefaultAsync();
+
 			return new ReceiptAdjustmentUpdateResponseDto
 			{
 				AdjustmentAmount = adjustment.AdjustmentAmount,
 				Remarks = adjustment.Remarks,
 				Invoice = invoice,
-				ApplyReceiptEnabled = receiptApplications.Count > 0,
+				ApplyReceiptEnabled = applyReceiptEnabled || receiptApplications.Count > 0,
 				ReceiptApplications = receiptApplications,
 				TransactionHistories = transactionHistories,
 				Notes = notes
@@ -448,9 +485,22 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 						CurrencyCode = a.CurrencyCode
 					}).ToList());
 
+			// The persisted request flag is authoritative. If Apply Receipt was requested but
+			// no application rows exist, the row is still flagged (with an empty list) so the
+			// Oracle API rejects the posting instead of posting only the write-off.
+			var applyReceiptRequestIds = (await _context.Requests
+				.AsNoTracking()
+				.Where(r => requestIds.Contains(r.Id) && r.ApplyReceiptEnabled)
+				.Select(r => r.Id)
+				.ToListAsync())
+				.ToHashSet();
+
 			foreach (var row in rows)
 			{
 				var requestId = StagingHeaderIdHelper.Parse(row.HeaderId).RequestId;
+				if (applyReceiptRequestIds.Contains(requestId))
+					row.ApplyReceiptEnabled = true;
+
 				if (!grouped.TryGetValue(requestId, out var applications) || applications.Count == 0)
 					continue;
 

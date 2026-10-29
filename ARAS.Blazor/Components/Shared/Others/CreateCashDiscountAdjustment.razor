@@ -20,13 +20,14 @@
 				<RadzenRow class="w-100" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Stretch">
 					<RadzenColumn Size="12" SizeMD="5">
 						<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
-							<RadzenFormField class="w-100" Text="Discount Percentage" Variant="Variant.Outlined">
-								<RadzenNumeric class="w-100"
-											   TValue="double"
-											   @bind-Value="DiscountPercentageValue"
-											   Immediate="true"
-																   Max="1"
-											   Disabled="@(!isAdjustable || IsDisabled)" />
+							<RadzenFormField class="w-100" Text="Discount Percentage (%)" Variant="Variant.Outlined">
+								<Radzen.Blazor.RadzenNumeric TValue="double"
+															 class="w-100"
+															 @bind-Value="DiscountPercentageValue"
+															 Immediate="true"
+																	 Min="0"
+																	 Max="100"
+															 Disabled="@(!isAdjustable || IsDisabled)" />
 							</RadzenFormField>
 						</RadzenStack>
 					</RadzenColumn>
@@ -40,11 +41,12 @@
 					<RadzenColumn Size="12" SizeMD="6">
 						<RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
 							<RadzenFormField Text="Discount Value" Variant="Variant.Outlined">
-								<RadzenNumeric TValue="double"
-											   @bind-Value="DiscountDecimalValue"
-											   Immediate="true"
-											   Max="(decimal)InvoiceAmount"
-											   Disabled="@(!isAdjustable || IsDisabled)" />
+								<Radzen.Blazor.RadzenNumeric TValue="double"
+															 @bind-Value="DiscountDecimalValue"
+															 Immediate="true"
+																	 Format="0.00"
+																	 Max="@(Convert.ToDecimal(InvoiceBalance))"
+															 Disabled="@(!isAdjustable || IsDisabled)" />
 							</RadzenFormField>
 						</RadzenStack>
 					</RadzenColumn>
@@ -98,7 +100,9 @@
 		isSyncingDiscounts = true;
 		remarks = InitialRemarks ?? string.Empty;
 		discountDecimal = InitialDiscount;
-		discountPercentage = InvoiceBalance == 0 ? 0 : Math.Round(discountDecimal / InvoiceBalance, 4);
+		discountPercentage = InvoiceBalance == 0
+			? 0
+			: Math.Round((discountDecimal / InvoiceBalance) * 100, 4);
 		isSyncingDiscounts = false;
 	}
 
@@ -108,7 +112,8 @@
 			return;
 
 		isSyncingDiscounts = true;
-		discountDecimal = Math.Round(discountPercentage * InvoiceBalance, 2);
+		discountPercentage = Math.Clamp(discountPercentage, 0d, 100d);
+		discountDecimal = Math.Round((discountPercentage / 100d) * InvoiceBalance, 2);
 		isSyncingDiscounts = false;
 		await InvokeAdjustmentChanged();
 	}
@@ -119,7 +124,9 @@
 			return;
 
 		isSyncingDiscounts = true;
-		discountPercentage = InvoiceBalance == 0 ? 0 : Math.Round(discountDecimal / InvoiceBalance, 4);
+		discountPercentage = InvoiceBalance == 0
+			? 0
+			: Math.Round((discountDecimal / InvoiceBalance) * 100, 4);
 		isSyncingDiscounts = false;
 		await InvokeAdjustmentChanged();
 	}

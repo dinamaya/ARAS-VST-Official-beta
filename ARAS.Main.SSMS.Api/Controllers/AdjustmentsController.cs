@@ -1,4 +1,4 @@
-﻿using ARAS.Main.SSMS.Api.Models.Dtos;
+using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using ARAS.Main.SSMS.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -274,5 +274,22 @@ namespace ARAS.Main.SSMS.Api.Controllers
                 return response.Failed(ex.Message);
             }
         }
+
+		[HttpPost("stage/failures")]
+		public async Task<ResponseDto<string>> PostAdjustmentStagingFailureData([FromBody] PostingFailureCreateDto data)
+		{
+			var response = new ResponseDto<string>();
+			try
+			{
+				await _adjustmentService.MarkPostingFailed(data.RequestIds, "SYSTEM", data.ErrorMessage);
+				response.Result = "Request status updated to ERP Posting Failed";
+				return response;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+				return response.Failed(ex.Message);
+			}
+		}
     }
 }

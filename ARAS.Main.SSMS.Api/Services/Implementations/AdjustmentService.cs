@@ -14,12 +14,14 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 		private readonly MainDbContext _context;
 		private readonly IRequestRepository _requestRepo;
 		private readonly ITransactionRepository _transactionRepo;
+		private readonly IRemarksRepository _remarksRepo;
 
-        public AdjustmentService(MainDbContext context, IRequestRepository requestRepo, ITransactionRepository transactionRepo)
+		public AdjustmentService(MainDbContext context, IRequestRepository requestRepo, ITransactionRepository transactionRepo, IRemarksRepository remarksRepo)
         {
             _context = context;
             _requestRepo = requestRepo;
             _transactionRepo = transactionRepo;
+			_remarksRepo = remarksRepo;
         }
 
         public async Task Approve(IEnumerable<long> requestIds, string createdBy, string role)
@@ -81,6 +83,32 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
             }
 
         }
+
+		public async Task MarkPostingFailed(IEnumerable<long> requestIds, string createdBy, string errorMessage)
+		{
+			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
+
+			try
+			{
+				requestIds = requestIds.Distinct();
+				var normalizedError = string.IsNullOrWhiteSpace(errorMessage)
+					? "ERP posting failed without an error message."
+					: errorMessage.Trim();
+
+				foreach (var requestId in requestIds)
+				{
+					var transactionId = await _transactionRepo.CreateAsync(new TransactionCreateDto(requestId, "ERP Posting Failed"), createdBy);
+					await _remarksRepo.CreateAsync(new RemarksCreateDto(transactionId, normalizedError), createdBy);
+				}
+
+				await dbTransaction.CommitAsync();
+			}
+			catch
+			{
+				await dbTransaction.RollbackAsync();
+				throw;
+			}
+		}
 
         public async Task PostByRequestIds(IEnumerable<long> requestIds, string createdBy)
         {

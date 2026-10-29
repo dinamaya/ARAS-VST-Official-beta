@@ -93,7 +93,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			var latest = await _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking().Where(t =>
 				t.RequestId == requestId &&
-				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "Posted" || t.Status == "For ERP Posting")
+				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "Posted" || t.Status == "For ERP Posting" || t.Status == "ERP Posting Failed")
 			).ToListAsync();
 
 			return latest.Count() > 0;
@@ -108,7 +108,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		{
 			return await _context.VwAllAdjustmentRequestLatestStatus.AsNoTracking().AnyAsync(t =>
 				t.RequestId == requestId &&
-				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "Posted" || t.Status == "For ERP Posting")
+				!(t.Status == "Rejected" || t.Status == "Declined" || t.Status == "Posted" || t.Status == "For ERP Posting" || t.Status == "ERP Posting Failed")
 			);
 		}
 

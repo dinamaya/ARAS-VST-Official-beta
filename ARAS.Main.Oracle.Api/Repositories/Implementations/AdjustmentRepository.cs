@@ -120,6 +120,11 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 					row.PaymentScheduleId);
 			}
 
+			// Validate every Apply Receipt row before sending anything to Fusion, so a
+			// request can never end up "Posted" with only its write-off applied.
+			foreach (var row in rows.Where(r => r.ApplyReceiptEnabled))
+				await ValidateApplyReceiptPayloadAsync(row);
+
 			foreach(var item in rows)
 			{
 				try
@@ -219,27 +224,28 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			if (string.IsNullOrWhiteSpace(receiptNumber))
 				return null;
 
-			try
+			var normalizedReceiptNumber = receiptNumber.Trim();
+			var requestUri = $"/aras/api/receipt-details?receiptNumber={Uri.EscapeDataString(normalizedReceiptNumber)}";
+			using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
+			var response = await _fusionApiClient.SendAsync(request);
+
+			if (!response.IsSuccessStatusCode)
 			{
-				var normalizedReceiptNumber = receiptNumber.Trim();
-				var requestUri = $"/aras/api/receipt-details?receiptNumber={Uri.EscapeDataString(normalizedReceiptNumber)}";
-				using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
-				var response = await _fusionApiClient.SendAsync(request);
-
-				if (!response.IsSuccessStatusCode)
-					return null;
-
-				var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-				var envelope = await response.Content.ReadFromJsonAsync<FusionReceiptApiEnvelope>(options);
-
-				return envelope?.ApiResponse?.FirstOrDefault(r =>
-					string.Equals(r.ReceiptNumber, normalizedReceiptNumber, StringComparison.OrdinalIgnoreCase));
+				var content = await ReadResponseContent(response);
+				_logger.LogError(
+					"Receipt details lookup failed for receipt {ReceiptNumber}. StatusCode: {StatusCode}. Response: {Response}",
+					normalizedReceiptNumber,
+					response.StatusCode,
+					content);
+				throw new InvalidOperationException(
+					$"Receipt details lookup failed for receipt {normalizedReceiptNumber}. StatusCode: {(int)response.StatusCode}. Response: {content}");
 			}
-			catch (Exception ex)
-			{
-				_logger.LogWarning(ex, "Receipt details lookup failed for receipt {ReceiptNumber}", receiptNumber);
-				return null;
-			}
+
+			var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+			var envelope = await response.Content.ReadFromJsonAsync<FusionReceiptApiEnvelope>(options);
+
+			return envelope?.ApiResponse?.FirstOrDefault(r =>
+				string.Equals(r.ReceiptNumber, normalizedReceiptNumber, StringComparison.OrdinalIgnoreCase));
 		}
 
 		private async Task BackfillReceiptGlAccountingDateAsync(AdjustmentPostingDto item)
@@ -251,6 +257,8 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 		private async Task CreateFusionSmallAmountWriteOff(AdjustmentPostingDto item)
 		{
+			await TryHydrateApplyReceiptPayloadAsync(item);
+
 			var hasSelectedReceiptApplications = item.ReceiptApplications?.Any(a =>
 				a is not null && a.PaymentScheduleId > 0 && a.AppliedAmount > 0) == true;
 
@@ -308,6 +316,85 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 			// Always call activity application
 			await CreateFusionReceiptActivityApplication(item, writeOffAmount, sarActivityName);
+		}
+
+		private async Task ValidateApplyReceiptPayloadAsync(AdjustmentPostingDto item)
+		{
+			// Apply Receipt is only executed inside the receipt write-off flow.
+			// Any other activity flagged for Apply Receipt would silently skip it.
+			if (!string.Equals(item.AdjustmentActivity, "Write-off Other Expense/Income", StringComparison.OrdinalIgnoreCase))
+				throw new InvalidOperationException(
+					$"Fusion posting failed for {GetPostingDescription(item)}: Apply Receipt is only supported for receipt write-off requests. Nothing was posted.");
+
+			if (!HasValidReceiptApplications(item) || item.ReceiptId is null || item.ReceiptId <= 0)
+				await TryHydrateApplyReceiptPayloadAsync(item);
+
+			if (!HasValidReceiptApplications(item))
+				throw new InvalidOperationException(
+					$"Fusion posting failed for {GetPostingDescription(item)}: Apply Receipt was selected for this request, but no invoice applications were found. Nothing was posted. Please decline the request so it can be resubmitted with the invoices to apply.");
+
+			if (item.ReceiptId is null || item.ReceiptId <= 0)
+				throw new InvalidOperationException(
+					$"Fusion posting failed for {GetPostingDescription(item)}: Apply Receipt was selected for this request, but the receipt ID is missing. Nothing was posted.");
+		}
+
+		private static bool HasValidReceiptApplications(AdjustmentPostingDto item) =>
+			item.ReceiptApplications?.Any(a => a is not null && a.PaymentScheduleId > 0 && a.AppliedAmount > 0) == true;
+
+		private async Task TryHydrateApplyReceiptPayloadAsync(AdjustmentPostingDto item)
+		{
+			var hasApplyPayload = item.ReceiptId.HasValue && item.ReceiptId > 0
+				&& item.ReceiptApplications?.Any(a => a is not null && a.PaymentScheduleId > 0 && a.AppliedAmount > 0) == true;
+
+			if (hasApplyPayload || item.AdjustmentId <= 0)
+				return;
+
+			try
+			{
+				var requestUri = $"/adjust/stage/receipt/adjustment/{item.AdjustmentId}";
+				using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
+				using var response = await _fusionApiClient.SendAsync(request);
+
+				if (!response.IsSuccessStatusCode)
+				{
+					_logger.LogWarning(
+						"Unable to hydrate apply receipt payload for AdjustmentId {AdjustmentId}. StatusCode: {StatusCode}",
+						item.AdjustmentId,
+						response.StatusCode);
+					return;
+				}
+
+				var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+				var envelope = await response.Content.ReadFromJsonAsync<ResponseDto<IEnumerable<AdjustmentPostingDto>>>(options);
+				var stagedRow = envelope?.Result?
+					.FirstOrDefault(r => r.AdjustmentId == item.AdjustmentId || r.HeaderId == item.HeaderId);
+
+				if (stagedRow is null)
+					return;
+
+				item.ReceiptId ??= stagedRow.ReceiptId;
+				item.CurrencyCode ??= stagedRow.CurrencyCode;
+				item.GlAccountingDate ??= stagedRow.GlAccountingDate;
+
+				if ((item.ReceiptApplications is null || item.ReceiptApplications.Count == 0)
+					&& stagedRow.ReceiptApplications is not null
+					&& stagedRow.ReceiptApplications.Count > 0)
+				{
+					item.ReceiptApplications = stagedRow.ReceiptApplications;
+				}
+
+				if (!item.ApplyReceiptEnabled)
+				{
+					item.ApplyReceiptEnabled = stagedRow.ApplyReceiptEnabled
+						|| item.ReceiptApplications?.Any(a => a is not null && a.PaymentScheduleId > 0 && a.AppliedAmount > 0) == true;
+				}
+			}
+			catch (Exception ex)
+			{
+				_logger.LogWarning(ex,
+					"Failed to hydrate apply receipt payload for AdjustmentId {AdjustmentId}.",
+					item.AdjustmentId);
+			}
 		}
 
 		private async Task ApplyReceiptToInvoicesAsync(AdjustmentPostingDto item, decimal receiptAmount)
@@ -441,6 +528,14 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 					content);
 				throw new InvalidOperationException(
 					$"Fusion receipt activity application failed. StatusCode: {(int)response.StatusCode}. Response: {content}");
+			}
+
+			if (content.Contains("<fault", StringComparison.OrdinalIgnoreCase)
+				|| content.Contains("faultstring", StringComparison.OrdinalIgnoreCase)
+				|| content.Contains("errorCode", StringComparison.OrdinalIgnoreCase))
+			{
+				_logger.LogError("Fusion receipt activity application returned a business error. Response: {Response}", content);
+				throw new InvalidOperationException($"Fusion receipt activity application returned an error. Response: {content}");
 			}
 		}
 

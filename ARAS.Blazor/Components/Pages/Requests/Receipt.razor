@@ -110,7 +110,7 @@
 		@if (selectedAdjustmentTypes.Any())
 				{
 		<RadzenColumn Size="12" SizeMD="7">
-			<CreateReceiptAdjustment IsDisabled="@IsSubmitting" InvoiceDetails="SearchedInvoice" SelectedAdjustmentTypes="selectedAdjustmentTypes" AdjustmentAmountChanged="HandleAdjustmentChange" ApplyReceiptStateChanged="HandleApplyReceiptStateChange" />
+			<CreateReceiptAdjustment @ref="receiptAdjustment" IsDisabled="@IsSubmitting" InvoiceDetails="SearchedInvoice" SelectedAdjustmentTypes="selectedAdjustmentTypes" AdjustmentAmountChanged="HandleAdjustmentChange" ApplyReceiptStateChanged="HandleApplyReceiptStateChange" />
 		</RadzenColumn>
 				}
 
@@ -147,7 +147,9 @@
 	private bool _scrollToAdjustmentTypes;
 	private bool isReceiptSearch;
 	private ReceiptAttachmentsDatatable receiptAttachments;
+	private CreateReceiptAdjustment? receiptAdjustment;
 	private ApplyReceiptStateDto _applyReceiptState = new();
+	private bool IsReceiptSource => !string.IsNullOrWhiteSpace(SearchedInvoice.ReceiptNumber);
 	private double AvailableBalance =>
 		SearchedInvoice.OriginalReceiptBalance
 		?? SearchedInvoice.ReceiptBalance
@@ -281,7 +283,7 @@
 		if (IsSubmitting || isSubmitConfirmationOpen)
 			return;
 
-		if (isReceiptSearch && HasSelectedAdjustmentType("Cash Discount"))
+		if (IsReceiptSource && HasSelectedAdjustmentType("Cash Discount"))
 		{
 			await DialogService.Alert(
 				"Cash Discount can only be applied to invoices. Please select an invoice.",
@@ -289,7 +291,7 @@
 			return;
 		}
 
-		if (!isReceiptSearch && HasSelectedAdjustmentType("Bank Charges"))
+		if (!IsReceiptSource && HasSelectedAdjustmentType("Bank Charges"))
 		{
 			await DialogService.Alert(
 				"Bank Charges can only be applied to receipts. Please select a receipt.",
@@ -299,6 +301,9 @@
 
 		try
 		{
+			if (receiptAdjustment is not null)
+				_applyReceiptState = receiptAdjustment.GetApplyReceiptState();
+
 			await base.OnSubmit();
 
 			isSubmitConfirmationOpen = true;
@@ -346,12 +351,12 @@
 					adj.Key,
 					SearchedInvoice,
 					adj.Value,
-					isReceiptSearch ? "Receipt" : "Invoice")
+					IsReceiptSource ? "Receipt" : "Invoice")
 				{
-					ApplyReceiptEnabled = isReceiptSearch
+					ApplyReceiptEnabled = IsReceiptSource
 						&& string.Equals(adj.Key, "Write-Off: Small Amount", StringComparison.OrdinalIgnoreCase)
 						&& _applyReceiptState.IsEnabled,
-					ReceiptApplications = isReceiptSearch
+					ReceiptApplications = IsReceiptSource
 						&& string.Equals(adj.Key, "Write-Off: Small Amount", StringComparison.OrdinalIgnoreCase)
 						&& _applyReceiptState.IsEnabled
 						? _applyReceiptState.SelectedApplications

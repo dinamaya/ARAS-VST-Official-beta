@@ -18,5 +18,12 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
 		public string CustomerName { get; set; }
 		public string CustomerNumber { get; set; }
        public long? CustomerTrxId { get; set; }
+
+		// Apply Receipt fields. Blazor only relays this DTO from the SSMS API to the
+		// Oracle API, so any field missing here is silently dropped from the posting.
+		// Keep in sync with ARAS.Main.Oracle.Api.Models.Dtos.AdjustmentPostingDto.
+		public long? ReceiptId { get; set; }
+		public bool ApplyReceiptEnabled { get; set; }
+		public IList<ARAS.Blazor.Models.DTOs.ReceiptInvoiceApplicationPostingDto> ReceiptApplications { get; set; } = [];
 	}
 }

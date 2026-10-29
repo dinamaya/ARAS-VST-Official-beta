@@ -1,13 +1,14 @@
 @using System.Globalization
 @using ARAS.Main.Oracle.Api.Models.Dtos
+@using ARAS.Blazor.Models.DTOs
 @using Microsoft.AspNetCore.Components.Routing
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 
 @*
-	Blocking progress overlay for actions that can take a while, mainly final
-	approvals that post to Oracle Fusion. While it runs it:
+	Blocking progress overlay for actions that can take a while: final approvals that
+	post to Oracle Fusion, and request submissions / resubmissions. While it runs it:
 	- covers the page so nothing can be clicked twice,
 	- explains what is being posted and shows the elapsed time,
 	- blocks in-app navigation and asks before the tab is closed or refreshed.
@@ -108,6 +109,9 @@
 
 	public const string FusionPostingTitle = "Posting to Oracle Fusion…";
 	public const string FusionPostingNote = "This can take a minute or two. Please keep this page open until it finishes.";
+	public const string SubmittingTitle = "Submitting request…";
+	public const string SubmittingChangesTitle = "Submitting changes…";
+	public const string SubmittingNote = "Please keep this page open until it finishes.";
 
 	public bool IsRunning => isRunning;
 
@@ -124,7 +128,7 @@
 	/// Exceptions from the action are re-thrown so the caller can show its own error dialog.
 	/// A second call while one is already running is ignored.
 	/// </summary>
-	public async Task RunAsync(string title, IEnumerable<string>? lines, string? note, Func<Task> action)
+	public async Task RunAsync(string title, IEnumerable<string?>? lines, string? note, Func<Task> action)
 	{
 		if (isRunning)
 			return;
@@ -160,7 +164,7 @@
 	}
 
 	/// <summary>Replaces the detail lines while the overlay is showing (e.g. once posting data has loaded).</summary>
-	public async Task SetLinesAsync(IEnumerable<string>? newLines)
+	public async Task SetLinesAsync(IEnumerable<string?>? newLines)
 	{
 		lines = Clean(newLines);
 		await InvokeAsync(StateHasChanged);
@@ -202,6 +206,21 @@
 		return result;
 	}
 
+	/// <summary>"3 attachments" for the notes that carry a file, or null when there are none.</summary>
+	public static string? DescribeAttachments(IEnumerable<NoteRowDto>? notes)
+	{
+		var count = notes?.Count(n => n is not null && !string.IsNullOrWhiteSpace(n.AttachmentName)) ?? 0;
+		return count switch
+		{
+			0 => null,
+			1 => "1 attachment",
+			_ => $"{count} attachments"
+		};
+	}
+
+	/// <summary>"1,234.56", for amounts in submission summaries.</summary>
+	public static string FormatSummaryAmount(double amount) => FormatAmount(amount, null);
+
 	/// <summary>
 	/// Picks a dialog title and message for a failed action. Timeouts get a distinct
 	/// "status unknown" message, because Fusion may still finish the posting after
@@ -241,8 +260,8 @@
 	private static string FormatElapsed(TimeSpan value) =>
 		value.TotalHours >= 1 ? value.ToString(@"h\:mm\:ss") : value.ToString(@"m\:ss");
 
-	private static List<string> Clean(IEnumerable<string>? values) =>
-		values?.Where(v => !string.IsNullOrWhiteSpace(v)).ToList() ?? [];
+	private static List<string> Clean(IEnumerable<string?>? values) =>
+		values?.Where(v => !string.IsNullOrWhiteSpace(v)).Select(v => v!).ToList() ?? [];
 
 	private static ValueTask BlockNavigation(LocationChangingContext context)
 	{

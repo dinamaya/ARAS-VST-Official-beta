@@ -71,7 +71,7 @@
 				<RadzenColumn Size="12" SizeLG="8">
 					<CardStandard HeaderIcon="edit" HeaderText="Update Adjustment">
 						<HeaderActions>
-							<RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Submit" class="btn-primary" Icon="send" Click="OnSubmit" />
+							<RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Submit" class="btn-primary" Icon="send" Click="OnSubmit" Disabled="@isPosting" />
 						</HeaderActions>
 						<BodyTtemplate>
 							@if(TypeCode == "cdr")
@@ -265,6 +265,8 @@
 
 	public async Task OnSubmit()
 	{
+		if (isPosting) return;
+
 		try
 		{
 			Guards.ThrowInvalidOperationIf(isLoading, "Can't submit request while search operation is ongoing");
@@ -280,7 +282,11 @@
 				Guards.ThrowInvalidOperationIf(newHash.Equals(inputHash), "No changes detected in the current request.");
 			}
 
-			await RequestService.Update(isRequestUpdatable, RequestId, data, details.Notes);
+			await postingOverlay.RunAsync(
+				FusionPostingOverlay.SubmittingChangesTitle,
+				[$"{adjustmentName} of {FusionPostingOverlay.FormatSummaryAmount(data.AdjustmentAmount)}", FusionPostingOverlay.DescribeAttachments(details.Notes)],
+				FusionPostingOverlay.SubmittingNote,
+				() => RequestService.Update(isRequestUpdatable, RequestId, data, details.Notes));
 			RefreshPage();
 		}
 		catch (Exception ex)

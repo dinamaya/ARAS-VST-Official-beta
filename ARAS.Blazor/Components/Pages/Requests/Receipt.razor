@@ -22,6 +22,8 @@
 @inject IJSRuntime JS
 <h2>Receipt Adjustment</h2>
 
+<FusionPostingOverlay @ref="submitOverlay" />
+
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 	<SearchInvoiceDetails OnSelectInvoice="OnInvoiceSelected" OnReceiptSearchChanged="SetReceiptSearch" OnSearchGroupChanged="HandleSearchGroupChanged" UseRecordTypeSearch="true" PlaceSearchButtonBelowDate="true" AlignSearchFields="true">
 		<ResultHeader>
@@ -383,7 +385,11 @@
 				});
 			}
 
-			await RequestService.Create(requests, Notes);
+			await submitOverlay.RunAsync(
+				FusionPostingOverlay.SubmittingTitle,
+				DescribeSubmission(requests),
+				FusionPostingOverlay.SubmittingNote,
+				() => RequestService.Create(requests, Notes));
 
 			var uri = NavManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
 			NavManager.NavigateTo(uri);
@@ -416,6 +422,20 @@
 		.Select(name => IsReceiptSource
 			? $"{name} is available for invoices only."
 			: $"{name} is available for receipts only.");
+
+	private FusionPostingOverlay submitOverlay = default!;
+
+	private IEnumerable<string?> DescribeSubmission(IEnumerable<BaseReceiptAdjustmentCreateDto> requests)
+	{
+		foreach (var request in requests)
+			yield return $"{request.AdjustmentType} of {FusionPostingOverlay.FormatSummaryAmount(request.AdjustmentAmount)} on {request.InvoiceNumber}";
+
+		var applications = requests.SelectMany(r => r.ReceiptApplications ?? []).ToList();
+		if (applications.Count > 0)
+			yield return $"Apply receipt to {applications.Count} {(applications.Count == 1 ? "invoice" : "invoices")} ({FusionPostingOverlay.FormatSummaryAmount(applications.Sum(a => a.AppliedAmount))})";
+
+		yield return FusionPostingOverlay.DescribeAttachments(Notes);
+	}
 
 	private bool HasSelectedAdjustmentType(string adjustmentType) =>
 		selectedAdjustmentTypes.Any(type => string.Equals(type, adjustmentType, StringComparison.OrdinalIgnoreCase));

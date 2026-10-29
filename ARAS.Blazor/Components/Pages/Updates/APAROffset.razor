@@ -311,7 +311,8 @@
 										Text="@SubmitButtonLabel"
                                       class="btn-primary"
                                       Icon="send"
-                                      Click="OnSubmit" />
+                                      Click="OnSubmit"
+                                      Disabled="@isPosting" />
                     </RadzenColumn>
                 </RadzenRow>
             </RadzenStack>
@@ -422,6 +423,8 @@
 
 	public async Task OnSubmit()
 	{
+		if (isPosting) return;
+
 		try
 		{
 			SyncWriteOffIfNeeded();
@@ -471,7 +474,11 @@
 		Guards.ThrowInvalidOperationIf(newHash.Equals(inputHash), "No changes detected in the current request.");
 		bool _isUpdatable = isRequestUpdatable && !newHash.Equals(inputHash);
 
-		await APAROffsetService.Update(_isUpdatable, RequestId, APAdjustments, ARAdjustments, Notes, GetWriteOffRow());
+		await postingOverlay.RunAsync(
+			FusionPostingOverlay.SubmittingChangesTitle,
+			DescribeSubmission(),
+			FusionPostingOverlay.SubmittingNote,
+			() => APAROffsetService.Update(_isUpdatable, RequestId, APAdjustments, ARAdjustments, Notes, GetWriteOffRow()));
 		RefreshPage();
 	}
 
@@ -692,6 +699,15 @@
 
 	private FusionPostingOverlay postingOverlay = default!;
 	private bool isPosting;
+
+	private IEnumerable<string?> DescribeSubmission()
+	{
+		yield return $"AP group: {APAdjustments.Count} {(APAdjustments.Count == 1 ? "line" : "lines")} ({FusionPostingOverlay.FormatSummaryAmount(APGroupTotal)})";
+		yield return $"AR group: {ARAdjustments.Count} {(ARAdjustments.Count == 1 ? "line" : "lines")} ({FusionPostingOverlay.FormatSummaryAmount(ARGroupTotal)})";
+		if (RequiresWriteOff)
+			yield return $"Write-off of {FusionPostingOverlay.FormatSummaryAmount(WriteOffAmount)}";
+		yield return FusionPostingOverlay.DescribeAttachments(Notes);
+	}
 
 	protected async Task OnApprove()
 	{

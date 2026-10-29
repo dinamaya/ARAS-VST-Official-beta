@@ -9,6 +9,7 @@
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Services.Interfaces
 @using ARAS.Blazor.Components.Shared.DataTables
+@using ARAS.Blazor.Components.Shared.Others
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.JSInterop
 @inject DialogService DialogService
@@ -24,6 +25,7 @@
 
 
 <h2>AP AR : Offset</h2>
+<FusionPostingOverlay @ref="submitOverlay" RunningChanged="@(value => isSubmitting = value)" />
 
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 	@if (Utils.Equals(QueryAction, Queries.Success.CREATE))
@@ -256,7 +258,7 @@
 	<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
 
 		<RadzenRow>
-			<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit">
+			<button class="btn btn-primary w-100 mt-2" @onclick="OnSubmit" disabled="@isSubmitting">
 				@SubmitButtonLabel
 			</button>
 		</RadzenRow>
@@ -267,6 +269,17 @@
 	[Parameter] public IList<APAROffsetAPRowDto> APAdjustments { get; set; }
 	[Parameter] public IList<APAROffsetARRowDto> ARAdjustments { get; set; }
 	private IList<NoteRowDto> Notes { get; set; } = new List<NoteRowDto>();
+	private FusionPostingOverlay submitOverlay = default!;
+	private bool isSubmitting;
+
+	private IEnumerable<string?> DescribeSubmission()
+	{
+		yield return $"AP group: {APAdjustments.Count} {(APAdjustments.Count == 1 ? "line" : "lines")} ({FusionPostingOverlay.FormatSummaryAmount(APGroupTotal)})";
+		yield return $"AR group: {ARAdjustments.Count} {(ARAdjustments.Count == 1 ? "line" : "lines")} ({FusionPostingOverlay.FormatSummaryAmount(ARGroupTotal)})";
+		if (RequiresWriteOff)
+			yield return $"Write-off of {FusionPostingOverlay.FormatSummaryAmount(WriteOffAmount)}";
+		yield return FusionPostingOverlay.DescribeAttachments(Notes);
+	}
 	private IEnumerable<string> writeOffReasons { get; set; } = [];
 
 	private InvoiceDetailsDto searchedInvoiceNumber;
@@ -347,6 +360,9 @@
 
 	public async Task OnSubmit()
 	{
+		if (isSubmitting)
+			return;
+
 		try
 		{
 			SyncWriteOffIfNeeded();
@@ -391,7 +407,11 @@
 
 	public async Task SubmitRequest()
 	{
-		await APAROffsetService.Create(APAdjustments, ARAdjustments, Notes, GetWriteOffRow());
+		await submitOverlay.RunAsync(
+			FusionPostingOverlay.SubmittingTitle,
+			DescribeSubmission(),
+			FusionPostingOverlay.SubmittingNote,
+			() => APAROffsetService.Create(APAdjustments, ARAdjustments, Notes, GetWriteOffRow()));
 
 		// Keep only the success flag so the search component does not replay the
 		// previous query and repopulate results after a successful submission.

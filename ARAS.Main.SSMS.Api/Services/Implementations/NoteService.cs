@@ -103,7 +103,7 @@ namespace ARAS.Main.SSMS.Api.Services.Implementations
 					AttachmentData = null,
 					AttachmentName = n.AttachmentName,
 					DateUploaded = n.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
-					Uploader = n.UploaderLastName + ", " + n.UploaderFirstName,
+					Uploader = Utils.Security.DecodeString(n.UploaderLastName + ", " + n.UploaderFirstName),
 				})
 				.ToListAsync();
 		}

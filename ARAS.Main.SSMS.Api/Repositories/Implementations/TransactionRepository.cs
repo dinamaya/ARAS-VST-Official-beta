@@ -1,3 +1,4 @@
+using ARAS.Main.SSMS.Api.App_Code.Globals;
 using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
 using ARAS.Main.SSMS.Api.Context;
 using ARAS.Main.SSMS.Api.Models.Dtos;
@@ -81,7 +82,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.Select(t => new TransactionHistoryDto
 				{
 					TransactionId = t.TransactionId,
-					Creator = t.LastName + ", " + t.FirstName,
+					Creator = Utils.Security.DecodeString(t.LastName + ", " + t.FirstName),
 					DateCreated = t.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
 					Description = t.Description,
 					AttachmentName = t.AttachmentName,
@@ -104,7 +105,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
                 {
                     TransactionId = x.TransactionId,
                     RequestNumber = x.RequestId.ToString(),
-                    Creator = x.Creator,
+                    Creator = Utils.Security.DecodeString(x.Creator),
                     DateCreated = x.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
                     Description = x.Description,
                     AttachmentName = x.AttachmentName,
@@ -125,7 +126,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.Select(t => new EmailTimelineDetailsDto
 				{
 					CreatorAction = t.Status,
-					CreatorFullName = t.LastName + ", " + t.FirstName,
+					CreatorFullName = Utils.Security.DecodeString(t.LastName + ", " + t.FirstName),
 					Remarks = t.Description,
 					DateCreated = t.DateCreated.ToString(Formats.Date.DISPLAY_COMPLETE),
 				}).ToListAsync();

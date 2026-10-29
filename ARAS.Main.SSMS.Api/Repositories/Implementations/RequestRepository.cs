@@ -187,7 +187,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				.Select(r => new RequestUpdateEmailDetailsDto
 				{
 					RequestNumber = r.RequestId.ToString(),
-					Creator = r.RequestorFirstName + " " + r.RequestorLastName
+					Creator = Utils.Security.DecodeString(r.RequestorFirstName + " " + r.RequestorLastName)
 				})
 				.FirstOrDefaultAsync() ?? throw new InvalidOperationException(Exceptions.NOTFOUND_REQUEST);
 
@@ -586,8 +586,11 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			return invoiceRequest ?? throw new InvalidOperationException(Exceptions.NOTFOUND_REQUEST);
 		}
 
+        // Account names can be stored URL-encoded (e.g. "Aldin%20Peter"); decode them for display.
         private static string ValidateFullName(string fName, string lName) =>
-			string.IsNullOrEmpty(lName) && string.IsNullOrEmpty(fName) ? string.Empty : lName + ", " + fName;
+			string.IsNullOrEmpty(lName) && string.IsNullOrEmpty(fName)
+				? string.Empty
+				: Utils.Security.DecodeString(lName) + ", " + Utils.Security.DecodeString(fName);
 
         private static IQueryable<ReportQueryRow> FilterReportByType(IQueryable<ReportQueryRow> query, string reportType)
         {

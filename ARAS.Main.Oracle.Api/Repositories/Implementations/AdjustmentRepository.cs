@@ -122,8 +122,8 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 			// Validate every Apply Receipt row before sending anything to Fusion, so a
 			// request can never end up "Posted" with only its write-off applied.
-			foreach (var row in rows.Where(r => r.ApplyReceiptEnabled))
-				await ValidateApplyReceiptPayloadAsync(row);
+			foreach (var row in rows.Where(r => r.ApplyReceiptEnabled || HasValidReceiptApplications(r)))
+				ValidateApplyReceiptPayload(row);
 
 			foreach(var item in rows)
 			{
@@ -257,8 +257,6 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 		private async Task CreateFusionSmallAmountWriteOff(AdjustmentPostingDto item)
 		{
-			await TryHydrateApplyReceiptPayloadAsync(item);
-
 			var hasSelectedReceiptApplications = item.ReceiptApplications?.Any(a =>
 				a is not null && a.PaymentScheduleId > 0 && a.AppliedAmount > 0) == true;
 
@@ -318,7 +316,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			await CreateFusionReceiptActivityApplication(item, writeOffAmount, sarActivityName);
 		}
 
-		private async Task ValidateApplyReceiptPayloadAsync(AdjustmentPostingDto item)
+		private void ValidateApplyReceiptPayload(AdjustmentPostingDto item)
 		{
 			// Apply Receipt is only executed inside the receipt write-off flow.
 			// Any other activity flagged for Apply Receipt would silently skip it.
@@ -326,9 +324,8 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 				throw new InvalidOperationException(
 					$"Fusion posting failed for {GetPostingDescription(item)}: Apply Receipt is only supported for receipt write-off requests. Nothing was posted.");
 
-			if (!HasValidReceiptApplications(item) || item.ReceiptId is null || item.ReceiptId <= 0)
-				await TryHydrateApplyReceiptPayloadAsync(item);
-
+			// The caller (Blazor -> SSMS staging data) must send the invoice applications.
+			// There is deliberately no fallback lookup here: missing data fails the posting.
 			if (!HasValidReceiptApplications(item))
 				throw new InvalidOperationException(
 					$"Fusion posting failed for {GetPostingDescription(item)}: Apply Receipt was selected for this request, but no invoice applications were found. Nothing was posted. Please decline the request so it can be resubmitted with the invoices to apply.");
@@ -340,62 +337,6 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 		private static bool HasValidReceiptApplications(AdjustmentPostingDto item) =>
 			item.ReceiptApplications?.Any(a => a is not null && a.PaymentScheduleId > 0 && a.AppliedAmount > 0) == true;
-
-		private async Task TryHydrateApplyReceiptPayloadAsync(AdjustmentPostingDto item)
-		{
-			var hasApplyPayload = item.ReceiptId.HasValue && item.ReceiptId > 0
-				&& item.ReceiptApplications?.Any(a => a is not null && a.PaymentScheduleId > 0 && a.AppliedAmount > 0) == true;
-
-			if (hasApplyPayload || item.AdjustmentId <= 0)
-				return;
-
-			try
-			{
-				var requestUri = $"/adjust/stage/receipt/adjustment/{item.AdjustmentId}";
-				using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
-				using var response = await _fusionApiClient.SendAsync(request);
-
-				if (!response.IsSuccessStatusCode)
-				{
-					_logger.LogWarning(
-						"Unable to hydrate apply receipt payload for AdjustmentId {AdjustmentId}. StatusCode: {StatusCode}",
-						item.AdjustmentId,
-						response.StatusCode);
-					return;
-				}
-
-				var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-				var envelope = await response.Content.ReadFromJsonAsync<ResponseDto<IEnumerable<AdjustmentPostingDto>>>(options);
-				var stagedRow = envelope?.Result?
-					.FirstOrDefault(r => r.AdjustmentId == item.AdjustmentId || r.HeaderId == item.HeaderId);
-
-				if (stagedRow is null)
-					return;
-
-				item.ReceiptId ??= stagedRow.ReceiptId;
-				item.CurrencyCode ??= stagedRow.CurrencyCode;
-				item.GlAccountingDate ??= stagedRow.GlAccountingDate;
-
-				if ((item.ReceiptApplications is null || item.ReceiptApplications.Count == 0)
-					&& stagedRow.ReceiptApplications is not null
-					&& stagedRow.ReceiptApplications.Count > 0)
-				{
-					item.ReceiptApplications = stagedRow.ReceiptApplications;
-				}
-
-				if (!item.ApplyReceiptEnabled)
-				{
-					item.ApplyReceiptEnabled = stagedRow.ApplyReceiptEnabled
-						|| item.ReceiptApplications?.Any(a => a is not null && a.PaymentScheduleId > 0 && a.AppliedAmount > 0) == true;
-				}
-			}
-			catch (Exception ex)
-			{
-				_logger.LogWarning(ex,
-					"Failed to hydrate apply receipt payload for AdjustmentId {AdjustmentId}.",
-					item.AdjustmentId);
-			}
-		}
 
 		private async Task ApplyReceiptToInvoicesAsync(AdjustmentPostingDto item, decimal receiptAmount)
 		{
@@ -760,8 +701,6 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			return result;
 		}
 
-		public async Task<IEnumerable<ARAdjustmentsStaging>> GetAll() => await efContext.AdjustmentsStaging.ToListAsync();
-
 		private async Task CreateStageRow(IEnumerable<AdjustmentCreateStagingRow> rows)
 		{
 			var list = rows.Select(row => new ARAdjustmentsStaging
@@ -848,37 +787,6 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 			var insertConn = await oracleConnection.OpenWithoutPolicyAsync();
 			await insertConn.ExecuteAsync(sql, list, commandTimeout: 120);
-		}
-
-		public async Task<IEnumerable<PostedResponseDto>> GetPosted(IEnumerable<long> adjustmentIds)
-        {
-			var headerIds = adjustmentIds.Distinct().ToList();
-			if (!headerIds.Any()) return [];
-
-			var conn = await oracleConnection.OpenWithoutPolicyAsync();
-			var parameters = new DynamicParameters();
-			var headerPredicates = new List<string>();
-
-			for (int i = 0; i < headerIds.Count; i++)
-			{
-				var parameterName = $"headerId{i}";
-				headerPredicates.Add($"stg.HEADER_ID = :{parameterName}");
-				parameters.Add(parameterName, headerIds[i]);
-			}
-
-			string sql = $@"
-				SELECT
-					stg.HEADER_ID HeaderId,
-					CAST(NULL AS VARCHAR2(240)) AdjustmentActivityName
-				FROM
-					APPS.XXMSI_AR_ADJ_STG stg
-				WHERE
-					({string.Join(" OR ", headerPredicates)}) AND
-					stg.STG_FLAG = '1' AND
-					stg.INT_FLAG = '1' AND
-					stg.INV_FLAG = '1'";
-
-			return (await conn.QueryAsync<PostedResponseDto>(sql, parameters, commandTimeout: 120)).ToList();
 		}
     }
 }

@@ -1,0 +1,67 @@
+/* Apply Receipt (to Invoice) grids: compact, Fusion-like layout.
+   Used by CreateReceiptAdjustment.razor and ApplyReceiptApplicationsDisplay.razor. */
+
+.apply-receipt-grid {
+	font-size: 0.8125rem; /* ~13px */
+}
+
+/* Let headers wrap onto two lines instead of truncating ("Amount Due" -> "Amount / Due"). */
+.apply-receipt-grid .rz-grid-table thead th .rz-column-title,
+.apply-receipt-grid .rz-grid-table thead th .rz-column-title-content {
+	white-space: normal;
+	overflow: visible;
+	text-overflow: clip;
+	line-height: 1.2;
+}
+
+.apply-receipt-grid .rz-grid-table thead th {
+	font-size: 0.75rem;
+	font-weight: 600;
+	vertical-align: bottom;
+}
+
+/* Never cut off cell values such as invoice numbers. */
+.apply-receipt-grid .rz-grid-table td .rz-cell-data {
+	white-space: normal;
+	overflow: visible;
+	text-overflow: clip;
+}
+
+.apply-receipt-grid .rz-grid-table td {
+	vertical-align: middle;
+}
+
+/* Amounts: aligned digits so columns of numbers line up. */
+.apply-receipt-amount {
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.apply-receipt-grid .rz-numeric input {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+.apply-receipt-invoice-number {
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.apply-receipt-subline {
+	font-size: 0.75rem;
+	color: #8392ab;
+	white-space: nowrap;
+}
+
+.apply-receipt-overdue {
+	color: #ea0606;
+	font-weight: 600;
+}
+
+.apply-receipt-row-selected > td {
+	background-color: rgba(94, 114, 228, 0.08) !important;
+}
+
+.apply-receipt-total {
+	font-variant-numeric: tabular-nums;
+}

@@ -13,7 +13,8 @@ namespace ARAS.Blazor.Services.Implementations
 			{
 				URL = configService.GetOracleAdjustmentApiUrl("stage"),
 				Data = data,
-				ApiType = ApiType.POST
+				ApiType = ApiType.POST,
+				HttpClientName = RequestDto.PostingHttpClient
 			});
 
             Guards.ThrowInvalidOperationIf(!(response?.IsSuccess ?? false), response?.Message ?? "Failed to create Oracle staging row.");

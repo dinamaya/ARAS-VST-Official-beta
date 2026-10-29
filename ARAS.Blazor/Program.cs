@@ -26,6 +26,12 @@ builder.Services.AddHttpClient("vstecs-aras-client", client =>
 {
     client.Timeout = TimeSpan.FromSeconds(60);
 });
+// Final approvals post to Oracle Fusion (several sequential Fusion calls), which can
+// take longer than regular API calls. Used only for the Oracle staging POST.
+builder.Services.AddHttpClient("vstecs-aras-posting", client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(3);
+});
 
 builder.Services.AddLocalRepositories();
 builder.Services.AddComplexConfiguration();

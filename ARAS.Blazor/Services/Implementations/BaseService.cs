@@ -57,7 +57,8 @@ namespace ARAS.Blazor.Services.Implementations
 				//bool isSecurityHashValid = await _authService.IsAccountSecurityHashValid();
 				//Guards.ThrowInvalidOperationIf(!isSecurityHashValid, "Session expired. Please log in again.");
 
-				HttpClient client = _httpClientFactory.CreateClient("vstecs-aras-client");
+				HttpClient client = _httpClientFactory.CreateClient(
+					string.IsNullOrWhiteSpace(requestDto.HttpClientName) ? RequestDto.DefaultHttpClient : requestDto.HttpClientName);
 				HttpRequestMessage message = new();
 				ResponseDto<TResult> responseDto = new();
 

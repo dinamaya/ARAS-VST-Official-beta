@@ -1,24 +1,44 @@
 @using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Models.DTOs
 
+@* Read-only view of the invoices a receipt will be applied to (approval / submission pages).
+   Same compact, Fusion-like layout as the Apply Receipt grid on the request page. *@
 <RadzenFieldset Text="Apply Receipt (to Invoice)" AllowCollapse="true" Collapsed="false" class="mt-3">
-	<RadzenDataGrid Data="@Applications" TItem="ReceiptInvoiceApplicationPostingDto" AllowPaging="false" AllowSorting="false" AllowFiltering="false" class="w-100">
+	<RadzenDataGrid Data="@Applications" TItem="ReceiptInvoiceApplicationPostingDto"
+					AllowPaging="false" AllowSorting="false" AllowFiltering="false"
+					Density="Density.Compact"
+					EmptyText="No invoice applications."
+					class="w-100 apply-receipt-grid">
 		<Columns>
-			<RadzenDataGridColumn TItem="ReceiptInvoiceApplicationPostingDto" Property="InvoiceNumber" Title="Invoice Number" />
-			<RadzenDataGridColumn TItem="ReceiptInvoiceApplicationPostingDto" Property="AmountDue" Title="Amount Due">
-				<Template Context="application">@application.AmountDue.ToPhp()</Template>
+			<RadzenDataGridColumn TItem="ReceiptInvoiceApplicationPostingDto" Title="Invoice Number" MinWidth="150px">
+				<Template Context="application">
+					<span class="apply-receipt-invoice-number">@application.InvoiceNumber</span>
+				</Template>
 			</RadzenDataGridColumn>
-			<RadzenDataGridColumn TItem="ReceiptInvoiceApplicationPostingDto" Property="AppliedAmount" Title="Applied Amount">
-				<Template Context="application">@application.AppliedAmount.ToPhp()</Template>
+			<RadzenDataGridColumn TItem="ReceiptInvoiceApplicationPostingDto" Title="Amount Due" Width="135px" TextAlign="TextAlign.Right">
+				<Template Context="application">
+					<span class="apply-receipt-amount">@application.AmountDue.ToAmountWithCurrency(application.CurrencyCode)</span>
+				</Template>
 			</RadzenDataGridColumn>
-			<RadzenDataGridColumn TItem="ReceiptInvoiceApplicationPostingDto" Property="DiscountAmount" Title="Discount">
-				<Template Context="application">@(application.DiscountAmount.HasValue ? application.DiscountAmount.Value.ToPhp() : "—")</Template>
+			<RadzenDataGridColumn TItem="ReceiptInvoiceApplicationPostingDto" Title="Applied Amount" Width="135px" TextAlign="TextAlign.Right">
+				<Template Context="application">
+					<span class="apply-receipt-amount">@application.AppliedAmount.ToAmountWithCurrency(application.CurrencyCode)</span>
+				</Template>
 			</RadzenDataGridColumn>
-			<RadzenDataGridColumn TItem="ReceiptInvoiceApplicationPostingDto" Property="CurrencyCode" Title="Currency" />
 		</Columns>
 	</RadzenDataGrid>
+
+	<div class="mt-2 d-flex justify-content-end">
+		<span class="fw-bold apply-receipt-total">Total Applied: @TotalApplied.ToAmountWithCurrency(CurrencyCode)</span>
+	</div>
 </RadzenFieldset>
 
 @code {
 	[Parameter] public IList<ReceiptInvoiceApplicationPostingDto> Applications { get; set; } = [];
+
+	private double TotalApplied => Applications?.Sum(a => a.AppliedAmount) ?? 0;
+
+	private string? CurrencyCode => Applications?
+		.Select(a => a.CurrencyCode)
+		.FirstOrDefault(c => !string.IsNullOrWhiteSpace(c));
 }

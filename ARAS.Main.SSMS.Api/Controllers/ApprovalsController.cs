@@ -82,23 +82,6 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-        [HttpGet("sync"), AllowAnonymous]
-        public async Task<ResponseDto<IEnumerable<ApprovedAdjustmentSyncDto>>> GetSync()
-        {
-            var response = new ResponseDto<IEnumerable<ApprovedAdjustmentSyncDto>>();
-            try
-            {
-                response.Result = await _adjustmentRepo.GetAllApprovedForSync();
-                response.Message = "Successfully fetched approved request adjustments for sync.";
-                return response;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return response.Failed(ex.Message);
-            }
-        }
-
 		private static string GetApprovalSuccessMessage(string role) => role switch
 		{
 			"CNC Approver" => "Request has been successfully approved and moved to FSG validation",

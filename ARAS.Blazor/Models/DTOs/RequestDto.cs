@@ -13,7 +13,15 @@ namespace ARAS.Blazor.Models.DTOs
 		/// <summary>
 		/// Use this property when ContentType is MultipartFormData and Data is a collection
 		/// </summary>
-		public string? FormCollectionName { get; set; } 
+		public string? FormCollectionName { get; set; }
+		/// <summary>
+		/// Named HttpClient to send this request with. Leave null for the default
+		/// client; use <see cref="PostingHttpClient"/> for slow Oracle Fusion postings.
+		/// </summary>
+		public string? HttpClientName { get; set; }
+
+		public const string DefaultHttpClient = "vstecs-aras-client";
+		public const string PostingHttpClient = "vstecs-aras-posting";
 	}
 
 

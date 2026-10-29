@@ -13,6 +13,8 @@
 			public const string DELETE = "scZpmNld";
 			public const string EDIT = "sMr1xl0e";
 			public const string CREATE = "sZcJakmc";
+			public const string APPROVED = "sAp7vQ2d";
+			public const string POSTED = "sPf8Rq2T";
 		}
 
 		public class Auth

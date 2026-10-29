@@ -1,3 +1,4 @@
+@using ARAS.Blazor.Components.Shared.Others
 @using ARAS.Blazor.App_Code.Globals.Extensions
 @using ARAS.Blazor.Components.Shared.Skeletons
 @using ARAS.Blazor.Models.DTOs
@@ -6,6 +7,8 @@
 @inject IRequestService RequestService
 @inject DialogService DialogService
 @inject NavigationManager NavManager
+
+<FusionPostingOverlay @ref="postingOverlay" RunningChanged="@(value => isPosting = value)" />
 
 <RadzenRow class="w-100">
 	<div class="card blur shadow-blur w-100">
@@ -34,9 +37,9 @@
 						{
 							<RadzenColumn Size="12" SizeMD="6">
 								<RadzenStack class="w-100" JustifyContent="JustifyContent.End" Orientation="Orientation.Horizontal">
-									<RadzenButton ButtonStyle="ButtonStyle.Danger" Text="Reject" class="btn-danger" Icon="cancel" Click="OnReject" />
-									<RadzenButton ButtonStyle="ButtonStyle.Warning" Text="Decline" class="btn-dark" Icon="thumb_down" Click="OnDecline" />
-									<RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Approve" class="btn-primary" Icon="thumb_up" Click="OnApprove" />
+									<RadzenButton ButtonStyle="ButtonStyle.Danger" Text="Reject" class="btn-danger" Icon="cancel" Click="OnReject" Disabled="@isPosting" />
+									<RadzenButton ButtonStyle="ButtonStyle.Warning" Text="Decline" class="btn-dark" Icon="thumb_down" Click="OnDecline" Disabled="@isPosting" />
+									<RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Approve" class="btn-primary" Icon="thumb_up" Click="OnApprove" Disabled="@isPosting" />
 								</RadzenStack>
 							</RadzenColumn>
 						}
@@ -208,18 +211,52 @@
 
 	private async Task OnDecline(MouseEventArgs args) => await OnStatusUpdate("DECLINE", "Decline", RequestService.DeclineReceiptAdjustmentRequests);
 
+	private FusionPostingOverlay postingOverlay = default!;
+	private bool isPosting;
+
 	private async Task OnStatusUpdate(string status, string stage, Func<IEnumerable<long>, Task> updateCallBack)
 	{
+		if (isPosting) return;
+
+		var requestIds = SelectedIds.ToList();
+
 		bool isConfirmed = await DialogService.Confirm(
-			$"Would you like to \"{status}\" {SelectedIds.Count()} request(s) at the same time?",
+			$"Would you like to \"{status}\" {requestIds.Count} request(s) at the same time?",
 			"Request " + stage
 		) ?? false;
 
 		if (!isConfirmed) return;
 
-		await updateCallBack.Invoke(SelectedIds);
+		// Only the final approver's approval posts to Oracle Fusion.
+		bool postsToFusion = status == "APPROVE" && await RequestService.IsFinalApprover();
 
-		var uri = NavManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
+		try
+		{
+			if (postsToFusion)
+			{
+				await postingOverlay.RunAsync(
+					$"Posting {requestIds.Count} request(s) to Oracle Fusion…",
+					["Each request is posted one after another, so larger batches take longer."],
+					FusionPostingOverlay.FusionPostingNote,
+					() => updateCallBack.Invoke(requestIds));
+			}
+			else
+			{
+				await postingOverlay.RunAsync(
+					$"Updating {requestIds.Count} request(s)…",
+					null,
+					null,
+					() => updateCallBack.Invoke(requestIds));
+			}
+		}
+		catch (Exception ex)
+		{
+			var (title, message) = FusionPostingOverlay.DescribeFailure(ex, $"Request {stage} Failed");
+			await DialogService.Alert(message, title);
+			return;
+		}
+
+		var uri = NavManager.GetUriWithQueryParameter("q", postsToFusion ? Queries.Success.POSTED : Queries.Success.CREATE);
 		NavManager.NavigateTo(uri, true);
 	}
 }

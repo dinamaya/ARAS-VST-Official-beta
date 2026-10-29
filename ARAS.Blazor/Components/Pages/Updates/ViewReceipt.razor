@@ -20,6 +20,8 @@
 
 <h2>@adjustmentName</h2>
 
+<FusionPostingOverlay @ref="postingOverlay" RunningChanged="@(value => isPosting = value)" />
+
 <RadzenStack Gap="2.3em" JustifyContent="JustifyContent.Center" Orientation="Orientation.Vertical">
 	@if (isReady && invoice is not null && details is not null)
 	{
@@ -30,13 +32,25 @@
 					@adjustmentName Adjustment updated successfully
 				</RadzenAlert>
 			}
+			@if (Utils.Equals(QueryAction, Queries.Success.APPROVED))
+			{
+				<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
+					Request approved and sent to the next approver.
+				</RadzenAlert>
+			}
+			@if (Utils.Equals(QueryAction, Queries.Success.POSTED))
+			{
+				<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
+					Request approved and posted to Oracle Fusion.
+				</RadzenAlert>
+			}
 			@if (isStatusChangeable)
 			{
 				<RadzenColumn Size="12">
 					<RadzenStack JustifyContent="JustifyContent.Right" Orientation="Orientation.Horizontal">
-						<RadzenButton ButtonStyle="ButtonStyle.Danger" Text="Reject" class="btn-danger" Icon="cancel" Click="OnReject" />
-						<RadzenButton ButtonStyle="ButtonStyle.Warning" Text="Decline" class="btn-dark" Icon="thumb_down" Click="OnDecline" />
-						<RadzenButton ButtonStyle="ButtonStyle.Success" Text="Approve" class="btn-success" Icon="thumb_up" Click="OnApprove" />
+						<RadzenButton ButtonStyle="ButtonStyle.Danger" Text="Reject" class="btn-danger" Icon="cancel" Click="OnReject" Disabled="@isPosting" />
+						<RadzenButton ButtonStyle="ButtonStyle.Warning" Text="Decline" class="btn-dark" Icon="thumb_down" Click="OnDecline" Disabled="@isPosting" />
+						<RadzenButton ButtonStyle="ButtonStyle.Success" Text="Approve" class="btn-success" Icon="thumb_up" Click="OnApprove" Disabled="@isPosting" />
 					</RadzenStack>
 				</RadzenColumn>
 			}
@@ -152,6 +166,8 @@
 	private ReceiptAdjustmentUpdateRequestDto data;
 	private BaseReceiptAdjustment? baseReceiptAdjustment;
 	private CreateCashDiscountAdjustment? cashDiscountAdjustment;
+	private FusionPostingOverlay postingOverlay = default!;
+	private bool isPosting;
 
 	private bool isOnSearch;
 	private bool isLoading;
@@ -297,17 +313,44 @@
 
 	protected async Task OnApprove()
 	{
+		if (isPosting) return;
+
 		try
 		{
 			bool isConfirmed = await DialogService.Confirm("Are you sure you want to \"APPROVE\" this request?", "Approve Request") ?? false;
 			if (!isConfirmed) return;
-			var stagingDetails = await RequestService.IsFinalApprover() ? await RequestService.GetReceiptStagingDataByRequestId(RequestId) : null;
-			await RequestService.Approve(RequestId, details.Notes, stagingDetails);
-			RefreshPage();
+
+			bool isFinalApprover = await RequestService.IsFinalApprover();
+
+			if (isFinalApprover)
+			{
+				// Final approval posts to Oracle Fusion, which can take a while.
+				await postingOverlay.RunAsync(
+					FusionPostingOverlay.FusionPostingTitle,
+					["Preparing the posting details…"],
+					FusionPostingOverlay.FusionPostingNote,
+					async () =>
+					{
+						var stagingDetails = await RequestService.GetReceiptStagingDataByRequestId(RequestId);
+						await postingOverlay.SetLinesAsync(FusionPostingOverlay.DescribePostings(stagingDetails));
+						await RequestService.Approve(RequestId, details.Notes, stagingDetails);
+					});
+			}
+			else
+			{
+				await postingOverlay.RunAsync(
+					"Approving request…",
+					null,
+					null,
+					() => RequestService.Approve(RequestId, details.Notes, null));
+			}
+
+			RefreshPage(isFinalApprover ? Queries.Success.POSTED : Queries.Success.APPROVED);
 		}
 		catch (Exception ex)
 		{
-			await DialogService.Alert(ex.Message, GetApprovalFailureTitle(ex));
+			var (title, message) = FusionPostingOverlay.DescribeFailure(ex, GetApprovalFailureTitle(ex));
+			await DialogService.Alert(message, title);
 		}
 	}
 
@@ -364,9 +407,9 @@
 		}
 	}
 
-	protected void RefreshPage()
+	protected void RefreshPage(string query = Queries.Success.CREATE)
 	{
-		var uri = NavigationManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
+		var uri = NavigationManager.GetUriWithQueryParameter("q", query);
 		NavigationManager.NavigateTo(uri, true);
 	}
 

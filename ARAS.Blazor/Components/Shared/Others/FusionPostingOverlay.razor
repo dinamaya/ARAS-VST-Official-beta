@@ -1,0 +1,307 @@
+@using System.Globalization
+@using ARAS.Main.Oracle.Api.Models.Dtos
+@using Microsoft.AspNetCore.Components.Routing
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+
+@*
+	Blocking progress overlay for actions that can take a while, mainly final
+	approvals that post to Oracle Fusion. While it runs it:
+	- covers the page so nothing can be clicked twice,
+	- explains what is being posted and shows the elapsed time,
+	- blocks in-app navigation and asks before the tab is closed or refreshed.
+	Usage: await overlay.RunAsync(title, lines, note, async () => { ... });
+*@
+
+@if (isRunning)
+{
+	<div class="fusion-posting-backdrop" role="alertdialog" aria-modal="true" aria-busy="true" aria-labelledby="fusion-posting-title" aria-describedby="fusion-posting-body">
+		<div class="fusion-posting-card">
+			<div class="fusion-posting-header">
+				<span class="spinner-border text-primary" role="status" aria-hidden="true"></span>
+				<h5 id="fusion-posting-title" class="fusion-posting-title">@title</h5>
+			</div>
+
+			<div id="fusion-posting-body">
+				@if (lines.Count > 0)
+				{
+					<ul class="fusion-posting-lines">
+						@foreach (var line in lines)
+						{
+							<li>@line</li>
+						}
+					</ul>
+				}
+
+				@if (!string.IsNullOrWhiteSpace(note))
+				{
+					<p class="fusion-posting-note">@note</p>
+				}
+			</div>
+
+			<div class="fusion-posting-elapsed" aria-live="off">Elapsed @FormatElapsed(elapsed)</div>
+		</div>
+	</div>
+}
+
+<style>
+	/* Global (not scoped) because the app does not load the scoped CSS bundle. Names are prefixed to avoid clashes. */
+	.fusion-posting-backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: 2000; /* above Radzen dialogs and notifications */
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 1rem;
+		background: rgba(15, 23, 42, 0.45);
+		backdrop-filter: blur(2px);
+		cursor: progress;
+	}
+
+	.fusion-posting-card {
+		width: 100%;
+		max-width: 30rem;
+		padding: 1.5rem 1.75rem;
+		border-radius: 1rem;
+		background: #fff;
+		box-shadow: 0 1.25rem 2.5rem rgba(0, 0, 0, 0.2);
+		cursor: default;
+	}
+
+	.fusion-posting-header {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+		margin-bottom: 1rem;
+	}
+
+	.fusion-posting-title {
+		margin: 0;
+		font-weight: 700;
+	}
+
+	.fusion-posting-lines {
+		margin: 0 0 1rem;
+		padding-left: 1.25rem;
+		font-size: 0.9rem;
+		line-height: 1.5;
+	}
+
+	.fusion-posting-note {
+		margin: 0 0 0.75rem;
+		font-size: 0.875rem;
+		color: #67748e;
+	}
+
+	.fusion-posting-elapsed {
+		font-size: 0.8rem;
+		color: #8392ab;
+		font-variant-numeric: tabular-nums;
+	}
+</style>
+
+@code {
+	/// <summary>Raised with true when an action starts and false when it ends, so the page can disable its buttons.</summary>
+	[Parameter] public EventCallback<bool> RunningChanged { get; set; }
+
+	public const string FusionPostingTitle = "Posting to Oracle Fusion…";
+	public const string FusionPostingNote = "This can take a minute or two. Please keep this page open until it finishes.";
+
+	public bool IsRunning => isRunning;
+
+	private bool isRunning;
+	private string title = string.Empty;
+	private List<string> lines = [];
+	private string? note;
+	private TimeSpan elapsed;
+	private CancellationTokenSource? timerCts;
+	private IDisposable? navigationRegistration;
+
+	/// <summary>
+	/// Shows the overlay, runs <paramref name="action"/>, then hides the overlay.
+	/// Exceptions from the action are re-thrown so the caller can show its own error dialog.
+	/// A second call while one is already running is ignored.
+	/// </summary>
+	public async Task RunAsync(string title, IEnumerable<string>? lines, string? note, Func<Task> action)
+	{
+		if (isRunning)
+			return;
+
+		this.title = title;
+		this.lines = Clean(lines);
+		this.note = note;
+		elapsed = TimeSpan.Zero;
+		isRunning = true;
+
+		StateHasChanged();
+		await RunningChanged.InvokeAsync(true);
+
+		navigationRegistration = NavigationManager.RegisterLocationChangingHandler(BlockNavigation);
+		await SetLeaveGuardAsync(true);
+		StartTimer();
+
+		try
+		{
+			await action();
+		}
+		finally
+		{
+			StopTimer();
+			navigationRegistration?.Dispose();
+			navigationRegistration = null;
+			await SetLeaveGuardAsync(false);
+
+			isRunning = false;
+			StateHasChanged();
+			await RunningChanged.InvokeAsync(false);
+		}
+	}
+
+	/// <summary>Replaces the detail lines while the overlay is showing (e.g. once posting data has loaded).</summary>
+	public async Task SetLinesAsync(IEnumerable<string>? newLines)
+	{
+		lines = Clean(newLines);
+		await InvokeAsync(StateHasChanged);
+	}
+
+	/// <summary>Builds short, human-readable lines describing what will be posted to Fusion.</summary>
+	public static IReadOnlyList<string> DescribePostings(IEnumerable<AdjustmentPostingDto>? rows, int maxLines = 6)
+	{
+		var result = new List<string>();
+
+		foreach (var row in rows ?? [])
+		{
+			if (row is null)
+				continue;
+
+			var applications = row.ReceiptApplications?
+				.Where(a => a is not null && a.AppliedAmount > 0)
+				.ToList() ?? [];
+
+			if (row.ApplyReceiptEnabled && applications.Count > 0)
+			{
+				var currency = applications.Select(a => a.CurrencyCode).FirstOrDefault(c => !string.IsNullOrWhiteSpace(c)) ?? row.CurrencyCode;
+				var invoiceWord = applications.Count == 1 ? "invoice" : "invoices";
+				result.Add($"Apply receipt {row.InvoiceNumber} to {applications.Count} {invoiceWord} ({FormatAmount(applications.Sum(a => a.AppliedAmount), currency)})");
+			}
+
+			var activity = string.IsNullOrWhiteSpace(row.AdjustmentActivity) ? "adjustment" : row.AdjustmentActivity;
+			var target = string.IsNullOrWhiteSpace(row.InvoiceNumber) ? string.Empty : $" on {row.InvoiceNumber}";
+			result.Add($"Post {activity} of {FormatAmount(row.AdjustmentAmount, row.CurrencyCode)}{target}");
+		}
+
+		if (result.Count > maxLines)
+		{
+			var hidden = result.Count - (maxLines - 1);
+			result = result.Take(maxLines - 1).ToList();
+			result.Add($"…and {hidden} more");
+		}
+
+		return result;
+	}
+
+	/// <summary>
+	/// Picks a dialog title and message for a failed action. Timeouts get a distinct
+	/// "status unknown" message, because Fusion may still finish the posting after
+	/// the browser stops waiting, and approving again could post twice.
+	/// </summary>
+	public static (string Title, string Message) DescribeFailure(Exception exception, string defaultTitle)
+	{
+		var text = exception.ToString();
+
+		if (text.Contains("Nothing was posted", StringComparison.OrdinalIgnoreCase))
+			return ("Posting Stopped: Nothing Was Posted", exception.Message);
+
+		if (IsTimeout(text))
+			return ("Posting Status Unknown",
+				"Oracle Fusion did not respond in time, so we can't confirm whether the posting finished. It may still complete in Fusion. " +
+				"Don't approve this request again yet: wait a few minutes, then check the transaction in Fusion and refresh this request. " +
+				"If Fusion shows it as posted but this request is still pending, contact the system administrator.");
+
+		return (defaultTitle, exception.Message);
+	}
+
+	private static bool IsTimeout(string text) =>
+		new[]
+		{
+			"timed out", "HttpClient.Timeout", "Timeout of", "task was canceled", "request was canceled",
+			"ServiceUnavailable", "Service Unavailable", "GatewayTimeout", "Gateway Timeout",
+			// BaseService's message when the gateway gives up and returns an empty body.
+			"Error while connecting to the server"
+		}.Any(keyword => text.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+
+	private static string FormatAmount(double amount, string? currencyCode)
+	{
+		var value = amount.ToString("N2", CultureInfo.InvariantCulture);
+		return string.IsNullOrWhiteSpace(currencyCode) ? value : $"{currencyCode.Trim().ToUpperInvariant()} {value}";
+	}
+
+	private static string FormatElapsed(TimeSpan value) =>
+		value.TotalHours >= 1 ? value.ToString(@"h\:mm\:ss") : value.ToString(@"m\:ss");
+
+	private static List<string> Clean(IEnumerable<string>? values) =>
+		values?.Where(v => !string.IsNullOrWhiteSpace(v)).ToList() ?? [];
+
+	private static ValueTask BlockNavigation(LocationChangingContext context)
+	{
+		context.PreventNavigation();
+		return ValueTask.CompletedTask;
+	}
+
+	private async Task SetLeaveGuardAsync(bool enabled)
+	{
+		try
+		{
+			await JS.InvokeVoidAsync(enabled ? "arasPostingGuard.enable" : "arasPostingGuard.disable");
+		}
+		catch (Exception)
+		{
+			// The guard is a convenience; never let it break the action itself
+			// (e.g. stale cached ui.js or a disconnected circuit).
+		}
+	}
+
+	private void StartTimer()
+	{
+		StopTimer();
+		timerCts = new CancellationTokenSource();
+		var token = timerCts.Token;
+		var startedAt = DateTime.UtcNow;
+
+		_ = Task.Run(async () =>
+		{
+			try
+			{
+				using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+				while (await timer.WaitForNextTickAsync(token))
+				{
+					elapsed = DateTime.UtcNow - startedAt;
+					await InvokeAsync(StateHasChanged);
+				}
+			}
+			catch (Exception)
+			{
+				// Cancelled when the action finishes, or the component was disposed.
+			}
+		});
+	}
+
+	private void StopTimer()
+	{
+		timerCts?.Cancel();
+		timerCts?.Dispose();
+		timerCts = null;
+	}
+
+	public async ValueTask DisposeAsync()
+	{
+		StopTimer();
+		navigationRegistration?.Dispose();
+		navigationRegistration = null;
+
+		if (isRunning)
+			await SetLeaveGuardAsync(false);
+	}
+}

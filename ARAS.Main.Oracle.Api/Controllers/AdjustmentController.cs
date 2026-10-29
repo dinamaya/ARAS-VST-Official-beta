@@ -71,49 +71,5 @@ namespace ARAS.Main.Oracle.Api.Controllers
 				return _response.Failed(ex.Message);
 			}
 		}
-
-		[HttpGet("stage")]
-		public async Task<ResponseDto<IEnumerable<ARAdjustmentsStaging>>> GetAllStageRows()
-		{
-			ResponseDto<IEnumerable<ARAdjustmentsStaging>> _response = new();
-			try
-			{
-				_response.Result = await _adjustRepo.GetAll();
-				_response.Message = "Adjustment get successfully.";
-				return _response;
-			}
-			catch (OracleException ex)
-			{
-				_logger.LogError(Exceptions.CANT_CONNECT);
-				return _response.Failed(Exceptions.CANT_CONNECT);
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex.Message);
-				return _response.Failed(ex.Message);
-			}
-		}
-
-		[HttpPost("stage/posted")]
-		public async Task<ResponseDto<IEnumerable<PostedResponseDto>>> GetPostedAdjustments([FromBody] IEnumerable<long> adjustmentIds)
-		{
-			ResponseDto<IEnumerable<PostedResponseDto>> _response = new();
-			try
-			{
-				_response.Result = await _adjustRepo.GetPosted(adjustmentIds);
-				_response.Message = "Adjustment get successfully.";
-				return _response;
-			}
-			catch (OracleException ex)
-			{
-				_logger.LogError(Exceptions.CANT_CONNECT);
-				return _response.Failed(Exceptions.CANT_CONNECT);
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex.Message);
-				return _response.Failed(ex.Message);
-			}
-		}
 	}
 }

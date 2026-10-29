@@ -11,7 +11,5 @@ namespace ARAS.Main.Oracle.Api.Repositories.Interfaces
 		Task<ReceivablesActivityDto> GetReceivableActivityByName(string adjustmentActivity);
 		Task<ReceivablesActivityDto> GetReceivableActivityByName(OracleConnection oracleConnection, string adjustmentActivity);
 		Task Create(IEnumerable<AdjustmentPostingDto> data);
-		Task<IEnumerable<ARAdjustmentsStaging>> GetAll();
-		Task<IEnumerable<PostedResponseDto>> GetPosted(IEnumerable<long> adjustmentIds);
 	}
 }

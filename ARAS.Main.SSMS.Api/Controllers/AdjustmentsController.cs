@@ -186,55 +186,6 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("stage/receipt/adjustment/{adjustmentId:long}")]
-		public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetReceiptAdjustmentStagingDataByAdjustmentId(long adjustmentId)
-		{
-			var response = new ResponseDto<IEnumerable<AdjustmentPostingDto>>();
-			try
-			{
-				response.Result = await _receiptRepo.GetStagingDataByAdjustmentId(adjustmentId);
-				return response;
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex.Message);
-				return response.Failed(ex.Message);
-			}
-		}
-
-		[HttpPost("stage/receipt/adjustments")]
-        public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetReceiptAdjustmentStagingDataByAdjustmentId([FromBody] IEnumerable<long> headerIds)
-        {
-            var response = new ResponseDto<IEnumerable<AdjustmentPostingDto>>();
-			try
-			{
-                response.Result = await _receiptRepo.GetStagingDataByAdjustmentId(headerIds);
-                return response;
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex.Message);
-				return response.Failed(ex.Message);
-			}
-		}
-
-		[HttpPost("stage")]
-		public async Task<ResponseDto<string>> PostAdjustmentStagingData(IEnumerable<long> adjustmentId)
-		{
-			var response = new ResponseDto<string>();
-			try
-			{
-				await _adjustmentService.Post(adjustmentId, "SYSTEM");
-				response.Result = "Request Status Posted";
-				return response;
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex.Message);
-				return response.Failed(ex.Message);
-			}
-		}
-
 		[HttpPost("stage/invoice")]
 		public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetInvoiceAdjustmentStagingData([FromBody] IEnumerable<long> requestIds)
 		{
@@ -249,40 +200,6 @@ namespace ARAS.Main.SSMS.Api.Controllers
 				}
 
 				response.Result = stagingRows;
-				return response;
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex.Message);
-				return response.Failed(ex.Message);
-			}
-		}
-
-        [HttpPost("stage/requests")]
-        public async Task<ResponseDto<string>> PostAdjustmentStagingRequestData([FromBody] IEnumerable<long> requestIds)
-        {
-            var response = new ResponseDto<string>();
-            try
-            {
-                await _adjustmentService.PostByRequestIds(requestIds, "SYSTEM");
-                response.Result = "Request Status Posted";
-                return response;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return response.Failed(ex.Message);
-            }
-        }
-
-		[HttpPost("stage/failures")]
-		public async Task<ResponseDto<string>> PostAdjustmentStagingFailureData([FromBody] PostingFailureCreateDto data)
-		{
-			var response = new ResponseDto<string>();
-			try
-			{
-				await _adjustmentService.MarkPostingFailed(data.RequestIds, "SYSTEM", data.ErrorMessage);
-				response.Result = "Request status updated to ERP Posting Failed";
 				return response;
 			}
 			catch (Exception ex)

@@ -11,8 +11,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 		Task<ReceiptAdjustmentUpdateResponseDto> GetDetailsById(long requestId);
 		Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByRequestId(long requestId);
 		Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByRequestIds(IEnumerable<long> requestId);
-		Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByAdjustmentId(long adjustmentId);
 
-		Task<IEnumerable<AdjustmentPostingDto>> GetStagingDataByAdjustmentId(IEnumerable<long> adjustmentIds);
 	}
 }

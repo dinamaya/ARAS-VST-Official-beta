@@ -4,9 +4,6 @@ namespace ARAS.Main.SSMS.Api.Services.Interfaces
 {
 	public interface IAdjustmentService
 	{
-		Task Post(IEnumerable<long> requestIds, string createdBy);
-        Task PostByRequestIds(IEnumerable<long> requestIds, string createdBy);
-		Task MarkPostingFailed(IEnumerable<long> requestIds, string createdBy, string errorMessage);
         Task Approve(IEnumerable<long> requestIds, string createdBy, string role);
 		Task Decline(IEnumerable<long> requestIds, string createdBy);
 		Task Reject(IEnumerable<long> requestIds, string createdBy);

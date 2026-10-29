@@ -20,6 +20,13 @@
 			</RadzenAlert>
 		}
 
+		@if (Utils.Equals(QueryAction, Queries.Success.POSTED))
+		{
+			<RadzenAlert class="m-0 border-radius-2xl" Variant="Variant.Filled" AlertStyle="AlertStyle.Success" Size="AlertSize.Medium" AllowClose=true>
+				Receipt Adjustment(s) approved and posted to Oracle Fusion
+			</RadzenAlert>
+		}
+
 		<MainSearchBar OnSearch="HandleSearch" TextFields="textFields" DropdownFields="dropdowns">
 			<ResultTemplate Context="isLoading">
 				<SearchReceiptAdjustmentsDataTable IsLoading="isLoading" Rows="rows" Role="@role" />

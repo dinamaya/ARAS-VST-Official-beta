@@ -320,19 +320,6 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 		public async Task<IEnumerable<long>> GetAllApproved() => await _context.VwApprovedReceiptAdjustments.AsNoTracking().Select(a => a.AdjustmentId).ToListAsync();
 
-		public async Task<IEnumerable<ApprovedAdjustmentSyncDto>> GetAllApprovedForSync()
-		{
-			return await _context.VwApprovedReceiptAdjustments
-				.AsNoTracking()
-				.Select(a => new ApprovedAdjustmentSyncDto
-				{
-					RequestId = a.RequestId,
-					AdjustmentId = a.AdjustmentId,
-					HeaderId = StagingHeaderIdHelper.Generate(a.RequestId, a.AdjustmentId)
-				})
-				.ToListAsync();
-		}
-
 
 	}
 }

@@ -273,47 +273,70 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			if (writeOffAmount <= 0)
 				throw new InvalidOperationException($"The write-off amount must be greater than zero ({writeOffAmount:0.00}).");
 
-			// Source detection:
-			// - Receipt/GetReceiptDetails => use 2 calls and receipt activity name
-			// - Invoice/GetInvoiceDetails => use 1 call and invoice activity name
-			var receiptDetails = await TryGetReceiptDetailsAsync(item.InvoiceNumber);
+			// Source of the request (Requests.SourceType). Older payloads without it fall back
+			// to looking the number up as a receipt in Fusion.
+			var isInvoiceSource = string.Equals(item.SourceType, "Invoice", StringComparison.OrdinalIgnoreCase);
+			var isDeclaredReceiptSource = string.Equals(item.SourceType, "Receipt", StringComparison.OrdinalIgnoreCase);
+
+			var receiptDetails = isInvoiceSource ? null : await TryGetReceiptDetailsAsync(item.InvoiceNumber);
+
+			if (isDeclaredReceiptSource && receiptDetails is null)
+				throw new InvalidOperationException(
+					$"Receipt {item.InvoiceNumber} was not found in Fusion, so the write-off cannot be posted. Nothing was posted.");
+
 			var isReceiptSource = receiptDetails is not null;
 
-			if (isReceiptSource)
+			if (!isReceiptSource)
 			{
-				item.GlAccountingDate ??= receiptDetails!.CreationDate ?? receiptDetails.GlAccountingDate;
+				// Invoice source: write the small amount off the invoice itself as an invoice
+				// adjustment (AdjustmentService.createAdjustment). The receipt activity service
+				// only accepts receipt numbers and rejects invoice numbers (AR-855742).
+				await CreateFusionInvoiceSmallAmountWriteOff(item);
+				return;
+			}
 
-				if (receiptAmount <= 0)
-					throw new InvalidOperationException($"The original receipt amount is missing or invalid ({receiptAmount:0.00}).");
+			item.GlAccountingDate ??= receiptDetails!.CreationDate ?? receiptDetails.GlAccountingDate;
 
-				if (item.ApplyReceiptEnabled || hasSelectedReceiptApplications)
-				{
-					await ApplyReceiptToInvoicesAsync(item, receiptAmount);
-				}
-				else
-				{
-					if (writeOffAmount >= receiptAmount)
-						throw new InvalidOperationException($"The write-off amount ({writeOffAmount:0.00}) must be less than the receipt amount ({receiptAmount:0.00}).");
-				}
+			if (receiptAmount <= 0)
+				throw new InvalidOperationException($"The original receipt amount is missing or invalid ({receiptAmount:0.00}).");
+
+			if (item.ApplyReceiptEnabled || hasSelectedReceiptApplications)
+			{
+				await ApplyReceiptToInvoicesAsync(item, receiptAmount);
 			}
 			else
 			{
-				if (item.ApplyReceiptEnabled)
-					throw new InvalidOperationException("Apply Receipt can only be used for receipt-based write-off transactions.");
-
-				_logger.LogInformation(
-					"SAR posting for {InvoiceNumber} detected as Invoice source. Using invoice-specific receivables activity.",
-					item.InvoiceNumber);
+				if (writeOffAmount >= receiptAmount)
+					throw new InvalidOperationException($"The write-off amount ({writeOffAmount:0.00}) must be less than the receipt amount ({receiptAmount:0.00}).");
 			}
 
-			// Receipt source -> Write-off Small Amount
-			// Invoice source -> Write-Off Small Amount - INV
-			var sarActivityName = isReceiptSource
-				? "Write-off Small Amount"
-				: "Write-Off Small Amount - INV";
+			// Receipt source -> receipt activity application "Write-off Small Amount".
+			await CreateFusionReceiptActivityApplication(item, writeOffAmount, "Write-off Small Amount");
+		}
 
-			// Always call activity application
-			await CreateFusionReceiptActivityApplication(item, writeOffAmount, sarActivityName);
+		private const string InvoiceSmallAmountWriteOffActivity = "Write-Off Small Amount - INV";
+
+		private async Task CreateFusionInvoiceSmallAmountWriteOff(AdjustmentPostingDto item)
+		{
+			if (item.ApplyReceiptEnabled || item.ReceiptApplications?.Any(a => a is not null && a.AppliedAmount > 0) == true)
+				throw new InvalidOperationException("Apply Receipt can only be used for receipt-based write-off transactions. Nothing was posted.");
+
+			if (item.CustomerTrxId is null)
+				await BackfillCustomerTrxIdAsync(item);
+
+			if (item.CustomerTrxId is null)
+				throw new InvalidOperationException(
+					$"CustomerTrxId is required for Fusion adjustment posting. Invoice: {item.InvoiceNumber}. Nothing was posted.");
+
+			_logger.LogInformation(
+				"Posting invoice-source small amount write-off for invoice {InvoiceNumber} (CustomerTrxId {CustomerTrxId}) as invoice adjustment with activity {Activity}.",
+				item.InvoiceNumber,
+				item.CustomerTrxId,
+				InvoiceSmallAmountWriteOffActivity);
+
+			// Same createAdjustment call as Cash Discount / AP-AR write-offs. The activity name
+			// drives the receivables activity, GL account and the negative (reducing) sign.
+			await CreateFusionAdjustment(item with { AdjustmentActivity = InvoiceSmallAmountWriteOffActivity });
 		}
 
 		private void ValidateApplyReceiptPayload(AdjustmentPostingDto item)
@@ -529,6 +552,14 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			{
 				_logger.LogError("Fusion adjustment posting failed. StatusCode: {StatusCode}. Response: {Response}", response.StatusCode, content);
 				throw new InvalidOperationException($"Fusion adjustment posting failed. StatusCode: {(int)response.StatusCode}. Response: {content}");
+			}
+
+			// SOAP faults normally come back as HTTP 500, but treat a fault in a 2xx body as a failure too.
+			if (content.Contains(":Fault>", StringComparison.OrdinalIgnoreCase)
+				|| content.Contains("faultstring", StringComparison.OrdinalIgnoreCase))
+			{
+				_logger.LogError("Fusion adjustment posting returned a SOAP fault. Response: {Response}", content);
+				throw new InvalidOperationException($"Fusion adjustment posting returned an error. Response: {content}");
 			}
 		}
 

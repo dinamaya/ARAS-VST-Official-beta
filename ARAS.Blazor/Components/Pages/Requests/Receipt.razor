@@ -42,15 +42,29 @@
 				<RadzenLabel class="fs-5" Text="Select Adjustment Types to Submit" />
 			</div>
 			<div class="pb-3 rz-text-align-center">
+				@* Types that don't fit the selected document are shown but disabled. *@
 				<RadzenSelectBar Disabled="@IsSubmitting"
 								 Multiple="true"
-								 Data="@ReceiptAdjustmentTypes"
 								 @bind-Value="@selectedAdjustmentTypes"
 								 TValue="IEnumerable<string>"
-								 Change="OnAdjustmentTypeSelectionChanged"
-								 TextProperty="@nameof(AdjustmentTypeSelectBarOption.Name)"
-								 ValueProperty="@nameof(AdjustmentTypeSelectBarOption.Name)" />
+								 Change="OnAdjustmentTypeSelectionChanged">
+					<Items>
+						@foreach (var option in ReceiptAdjustmentTypes)
+						{
+							<RadzenSelectBarItem Text="@option.Name" Value="@option.Name" Disabled="@(!IsAdjustmentTypeAllowed(option.Name))" />
+						}
+					</Items>
+				</RadzenSelectBar>
 			</div>
+			@if (UnavailableTypeHints.Any())
+			{
+				<div class="pb-3 rz-text-align-center text-sm text-secondary">
+					@foreach (var hint in UnavailableTypeHints)
+					{
+						<div>@hint</div>
+					}
+				</div>
+			}
 		</RadzenColumn>
 		<RadzenColumn Size="12" SizeMD="@(selectedAdjustmentTypes.Any() ? 5 : 12)">
 			<RadzenRow>
@@ -238,6 +252,9 @@
 
 	private async Task OnAdjustmentTypeSelectionChanged()
 	{
+		// Defensive: never keep a type that is not allowed for the selected document.
+		selectedAdjustmentTypes = selectedAdjustmentTypes.Where(IsAdjustmentTypeAllowed).ToList();
+
 		var allTypes = ReceiptAdjustmentTypes.Select(t => t.Name);
 		var notExisting = allTypes
 			.Where(k => !selectedAdjustmentTypes.Contains(k))
@@ -381,6 +398,22 @@
 			StateHasChanged();
 		}
 	}
+
+	// Which document each receipt adjustment type can be raised against.
+	// Kept in sync with the server-side check in the SSMS API (BaseReceiptAdjustmentRepository).
+	private bool IsAdjustmentTypeAllowed(string adjustmentType) => adjustmentType switch
+	{
+		_ when string.Equals(adjustmentType, "Cash Discount", StringComparison.OrdinalIgnoreCase) => !IsReceiptSource,
+		_ when string.Equals(adjustmentType, "Bank Charges", StringComparison.OrdinalIgnoreCase) => IsReceiptSource,
+		_ => true
+	};
+
+	private IEnumerable<string> UnavailableTypeHints => (ReceiptAdjustmentTypes ?? [])
+		.Select(option => option.Name)
+		.Where(name => !IsAdjustmentTypeAllowed(name))
+		.Select(name => IsReceiptSource
+			? $"{name} is available for invoices only."
+			: $"{name} is available for receipts only.");
 
 	private bool HasSelectedAdjustmentType(string adjustmentType) =>
 		selectedAdjustmentTypes.Any(type => string.Equals(type, adjustmentType, StringComparison.OrdinalIgnoreCase));

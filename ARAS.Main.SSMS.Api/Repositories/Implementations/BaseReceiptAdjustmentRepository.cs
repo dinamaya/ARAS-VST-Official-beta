@@ -43,6 +43,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			try
 			{
 				var models = data.Model.ToList();
+				ValidateSourceRules(models);
 				string invoiceNumber = models.Select(d => d.InvoiceNumber).First();
 				IList<string> adjustmentTypeIds = [];
 				IEnumerable<long> requestIds = [];
@@ -184,6 +185,54 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			{
 				await dbTransaction.RollbackAsync();
 				throw;
+			}
+		}
+
+		public const string ReceiptSource = "Receipt";
+		public const string InvoiceSource = "Invoice";
+
+		/// <summary>
+		/// Server-side rules for which document type each receipt adjustment can be raised against.
+		/// Mirrors the request page so the API cannot be used to bypass it:
+		/// - Cash Discount: invoices only (posted as an invoice adjustment).
+		/// - Bank Charges: receipts only (posted as a receipt activity).
+		/// - Write-Off: Small Amount: receipts or invoices.
+		/// - Apply Receipt: receipts only.
+		/// </summary>
+		private static void ValidateSourceRules(IList<BaseReceiptAdjustmentCreateDto> models)
+		{
+			Guards.ThrowInvalidOperationIf(models.Count == 0, "No adjustments were submitted.");
+
+			var sources = models
+				.Select(m => string.IsNullOrWhiteSpace(m.SourceType) ? ReceiptSource : m.SourceType.Trim())
+				.Distinct(StringComparer.OrdinalIgnoreCase)
+				.ToList();
+
+			Guards.ThrowInvalidOperationIf(
+				sources.Count > 1,
+				"All adjustments in one submission must be for the same receipt or invoice.");
+
+			var source = sources[0];
+			bool isReceipt = string.Equals(source, ReceiptSource, StringComparison.OrdinalIgnoreCase);
+			bool isInvoice = string.Equals(source, InvoiceSource, StringComparison.OrdinalIgnoreCase);
+
+			Guards.ThrowInvalidOperationIf(
+				!isReceipt && !isInvoice,
+				$"Unknown source type \"{source}\". Expected \"{ReceiptSource}\" or \"{InvoiceSource}\".");
+
+			foreach (var model in models)
+			{
+				Guards.ThrowInvalidOperationIf(
+					isReceipt && string.Equals(model.AdjustmentType, "Cash Discount", StringComparison.OrdinalIgnoreCase),
+					"Cash Discount can only be applied to invoices. Please select an invoice.");
+
+				Guards.ThrowInvalidOperationIf(
+					isInvoice && string.Equals(model.AdjustmentType, "Bank Charges", StringComparison.OrdinalIgnoreCase),
+					"Bank Charges can only be applied to receipts. Please select a receipt.");
+
+				Guards.ThrowInvalidOperationIf(
+					isInvoice && (model.ApplyReceiptEnabled || (model.ReceiptApplications?.Any() ?? false)),
+					"Apply Receipt can only be used with receipts. Please select a receipt.");
 			}
 		}
 
@@ -415,18 +464,24 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			// The persisted request flag is authoritative. If Apply Receipt was requested but
 			// no application rows exist, the row is still flagged (with an empty list) so the
 			// Oracle API rejects the posting instead of posting only the write-off.
-			var applyReceiptRequestIds = (await _context.Requests
+			// Also pass the request's source document type ("Receipt"/"Invoice") so the
+			// Oracle API posts to the right Fusion service instead of guessing.
+			var requestInfo = await _context.Requests
 				.AsNoTracking()
-				.Where(r => requestIds.Contains(r.Id) && r.ApplyReceiptEnabled)
-				.Select(r => r.Id)
-				.ToListAsync())
-				.ToHashSet();
+				.Where(r => requestIds.Contains(r.Id))
+				.Select(r => new { r.Id, r.ApplyReceiptEnabled, r.SourceType })
+				.ToDictionaryAsync(r => r.Id);
 
 			foreach (var row in rows)
 			{
 				var requestId = StagingHeaderIdHelper.Parse(row.HeaderId).RequestId;
-				if (applyReceiptRequestIds.Contains(requestId))
-					row.ApplyReceiptEnabled = true;
+				if (requestInfo.TryGetValue(requestId, out var info))
+				{
+					if (info.ApplyReceiptEnabled)
+						row.ApplyReceiptEnabled = true;
+
+					row.SourceType ??= info.SourceType;
+				}
 
 				if (!grouped.TryGetValue(requestId, out var applications) || applications.Count == 0)
 					continue;

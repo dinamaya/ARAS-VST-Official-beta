@@ -23,6 +23,8 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
 		public long? CustomerTrxId { get; set; } // Fusion Customer Transaction ID
 		public long? ReceiptId { get; set; }
 		public bool ApplyReceiptEnabled { get; set; }
+		/// <summary>"Receipt" or "Invoice": the document type the request was raised against (Requests.SourceType).</summary>
+		public string? SourceType { get; set; }
 		public IList<ReceiptInvoiceApplicationPostingDto> ReceiptApplications { get; set; } = [];
 	}
 

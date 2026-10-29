@@ -24,6 +24,8 @@ namespace ARAS.Main.Oracle.Api.Models.Dtos
 		// Keep in sync with ARAS.Main.Oracle.Api.Models.Dtos.AdjustmentPostingDto.
 		public long? ReceiptId { get; set; }
 		public bool ApplyReceiptEnabled { get; set; }
+		/// <summary>"Receipt" or "Invoice": the document type the request was raised against (Requests.SourceType).</summary>
+		public string? SourceType { get; set; }
 		public IList<ARAS.Blazor.Models.DTOs.ReceiptInvoiceApplicationPostingDto> ReceiptApplications { get; set; } = [];
 	}
 }

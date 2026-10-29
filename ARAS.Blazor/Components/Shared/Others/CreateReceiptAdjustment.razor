@@ -34,111 +34,116 @@
 				<RadzenColumn Size="12">
 					<BaseReceiptAdjustment IsDisabled="@IsDisabled" AdjustmentName="Write-Off: Small Amount" IsAdjustable="isAdjustable" AdjustmentAmountChanged="OnAdjustmentAmountChanged" />
 				</RadzenColumn>
+			}
+			@* Apply Receipt is a receipt-level step shared by Write-Off: Small Amount and Bank Charges.
+			   It is submitted with one of those requests (see ApplyReceiptOwnerFor) so invoices are applied once. *@
+			@if (CanShowApplyReceiptSection)
+			{
+				<RadzenColumn Size="12">
+					<RadzenFieldset Text="Apply Receipt (to Invoice)" AllowCollapse="true" Collapsed="false">
+						<RadzenRow Gap="1rem" AlignItems="AlignItems.Center" class="mb-2">
+							<RadzenColumn Size="12" SizeMD="6">
+								<div class="d-flex align-items-center gap-2">
+									<RadzenSwitch @bind-Value="isApplyReceiptEnabled" Disabled="@IsDisabled" Change="OnApplyReceiptToggleChanged" />
+									<RadzenLabel Text="Enable Apply Receipt" />
+								</div>
+							</RadzenColumn>
+							<RadzenColumn Size="12" SizeMD="6" class="text-md-end">
+								<span class="badge bg-light text-dark">Application Type: Transaction</span>
+							</RadzenColumn>
+						</RadzenRow>
+						@if (isApplyReceiptEnabled && SelectedAdjustmentTypes.Count(t => ApplyReceiptOwnerTypes.Contains(t)) > 1)
+						{
+							<div class="text-sm text-secondary mb-2">The invoice applications will be submitted with the @ApplyReceiptOwner request.</div>
+						}
 
-				@if (CanShowApplyReceiptSection)
-				{
-					<RadzenColumn Size="12">
-						<RadzenFieldset Text="Apply Receipt (to Invoice)" AllowCollapse="true" Collapsed="false">
-							<RadzenRow Gap="1rem" AlignItems="AlignItems.Center" class="mb-2">
-								<RadzenColumn Size="12" SizeMD="6">
-									<div class="d-flex align-items-center gap-2">
-										<RadzenSwitch @bind-Value="isApplyReceiptEnabled" Disabled="@IsDisabled" Change="OnApplyReceiptToggleChanged" />
-										<RadzenLabel Text="Enable Apply Receipt" />
+						@if (isApplyReceiptEnabled)
+						{
+							<RadzenRow Gap="1rem" class="mb-2">
+								<RadzenColumn Size="12" SizeMD="4">
+									<div class="border rounded p-2">
+										<div class="text-sm">Receipt Balance</div>
+										<div class="fw-bold">@AvailableBalance.ToPhp()</div>
 									</div>
 								</RadzenColumn>
-								<RadzenColumn Size="12" SizeMD="6" class="text-md-end">
-									<span class="badge bg-light text-dark">Application Type: Transaction</span>
+								<RadzenColumn Size="12" SizeMD="4">
+									<div class="border rounded p-2">
+										<div class="text-sm">Total Applied Amount</div>
+										<div class="fw-bold">@TotalAppliedAmount.ToPhp()</div>
+									</div>
+								</RadzenColumn>
+								<RadzenColumn Size="12" SizeMD="4">
+									<div class="border rounded p-2">
+									<div class="text-sm">Remaining Balance After Invoice Applications</div>
+									<div class="fw-bold">@(Math.Max(AvailableBalance - TotalAppliedAmount, 0).ToPhp())</div>
+									</div>
 								</RadzenColumn>
 							</RadzenRow>
 
-							@if (isApplyReceiptEnabled)
-							{
-								<RadzenRow Gap="1rem" class="mb-2">
-									<RadzenColumn Size="12" SizeMD="4">
-										<div class="border rounded p-2">
-											<div class="text-sm">Receipt Balance</div>
-											<div class="fw-bold">@AvailableBalance.ToPhp()</div>
-										</div>
-									</RadzenColumn>
-									<RadzenColumn Size="12" SizeMD="4">
-										<div class="border rounded p-2">
-											<div class="text-sm">Total Applied Amount</div>
-											<div class="fw-bold">@TotalAppliedAmount.ToPhp()</div>
-										</div>
-									</RadzenColumn>
-									<RadzenColumn Size="12" SizeMD="4">
-										<div class="border rounded p-2">
-										<div class="text-sm">Remaining Balance After Invoice Applications</div>
-										<div class="fw-bold">@(Math.Max(AvailableBalance - TotalAppliedAmount, 0).ToPhp())</div>
-										</div>
-									</RadzenColumn>
-								</RadzenRow>
+							@* Toolbar: search, filters and actions on one line (wraps on small screens). *@
+							<RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="0.5rem" AlignItems="AlignItems.Center" class="mb-2">
+								<RadzenTextBox @bind-Value="invoiceSearch" Style="flex: 1 1 14rem; min-width: 10rem;" Placeholder="Search by invoice number..." Change="@(args => StateHasChanged())" />
+								<RadzenDropDown @bind-Value="statusFilter" Data="statusOptions" Style="width: 7rem;" AllowClear="false" />
+								@if (HasMultipleCurrencies)
+								{
+									<RadzenDropDown @bind-Value="currencyFilter" Data="currencyOptions" Style="width: 7rem;" AllowClear="false" />
+								}
+								<RadzenButton Icon="refresh" Text="Refresh" Size="ButtonSize.Small" Disabled="@IsDisabled" Click="RefreshApplicableInvoices" />
+								<RadzenButton Icon="clear" Text="Clear Selection" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Disabled="@IsDisabled" Click="ClearSelection" />
+							</RadzenStack>
 
-								@* Toolbar: search, filters and actions on one line (wraps on small screens). *@
-								<RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="0.5rem" AlignItems="AlignItems.Center" class="mb-2">
-									<RadzenTextBox @bind-Value="invoiceSearch" Style="flex: 1 1 14rem; min-width: 10rem;" Placeholder="Search by invoice number..." Change="@(args => StateHasChanged())" />
-									<RadzenDropDown @bind-Value="statusFilter" Data="statusOptions" Style="width: 7rem;" AllowClear="false" />
-									@if (HasMultipleCurrencies)
-									{
-										<RadzenDropDown @bind-Value="currencyFilter" Data="currencyOptions" Style="width: 7rem;" AllowClear="false" />
-									}
-									<RadzenButton Icon="refresh" Text="Refresh" Size="ButtonSize.Small" Disabled="@IsDisabled" Click="RefreshApplicableInvoices" />
-									<RadzenButton Icon="clear" Text="Clear Selection" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Disabled="@IsDisabled" Click="ClearSelection" />
-								</RadzenStack>
+							@*
+								Fusion-like layout: only what is needed to decide the application.
+								Invoice date and amount are shown under the invoice number; currency is part of each amount.
+								Discount is hidden until discounts on receipt applications are supported end to end.
+							*@
+							<RadzenDataGrid Data="@FilteredInvoices" TItem="ApplicableReceiptInvoiceDto"
+											AllowPaging="false" AllowSorting="false" AllowFiltering="false"
+											Density="Density.Compact"
+											RowRender="@OnInvoiceRowRender"
+											EmptyText="No open invoices found for this customer."
+											class="w-100 apply-receipt-grid">
+								<Columns>
+									<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="" Width="44px" TextAlign="TextAlign.Center">
+										<Template Context="row">
+											<RadzenCheckBox TValue="bool" @bind-Value="row.IsSelected" Change="@(args => OnSelectionChanged(row))" Disabled="@IsDisabled" />
+										</Template>
+									</RadzenDataGridColumn>
+									<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Invoice Number" MinWidth="150px">
+										<Template Context="row">
+											<div class="apply-receipt-invoice-number">@row.InvoiceNumber</div>
+											<div class="apply-receipt-subline">
+												@row.InvoiceDate.ToString("MMM dd, yyyy") · <span class="apply-receipt-amount">@row.InvoiceAmount.ToAmountWithCurrency(row.CurrencyCode)</span>
+											</div>
+										</Template>
+									</RadzenDataGridColumn>
+									<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Due Date" Width="110px">
+										<Template Context="row">
+											@if (row.DueDate.HasValue)
+											{
+												<span class="@(IsOverdue(row) ? "apply-receipt-overdue" : null)" title="@(IsOverdue(row) ? "Overdue" : null)">@row.DueDate.Value.ToString("MMM dd, yyyy")</span>
+											}
+										</Template>
+									</RadzenDataGridColumn>
+									<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Amount Due" Width="135px" TextAlign="TextAlign.Right">
+										<Template Context="row">
+											<span class="apply-receipt-amount">@row.InvoiceBalance.ToAmountWithCurrency(row.CurrencyCode)</span>
+										</Template>
+									</RadzenDataGridColumn>
+									<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Applied Amount" Width="150px" TextAlign="TextAlign.Right">
+										<Template Context="row">
+											<RadzenNumeric TValue="double" @bind-Value="row.AppliedAmount" Format="N2" Step="0.01" Min="0" Max="@(Convert.ToDecimal(row.InvoiceBalance))" Disabled="@(!row.IsSelected || IsDisabled)" Change="@(args => OnAppliedAmountChanged(row))" Style="width:100%" />
+										</Template>
+									</RadzenDataGridColumn>
+								</Columns>
+							</RadzenDataGrid>
 
-								@*
-									Fusion-like layout: only what is needed to decide the application.
-									Invoice date and amount are shown under the invoice number; currency is part of each amount.
-									Discount is hidden until discounts on receipt applications are supported end to end.
-								*@
-								<RadzenDataGrid Data="@FilteredInvoices" TItem="ApplicableReceiptInvoiceDto"
-												AllowPaging="false" AllowSorting="false" AllowFiltering="false"
-												Density="Density.Compact"
-												RowRender="@OnInvoiceRowRender"
-												EmptyText="No open invoices found for this customer."
-												class="w-100 apply-receipt-grid">
-									<Columns>
-										<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="" Width="44px" TextAlign="TextAlign.Center">
-											<Template Context="row">
-												<RadzenCheckBox TValue="bool" @bind-Value="row.IsSelected" Change="@(args => OnSelectionChanged(row))" Disabled="@IsDisabled" />
-											</Template>
-										</RadzenDataGridColumn>
-										<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Invoice Number" MinWidth="150px">
-											<Template Context="row">
-												<div class="apply-receipt-invoice-number">@row.InvoiceNumber</div>
-												<div class="apply-receipt-subline">
-													@row.InvoiceDate.ToString("MMM dd, yyyy") · <span class="apply-receipt-amount">@row.InvoiceAmount.ToAmountWithCurrency(row.CurrencyCode)</span>
-												</div>
-											</Template>
-										</RadzenDataGridColumn>
-										<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Due Date" Width="110px">
-											<Template Context="row">
-												@if (row.DueDate.HasValue)
-												{
-													<span class="@(IsOverdue(row) ? "apply-receipt-overdue" : null)" title="@(IsOverdue(row) ? "Overdue" : null)">@row.DueDate.Value.ToString("MMM dd, yyyy")</span>
-												}
-											</Template>
-										</RadzenDataGridColumn>
-										<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Amount Due" Width="135px" TextAlign="TextAlign.Right">
-											<Template Context="row">
-												<span class="apply-receipt-amount">@row.InvoiceBalance.ToAmountWithCurrency(row.CurrencyCode)</span>
-											</Template>
-										</RadzenDataGridColumn>
-										<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Applied Amount" Width="150px" TextAlign="TextAlign.Right">
-											<Template Context="row">
-												<RadzenNumeric TValue="double" @bind-Value="row.AppliedAmount" Format="N2" Step="0.01" Min="0" Max="@(Convert.ToDecimal(row.InvoiceBalance))" Disabled="@(!row.IsSelected || IsDisabled)" Change="@(args => OnAppliedAmountChanged(row))" Style="width:100%" />
-											</Template>
-										</RadzenDataGridColumn>
-									</Columns>
-								</RadzenDataGrid>
-
-								<div class="mt-2 d-flex justify-content-end">
-									<span class="fw-bold apply-receipt-total">Total Selected: @TotalAppliedAmount.ToAmountWithCurrency(SelectedCurrencyCode)</span>
-								</div>
-							}
-						</RadzenFieldset>
-					</RadzenColumn>
-				}
+							<div class="mt-2 d-flex justify-content-end">
+								<span class="fw-bold apply-receipt-total">Total Selected: @TotalAppliedAmount.ToAmountWithCurrency(SelectedCurrencyCode)</span>
+							</div>
+						}
+					</RadzenFieldset>
+				</RadzenColumn>
 			}
 		</RadzenRow>
 	</BodyTtemplate>
@@ -163,8 +168,21 @@
 	private IEnumerable<string> currencyOptions = ["All"];
 	private IList<ApplicableReceiptInvoiceDto> applicableInvoices = [];
 
+	// Adjustment types that can carry Apply Receipt, in order of preference.
+	private static readonly string[] ApplyReceiptOwnerTypes = ["Write-Off: Small Amount", "Bank Charges"];
+
+	/// <summary>
+	/// The selected adjustment type whose request carries the Apply Receipt invoices, or null.
+	/// Only one request per submission carries them, so the invoices are applied in Fusion once.
+	/// </summary>
+	public static string? ApplyReceiptOwnerFor(IEnumerable<string>? selectedTypes) =>
+		ApplyReceiptOwnerTypes.FirstOrDefault(type =>
+			selectedTypes?.Any(t => string.Equals(t, type, StringComparison.OrdinalIgnoreCase)) == true);
+
+	private string? ApplyReceiptOwner => ApplyReceiptOwnerFor(SelectedAdjustmentTypes);
+
 	private bool CanShowApplyReceiptSection =>
-		SelectedAdjustmentTypes.Contains("Write-Off: Small Amount") &&
+		ApplyReceiptOwner is not null &&
 		!string.IsNullOrWhiteSpace(InvoiceDetails?.ReceiptNumber);
 
 	private IEnumerable<ApplicableReceiptInvoiceDto> FilteredInvoices => applicableInvoices

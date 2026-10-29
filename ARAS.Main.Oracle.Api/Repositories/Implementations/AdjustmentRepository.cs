@@ -132,6 +132,19 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 					if (string.Equals(item.AdjustmentActivity, "Bank Charge", StringComparison.OrdinalIgnoreCase))
 					{
 						await BackfillReceiptGlAccountingDateAsync(item);
+
+						// Apply Receipt (to Invoice) can also be submitted with a Bank Charge request.
+						// Apply the receipt to the selected invoices first, then record the bank charge,
+						// the same order as the receipt write-off flow.
+						if (item.ApplyReceiptEnabled || HasValidReceiptApplications(item))
+						{
+							var receiptAmount = decimal.Round(Convert.ToDecimal(item.InvoiceAmount), 2, MidpointRounding.AwayFromZero);
+							if (receiptAmount <= 0)
+								throw new InvalidOperationException($"The original receipt amount is missing or invalid ({receiptAmount:0.00}).");
+
+							await ApplyReceiptToInvoicesAsync(item, receiptAmount);
+						}
+
 						await CreateFusionReceiptActivityApplication(item);
 						continue;
 					}
@@ -341,11 +354,12 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 		private void ValidateApplyReceiptPayload(AdjustmentPostingDto item)
 		{
-			// Apply Receipt is only executed inside the receipt write-off flow.
+			// Apply Receipt is only executed inside the receipt write-off and bank charge flows.
 			// Any other activity flagged for Apply Receipt would silently skip it.
-			if (!string.Equals(item.AdjustmentActivity, "Write-off Other Expense/Income", StringComparison.OrdinalIgnoreCase))
+			if (!string.Equals(item.AdjustmentActivity, "Write-off Other Expense/Income", StringComparison.OrdinalIgnoreCase)
+				&& !string.Equals(item.AdjustmentActivity, "Bank Charge", StringComparison.OrdinalIgnoreCase))
 				throw new InvalidOperationException(
-					$"Fusion posting failed for {GetPostingDescription(item)}: Apply Receipt is only supported for receipt write-off requests. Nothing was posted.");
+					$"Fusion posting failed for {GetPostingDescription(item)}: Apply Receipt is only supported for receipt write-off and bank charge requests. Nothing was posted.");
 
 			// The caller (Blazor -> SSMS staging data) must send the invoice applications.
 			// There is deliberately no fallback lookup here: missing data fails the posting.

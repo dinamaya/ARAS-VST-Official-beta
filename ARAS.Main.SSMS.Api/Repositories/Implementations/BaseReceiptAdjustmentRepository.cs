@@ -188,6 +188,9 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			}
 		}
 
+		private static readonly HashSet<string> ApplyReceiptAdjustmentTypes =
+			new(StringComparer.OrdinalIgnoreCase) { "Write-Off: Small Amount", "Bank Charges" };
+
 		public const string ReceiptSource = "Receipt";
 		public const string InvoiceSource = "Invoice";
 
@@ -197,7 +200,7 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		/// - Cash Discount: invoices only (posted as an invoice adjustment).
 		/// - Bank Charges: receipts only (posted as a receipt activity).
 		/// - Write-Off: Small Amount: receipts or invoices.
-		/// - Apply Receipt: receipts only.
+		/// - Apply Receipt: receipts only, with Write-Off: Small Amount or Bank Charges, once per submission.
 		/// </summary>
 		private static void ValidateSourceRules(IList<BaseReceiptAdjustmentCreateDto> models)
 		{
@@ -219,6 +222,20 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 			Guards.ThrowInvalidOperationIf(
 				!isReceipt && !isInvoice,
 				$"Unknown source type \"{source}\". Expected \"{ReceiptSource}\" or \"{InvoiceSource}\".");
+
+			// Apply Receipt applies the receipt to invoices once; only one request in a
+			// submission may carry it, and only Write-Off: Small Amount or Bank Charges.
+			var applyReceiptModels = models
+				.Where(m => m.ApplyReceiptEnabled || (m.ReceiptApplications?.Any() ?? false))
+				.ToList();
+
+			Guards.ThrowInvalidOperationIf(
+				applyReceiptModels.Count > 1,
+				"Apply Receipt can only be submitted with one adjustment per receipt.");
+
+			Guards.ThrowInvalidOperationIf(
+				applyReceiptModels.Any(m => !ApplyReceiptAdjustmentTypes.Contains(m.AdjustmentType)),
+				"Apply Receipt can only be used with Write-Off: Small Amount or Bank Charges.");
 
 			foreach (var model in models)
 			{

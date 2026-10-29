@@ -354,6 +354,12 @@
 				RemainingBalance < 0,
 				"Cannot apply adjustment(s) because the remaining receipt balance is less than 0.");
 
+			// Apply Receipt is submitted with exactly one request (Write-Off: Small Amount first,
+			// otherwise Bank Charges) so the invoices are applied in Fusion only once.
+			string? applyReceiptOwner = IsReceiptSource && _applyReceiptState.IsEnabled
+				? CreateReceiptAdjustment.ApplyReceiptOwnerFor(selectedAdjustmentTypes)
+				: null;
+
 			foreach (var adj in _adjustments)
 			{
 				Guards.ThrowInvalidOperationIf(
@@ -370,12 +376,8 @@
 					adj.Value,
 					IsReceiptSource ? "Receipt" : "Invoice")
 				{
-					ApplyReceiptEnabled = IsReceiptSource
-						&& string.Equals(adj.Key, "Write-Off: Small Amount", StringComparison.OrdinalIgnoreCase)
-						&& _applyReceiptState.IsEnabled,
-					ReceiptApplications = IsReceiptSource
-						&& string.Equals(adj.Key, "Write-Off: Small Amount", StringComparison.OrdinalIgnoreCase)
-						&& _applyReceiptState.IsEnabled
+					ApplyReceiptEnabled = string.Equals(adj.Key, applyReceiptOwner, StringComparison.OrdinalIgnoreCase),
+					ReceiptApplications = string.Equals(adj.Key, applyReceiptOwner, StringComparison.OrdinalIgnoreCase)
 						? _applyReceiptState.SelectedApplications
 						: []
 				});

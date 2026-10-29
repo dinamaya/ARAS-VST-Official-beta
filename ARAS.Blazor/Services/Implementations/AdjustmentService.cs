@@ -49,7 +49,20 @@ namespace ARAS.Blazor.Services.Implementations
 
 			Guards.ThrowInvalidOperationIf(!response.IsSuccess, "Failed to connect. Please Check internet connection or contact the administrator");
 
-			return response.Result;
+			return (response.Result ?? [])
+				.Where(type => !HiddenInvoiceTypes.Contains(type))
+				.ToList();
 		}
+
+		/// <summary>
+		/// Invoice adjustment types that are not available yet (planned for a later version).
+		/// Hidden from every invoice type list: file request, approvals and request history.
+		/// Remove a name from this list to make the type available again.
+		/// </summary>
+		private static readonly HashSet<string> HiddenInvoiceTypes = new(StringComparer.OrdinalIgnoreCase)
+		{
+			"Write-Off: Sales Return Auto Net",
+			"AR Invoice Offsetting"
+		};
     }
 }

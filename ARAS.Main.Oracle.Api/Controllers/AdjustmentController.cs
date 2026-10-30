@@ -2,6 +2,7 @@ using ARAS.Main.Oracle.Api.App_Code.Globals.Constants;
 using ARAS.Main.Oracle.Api.Models.Dtos;
 using ARAS.Main.Oracle.Api.Models.Entities;
 using ARAS.Main.Oracle.Api.Repositories.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,7 @@ namespace ARAS.Main.Oracle.Api.Controllers
 {
 	[Route("api/adjustment")]
 	[ApiController]
+	[Authorize]
 	public class AdjustmentController : ControllerBase
 	{
 		private readonly ILogger<InvoiceController> _logger;
@@ -44,7 +46,8 @@ namespace ARAS.Main.Oracle.Api.Controllers
 			}
 		}
 
-		[HttpPost("stage")]
+		// Posts to Oracle Fusion. Only the final approver (FSG Approver) posts.
+		[HttpPost("stage"), Authorize(Roles = "FSG Approver")]
 		public async Task<ResponseDto<string>> CreateStageRow([FromBody] IEnumerable<AdjustmentPostingDto> data)
 		{
 			ResponseDto<string> _response = new();

@@ -1,6 +1,7 @@
 using ARAS.Main.Oracle.Api.App_Code.Globals.Constants;
 using ARAS.Main.Oracle.Api.Models.Dtos;
 using ARAS.Main.Oracle.Api.Repositories.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
 
@@ -8,6 +9,7 @@ namespace ARAS.Main.Oracle.Api.Controllers
 {
 	[Route("api/invoice")]
 	[ApiController]
+	[Authorize]
 	public class InvoiceController : ControllerBase
 	{
 		private readonly ILogger<InvoiceController> _logger;

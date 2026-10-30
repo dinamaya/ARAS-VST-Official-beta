@@ -9,6 +9,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 {
 	[Route("api/requests")]
 	[ApiController]
+	[Authorize]
 	public class RequestsController : ControllerBase
 	{
 		private readonly ILogger<RequestsController> _logger;

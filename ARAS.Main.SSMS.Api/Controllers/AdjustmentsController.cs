@@ -8,6 +8,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 {
 	[Route("api/adjustments")]
 	[ApiController]
+	[Authorize]
 	public class AdjustmentsController : ControllerBase
 	{
 		private readonly ILogger<AdjustmentsController> _logger;
@@ -122,7 +123,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("stage/ofr/{requestId:long}")]
+		[HttpGet("stage/ofr/{requestId:long}"), Authorize(Roles = "CNC Approver,FSG Validator,FSG Approver")]
 		public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetARInvoiceStagingData(long requestId)
 		{
 			var response = new ResponseDto<IEnumerable<AdjustmentPostingDto>>();
@@ -138,7 +139,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("stage/invoice/{requestId:long}")]
+		[HttpGet("stage/invoice/{requestId:long}"), Authorize(Roles = "CNC Approver,FSG Validator,FSG Approver")]
 		public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetInvoiceAdjustmentStagingData(long requestId)
 		{
 			var response = new ResponseDto<IEnumerable<AdjustmentPostingDto>>();
@@ -154,7 +155,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet("stage/receipt/{requestId:long}")]
+		[HttpGet("stage/receipt/{requestId:long}"), Authorize(Roles = "CNC Approver,FSG Validator,FSG Approver")]
 		public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetReceiptAdjustmentStagingData(long requestId)
 		{
 			var response = new ResponseDto<IEnumerable<AdjustmentPostingDto>>();
@@ -170,7 +171,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpPost("stage/receipt")]
+		[HttpPost("stage/receipt"), Authorize(Roles = "CNC Approver,FSG Validator,FSG Approver")]
 		public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetReceiptAdjustmentStagingData([FromBody] IEnumerable<long> requestIds)
 		{
 			var response = new ResponseDto<IEnumerable<AdjustmentPostingDto>>();
@@ -186,7 +187,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpPost("stage/invoice")]
+		[HttpPost("stage/invoice"), Authorize(Roles = "CNC Approver,FSG Validator,FSG Approver")]
 		public async Task<ResponseDto<IEnumerable<AdjustmentPostingDto>>> GetInvoiceAdjustmentStagingData([FromBody] IEnumerable<long> requestIds)
 		{
 			var response = new ResponseDto<IEnumerable<AdjustmentPostingDto>>();

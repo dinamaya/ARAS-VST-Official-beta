@@ -1,6 +1,7 @@
 using ARAS.Main.SSMS.Api.App_Code.Globals.Extensions;
 using ARAS.Main.SSMS.Api.Context.Seeders;
 using Hangfire;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,7 +9,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddValidationConfig();
 builder.Services.AddAuthConfig(builder);
-builder.Services.AddAuthorization();
+// Every endpoint requires a valid ARAS token unless it opts out with [AllowAnonymous].
+builder.Services.AddAuthorization(options =>
+{
+	options.FallbackPolicy = new AuthorizationPolicyBuilder()
+		.RequireAuthenticatedUser()
+		.Build();
+});
 builder.Services.AddComplexConfiguration();
 builder.Services.AddRepositoriesConfig();
 builder.Services.AddControllers();
@@ -22,7 +29,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-	app.MapOpenApi();
+	app.MapOpenApi().AllowAnonymous();
 }
 
 app.UseHttpsRedirection();

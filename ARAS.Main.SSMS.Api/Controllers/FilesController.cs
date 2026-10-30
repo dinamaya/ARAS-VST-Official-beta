@@ -4,6 +4,7 @@ using ARAS.Main.SSMS.Api.App_Code.Globals.Constants;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Services.Interfaces;
 using Azure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +16,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 {
 	[Route("api/files")]
 	[ApiController]
+	[Authorize]
 	public class FilesController : ControllerBase
 	{
 		private readonly ILogger<FilesController> _logger;

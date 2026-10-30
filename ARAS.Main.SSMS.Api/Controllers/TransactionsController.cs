@@ -10,6 +10,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 {
 	[Route("api/transactions")]
 	[ApiController]
+	[Authorize]
 	public class TransactionsController : ControllerBase
 	{
 		private readonly ITransactionRepository _transactionRepo;

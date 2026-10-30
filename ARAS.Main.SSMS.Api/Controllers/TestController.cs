@@ -1,6 +1,7 @@
 ﻿using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using ARAS.Main.SSMS.Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,6 +9,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 {
 	[Route("api/test")]
 	[ApiController]
+	[Authorize]
 	public class TestController : ControllerBase
 	{
 		private readonly IBackgroundJobService _bgJobService;
@@ -19,7 +21,8 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			_adjustmentRepo = adjustmentRepo;
 		}
 
-		[HttpGet]
+		// Plain health check for the gateway / monitoring; returns no data.
+		[HttpGet, AllowAnonymous]
 		public string Get()
 		{
 			return "ARAS Main SSMS API is working";

@@ -2,6 +2,7 @@ using ARAS.Blazor.App_Code.Globals.Extensions;
 using ARAS.Main.SSMS.Api.Models.Dtos;
 using ARAS.Main.SSMS.Api.Repositories.Interfaces;
 using ARAS.Main.SSMS.Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -10,6 +11,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 {
 	[Route("api/reject")]
 	[ApiController]
+	[Authorize(Roles = "CNC Approver,FSG Validator,FSG Approver")]
 	public class RejectionsController : ControllerBase
 	{
 		private readonly ILogger<RejectionsController> _logger;

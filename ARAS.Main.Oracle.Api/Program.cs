@@ -6,6 +6,7 @@ using ARAS.Main.Oracle.Api.Repositories.Interfaces;
 using ARAS.Main.Oracle.Api.Services.Implementations;
 using ARAS.Main.Oracle.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -31,6 +32,14 @@ builder.Services.AddAuthentication(options =>
 		IssuerSigningKey = new SymmetricSecurityKey(
 			Encoding.UTF8.GetBytes(builder.Configuration["AuthConfig:JwtOptions:Key"]))
 	};
+});
+
+// Every endpoint requires a valid ARAS token unless it opts out with [AllowAnonymous].
+builder.Services.AddAuthorization(options =>
+{
+	options.FallbackPolicy = new AuthorizationPolicyBuilder()
+		.RequireAuthenticatedUser()
+		.Build();
 });
 
 builder.Services.AddControllers();
@@ -65,11 +74,12 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-	app.MapOpenApi();
+	app.MapOpenApi().AllowAnonymous();
 }
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

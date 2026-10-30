@@ -65,7 +65,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			}
 		}
 
-		[HttpGet, AllowAnonymous]
+		[HttpGet]
 		public async Task<ResponseDto<IEnumerable<long>>> Get()
 		{
 			var response = new ResponseDto<IEnumerable<long>>();

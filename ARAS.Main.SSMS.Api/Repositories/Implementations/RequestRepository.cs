@@ -72,6 +72,47 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 		}
 
 		/// <summary>
+		/// Checks if the request can still be edited and was created by the given account.
+		/// Only the requestor who filed it can edit it, and only while it is waiting for
+		/// CNC approval or has been declined.
+		/// </summary>
+		public async Task<bool> IsUpdatableBy(long requestId, string accountId)
+		{
+			if (string.IsNullOrWhiteSpace(accountId))
+				return false;
+
+			var createdBy = await GetCreatedBy(requestId);
+			return IsSameAccount(createdBy, accountId) && await IsUpdatable(requestId);
+		}
+
+		/// <summary>
+		/// Throws when the given account may not edit the request, so a direct API call
+		/// cannot change someone else's request or one that has moved past CNC approval.
+		/// </summary>
+		public async Task EnsureUpdatableBy(long requestId, string accountId)
+		{
+			var createdBy = await GetCreatedBy(requestId);
+			Guards.ThrowInvalidOperationIf(createdBy is null, Exceptions.NOTFOUND_REQUEST);
+			Guards.ThrowInvalidOperationIf(
+				string.IsNullOrWhiteSpace(accountId) || !IsSameAccount(createdBy, accountId),
+				"You can only edit requests that you created.");
+			Guards.ThrowInvalidOperationIf(
+				!await IsUpdatable(requestId),
+				"This request can no longer be edited. Only requests waiting for CNC approval or declined requests can be changed. Please refresh the page to see its current status.");
+		}
+
+		private async Task<string?> GetCreatedBy(long requestId) =>
+			await _context.Requests
+				.AsNoTracking()
+				.Where(r => r.Id == requestId)
+				.Select(r => r.CreatedBy)
+				.FirstOrDefaultAsync();
+
+		private static bool IsSameAccount(string? createdBy, string accountId) =>
+			!string.IsNullOrWhiteSpace(createdBy) &&
+			string.Equals(createdBy.Trim(), accountId.Trim(), StringComparison.OrdinalIgnoreCase);
+
+		/// <summary>
 		/// Checks if the request is in any approval stage
 		/// </summary>
 		/// <param name="requestId"></param>

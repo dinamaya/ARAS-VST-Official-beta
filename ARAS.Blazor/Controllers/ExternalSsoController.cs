@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using ARAS.Blazor.App_Code.Globals;
 using ARAS.Blazor.App_Code.Globals.Constants;
 using ARAS.Blazor.Context;
 using ARAS.Blazor.Models.Configuration;
@@ -26,6 +27,7 @@ public sealed class ExternalSsoController : Controller
 	private readonly ILogger<ExternalSsoController> _logger;
 	private readonly ITokenService _tokenService;
 	private readonly IConfigService _config;
+	private readonly IWebHostEnvironment _env;
 
 	public ExternalSsoController(
 		IOptions<ExternalSsoOptions> options,
@@ -33,7 +35,8 @@ public sealed class ExternalSsoController : Controller
 		AuthDbContext dbContext,
 		ILogger<ExternalSsoController> logger,
 		ITokenService tokenService,
-		IConfigService config)
+		IConfigService config,
+		IWebHostEnvironment env)
 	{
 		_options = options.Value;
 		_userManager = userManager;
@@ -41,6 +44,7 @@ public sealed class ExternalSsoController : Controller
 		_logger = logger;
 		_tokenService = tokenService;
 		_config = config;
+		_env = env;
 	}
 
 	[HttpGet("Index")]
@@ -66,13 +70,12 @@ public sealed class ExternalSsoController : Controller
 			string.IsNullOrWhiteSpace(userDirectory) ||
 			string.IsNullOrWhiteSpace(accessKey))
 		{
-			return Forbid();
+			return Reject("Missing payload, user_directory or access_key in the URMS post.");
 		}
 
 		if (!IsValidAccessKey(accessKey))
 		{
-			_logger.LogWarning("MIS SSO request contained an invalid access key.");
-			return Forbid();
+			return Reject("Invalid access key (ExternalSso:AccessKey does not match URMS).");
 		}
 
 		using var payloadDocument = JsonDocument.Parse(payload);
@@ -91,31 +94,36 @@ public sealed class ExternalSsoController : Controller
 			isDeleted ||
 			!string.Equals(status, "Active", StringComparison.OrdinalIgnoreCase))
 		{
-			return Forbid();
+			return Reject(
+				$"URMS user directory rejected: email='{email}', status='{status}', isDeleted={isDeleted}. Email is required and status must be Active.");
 		}
 
 		// URMS is the authorization source of truth. ARAS only maps URMS roles
 		// to the role names used by its existing authorization policies.
-		var account = await _userManager.FindByEmailAsync(email);
-
-		if (account is null || !account.IsActive)
-		{
-			_logger.LogWarning(
-				"No active ARAS account was found for employee {EmployeeNumber}.",
-				employeeNumber);
-
-			return Forbid();
-		}
-
+		// Resolve roles first so no local account is created for users who
+		// have no ARAS access in URMS.
 		var arasRoles = ResolveArasRoles(payloadDocument.RootElement);
 
 		if (arasRoles.Count == 0)
 		{
-			_logger.LogWarning(
-				"ARAS account {Email} has no allowed roles.",
-				email);
+			return Reject(
+				$"User {email} has no allowed ARAS role in the URMS payload. Payload: {payload}");
+		}
 
-			return Forbid();
+		var account = await _userManager.FindByEmailAsync(email);
+
+		// First SSO login: URMS has granted access, so provision the local
+		// ARAS account (same shape the old AAD sign-in created).
+		account ??= await ProvisionAccountAsync(email, employeeNumber, fullName);
+
+		if (account is null)
+		{
+			return Reject($"Could not create the ARAS account for {email}. See the console log for the Identity errors.");
+		}
+
+		if (!account.IsActive)
+		{
+			return Reject($"ARAS account {email} exists but IsActive = 0.");
 		}
 
 		HttpContext.Session.SetString(
@@ -182,6 +190,83 @@ public sealed class ExternalSsoController : Controller
 			employeeNumber);
 
 		return Redirect("/");
+	}
+
+	// Logs why SSO was refused. In Development the reason is also shown in
+	// the browser so it can be diagnosed without digging through the console.
+	private IActionResult Reject(string reason)
+	{
+		_logger.LogWarning("MIS SSO login rejected: {Reason}", reason);
+
+		return _env.IsDevelopment()
+			? StatusCode(StatusCodes.Status403Forbidden, "MIS SSO login rejected: " + reason)
+			: Forbid();
+	}
+
+	private async Task<Account?> ProvisionAccountAsync(
+		string email,
+		string? employeeNumber,
+		string? fullName)
+	{
+		var (firstName, lastName) = SplitFullName(fullName, email);
+		var now = DateTime.Now;
+
+		var account = new Account
+		{
+			Email = email,
+			UserName = email,
+			OpenId = string.IsNullOrWhiteSpace(employeeNumber)
+				? Guid.NewGuid().ToString()
+				: employeeNumber,
+			FirstName = Utils.Security.CleanString(firstName),
+			LastName = Utils.Security.CleanString(lastName),
+			GroupCode = string.Empty,
+			CreatedBy = "ARAS-MIS-SSO",
+			DateCreated = now,
+			ModifiedBy = "ARAS-MIS-SSO",
+			DateModified = now,
+			IsActive = true
+		};
+
+		var result = await _userManager.CreateAsync(account);
+
+		if (result.Succeeded)
+		{
+			_logger.LogInformation(
+				"Provisioned ARAS account for {Email} (employee {EmployeeNumber}) on first MIS SSO login.",
+				email,
+				employeeNumber);
+
+			return account;
+		}
+
+		// A parallel request may have created it first.
+		var existing = await _userManager.FindByEmailAsync(email);
+
+		if (existing is null)
+		{
+			_logger.LogError(
+				"Failed to provision ARAS account for {Email}: {Errors}",
+				email,
+				string.Join(", ", result.Errors.Select(e => e.Description)));
+		}
+
+		return existing;
+	}
+
+	private static (string FirstName, string LastName) SplitFullName(
+		string? fullName,
+		string email)
+	{
+		var parts = (fullName ?? string.Empty)
+			.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+		return parts.Length switch
+		{
+			0 => (email.Split('@')[0], string.Empty),
+			1 => (parts[0], string.Empty),
+			_ => (string.Join(' ', parts[..^1]), parts[^1])
+		};
 	}
 
 	private List<string> ResolveArasRoles(JsonElement payloadRoot)

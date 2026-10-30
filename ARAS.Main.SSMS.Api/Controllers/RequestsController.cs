@@ -49,7 +49,8 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			var response = new ResponseDto<bool>();
 			try
 			{
-				response.Result = await _requestRepo.IsUpdatable(requestId);
+				// True only for the requestor who filed it, while it can still be edited.
+				response.Result = await _requestRepo.IsUpdatableBy(requestId, User.GetAccountBasicInfo().Id);
 				return response;
 			}
 			catch (Exception ex)
@@ -316,6 +317,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			try
 			{
 				var account = User.GetAccountBasicInfo();
+				await _requestRepo.EnsureUpdatableBy(requestId, account.Id);
 				response.Result = await _receiptAdjustmentRepo.UpdateAsync(requestId, data, account.Id);
 				return response;
 			}
@@ -331,6 +333,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			var response = new ResponseDto<long>();
 			try
 			{
+				await _requestRepo.EnsureUpdatableBy(requestId, User.GetAccountBasicInfo().Id);
 				var requestCreation = new RequestCreationDto<IEnumerable<APAROffsetCreateDto>>(data, User.GetAccountBasicInfo());
 				response.Result = await _aparRepo.Update(requestId, requestCreation, requestCreation.CreatorId);
 				return response;
@@ -369,6 +372,7 @@ namespace ARAS.Main.SSMS.Api.Controllers
 			var response = new ResponseDto<long>();
 			try
 			{
+				await _requestRepo.EnsureUpdatableBy(requestId, User.GetAccountBasicInfo().Id);
 				var requestCreation = new RequestCreationDto<IEnumerable<ARInvoiceOffsettingCreateDto>>(data, User.GetAccountBasicInfo());
 				response.Result = await _arRepo.Update(requestId, requestCreation, requestCreation.CreatorId);
 				return response;

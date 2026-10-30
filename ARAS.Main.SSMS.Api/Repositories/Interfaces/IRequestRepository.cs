@@ -12,6 +12,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Interfaces
 		Task<long> CreateAsync(string adjustmentTypeId, string createdBy, string? sourceType);
 		Task<IEnumerable<long>> CreateAsync(IEnumerable<string> adjustmentTypeIds, string createdBy, string? sourceType);
 		Task<bool> IsUpdatable(long requestId);
+		Task<bool> IsUpdatableBy(long requestId, string accountId);
+		Task EnsureUpdatableBy(long requestId, string accountId);
 		Task<bool> IsApprovable(long requestId);
 		Task<bool> IsDeclinable (long requestId);
 		Task<bool> IsRejectable (long requestId);

@@ -66,7 +66,7 @@
 		},
 		{
 			"DownstreamPathTemplate": "/api/ar-invoice-offsetting/{everything}",
-			"DownstreamScheme": "https",
+			"DownstreamScheme": "http",
 			"DownstreamHostAndPorts": [
 				{
 					"Host": "10.105.33.40",

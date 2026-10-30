@@ -18,8 +18,9 @@ namespace ARAS.Main.SSMS.Api.Controllers
 		private readonly IAROffsettingRepository _arOffsetRepo;
 		private readonly IBaseReceiptAdjustmentRepository _receiptRepo;
 
-        public AdjustmentsController(IAdjustmentRepository adjustmentRepo, IAPAROffsetRepository aparOffsetRepo, IAROffsettingRepository arOffsetRepo, IBaseReceiptAdjustmentRepository receiptRepo, IAdjustmentService adjustmentService)
+        public AdjustmentsController(IAdjustmentRepository adjustmentRepo, IAPAROffsetRepository aparOffsetRepo, IAROffsettingRepository arOffsetRepo, IBaseReceiptAdjustmentRepository receiptRepo, IAdjustmentService adjustmentService, ILogger<AdjustmentsController> logger)
         {
+            _logger = logger;
             _adjustmentRepo = adjustmentRepo;
             _aparOffsetRepo = aparOffsetRepo;
             _arOffsetRepo = arOffsetRepo;

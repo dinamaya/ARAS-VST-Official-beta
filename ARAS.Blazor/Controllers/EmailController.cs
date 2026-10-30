@@ -15,9 +15,10 @@ namespace ARAS.Blazor.Controllers
 		private readonly IEmailRepository _emailRepo;
 		private readonly ILogger<EmailController> _logger;
 
-		public EmailController(IEmailRepository emailRepo)
+		public EmailController(IEmailRepository emailRepo, ILogger<EmailController> logger)
 		{
 			_emailRepo = emailRepo;
+			_logger = logger;
 		}
 
 		[HttpGet("all")]

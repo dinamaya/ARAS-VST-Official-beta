@@ -1,4 +1,6 @@
 @page "/approvals/invoice"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "CNC Approver,FSG Validator,FSG Approver")]
 @using ARAS.Blazor.Models.DTOs
 @using ARAS.Blazor.Components.Shared.DataTables
 @using ARAS.Blazor.App_Code.Globals

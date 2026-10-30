@@ -256,7 +256,16 @@ namespace ARAS.Blazor.Services.Implementations
 			foreach (var note in notes)
 				note.Id = createResult.Result.Where(r => r.AdjustmentTypeCode == note.AdjustmentType).FirstOrDefault()?.RequestId.ToString() ?? string.Empty;
 
-			await _noteService.Create(notes);
+			// The requests already exist: a failed upload must not look like a failed submission,
+			// or the requestor would submit the same request again.
+			try
+			{
+				await _noteService.Create(notes);
+			}
+			catch (Exception ex)
+			{
+				throw new AttachmentUploadException(isNewRequest: true, ex);
+			}
 		}
 
 		public async Task Update(bool isUpdatable, long requestId, ReceiptAdjustmentUpdateRequestDto row, IEnumerable<NoteRowDto> notes)
@@ -272,7 +281,15 @@ namespace ARAS.Blazor.Services.Implementations
 				Guards.ThrowInvalidOperationIf(!createResult.IsSuccess, "Failed to update request" + createResult.Message);
 			}
 
-			await _noteService.Create(requestId, notes);
+			try
+			{
+				await _noteService.Create(requestId, notes);
+			}
+			catch (Exception ex) when (isUpdatable)
+			{
+				// The changes were saved; only the new attachments failed.
+				throw new AttachmentUploadException(isNewRequest: false, ex);
+			}
 		}
 
 		public async Task ApproveReceiptAdjustmentRequests(IEnumerable<long> data)

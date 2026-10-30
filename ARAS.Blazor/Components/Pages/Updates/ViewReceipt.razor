@@ -296,6 +296,7 @@
 
 			SynchronizeAdjustmentInput();
 			string? applyReceiptLine = SynchronizeApplyReceiptInput();
+			bool hasFieldChanges = false;
 
 			if (isRequestUpdatable)
 			{
@@ -303,14 +304,23 @@
 					? (details.ApplyReceiptEnabled ? details.ReceiptApplications.Select(a => (a.PaymentScheduleId, a.AppliedAmount)) : Enumerable.Empty<(long PaymentScheduleId, double AppliedAmount)>())
 					: (data.ReceiptApplications ?? []).Select(a => (a.PaymentScheduleId, a.AppliedAmount));
 				string newHash = Utils.Security.ObjectHash(BuildChangeSnapshot(currentApplications));
-				Guards.ThrowInvalidOperationIf(newHash.Equals(inputHash), "No changes detected in the current request.");
+				hasFieldChanges = !newHash.Equals(inputHash);
+				// A newly added attachment on its own counts as a change (it is uploaded without resubmitting the request).
+				bool hasNewAttachments = details.Notes?.Any(n => n is not null && string.IsNullOrEmpty(n.Id)) == true;
+				Guards.ThrowInvalidOperationIf(!hasFieldChanges && !hasNewAttachments, "No changes detected in the current request.");
 			}
 
 			await postingOverlay.RunAsync(
 				FusionPostingOverlay.SubmittingChangesTitle,
 				[$"{adjustmentName} of {FusionPostingOverlay.FormatSummaryAmount(data.AdjustmentAmount)}", applyReceiptLine, FusionPostingOverlay.DescribeAttachments(details.Notes)],
 				FusionPostingOverlay.SubmittingNote,
-				() => RequestService.Update(isRequestUpdatable, RequestId, data, details.Notes));
+				() => RequestService.Update(isRequestUpdatable && hasFieldChanges, RequestId, data, details.Notes));
+			RefreshPage();
+		}
+		catch (AttachmentUploadException ex)
+		{
+			// The changes were saved; reload so they aren't submitted twice.
+			await DialogService.Alert(ex.Message, AttachmentUploadException.Title);
 			RefreshPage();
 		}
 		catch (Exception ex)

@@ -407,6 +407,12 @@
 
 			await SubmitRequest();
 		}
+		catch (AttachmentUploadException ex)
+		{
+			// The request was created; treat the submission as done so it isn't submitted twice.
+			await DialogService.Alert(ex.Message, AttachmentUploadException.Title);
+			GoToSuccess();
+		}
 		catch (Exception ex)
 		{
 			await DialogService.Alert(ex.Message, "Request Submission Failed");
@@ -421,6 +427,11 @@
 			FusionPostingOverlay.SubmittingNote,
 			() => APAROffsetService.Create(APAdjustments, ARAdjustments, Notes, GetWriteOffRow()));
 
+		GoToSuccess();
+	}
+
+	private void GoToSuccess()
+	{
 		// Keep only the success flag so the search component does not replay the
 		// previous query and repopulate results after a successful submission.
 		var uri = $"{NavigationManager.Uri.Split('?')[0]}?q={Uri.EscapeDataString(Queries.Success.CREATE)}";

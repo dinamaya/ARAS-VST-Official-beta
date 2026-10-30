@@ -472,6 +472,12 @@
 
 			await SubmitRequest();
 		}
+		catch (AttachmentUploadException ex)
+		{
+			// The changes were saved; reload so they aren't submitted twice.
+			await DialogService.Alert(ex.Message, AttachmentUploadException.Title);
+			RefreshPage();
+		}
 		catch (Exception ex)
 		{
 			await DialogService.Alert(ex.Message, "Request Submission Failed");
@@ -482,8 +488,11 @@
 	{
 		var data = BuildChangeSnapshot();
 		string newHash = Utils.Security.ObjectHash(data);
-		Guards.ThrowInvalidOperationIf(newHash.Equals(inputHash), "No changes detected in the current request.");
-		bool _isUpdatable = isRequestUpdatable && !newHash.Equals(inputHash);
+		bool hasFieldChanges = !newHash.Equals(inputHash);
+		// A newly added attachment on its own counts as a change (it is uploaded without resubmitting the request).
+		bool hasNewAttachments = Notes?.Any(n => n is not null && string.IsNullOrEmpty(n.Id)) == true;
+		Guards.ThrowInvalidOperationIf(!hasFieldChanges && !hasNewAttachments, "No changes detected in the current request.");
+		bool _isUpdatable = isRequestUpdatable && hasFieldChanges;
 
 		await postingOverlay.RunAsync(
 			FusionPostingOverlay.SubmittingChangesTitle,

@@ -35,7 +35,16 @@ namespace ARAS.Blazor.Services.Implementations
 
 			Guards.ThrowInvalidOperationIf(!createResult.IsSuccess, "Failed to create request" + createResult.Message);
 
-			await _noteService.Create(createResult.Result, notes);
+			// The request already exists: a failed upload must not look like a failed submission,
+			// or the requestor would submit the same request again (a duplicate AP-AR request).
+			try
+			{
+				await _noteService.Create(createResult.Result, notes);
+			}
+			catch (Exception ex)
+			{
+				throw new AttachmentUploadException(isNewRequest: true, ex);
+			}
 		}
 
 		public async Task Update(bool isUpdatable, long requestId, IEnumerable<APAROffsetAPRowDto> apRows, IEnumerable<APAROffsetARRowDto> arRows, IEnumerable<NoteRowDto> notes, APAROffsetARRowDto? writeOffRow = null)
@@ -54,7 +63,15 @@ namespace ARAS.Blazor.Services.Implementations
 				Guards.ThrowInvalidOperationIf(!result.IsSuccess, "Failed to update request" + result.Message);
 			}
 
-			await _noteService.Create(requestId, notes);
+			try
+			{
+				await _noteService.Create(requestId, notes);
+			}
+			catch (Exception ex) when (isUpdatable)
+			{
+				// The changes were saved; only the new attachments failed.
+				throw new AttachmentUploadException(isNewRequest: false, ex);
+			}
 		}
 
 		public async Task<APAROffsetRowDto> GetAdjustments(long requestId)

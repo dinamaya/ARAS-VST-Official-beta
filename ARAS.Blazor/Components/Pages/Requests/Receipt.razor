@@ -405,8 +405,17 @@
 			else
 				Notes?.Clear();
 
-			var uri = NavManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
-			NavManager.NavigateTo(uri);
+			GoToSuccess();
+		}
+		catch (AttachmentUploadException ex)
+		{
+			// The request was created; treat the submission as done so it isn't submitted twice.
+			await DialogService.Alert(ex.Message, AttachmentUploadException.Title);
+			if (receiptAttachments is not null)
+				await receiptAttachments.ClearNotes();
+			else
+				Notes?.Clear();
+			GoToSuccess();
 		}
 		catch (Exception ex)
 		{
@@ -438,6 +447,12 @@
 			: $"{name} is available for receipts only.");
 
 	private FusionPostingOverlay submitOverlay = default!;
+
+	private void GoToSuccess()
+	{
+		var uri = NavManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
+		NavManager.NavigateTo(uri);
+	}
 
 	private void ValidateSelectedAdjustments()
 	{

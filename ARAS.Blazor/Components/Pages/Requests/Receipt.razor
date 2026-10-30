@@ -326,6 +326,11 @@
 
 			await base.OnSubmit();
 
+			// Check every ticked type, not only the ones whose fields were typed into.
+			// Otherwise a ticked type left blank is silently skipped (with any Apply
+			// Receipt applications attached to it).
+			ValidateSelectedAdjustments();
+
 			isSubmitConfirmationOpen = true;
 			StateHasChanged();
 			bool isConfirmed = await DialogService.Confirm("Would you like to submit the following \"Receipt Adjustment(s)\"?", "Create Receipt Adjustment(s)") ?? false;
@@ -363,7 +368,7 @@
 				? CreateReceiptAdjustment.ApplyReceiptOwnerFor(selectedAdjustmentTypes)
 				: null;
 
-			foreach (var adj in _adjustments)
+			foreach (var adj in _adjustments.Where(a => selectedAdjustmentTypes.Contains(a.Key)))
 			{
 				Guards.ThrowInvalidOperationIf(
 					string.IsNullOrEmpty(adj.Value.Remarks),
@@ -433,6 +438,25 @@
 			: $"{name} is available for receipts only.");
 
 	private FusionPostingOverlay submitOverlay = default!;
+
+	private void ValidateSelectedAdjustments()
+	{
+		var types = selectedAdjustmentTypes?.ToList() ?? [];
+		Guards.ThrowInvalidOperationIf(types.Count == 0, "Please select at least one adjustment type.");
+
+		foreach (var type in types)
+		{
+			_adjustments.TryGetValue(type, out var entry);
+
+			Guards.ThrowInvalidOperationIf(
+				string.IsNullOrWhiteSpace(entry?.Remarks),
+				$"Cannot apply adjustment(s) because there is no remarks on {type} adjustment field.");
+
+			Guards.ThrowInvalidOperationIf(
+				(entry?.Amount ?? 0) <= 0,
+				$"Cannot apply adjustment(s) because the {type} adjustment amount is less than or equal to 0.");
+		}
+	}
 
 	private IEnumerable<string?> DescribeSubmission(IEnumerable<BaseReceiptAdjustmentCreateDto> requests)
 	{

@@ -188,6 +188,7 @@
 			IsSubmitting = false;
 			isSubmitConfirmationOpen = false;
 			Reset();
+			Notes?.Clear();
 			SearchedInvoice = new();
 		}
 	}
@@ -390,6 +391,14 @@
 				DescribeSubmission(requests),
 				FusionPostingOverlay.SubmittingNote,
 				() => RequestService.Create(requests, Notes));
+
+			// The page is reused for the next request (no full reload), so clear the
+			// attachments now. Otherwise this request's files are uploaded again with
+			// the next one and can't be removed (they already have a request ID).
+			if (receiptAttachments is not null)
+				await receiptAttachments.ClearNotes();
+			else
+				Notes?.Clear();
 
 			var uri = NavManager.GetUriWithQueryParameter("q", Queries.Success.CREATE);
 			NavManager.NavigateTo(uri);

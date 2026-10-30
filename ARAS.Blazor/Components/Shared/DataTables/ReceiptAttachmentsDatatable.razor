@@ -125,6 +125,14 @@
 
 	public async Task OnRemoveNote(NoteRowDto data) => await RemoveNote(data);
 
+	/// <summary>Empties the list, e.g. after a request was submitted, so the next request starts clean.</summary>
+	public async Task ClearNotes()
+	{
+		Notes?.Clear();
+		if (dataGrid is not null)
+			await dataGrid.Reload();
+	}
+
 	private async Task DownloadAttachment(string noteId, string attachmentName)
 	{
 		await AttachementService.Download(noteId, attachmentName);

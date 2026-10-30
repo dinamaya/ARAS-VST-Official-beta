@@ -272,6 +272,8 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
 				var adjustment = await _adjustmentRepo.UpdateAsync(requestId, adjustmentUpdate, modifiedBy);
 
+				await UpdateReceiptApplicationsAsync(requestId, data, modifiedBy);
+
 				await dbTransaction.CommitAsync();
 				return requestId;
 			}
@@ -280,6 +282,113 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				await dbTransaction.RollbackAsync();
 				throw;
 			}
+		}
+
+		/// <summary>
+		/// Applies the requestor's Apply Receipt corrections (when sent) and checks that the
+		/// adjustment plus the invoice applications still fit within the receipt balance.
+		/// Only the request that already carries Apply Receipt can change it, so the same
+		/// invoices are never applied by two requests of one submission.
+		/// </summary>
+		private async Task UpdateReceiptApplicationsAsync(long requestId, ReceiptAdjustmentUpdateRequestDto data, string modifiedBy)
+		{
+			var request = await _context.Requests.FirstOrDefaultAsync(r => r.Id == requestId)
+				?? throw new InvalidOperationException("Request not found. Please contact the administrator");
+
+			Guards.ThrowInvalidOperationIf(
+				string.Equals(request.SourceType, InvoiceSource, StringComparison.OrdinalIgnoreCase) &&
+				(data.ApplyReceiptEnabled == true || (data.ReceiptApplications?.Any() ?? false)),
+				"Apply Receipt can only be used with receipts.");
+
+			var existing = await _context.ReceiptInvoiceApplications
+				.Where(a => a.RequestId == requestId && a.IsActive)
+				.ToListAsync();
+
+			double appliedTotal;
+
+			if (data.ApplyReceiptEnabled is null)
+			{
+				appliedTotal = existing.Sum(a => a.AppliedAmount);
+			}
+			else
+			{
+				Guards.ThrowInvalidOperationIf(
+					!request.ApplyReceiptEnabled && existing.Count == 0,
+					"Apply Receipt can only be changed on the request it was submitted with.");
+
+				var applications = data.ApplyReceiptEnabled.Value
+					? (data.ReceiptApplications ?? [])
+						.Where(a => a is not null && a.PaymentScheduleId > 0 && a.AppliedAmount > 0)
+						.ToList()
+					: new List<ReceiptInvoiceApplicationSelectionDto>();
+
+				Guards.ThrowInvalidOperationIf(
+					data.ApplyReceiptEnabled.Value && applications.Count == 0,
+					"Apply Receipt is enabled but no invoice with a positive applied amount was selected.");
+
+				Guards.ThrowInvalidOperationIf(
+					applications.GroupBy(a => a.PaymentScheduleId).Any(g => g.Count() > 1),
+					"The same invoice was selected more than once. Please select each invoice only once.");
+
+				foreach (var application in applications)
+					Guards.ThrowInvalidOperationIf(
+						application.AmountDue > 0 && application.AppliedAmount > application.AmountDue + 0.005,
+						$"The applied amount for invoice {application.InvoiceNumber} is more than its amount due.");
+
+				var receipt = existing.FirstOrDefault();
+				Guards.ThrowInvalidOperationIf(
+					applications.Count > 0 && (receipt?.ReceiptId is null || receipt.ReceiptId <= 0),
+					"The receipt ID for Apply Receipt is missing. Please contact the administrator.");
+
+				var now = DateTime.Now;
+				foreach (var old in existing)
+				{
+					old.IsActive = false;
+					old.ModifiedBy = modifiedBy;
+					old.DateModified = now;
+				}
+
+				if (applications.Count > 0)
+				{
+					await _context.ReceiptInvoiceApplications.AddRangeAsync(applications.Select(a => new ReceiptInvoiceApplication
+					{
+						RequestId = requestId,
+						ReceiptNumber = receipt!.ReceiptNumber,
+						ReceiptId = receipt.ReceiptId,
+						InvoiceId = a.InvoiceId,
+						InvoiceNumber = a.InvoiceNumber,
+						PaymentScheduleId = a.PaymentScheduleId,
+						AppliedAmount = a.AppliedAmount,
+						DiscountAmount = a.DiscountAmount,
+						AmountDue = a.AmountDue,
+						CurrencyCode = a.CurrencyCode,
+						CreatedBy = modifiedBy,
+						DateCreated = now,
+						ModifiedBy = modifiedBy,
+						DateModified = now,
+						IsActive = true
+					}));
+				}
+
+				request.ApplyReceiptEnabled = applications.Count > 0;
+				appliedTotal = applications.Sum(a => a.AppliedAmount);
+			}
+
+			// The receipt balance saved with the request (receipts use the legacy Invoice* columns).
+			var receiptBalance = await _context.Adjustments
+				.Where(a => a.RequestId == requestId && a.IsActive)
+				.Select(a => a.Invoice.InvoiceBalance)
+				.FirstOrDefaultAsync();
+
+			if (receiptBalance > 0)
+			{
+				var total = Math.Round(appliedTotal + data.AdjustmentAmount, 2);
+				Guards.ThrowInvalidOperationIf(
+					total > Math.Round(receiptBalance, 2) + 0.005,
+					$"The adjustment amount plus the applied invoice amounts ({total:N2}) is more than the receipt balance ({receiptBalance:N2}).");
+			}
+
+			await _context.SaveChangesAsync();
 		}
 
 		public async Task<ReceiptAdjustmentUpdateResponseDto> GetDetailsById(long requestId)

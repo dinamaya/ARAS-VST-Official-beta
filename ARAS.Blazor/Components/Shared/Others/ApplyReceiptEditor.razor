@@ -1,0 +1,295 @@
+@using ARAS.Blazor.App_Code.Globals.Extensions
+@using ARAS.Blazor.Models.DTOs
+@using ARAS.Blazor.Services.Interfaces
+@inject IInvoiceService InvoiceService
+
+@*
+	Editable Apply Receipt (to Invoice) section for a request that already carries invoice
+	applications (Update Adjustment page). The saved applications are pre-selected against the
+	invoices that are currently open in Fusion, so amounts due are up to date.
+*@
+<RadzenFieldset Text="Apply Receipt (to Invoice)" AllowCollapse="true" Collapsed="false" class="mt-3">
+	<RadzenRow Gap="1rem" AlignItems="AlignItems.Center" class="mb-2">
+		<RadzenColumn Size="12" SizeMD="6">
+			<div class="d-flex align-items-center gap-2">
+				<RadzenSwitch @bind-Value="isEnabled" Disabled="@(IsDisabled || isLoading)" Change="OnToggleChanged" />
+				<RadzenLabel Text="Enable Apply Receipt" />
+			</div>
+		</RadzenColumn>
+		<RadzenColumn Size="12" SizeMD="6" class="text-md-end">
+			<span class="badge bg-light text-dark">Application Type: Transaction</span>
+		</RadzenColumn>
+	</RadzenRow>
+
+	@if (!isEnabled)
+	{
+		<div class="text-sm text-secondary">Apply Receipt is off. The receipt won't be applied to any invoice when this request is posted.</div>
+	}
+	else
+	{
+		@foreach (var warning in warnings)
+		{
+			<RadzenAlert AlertStyle="AlertStyle.Warning" Variant="Variant.Flat" Shade="Shade.Lighter" Size="AlertSize.Small" AllowClose="false" class="mb-2">@warning</RadzenAlert>
+		}
+
+		<RadzenRow Gap="1rem" class="mb-2">
+			<RadzenColumn Size="12" SizeMD="4">
+				<div class="border rounded p-2">
+					<div class="text-sm">Receipt Balance</div>
+					<div class="fw-bold">@ReceiptBalance.ToPhp()</div>
+				</div>
+			</RadzenColumn>
+			<RadzenColumn Size="12" SizeMD="4">
+				<div class="border rounded p-2">
+					<div class="text-sm">Total Applied Amount</div>
+					<div class="fw-bold">@TotalAppliedAmount.ToPhp()</div>
+				</div>
+			</RadzenColumn>
+			<RadzenColumn Size="12" SizeMD="4">
+				<div class="border rounded p-2">
+					<div class="text-sm">Remaining After Adjustment and Applications</div>
+					<div class="fw-bold @(RemainingBalance < 0 ? "text-danger" : null)">@RemainingBalance.ToPhp()</div>
+				</div>
+			</RadzenColumn>
+		</RadzenRow>
+
+		<RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" Gap="0.5rem" AlignItems="AlignItems.Center" class="mb-2">
+			<RadzenTextBox @bind-Value="invoiceSearch" Style="flex: 1 1 14rem; min-width: 10rem;" Placeholder="Search by invoice number..." Change="@(args => StateHasChanged())" />
+			<RadzenButton Icon="refresh" Text="Refresh" Size="ButtonSize.Small" Disabled="@(IsDisabled || isLoading)" Click="ReloadInvoices" />
+			<RadzenButton Icon="clear" Text="Clear Selection" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Disabled="@(IsDisabled || isLoading)" Click="ClearSelection" />
+		</RadzenStack>
+
+		@if (isLoading)
+		{
+			<div class="text-sm text-secondary py-3">Loading open invoices from Oracle Fusion…</div>
+		}
+		else if (loadError is not null)
+		{
+			<RadzenAlert AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" Shade="Shade.Lighter" Size="AlertSize.Small" AllowClose="false">@loadError</RadzenAlert>
+		}
+		else
+		{
+			<RadzenDataGrid Data="@FilteredInvoices" TItem="ApplicableReceiptInvoiceDto"
+							AllowPaging="false" AllowSorting="false" AllowFiltering="false"
+							Density="Density.Compact"
+							RowRender="@OnInvoiceRowRender"
+							EmptyText="No open invoices found for this customer."
+							class="w-100 apply-receipt-grid">
+				<Columns>
+					<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="" Width="44px" TextAlign="TextAlign.Center">
+						<Template Context="row">
+							<RadzenCheckBox TValue="bool" @bind-Value="row.IsSelected" Change="@(args => OnSelectionChanged(row))" Disabled="@IsDisabled" />
+						</Template>
+					</RadzenDataGridColumn>
+					<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Invoice Number" MinWidth="150px">
+						<Template Context="row">
+							<div class="apply-receipt-invoice-number">@row.InvoiceNumber</div>
+							<div class="apply-receipt-subline">
+								@row.InvoiceDate.ToString("MMM dd, yyyy") · <span class="apply-receipt-amount">@row.InvoiceAmount.ToAmountWithCurrency(row.CurrencyCode)</span>
+							</div>
+						</Template>
+					</RadzenDataGridColumn>
+					<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Due Date" Width="110px">
+						<Template Context="row">
+							@if (row.DueDate.HasValue)
+							{
+								<span class="@(IsOverdue(row) ? "apply-receipt-overdue" : null)" title="@(IsOverdue(row) ? "Overdue" : null)">@row.DueDate.Value.ToString("MMM dd, yyyy")</span>
+							}
+						</Template>
+					</RadzenDataGridColumn>
+					<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Amount Due" Width="135px" TextAlign="TextAlign.Right">
+						<Template Context="row">
+							<span class="apply-receipt-amount">@row.InvoiceBalance.ToAmountWithCurrency(row.CurrencyCode)</span>
+						</Template>
+					</RadzenDataGridColumn>
+					<RadzenDataGridColumn TItem="ApplicableReceiptInvoiceDto" Title="Applied Amount" Width="150px" TextAlign="TextAlign.Right">
+						<Template Context="row">
+							<RadzenNumeric TValue="double" @bind-Value="row.AppliedAmount" Format="N2" Step="0.01" Min="0" Max="@(Convert.ToDecimal(row.InvoiceBalance))" Disabled="@(!row.IsSelected || IsDisabled)" Change="@(args => OnAppliedAmountChanged(row))" Style="width:100%" />
+						</Template>
+					</RadzenDataGridColumn>
+				</Columns>
+			</RadzenDataGrid>
+
+			<div class="mt-2 d-flex justify-content-end">
+				<span class="fw-bold apply-receipt-total">Total Selected: @TotalAppliedAmount.ToAmountWithCurrency(SelectedCurrencyCode)</span>
+			</div>
+		}
+	}
+</RadzenFieldset>
+
+@code {
+	/// <summary>Receipt number (receipt requests store it in the legacy InvoiceNumber column).</summary>
+	[Parameter] public string ReceiptNumber { get; set; } = string.Empty;
+	[Parameter] public double ReceiptBalance { get; set; }
+	/// <summary>The request's adjustment amount (e.g. the bank charge), used for the remaining balance.</summary>
+	[Parameter] public double AdjustmentAmount { get; set; }
+	[Parameter] public IList<ReceiptInvoiceApplicationPostingDto> InitialApplications { get; set; } = [];
+	[Parameter] public bool IsDisabled { get; set; }
+
+	private bool isEnabled;
+	private bool isLoading;
+	private bool isLoaded;
+	private string? loadError;
+	private string invoiceSearch = string.Empty;
+	private IList<ApplicableReceiptInvoiceDto> invoices = [];
+	private readonly List<string> warnings = [];
+
+	/// <summary>False while the open invoices are loading or failed to load (the selection is not known yet).</summary>
+	public bool IsReady => !isEnabled || (isLoaded && loadError is null);
+
+	private double TotalAppliedAmount => invoices.Where(i => i.IsSelected).Sum(i => i.AppliedAmount);
+	private double RemainingBalance => Math.Round(ReceiptBalance - AdjustmentAmount - TotalAppliedAmount, 2);
+
+	private IEnumerable<ApplicableReceiptInvoiceDto> FilteredInvoices => invoices
+		.Where(i => string.IsNullOrWhiteSpace(invoiceSearch) || i.InvoiceNumber.Contains(invoiceSearch, StringComparison.OrdinalIgnoreCase));
+
+	private string? SelectedCurrencyCode => invoices
+		.Where(i => i.IsSelected)
+		.Select(i => i.CurrencyCode)
+		.Concat(InitialApplications.Select(a => a.CurrencyCode))
+		.FirstOrDefault(c => !string.IsNullOrWhiteSpace(c));
+
+	protected override async Task OnInitializedAsync()
+	{
+		isEnabled = InitialApplications?.Any(a => a is not null && a.AppliedAmount > 0) == true;
+		if (isEnabled)
+			await LoadInvoices(preselect: true);
+	}
+
+	private async Task OnToggleChanged(bool enabled)
+	{
+		isEnabled = enabled;
+		if (isEnabled && !isLoaded)
+			await LoadInvoices(preselect: true);
+	}
+
+	private Task ReloadInvoices() => LoadInvoices(preselect: false);
+
+	private async Task LoadInvoices(bool preselect)
+	{
+		if (string.IsNullOrWhiteSpace(ReceiptNumber))
+		{
+			loadError = "The receipt number is missing, so the open invoices can't be loaded.";
+			return;
+		}
+
+		// Keep the current selection when refreshing; use the saved applications the first time.
+		var keep = preselect
+			? (InitialApplications ?? []).Where(a => a is not null && a.AppliedAmount > 0)
+				.Select(a => (a.PaymentScheduleId, a.InvoiceNumber, a.AppliedAmount)).ToList()
+			: invoices.Where(i => i.IsSelected && i.AppliedAmount > 0)
+				.Select(i => (i.PaymentScheduleId, i.InvoiceNumber, i.AppliedAmount)).ToList();
+
+		isLoading = true;
+		loadError = null;
+		StateHasChanged();
+
+		try
+		{
+			var rows = await InvoiceService.GetApplicableInvoicesForReceipt(ReceiptNumber);
+			invoices = (rows ?? [])
+				.Where(r => r.InvoiceBalance > 0)
+				.Select(r =>
+				{
+					r.IsSelected = false;
+					r.AppliedAmount = 0;
+					r.DiscountAmount = 0;
+					return r;
+				})
+				.ToList();
+
+			warnings.Clear();
+			foreach (var (paymentScheduleId, invoiceNumber, appliedAmount) in keep)
+			{
+				var row = invoices.FirstOrDefault(i => i.PaymentScheduleId == paymentScheduleId);
+				if (row is null)
+				{
+					warnings.Add($"Invoice {invoiceNumber} is no longer open in Oracle Fusion, so it was removed from the selection.");
+					continue;
+				}
+
+				row.IsSelected = true;
+				row.AppliedAmount = Math.Min(appliedAmount, row.InvoiceBalance);
+				if (appliedAmount > row.InvoiceBalance)
+					warnings.Add($"Invoice {invoiceNumber}'s amount due is now {row.InvoiceBalance.ToAmountWithCurrency(row.CurrencyCode)}, so its applied amount was reduced to match.");
+			}
+
+			isLoaded = true;
+		}
+		catch (Exception ex)
+		{
+			loadError = $"Couldn't load the open invoices from Oracle Fusion: {ex.Message} Please press Refresh to try again.";
+		}
+		finally
+		{
+			isLoading = false;
+			StateHasChanged();
+		}
+	}
+
+	private void OnSelectionChanged(ApplicableReceiptInvoiceDto row)
+	{
+		if (!row.IsSelected)
+			row.AppliedAmount = 0;
+		else if (row.AppliedAmount <= 0)
+			row.AppliedAmount = Math.Min(row.InvoiceBalance, Math.Max(ReceiptBalance - AdjustmentAmount - TotalAppliedAmount, 0));
+	}
+
+	private void OnAppliedAmountChanged(ApplicableReceiptInvoiceDto row)
+	{
+		if (!row.IsSelected)
+			return;
+
+		if (row.AppliedAmount < 0)
+			row.AppliedAmount = 0;
+
+		if (row.AppliedAmount > row.InvoiceBalance)
+			row.AppliedAmount = row.InvoiceBalance;
+	}
+
+	private void ClearSelection()
+	{
+		foreach (var row in invoices)
+		{
+			row.IsSelected = false;
+			row.AppliedAmount = 0;
+		}
+	}
+
+	private static bool IsOverdue(ApplicableReceiptInvoiceDto row) =>
+		row.DueDate.HasValue && row.DueDate.Value.Date < DateTime.Today;
+
+	private void OnInvoiceRowRender(RowRenderEventArgs<ApplicableReceiptInvoiceDto> args)
+	{
+		if (!args.Data.IsSelected)
+			return;
+
+		args.Attributes["class"] = args.Attributes.TryGetValue("class", out var existing) && existing is string css && !string.IsNullOrWhiteSpace(css)
+			? $"{css} apply-receipt-row-selected"
+			: "apply-receipt-row-selected";
+	}
+
+	/// <summary>The current Apply Receipt choice, in the same shape the request page submits.</summary>
+	public ApplyReceiptStateDto GetState() => new()
+	{
+		IsEnabled = isEnabled,
+		SelectedApplications = !isEnabled
+			? []
+			: invoices
+				.Where(i => i.IsSelected && i.AppliedAmount > 0)
+				.Select(i => new ReceiptInvoiceApplicationSelectionDto
+				{
+					InvoiceId = i.InvoiceId,
+					InvoiceNumber = i.InvoiceNumber,
+					PaymentScheduleId = i.PaymentScheduleId,
+					InvoiceDate = i.InvoiceDate,
+					DueDate = i.DueDate,
+					InvoiceAmount = i.InvoiceAmount,
+					AmountDue = i.InvoiceBalance,
+					CurrencyCode = i.CurrencyCode,
+					AppliedAmount = i.AppliedAmount,
+					DiscountAmount = i.DiscountAmount
+				})
+				.ToList()
+	};
+}

@@ -94,9 +94,15 @@
 									InitialRemarks="@details.Remarks"
 									InitialAdjustment="@details.AdjustmentAmount"
 									AdjustmentAmountChanged="HandleAdjustment" />
-								@if ((TypeCode is "sar" or "bca") && details.ApplyReceiptEnabled && details.ReceiptApplications.Any())
+								@if (CanEditApplyReceipt)
 								{
-									<ApplyReceiptApplicationsDisplay Applications="@details.ReceiptApplications" />
+									@* The requestor can correct the invoice applications along with the amount and remarks. *@
+									<ApplyReceiptEditor @ref="applyReceiptEditor"
+										ReceiptNumber="@details.Invoice.InvoiceNumber"
+										ReceiptBalance="@ReceiptBalance"
+										AdjustmentAmount="@data.AdjustmentAmount"
+										InitialApplications="@details.ReceiptApplications"
+										IsDisabled="@isPosting" />
 								}
 							}
 						</BodyTtemplate>
@@ -166,6 +172,7 @@
 	private ReceiptAdjustmentUpdateRequestDto data;
 	private BaseReceiptAdjustment? baseReceiptAdjustment;
 	private CreateCashDiscountAdjustment? cashDiscountAdjustment;
+	private ApplyReceiptEditor? applyReceiptEditor;
 	private FusionPostingOverlay postingOverlay = default!;
 	private bool isPosting;
 
@@ -180,6 +187,16 @@
 	private string adjustmentName;
 	private string inputHash = string.Empty;
 	private bool isRequestUpdatable => isUpdatable && role == "Requestor";
+
+	// Apply Receipt can be corrected only on the request that already carries it
+	// (Write-Off: Small Amount or Bank Charges raised against a receipt).
+	private bool CanEditApplyReceipt =>
+		(TypeCode is "sar" or "bca") &&
+		details?.ApplyReceiptEnabled == true &&
+		details.ReceiptApplications.Any() &&
+		ShouldRenderReceiptSummary();
+
+	private double ReceiptBalance => invoice?.ReceiptBalance ?? invoice?.InvoiceBalance ?? 0;
 
 	protected override async Task OnParametersSetAsync()
 	{
@@ -222,9 +239,12 @@
 				AdjustmentAmount = details.AdjustmentAmount,
 				Remarks = details.Remarks
 			};
-			inputHash = Utils.Security.ObjectHash(data);
-
 			invoice = ToInvoiceDetails(details.Invoice, details.AdjustmentAmount);
+
+			var savedApplications = details.ApplyReceiptEnabled
+				? details.ReceiptApplications.Select(a => (a.PaymentScheduleId, a.AppliedAmount))
+				: Enumerable.Empty<(long PaymentScheduleId, double AppliedAmount)>();
+			inputHash = Utils.Security.ObjectHash(BuildChangeSnapshot(savedApplications));
 		}
 		catch (Exception ex)
 		{
@@ -275,16 +295,20 @@
 			if (!isConfirmed) return;
 
 			SynchronizeAdjustmentInput();
+			string? applyReceiptLine = SynchronizeApplyReceiptInput();
 
 			if (isRequestUpdatable)
 			{
-				string newHash = Utils.Security.ObjectHash(data);
+				var currentApplications = data.ApplyReceiptEnabled is null
+					? (details.ApplyReceiptEnabled ? details.ReceiptApplications.Select(a => (a.PaymentScheduleId, a.AppliedAmount)) : Enumerable.Empty<(long PaymentScheduleId, double AppliedAmount)>())
+					: (data.ReceiptApplications ?? []).Select(a => (a.PaymentScheduleId, a.AppliedAmount));
+				string newHash = Utils.Security.ObjectHash(BuildChangeSnapshot(currentApplications));
 				Guards.ThrowInvalidOperationIf(newHash.Equals(inputHash), "No changes detected in the current request.");
 			}
 
 			await postingOverlay.RunAsync(
 				FusionPostingOverlay.SubmittingChangesTitle,
-				[$"{adjustmentName} of {FusionPostingOverlay.FormatSummaryAmount(data.AdjustmentAmount)}", FusionPostingOverlay.DescribeAttachments(details.Notes)],
+				[$"{adjustmentName} of {FusionPostingOverlay.FormatSummaryAmount(data.AdjustmentAmount)}", applyReceiptLine, FusionPostingOverlay.DescribeAttachments(details.Notes)],
 				FusionPostingOverlay.SubmittingNote,
 				() => RequestService.Update(isRequestUpdatable, RequestId, data, details.Notes));
 			RefreshPage();
@@ -313,6 +337,54 @@
 		data.AdjustmentAmount = entry.Amount;
 		data.Remarks = entry.Remarks;
 	}
+
+	/// <summary>
+	/// Copies the Apply Receipt editor's selection into the update and checks it.
+	/// Returns a summary line for the progress overlay, or null when Apply Receipt isn't edited here.
+	/// </summary>
+	private string? SynchronizeApplyReceiptInput()
+	{
+		data.ApplyReceiptEnabled = null;
+		data.ReceiptApplications = null;
+
+		if (!isRequestUpdatable || !CanEditApplyReceipt || applyReceiptEditor is null)
+			return null;
+
+		Guards.ThrowInvalidOperationIf(
+			!applyReceiptEditor.IsReady,
+			"The open invoices for Apply Receipt haven't loaded. Please press Refresh in the Apply Receipt section and try again.");
+
+		var state = applyReceiptEditor.GetState();
+		data.ApplyReceiptEnabled = state.IsEnabled;
+		data.ReceiptApplications = state.SelectedApplications;
+
+		if (!state.IsEnabled)
+			return "Apply receipt turned off";
+
+		Guards.ThrowInvalidOperationIf(
+			!state.SelectedApplications.Any(),
+			"Enable Apply Receipt requires at least one selected invoice with a positive applied amount.");
+
+		var total = Math.Round(state.TotalAppliedAmount + data.AdjustmentAmount, 2);
+		Guards.ThrowInvalidOperationIf(
+			ReceiptBalance > 0 && total > Math.Round(ReceiptBalance, 2),
+			$"The adjustment amount plus the applied invoice amounts ({total:N2}) is more than the receipt balance ({ReceiptBalance:N2}).");
+
+		var count = state.SelectedApplications.Count;
+		return $"Apply receipt to {count} {(count == 1 ? "invoice" : "invoices")} ({FusionPostingOverlay.FormatSummaryAmount(state.TotalAppliedAmount)})";
+	}
+
+	/// <summary>The values that count as a change: amount, remarks and the invoice applications.</summary>
+	private object BuildChangeSnapshot(IEnumerable<(long PaymentScheduleId, double AppliedAmount)> applications) => new
+	{
+		data.AdjustmentAmount,
+		data.Remarks,
+		Applications = applications
+			.Where(a => a.AppliedAmount > 0)
+			.OrderBy(a => a.PaymentScheduleId)
+			.Select(a => $"{a.PaymentScheduleId}:{a.AppliedAmount:0.00}")
+			.ToList()
+	};
 
 	private void HandleSearchChanged(bool value) => isOnSearch = value;
 	private void HandleLoadingChanged(bool value) => isLoading = value;

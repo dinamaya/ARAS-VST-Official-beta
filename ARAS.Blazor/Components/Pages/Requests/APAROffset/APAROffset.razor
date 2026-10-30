@@ -370,6 +370,7 @@
 			Guards.ThrowInvalidOperationIf(!APAdjustments.Any(), "Can't submit request because AP Group has no rows");
 			Guards.ThrowInvalidOperationIf(!ARAdjustments.Any(), "Can't submit request because there are no adjustment in the current request");
 			Guards.ThrowInvalidOperationIf(isLoading, "Can't submit request while search operation is ongoing");
+			Guards.ThrowInvalidOperationIf(APAROffsetRules.CountArInvoices(ARAdjustments) > 1, APAROffsetRules.TooManyArInvoicesMessage);
 
 			var confirmMessage = RequiresWriteOff
 				? "This request will submit 2 transactions (AP/AR Adjustment and Write-off). Continue?"
@@ -391,6 +392,13 @@
 				Guards.ThrowInvalidOperationIf(WriteOffAmount <= 0, "Write-off amount must be greater than 0.00.");
 				Guards.ThrowInvalidOperationIf(string.IsNullOrWhiteSpace(WriteOffReason), "Write-off reason is required.");
 				Guards.ThrowInvalidOperationIf(!HasBalancedTransactions, "AP, AR and Write-off amounts must reconcile to 0.00 difference.");
+
+				// The write-off has no invoice number, so it must be posted against one of
+				// this request's AR invoices, which needs its Fusion invoice match.
+				var writeOffInvoice = APAROffsetWriteOff.FindInvoice(ARAdjustments);
+				Guards.ThrowInvalidOperationIf(
+					!APAROffsetWriteOff.IsMatchedToFusion(writeOffInvoice),
+					APAROffsetWriteOff.NotMatchedMessage(writeOffInvoice?.InvoiceNumber));
 			}
 			else
 			{
@@ -420,6 +428,13 @@
 	}
 
 	protected async Task AddAR(InvoiceDetailsDto data){
+		// Company practice: one AR invoice per AP-AR offset request.
+		if (APAROffsetRules.CountArInvoices(ARAdjustments) >= 1)
+		{
+			await DialogService.Alert(APAROffsetRules.SingleArInvoiceMessage, "Only One AR Invoice");
+			return;
+		}
+
 		var result = await DialogService.OpenAsync<AddAPAROffsettingAR>(
 			"Confirm AR Invoice Number",
             new Dictionary<string, object>()
@@ -613,7 +628,7 @@
 		if (!RequiresWriteOff)
 			return null;
 
-		var contextRow = ARAdjustments.FirstOrDefault();
+		var contextRow = APAROffsetWriteOff.FindInvoice(ARAdjustments) ?? ARAdjustments.FirstOrDefault();
 		if (contextRow is null)
 			return null;
 

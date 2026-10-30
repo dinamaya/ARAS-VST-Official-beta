@@ -29,6 +29,9 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
         public async Task<long> Create(RequestCreationDto<IEnumerable<APAROffsetCreateDto>> data, string createdBy)
         {
+			ValidateSingleArInvoice(data.Model);
+			ValidateWriteOffInvoice(data.Model);
+
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
 			try
@@ -81,6 +84,9 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 
         public async Task<long> Update(long requestId, RequestCreationDto<IEnumerable<APAROffsetCreateDto>> data, string modifiedBy)
         {
+			ValidateSingleArInvoice(data.Model);
+			ValidateWriteOffInvoice(data.Model);
+
 			await using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
 			try
@@ -262,7 +268,73 @@ namespace ARAS.Main.SSMS.Api.Repositories.Implementations
 				}
 			}
 
+			// Older requests may have no Fusion CustomerTrxId saved on any AR invoice.
+			// Give the write-off this request's own AR invoice number so the Oracle API
+			// looks up the right invoice, instead of leaving it with nothing to match on.
+			var arInvoiceNumber = rows
+				.Where(r => string.IsNullOrWhiteSpace(r.ReasonCode) && !string.IsNullOrWhiteSpace(r.InvoiceNumber))
+				.Select(r => r.InvoiceNumber)
+				.FirstOrDefault();
+
+			if (!string.IsNullOrWhiteSpace(arInvoiceNumber))
+			{
+				foreach (var row in rows.Where(r =>
+					!string.IsNullOrWhiteSpace(r.ReasonCode) &&
+					r.CustomerTrxId is null &&
+					string.IsNullOrWhiteSpace(r.InvoiceNumber)))
+				{
+					row.InvoiceNumber = arInvoiceNumber;
+				}
+			}
+
 			return rows;
+		}
+
+		/// <summary>
+		/// Company practice: an AP-AR offset request offsets exactly one AR invoice.
+		/// The write-off row (AR with a reason code) is not counted.
+		/// </summary>
+		private static void ValidateSingleArInvoice(IEnumerable<APAROffsetCreateDto>? model)
+		{
+			var arInvoiceCount = model?.Count(r =>
+				r is not null &&
+				string.Equals(r.Type, "AR", StringComparison.OrdinalIgnoreCase) &&
+				string.IsNullOrWhiteSpace(r.ReasonCode)) ?? 0;
+
+			if (arInvoiceCount > 1)
+				throw new InvalidOperationException(
+					"An AP-AR offset request can have only one AR invoice. " +
+					"Please remove the extra AR invoices before submitting.");
+		}
+
+		/// <summary>
+		/// A write-off has no invoice number of its own and is posted against one of the
+		/// request's AR invoices, so at least one of them (or the write-off itself) must
+		/// carry the Fusion CustomerTrxId. Rejects the request before anything is saved.
+		/// </summary>
+		private static void ValidateWriteOffInvoice(IEnumerable<APAROffsetCreateDto>? model)
+		{
+			var rows = model?.Where(r => r is not null).ToList() ?? [];
+
+			static bool IsAr(APAROffsetCreateDto r) => string.Equals(r.Type, "AR", StringComparison.OrdinalIgnoreCase);
+
+			var writeOff = rows.FirstOrDefault(r => IsAr(r) && !string.IsNullOrWhiteSpace(r.ReasonCode));
+			if (writeOff is null || writeOff.CustomerTrxId is not null)
+				return;
+
+			var arInvoices = rows
+				.Where(r => IsAr(r) && string.IsNullOrWhiteSpace(r.ReasonCode) && !string.IsNullOrWhiteSpace(r.InvoiceNumber))
+				.ToList();
+
+			if (arInvoices.Any(r => r.CustomerTrxId is not null))
+				return;
+
+			var invoiceNumber = arInvoices.FirstOrDefault()?.InvoiceNumber;
+			throw new InvalidOperationException(
+				$"Invoice {(string.IsNullOrWhiteSpace(invoiceNumber) ? "(no invoice number)" : invoiceNumber.Trim())} can't be used for the write-off. " +
+				"It couldn't be matched to an invoice in Oracle Fusion for this customer. " +
+				"Please check that the invoice exists in Fusion and is complete, then try again. " +
+				"If it does, contact the system administrator.");
 		}
 	}
 }

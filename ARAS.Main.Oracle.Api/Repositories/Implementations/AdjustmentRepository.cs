@@ -101,23 +101,26 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			foreach (var row in rows.Where(r => r.CustomerTrxId is null && !string.IsNullOrWhiteSpace(r.InvoiceNumber)))
 				await BackfillCustomerTrxIdAsync(row);
 
-			var invoiceContext = rows.FirstOrDefault(r =>
-				r.CustomerTrxId is not null && !string.IsNullOrWhiteSpace(r.InvoiceNumber));
-			foreach (var row in rows.Where(r => r.CustomerTrxId is null && string.IsNullOrWhiteSpace(r.InvoiceNumber)))
-			{
-				if (invoiceContext is null)
-					continue;
+			// A row with neither a Fusion CustomerTrxId nor an invoice number (an AP/AR
+			// write-off whose invoice couldn't be resolved) must not borrow another row's
+			// invoice: a bulk approval mixes several requests, so that could post the
+			// write-off against a different request's invoice and customer. Stop instead.
+			var unmatchedRows = rows
+				.Where(r => r.CustomerTrxId is null && string.IsNullOrWhiteSpace(r.InvoiceNumber))
+				.ToList();
 
-				row.CustomerTrxId = invoiceContext.CustomerTrxId;
-				row.PaymentScheduleId ??= invoiceContext.PaymentScheduleId;
-				row.CurrencyCode ??= invoiceContext.CurrencyCode;
-				row.GlAccountingDate ??= invoiceContext.GlAccountingDate;
-				_logger.LogInformation(
-					"Inherited Fusion invoice context for write-off row {AdjustmentId} from invoice {InvoiceNumber}: CustomerTrxId={CustomerTrxId}, PaymentScheduleId={PaymentScheduleId}",
-					row.AdjustmentId,
-					invoiceContext.InvoiceNumber,
-					row.CustomerTrxId,
-					row.PaymentScheduleId);
+			if (unmatchedRows.Count > 0)
+			{
+				foreach (var row in unmatchedRows)
+					_logger.LogWarning(
+						"Write-off row {AdjustmentId} (HeaderId {HeaderId}, amount {Amount}) has no CustomerTrxId and no invoice number; posting stopped.",
+						row.AdjustmentId,
+						row.HeaderId,
+						row.AdjustmentAmount);
+
+				throw new InvalidOperationException(
+					"Nothing was posted. A write-off couldn't be matched to its AR invoice in Oracle Fusion. " +
+					"Please decline the request so the requestor can re-select the AR invoice, or contact the system administrator.");
 			}
 
 			// Validate every Apply Receipt row before sending anything to Fusion, so a

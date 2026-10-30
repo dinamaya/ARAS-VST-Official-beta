@@ -81,7 +81,9 @@ namespace ARAS.Blazor.Services.Implementations
 				// invoice number is therefore an AR invoice row and must be submitted.
 				.Where(r => !string.IsNullOrWhiteSpace(r.InvoiceNumber))
 				.ToList();
-			var arInvoiceContext = arInvoiceRows.FirstOrDefault();
+			// The write-off is posted against this request's own AR invoice, preferring one
+			// that already has its Fusion CustomerTrxId.
+			var arInvoiceContext = APAROffsetWriteOff.FindInvoice(arInvoiceRows);
 
 			var apRequests = apRows.Select(r => new APAROffsetCreateDto()
 			{

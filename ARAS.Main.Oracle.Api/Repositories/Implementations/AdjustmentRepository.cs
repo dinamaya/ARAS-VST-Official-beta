@@ -43,7 +43,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 			if (_config.IsOntest())
 				return _config.GetReasonCodes();
 
-			var conn = await oracleConnection.OpenWithoutPolicyAsync();
+			await using var conn = await oracleConnection.OpenWithoutPolicyAsync();
 			
 			var sql = @"
 				SELECT
@@ -70,7 +70,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
 		public async Task<IEnumerable<ReceivablesActivityDto>> GetReceivableActivities()
 		{
-			var conn = await oracleConnection.OpenWithoutPolicyAsync();
+			await using var conn = await oracleConnection.OpenWithoutPolicyAsync();
 
 			var sql = @"
 				SELECT   DISTINCT
@@ -709,7 +709,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 
         public async Task<ReceivablesActivityDto> GetReceivableActivityByName(string adjustmentActivity)
         {
-			var conn = await oracleConnection.OpenWithoutPolicyAsync();
+			await using var conn = await oracleConnection.OpenWithoutPolicyAsync();
 
 			var sql = @"
 				SELECT DISTINCT
@@ -833,7 +833,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
 					:InvFlag
 				)";
 
-			var insertConn = await oracleConnection.OpenWithoutPolicyAsync();
+			await using var insertConn = await oracleConnection.OpenWithoutPolicyAsync();
 			await insertConn.ExecuteAsync(sql, list, commandTimeout: 120);
 		}
     }

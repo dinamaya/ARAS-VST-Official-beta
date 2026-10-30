@@ -613,7 +613,7 @@ namespace ARAS.Main.Oracle.Api.Repositories.Implementations
         // =========================================================================
         public async Task<string> GetCustomerTrxIdByInvoiceDetails(CustomerInvoiceRequestDto invoiceDetails)
         {
-            var conn = await oracleConnection.OpenWithoutPolicyAsync();
+            await using var conn = await oracleConnection.OpenWithoutPolicyAsync();
 
             // [ORACLE EBS] — Customer transaction ID lookup
             // TODO: Replace with Oracle Fusion endpoint when provided by Admin.
